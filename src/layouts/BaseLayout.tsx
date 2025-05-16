@@ -3,6 +3,7 @@ import DragWindowRegion from "@/components/DragWindowRegion";
 import NavigationMenu from "@/components/template/NavigationMenu";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
+import { Toaster } from "@/components/ui/sonner";
  
 export default function BaseLayout({
   children,
@@ -18,6 +19,7 @@ export default function BaseLayout({
 
       <AppSidebar />
       <SidebarInset>
+      <Toaster />
 
       <main className="flex-1">{children}</main>
       </SidebarInset>
