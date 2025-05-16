@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listApis, deleteApi } from '@/helpers/ipc/openapi/openapi-client';
+import { listApis, deleteApi, renameApi } from '@/helpers/ipc/openapi/openapi-client';
 import type { API } from '@/helpers/openapi/types';
 
 export const API_QUERY_KEY = 'apis';
@@ -34,12 +34,22 @@ export function useApis() {
     }
   });
 
+  // Mutation to rename an API
+  const renameApiMutation = useMutation({
+    mutationFn: ({ apiId, newName }: { apiId: string; newName: string }) => renameApi(apiId, newName),
+    onSuccess: () => {
+      // Invalidate the APIs query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: [API_QUERY_KEY] });
+    }
+  });
+
   return {
     apis: data || [],
     isLoading,
     isError,
     error,
     refetch,
-    deleteApi: deleteApiMutation.mutate
+    deleteApi: deleteApiMutation.mutate,
+    renameApi: renameApiMutation.mutate
   };
 }
