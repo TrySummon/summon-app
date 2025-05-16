@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { FileJson, Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { API_QUERY_KEY } from "@/hooks/useApis";
 import { 
   Dialog,
   DialogContent,
@@ -14,18 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/utils/tailwind";
-
-// Define the interface for the electron API
-declare global {
-  interface Window {
-    require: (module: string) => any;
-    electron: {
-      importCollection: {
-        import: (file: File, options: ImportApiOptions) => Promise<{ success: boolean; message?: string }>;
-      };
-    };
-  }
-}
 
 // Define the options interface
 export interface ImportApiOptions {
@@ -42,6 +32,7 @@ export function ImportApiDialog({
   children,
   onImport = () => {}
 }: ImportApiDialogProps) {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -92,23 +83,19 @@ export function ImportApiDialog({
       const importPromise = new Promise<void>(async (resolve, reject) => {
         try {
           // If we're in an Electron environment, use IPC
-          if (window.electron?.importCollection) {
-            const result = await window.electron.importCollection.import(file, options);
+            const result = await window.electron.importApi.import(file, options);
             
             if (result.success) {
+              // Invalidate the APIs query to refresh the list
+              queryClient.invalidateQueries({ queryKey: [API_QUERY_KEY] });
+              
               setFile(null);
               setOpen(false);
               resolve();
             } else {
-              reject(new Error(result.message || "Failed to import collection"));
+              reject(new Error(result.message || "Failed to import API"));
             }
-          } else {
-            // Fallback to the prop callback for non-Electron environments
-            onImport(file, options);
-            setFile(null);
-            setOpen(false);
-            resolve();
-          }
+         
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
           reject(new Error(errorMessage));
@@ -118,9 +105,11 @@ export function ImportApiDialog({
       });
       
       toast.promise(importPromise, {
-        loading: 'Importing collection...',
-        success: 'Collection imported successfully!',
-        error: (err) => err.message || 'Failed to import collection',
+        loading: 'Importing API...',
+        success: (result: any) => {
+          return `API imported successfully!${result?.apiId ? ` ID: ${result.apiId}` : ''}`;
+        },
+        error: (err) => err.message || 'Failed to import API',
       });
     }
   };
@@ -138,10 +127,10 @@ export function ImportApiDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
-            Import Collection
+            Import API
           </DialogTitle>
           <DialogDescription>
-            Upload an OpenAPI specification file (JSON or YAML) to import as a collection.
+            Upload an OpenAPI specification file (JSON or YAML) to import.
           </DialogDescription>
         </DialogHeader>
         

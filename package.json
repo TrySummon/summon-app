@@ -84,6 +84,7 @@
     "clsx": "^2.1.1",
     "electron-squirrel-startup": "^1.0.1",
     "i18next": "^25.0.1",
+    "lowdb": "^7.0.1",
     "lucide-react": "^0.503.0",
     "next-themes": "^0.4.6",
     "openapi-types": "^12.1.3",

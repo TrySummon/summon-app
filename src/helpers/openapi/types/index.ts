@@ -4,15 +4,16 @@
  * Core type definitions for the openapi-to-mcp generator
  */
 import type { JSONSchema7 } from "json-schema";
-import { OpenAPIV3 } from "openapi-types";
+import type { OpenAPIV3 } from "openapi-types";
 
 /**
  * Transport types supported by the MCP server
  */
 export type TransportType = "stdio" | "web" | "streamable-http";
 
-export interface Collection {
+export interface API {
   name: string;
+  description?: string;
   version: string;
   baseUrl?: string;
   tags?: string[];
