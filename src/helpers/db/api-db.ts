@@ -1,218 +1,144 @@
-import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
-import path from 'path';
 import { app } from 'electron';
-import fs from 'fs';
-import { API, McpToolDefinition } from '../openapi/types';
+import path from 'path';
+import fs from 'fs/promises';
+import { v4 as uuidv4 } from 'uuid';
+import { OpenAPIV3 } from 'openapi-types';
 
-// Define the database schema
-interface ApiDbSchema {
-  apis: {
-    id: string;
-    api: API;
-    tools: McpToolDefinition[];
-    createdAt: string;
-    updatedAt: string;
-  }[];
+// Define the API data structure that will be stored in files
+interface ApiData {
+  id: string;
+  api: OpenAPIV3.Document;
 }
 
-class ApiDatabase {
-  private db: Low<ApiDbSchema>;
-  private static instance: ApiDatabase;
+// Define the directory where API data will be stored
+const getApiDataDir = () => {
+  const userDataPath = app.getPath('userData');
+  return path.join(userDataPath, 'api-data');
+};
 
-  private constructor() {
-    // Ensure the data directory exists
-    const userDataPath = app.getPath('userData');
-    const dbDirectory = path.join(userDataPath, 'db');
-    
-    if (!fs.existsSync(dbDirectory)) {
-      fs.mkdirSync(dbDirectory, { recursive: true });
-    }
-    
-    const dbPath = path.join(dbDirectory, 'apis.json');
-    const adapter = new JSONFile<ApiDbSchema>(dbPath);
-    this.db = new Low(adapter, { apis: [] } as ApiDbSchema);
-    
-    // Initialize the database with default data if it doesn't exist
-    this.initDb().catch(err => console.error('Failed to initialize database:', err));
+// Ensure the API data directory exists
+const ensureApiDataDir = async () => {
+  const apiDataDir = getApiDataDir();
+  try {
+    await fs.mkdir(apiDataDir, { recursive: true });
+  } catch (error) {
+    console.error('Failed to create API data directory:', error);
+    throw error;
   }
+};
 
-  private async initDb(): Promise<void> {
-    await this.db.read();
-    
-    // Make sure the database is initialized with the correct structure
-    if (!this.db.data.apis) {
-      this.db.data.apis = [];
-      await this.db.write();
-    }
-  }
+// Get the file path for an API
+const getApiFilePath = (apiId: string) => {
+  return path.join(getApiDataDir(), `${apiId}.json`);
+};
 
-  public static getInstance(): ApiDatabase {
-    if (!ApiDatabase.instance) {
-      ApiDatabase.instance = new ApiDatabase();
-    }
-    return ApiDatabase.instance;
-  }
-
-  // Create a new API with its tools
-  public async createApi(api: API, tools: McpToolDefinition[]): Promise<string> {
-    await this.db.read();
-    
-    const id = this.generateId(api.name);
-    const now = new Date().toISOString();
-    
-    this.db.data!.apis.push({
-      id,
-      api,
-      tools,
-      createdAt: now,
-      updatedAt: now
-    });
-    
-    await this.db.write();
-    return id;
-  }
-
-  // Get all APIs (without tools for better performance)
-  public async listApis(): Promise<{ id: string; api: API; createdAt: string; updatedAt: string }[]> {
-    await this.db.read();
-    
-    return this.db.data!.apis.map(({ id, api, createdAt, updatedAt }) => ({
-      id,
-      api,
-      createdAt,
-      updatedAt
-    }));
-  }
-
-  // Get a specific API by ID
-  public async getApiById(id: string): Promise<{ id: string; api: API; tools: McpToolDefinition[]; createdAt: string; updatedAt: string } | null> {
-    await this.db.read();
-    
-    const apiEntry = this.db.data!.apis.find(api => api.id === id);
-    return apiEntry || null;
-  }
-
-  // Update an API
-  public async updateApi(id: string, apiData: API): Promise<boolean> {
-    await this.db.read();
-    
-    const apiIndex = this.db.data!.apis.findIndex(api => api.id === id);
-    
-    if (apiIndex === -1) {
-      return false;
-    }
-    
-    this.db.data!.apis[apiIndex].api = apiData;
-    this.db.data!.apis[apiIndex].updatedAt = new Date().toISOString();
-    
-    await this.db.write();
+// Check if an API exists
+const apiExists = async (apiId: string): Promise<boolean> => {
+  try {
+    await fs.access(getApiFilePath(apiId));
     return true;
+  } catch {
+    return false;
   }
+};
 
-  // Delete an API and all its tools
-  public async deleteApi(id: string): Promise<boolean> {
-    await this.db.read();
+// Create a new API and its tools
+const createApi = async (api: OpenAPIV3.Document): Promise<string> => {
+  await ensureApiDataDir();
+  
+  // Generate a unique ID for the API
+  const apiId = uuidv4();
+  
+  // Create the API file
+  const apiData: ApiData = { id: apiId, api };
+  await fs.writeFile(getApiFilePath(apiId), JSON.stringify(apiData, null, 2));
+  
+  return apiId;
+};
+
+// List all APIs
+const listApis = async (): Promise<ApiData[]> => {
+  await ensureApiDataDir();
+  
+  try {
+    const files = await fs.readdir(getApiDataDir());
+    const apiFiles = files.filter(file => file.endsWith('.json'));
     
-    const initialLength = this.db.data!.apis.length;
-    this.db.data!.apis = this.db.data!.apis.filter(api => api.id !== id);
+    const apis: ApiData[] = [];
     
-    if (initialLength === this.db.data!.apis.length) {
-      return false;
+    for (const file of apiFiles) {
+      try {
+        const filePath = path.join(getApiDataDir(), file);
+        const fileContent = await fs.readFile(filePath, 'utf-8');
+        const apiData = JSON.parse(fileContent) as ApiData;
+        apis.push(apiData);
+      } catch (error) {
+        console.error(`Error reading API file ${file}:`, error);
+        // Continue with other files
+      }
     }
     
-    await this.db.write();
+    return apis;
+  } catch (error) {
+    console.error('Error listing APIs:', error);
+    return [];
+  }
+};
+
+// Get an API by ID
+const getApiById = async (id: string): Promise<ApiData | null> => {
+  if (!await apiExists(id)) {
+    return null;
+  }
+  
+  try {
+    const fileContent = await fs.readFile(getApiFilePath(id), 'utf-8');
+    return JSON.parse(fileContent) as ApiData;
+  } catch (error) {
+    console.error(`Error getting API with ID ${id}:`, error);
+    return null;
+  }
+};
+
+// Update an API
+const updateApi = async (id: string, api: OpenAPIV3.Document): Promise<boolean> => {
+  if (!await apiExists(id)) {
+    return false;
+  }
+  
+  try {
+    const apiData: ApiData = { id, api };
+    await fs.writeFile(getApiFilePath(id), JSON.stringify(apiData, null, 2));
     return true;
+  } catch (error) {
+    console.error(`Error updating API with ID ${id}:`, error);
+    return false;
   }
+};
 
-  // List all tools for a specific API
-  public async listApiTools(apiId: string): Promise<McpToolDefinition[] | null> {
-    await this.db.read();
-    
-    const apiEntry = this.db.data!.apis.find(api => api.id === apiId);
-    
-    if (!apiEntry) {
-      return null;
-    }
-    
-    return apiEntry.tools;
+// Delete an API and all its tools
+const deleteApi = async (id: string): Promise<boolean> => {
+  if (!await apiExists(id)) {
+    return false;
   }
-
-  // Get a specific tool from an API
-  public async getApiTool(apiId: string, toolName: string): Promise<McpToolDefinition | null> {
-    await this.db.read();
+  
+  try {
+    // Delete the API file
+    await fs.unlink(getApiFilePath(id));
     
-    const apiEntry = this.db.data!.apis.find(api => api.id === apiId);
-    
-    if (!apiEntry) {
-      return null;
-    }
-    
-    const tool = apiEntry.tools.find(tool => tool.name === toolName);
-    return tool || null;
-  }
-
-  // Update a specific tool in an API
-  public async updateApiTool(apiId: string, toolName: string, toolData: McpToolDefinition): Promise<boolean> {
-    await this.db.read();
-    
-    const apiIndex = this.db.data!.apis.findIndex(api => api.id === apiId);
-    
-    if (apiIndex === -1) {
-      return false;
-    }
-    
-    const toolIndex = this.db.data!.apis[apiIndex].tools.findIndex(tool => tool.name === toolName);
-    
-    if (toolIndex === -1) {
-      return false;
-    }
-    
-    this.db.data!.apis[apiIndex].tools[toolIndex] = toolData;
-    this.db.data!.apis[apiIndex].updatedAt = new Date().toISOString();
-    
-    await this.db.write();
     return true;
+  } catch (error) {
+    console.error(`Error deleting API with ID ${id}:`, error);
+    return false;
   }
+};
 
-  // Delete a specific tool from an API
-  public async deleteApiTool(apiId: string, toolName: string): Promise<boolean> {
-    await this.db.read();
-    
-    const apiIndex = this.db.data!.apis.findIndex(api => api.id === apiId);
-    
-    if (apiIndex === -1) {
-      return false;
-    }
-    
-    const initialLength = this.db.data!.apis[apiIndex].tools.length;
-    this.db.data!.apis[apiIndex].tools = this.db.data!.apis[apiIndex].tools.filter(tool => tool.name !== toolName);
-    
-    if (initialLength === this.db.data!.apis[apiIndex].tools.length) {
-      return false;
-    }
-    
-    this.db.data!.apis[apiIndex].updatedAt = new Date().toISOString();
-    await this.db.write();
-    return true;
-  }
 
-  // Helper method to generate a human-readable unique ID based on API name
-  private generateId(apiName?: string): string {
-    if (apiName) {
-      // Create a slug from the API name
-      const baseSlug = apiName.toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric chars with hyphens
-        .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
-      
-      // Add a timestamp to ensure uniqueness
-      const timestamp = new Date().getTime().toString(36);
-      return `${baseSlug}-${timestamp}`;
-    }
-    
-    // Fallback to a timestamp-based ID if no name is provided
-    return `api-${new Date().getTime().toString(36)}`;
-  }
-}
-
-export const apiDb = ApiDatabase.getInstance();
+// Export the API database functions
+export const apiDb = {
+  createApi,
+  listApis,
+  getApiById,
+  updateApi,
+  deleteApi,
+};

@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate, useSearch } from "@tanstack/react-router";
 import { useApis } from "@/hooks/useApis";
-import { listApiTools } from "@/helpers/ipc/openapi/openapi-client";
-import { McpToolDefinition } from "@/helpers/openapi/types";
 import { 
   Breadcrumb, 
   BreadcrumbItem, 
@@ -13,11 +11,15 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Server } from "lucide-react";
+import { Server, Globe, ExternalLink, Copy } from "lucide-react";
 import { SubNav } from "@/components/SubNav";
 import { Markdown } from "@/components/ui/markdown";
 import { AuthorizationTab } from "@/components/AuthorizationTab";
 import { Toaster } from "@/components/ui/sonner";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 // Define the search params interface
 interface ApiPageSearchParams {
@@ -29,35 +31,11 @@ export default function ApiPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/api/$apiId" }) as ApiPageSearchParams;
   const { apis } = useApis();
-  const [apiTools, setApiTools] = useState<McpToolDefinition[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>(search.tab || "overview");
   
   const api = apis.find(a => a.id === apiId);
   
-  useEffect(() => {
-    async function fetchApiTools() {
-      if (!apiId) return;
-      
-      setIsLoading(true);
-      try {
-        const result = await listApiTools(apiId);
-        if (result.success) {
-          setApiTools(result.tools || []);
-        } else {
-          setError("Failed to load API tools");
-        }
-      } catch (err) {
-        console.error('Failed to load API tools:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    fetchApiTools();
-  }, [apiId]);
+
   
   if (!api) {
     return (
@@ -98,7 +76,7 @@ export default function ApiPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="p-2 border-b -mt-[1px] flex-shrink-0">
-        <Button variant="ghost" size="sm"><Server className="size-3 mr-2" /> {api.api.name}</Button>
+        <Button variant="ghost" size="sm"><Server className="size-3 mr-2" /> {api.api.info.title}</Button>
       </div>
       <div className="p-3 flex-shrink-0">
         <SubNav 
@@ -113,7 +91,102 @@ export default function ApiPage() {
       <div className="flex flex-col overflow-y-auto flex-1">
         {activeTab === "overview" && (
           <div className="mx-20 mt-6 mb-4">
-            <Markdown content={api.api.description || ''} />
+            {/* Server Information Section */}
+            {api.api.servers && api.api.servers.length > 0 && (
+              <Card className="mb-8">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center">
+                    <Globe className="mr-2 h-5 w-5 text-muted-foreground" />
+                    <CardTitle>Servers</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Available server endpoints for this API
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {api.api.servers.map((server, index) => (
+                      <div key={index} className="rounded-md border p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Server className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <h4 className="font-medium">
+                              {server.description || `Server ${index + 1}`}
+                            </h4>
+                          </div>
+                          <div className="flex space-x-2">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(server.url);
+                                      toast.success("Server URL copied to clipboard");
+                                    }}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Copy URL</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            
+                            {server.url.startsWith('http') && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => window.open(server.url, '_blank')}
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Open in new tab</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-2">
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {server.url}
+                          </Badge>
+                        </div>
+                        {server.variables && Object.keys(server.variables).length > 0 && (
+                          <div className="mt-4">
+                            <h5 className="text-sm font-medium mb-2">Variables:</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {Object.entries(server.variables).map(([name, variable]) => (
+                                <div key={name} className="flex items-center space-x-2 text-sm">
+                                  <span className="font-medium">{name}:</span>
+                                  <span>{variable.default}</span>
+                                  {variable.enum && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {variable.enum.length} options
+                                    </Badge>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* API Description */}
+            <Markdown content={api.api.info.description || '* No description provided *'} />
           </div>
         )}
         {activeTab === "auth" && (

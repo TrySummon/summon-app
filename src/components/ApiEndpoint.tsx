@@ -1,6 +1,12 @@
 import React from "react";
 import { SidebarMenuSubItem, SidebarMenuSubButton } from "@/components/ui/sidebar";
-import { McpToolDefinition } from "@/helpers/openapi/types";
+import { OpenAPIV3 } from "openapi-types";
+
+// Extended OpenAPI operation type with custom properties
+interface ExtendedOperation extends OpenAPIV3.OperationObject {
+  'x-path'?: string;
+  'x-method'?: string;
+}
 
 type MethodBadgeProps = {
   method: string;
@@ -34,20 +40,19 @@ const MethodBadge: React.FC<MethodBadgeProps> = ({ method }) => {
 };
 
 type ApiToolProps = {
-  tool: McpToolDefinition;
+  def: OpenAPIV3.OperationObject & {
+    'x-path'?: string;
+    'x-method'?: string;
+  };
 };
 
-export const ApiTool: React.FC<ApiToolProps> = ({ tool }) => {
-  // Extract method from the tool name if it follows the pattern "METHOD-toolname"
-  const methodMatch = tool.name.match(/^(GET|POST|PUT|DELETE|PATCH)-/i);
+export const ApiEndpoint: React.FC<ApiToolProps> = ({ def }) => {
+  // Get the path and method from the operation object
+  const path = def['x-path'] || '';
+  const method = def['x-method'] ? def['x-method'].toUpperCase() : '';
   
-  // If method is in the name, display it as a badge and show the rest of the name
-  const displayName = methodMatch 
-    ? tool.name.substring(methodMatch[0].length) 
-    : tool.name;
-  
-  // Use either the method from the name or from the tool definition
-  const method = methodMatch ? methodMatch[1].toUpperCase() : tool.method.toUpperCase();
+  // Use operationId if available, otherwise use path
+  const displayName = def.operationId || path;
 
   return (
     <SidebarMenuSubItem>

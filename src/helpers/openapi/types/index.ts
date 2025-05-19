@@ -11,15 +11,6 @@ import type { OpenAPIV3 } from "openapi-types";
  */
 export type TransportType = "stdio" | "web" | "streamable-http";
 
-export interface API {
-  name: string;
-  description?: string;
-  version: string;
-  baseUrl?: string;
-  tags?: string[];
-  security?: OpenAPIV3.ComponentsObject["securitySchemes"]
-}
-
 /**
  * MCP Tool Definition describes a tool extracted from an OpenAPI spec
  * for use in Model Context Protocol server

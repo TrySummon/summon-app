@@ -16,7 +16,10 @@ export const renameApi = async (apiId: string, newName: string) => {
     // Save the updated API
     const updateResult = await updateApi(apiId, {
       ...getResult.api.api,
-      name: newName
+      info: {
+        ...getResult.api.api.info,
+        title: newName
+      }
     });
     return updateResult;
   } catch (error) {
@@ -26,9 +29,3 @@ export const renameApi = async (apiId: string, newName: string) => {
     };
   }
 };
-
-// API Tool operations
-export const listApiTools = window.openapi.db.listApiTools;
-export const getApiTool = window.openapi.db.getApiTool;
-export const updateApiTool = window.openapi.db.updateApiTool;
-export const deleteApiTool = window.openapi.db.deleteApiTool;

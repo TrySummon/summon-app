@@ -27,10 +27,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { listApiTools } from "@/helpers/ipc/openapi/openapi-client";
-import { McpToolDefinition } from "@/helpers/openapi/types";
-import { ApiTool } from "@/components/ApiTool";
+import { ApiEndpoint } from "@/components/ApiEndpoint";
 import { useNavigate, useMatch, useRouterState } from "@tanstack/react-router";
+import { OpenAPIV3 } from "openapi-types";
+
+// Extended OpenAPI operation type with custom properties
+interface ExtendedOperation extends OpenAPIV3.OperationObject {
+  'x-path'?: string;
+  'x-method'?: string;
+}
 
 function useApiMatch() {
   const router = useRouterState();
@@ -52,38 +57,23 @@ export function ApiSection() {
   const { apis, isLoading, error, isError, refetch, deleteApi, renameApi } = useApis();
   const [isHovering, setIsHovering] = useState(false);
   const [openApiIds, setOpenApiIds] = useState<string[]>([]);
-  const [apiTools, setApiTools] = useState<Record<string, McpToolDefinition[]>>({});
   const [editingApiId, setEditingApiId] = useState<string | null>(null);
   const [tempApiName, setTempApiName] = useState<string>("");
   const editableNameRef = useRef<HTMLSpanElement>(null);
   const navigate = useNavigate();
 
-    const apiMatch = useApiMatch();
+  const apiMatch = useApiMatch();
  
   
   // Ref to track if rename action initiated the dropdown close
   const renameInitiatedRef = useRef(false); 
   
-  const toggleApiCollapsible = async (apiId: string) => {
+  const toggleApiCollapsible = (apiId: string) => {
     const isCurrentlyOpen = openApiIds.includes(apiId);
     
     setOpenApiIds(prev => 
       isCurrentlyOpen ? prev.filter(id => id !== apiId) : [...prev, apiId]
     );
-    
-    if (!isCurrentlyOpen && !apiTools[apiId]) {
-      try {
-        const result = await listApiTools(apiId);
-        if (result.success) {
-          setApiTools(prev => ({
-            ...prev,
-            [apiId]: result.tools || []
-          }));
-        }
-      } catch (err) {
-        console.error('Failed to load API tools:', err);
-      }
-    }
   };
 
   const handleRefresh = () => {
@@ -248,13 +238,13 @@ export function ApiSection() {
                             className="outline-none border-b border-dashed border-primary px-1"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {apiItem.api.name}
+                            {apiItem.api.info.title}
                           </span>
                         ) : (
                           <span 
                             className="cursor-pointer hover:text-primary transition-colors"
                           >
-                            {apiItem.api.name}
+                            {apiItem.api.info.title}
                           </span>
                         )}
                       </div>
@@ -292,12 +282,12 @@ export function ApiSection() {
                         }
                       }}
                     >
-                      <DropdownMenuItem className="text-xs" onSelect={() => startRenameApi(apiItem.id, apiItem.api.name)}>
+                      <DropdownMenuItem className="text-xs" onSelect={() => startRenameApi(apiItem.id, apiItem.api.info.title)}>
                         <Pencil className="mr-2 !size-3 text-muted-foreground" />
                         <span>Rename API</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-xs" onSelect={() => handleDeleteApi(apiItem.id, apiItem.api.name)}>
+                      <DropdownMenuItem className="text-xs" onSelect={() => handleDeleteApi(apiItem.id, apiItem.api.info.title)}>
                         <Trash2 className="mr-2 !size-3 text-muted-foreground" />
                         <span>Delete API</span>
                       </DropdownMenuItem>
@@ -306,18 +296,39 @@ export function ApiSection() {
                   
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {apiTools[apiItem.id]?.map((tool, index) => (
-                        <ApiTool 
-                          key={`${apiItem.id}-tool-${index}`}
-                          tool={tool}
-                        />
-                      ))}
-                      {(!apiTools[apiItem.id] || apiTools[apiItem.id].length === 0) && (
-                        <SidebarMenuSubItem>
-                          <div className="px-4 py-2 text-xs text-muted-foreground">
-                            No tools available
-                          </div>
-                        </SidebarMenuSubItem>
+                      {openApiIds.includes(apiItem.id) && apiItem.api.paths && (
+                        <>
+                          {Object.entries(apiItem.api.paths).flatMap(([path, pathItem]) => {
+                            if (!pathItem) return [];
+                            
+                            const methods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as const;
+                            return methods.flatMap(method => {
+                              const operation = pathItem[method];
+                              if (!operation) return [];
+                              
+                              // Add path and method to the operation object
+                              const extendedOperation = {
+                                ...operation,
+                                'x-path': path,
+                                'x-method': method
+                              };
+                              
+                              return [
+                                <ApiEndpoint
+                                  key={`${apiItem.id}-${method}-${path}`}
+                                  def={extendedOperation}
+                                />
+                              ];
+                            });
+                          })}
+                          {Object.keys(apiItem.api.paths).length === 0 && (
+                            <SidebarMenuSubItem>
+                              <div className="px-4 py-2 text-xs text-muted-foreground">
+                                No endpoints available
+                              </div>
+                            </SidebarMenuSubItem>
+                          )}
+                        </>
                       )}
                     </SidebarMenuSub>
                   </CollapsibleContent>

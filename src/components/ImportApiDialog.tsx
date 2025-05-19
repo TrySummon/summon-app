@@ -13,34 +13,26 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/utils/tailwind";
+import { useNavigate } from "@tanstack/react-router";
 
-// Define the options interface
-export interface ImportApiOptions {
-  ignoreDeprecated: boolean;
-  ignoreOptionalParams: boolean;
-}
+
 
 interface ImportApiDialogProps {
   children: React.ReactNode;
-  onImport?: (file: File, options: ImportApiOptions) => void;
+  onImport?: (file: File) => void;
 }
 
 export function ImportApiDialog({ 
-  children,
+  children, 
   onImport = () => {}
 }: ImportApiDialogProps) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [options, setOptions] = useState<ImportApiOptions>({
-    ignoreDeprecated: false,
-    ignoreOptionalParams: false,
-  });
   
   const handleFileChange = (file: File | null) => {    
     if (!file) {
@@ -83,17 +75,24 @@ export function ImportApiDialog({
       const importPromise = new Promise<void>(async (resolve, reject) => {
         try {
           // If we're in an Electron environment, use IPC
-            const result = await window.openapi.import(file, options);
+            const result = await window.openapi.import(file);
             
             if (result.success) {
               // Invalidate the APIs query to refresh the list
-              queryClient.invalidateQueries({ queryKey: [API_QUERY_KEY] });
-              
-              setFile(null);
+              queryClient.invalidateQueries({ queryKey: ['apis'] });
               setOpen(false);
+              
+              // Navigate to the API page if we have an API ID
+              if (result.apiId) {
+                // Use a small timeout to allow the query invalidation to complete
+                setTimeout(() => {
+                  navigate({ to: "/api/$apiId", params: { apiId: result.apiId } });
+                }, 100);
+              }
+              
               resolve();
             } else {
-              reject(new Error(result.message || "Failed to import API"));
+              reject(new Error(result.message || 'Failed to import API'));
             }
          
         } catch (err) {
@@ -192,41 +191,6 @@ export function ImportApiDialog({
                 </label>
               </>
             )}
-          </div>
-          
-          {/* Options */}
-          <div className="mt-4 space-y-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="ignore-deprecated" 
-                checked={options.ignoreDeprecated}
-                onCheckedChange={(checked) => 
-                  setOptions(prev => ({ ...prev, ignoreDeprecated: checked === true }))
-                }
-              />
-              <Label 
-                htmlFor="ignore-deprecated" 
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Ignore deprecated endpoints
-              </Label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="ignore-optional" 
-                checked={options.ignoreOptionalParams}
-                onCheckedChange={(checked) => 
-                  setOptions(prev => ({ ...prev, ignoreOptionalParams: checked === true }))
-                }
-              />
-              <Label 
-                htmlFor="ignore-optional" 
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Ignore optional parameters
-              </Label>
-            </div>
           </div>
           
         </div>

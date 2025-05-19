@@ -10,8 +10,9 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
-import { API, McpToolDefinition } from "./helpers/openapi/types";
+import { McpToolDefinition } from "./helpers/openapi/types";
 import { AuthCredentials } from "./types/auth";
+import { OpenAPIV3 } from "openapi-types";
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -35,15 +36,15 @@ declare global {
       db: {
         listApis: () => Promise<{ 
           success: boolean; 
-          apis?: { id: string; api: API; createdAt: string; updatedAt: string }[];
+          apis?: { id: string; api: OpenAPIV3.Document; createdAt: string; updatedAt: string }[];
           message?: string;
         }>;
         getApi: (id: string) => Promise<{
           success: boolean;
-          api?: { id: string; api: API; tools: McpToolDefinition[]; createdAt: string; updatedAt: string };
+          api?: { id: string; api: OpenAPIV3.Document; tools: McpToolDefinition[]; createdAt: string; updatedAt: string };
           message?: string;
         }>;
-        updateApi: (id: string, api: API) => Promise<{
+        updateApi: (id: string, api: OpenAPIV3.Document) => Promise<{
           success: boolean;
           message: string;
         }>;
@@ -51,26 +52,8 @@ declare global {
           success: boolean;
           message: string;
         }>;
-        listApiTools: (apiId: string) => Promise<{
-          success: boolean;
-          tools?: McpToolDefinition[];
-          message?: string;
-        }>;
-        getApiTool: (apiId: string, toolName: string) => Promise<{
-          success: boolean;
-          tool?: McpToolDefinition;
-          message?: string;
-        }>;
-        updateApiTool: (apiId: string, toolName: string, tool: McpToolDefinition) => Promise<{
-          success: boolean;
-          message: string;
-        }>;
-        deleteApiTool: (apiId: string, toolName: string) => Promise<{
-          success: boolean;
-          message: string;
-        }>;
       };
-      import: (file: File, options: any) => Promise<any>;
+      import: (file: File) => Promise<any>;
     }
     auth: {
       getCredentials: (apiId: string) => Promise<AuthCredentials | null>;
