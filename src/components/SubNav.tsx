@@ -15,18 +15,26 @@ export interface NavItem {
   value: string;
 }
 
-interface SubNavProps {
+export interface SubNavProps {
   items: NavItem[];
   defaultValue?: string;
   className?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
 }
 
-export function SubNav({ items, defaultValue, className }: SubNavProps) {
+export function SubNav({ items, defaultValue, className, value, onValueChange }: SubNavProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(defaultValue || items[0]?.value || "");
+  const [activeTab, setActiveTab] = useState(value || defaultValue || items[0]?.value || "");
   const [pathname, setPathname] = useState("");
 
   useEffect(() => {
+    // If value prop is provided, use it
+    if (value !== undefined) {
+      setActiveTab(value);
+      return;
+    }
+    
     // Set the initial pathname
     setPathname(window.location.pathname);
 
@@ -39,14 +47,18 @@ export function SubNav({ items, defaultValue, className }: SubNavProps) {
     }
     // If no match is found, use the default value or the first item
     setActiveTab(defaultValue || items[0]?.value || "");
-  }, [pathname, items, defaultValue]);
+  }, [pathname, items, defaultValue, value]);
 
-  const handleNavigation = (href: string) => {
-    navigate({ to: href });
+  const handleNavigation = (href: string, itemValue: string) => {
+    if (onValueChange) {
+      onValueChange(itemValue);
+    } else {
+      navigate({ to: href });
+    }
   };
 
   return (
-    <div className={className}>
+    <div className={cn("mb-4", className)}>
         <NavigationMenu className="w-full">
           <NavigationMenuList className="h-fit bg-transparent space-x-4 p-0 justify-start">
             {items.map((item) => (
@@ -57,7 +69,7 @@ export function SubNav({ items, defaultValue, className }: SubNavProps) {
                     "text-muted-foreground hover:text-foreground transition-colors",
                     activeTab === item.value && "border-primary text-foreground"
                   )}
-                  onClick={() => handleNavigation(item.href)}
+                  onClick={() => handleNavigation(item.href, item.value)}
                 >
                   {item.name}
                 </div>

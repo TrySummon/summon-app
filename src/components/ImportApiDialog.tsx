@@ -83,7 +83,7 @@ export function ImportApiDialog({
       const importPromise = new Promise<void>(async (resolve, reject) => {
         try {
           // If we're in an Electron environment, use IPC
-            const result = await window.electron.importApi.import(file, options);
+            const result = await window.openapi.import(file, options);
             
             if (result.success) {
               // Invalidate the APIs query to refresh the list

@@ -11,6 +11,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { API, McpToolDefinition } from "./helpers/openapi/types";
+import { AuthCredentials } from "./types/auth";
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -30,8 +31,8 @@ const queryClient = new QueryClient()
 declare global {
   interface Window {
     require: (module: string) => any;
-    electron: {
-      apiDb: {
+    openapi: {
+      db: {
         listApis: () => Promise<{ 
           success: boolean; 
           apis?: { id: string; api: API; createdAt: string; updatedAt: string }[];
@@ -69,10 +70,13 @@ declare global {
           message: string;
         }>;
       };
-      importApi: {
-        import: (file: File, options: any) => Promise<any>;
-      };
-    };
+      import: (file: File, options: any) => Promise<any>;
+    }
+    auth: {
+      getCredentials: (apiId: string) => Promise<AuthCredentials | null>;
+      saveCredentials: (apiId: string, credentials: AuthCredentials) => Promise<boolean>;
+      clearCredentials: (apiId: string) => Promise<boolean>;
+    }
   }
 }
 

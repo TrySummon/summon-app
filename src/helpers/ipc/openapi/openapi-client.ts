@@ -1,8 +1,8 @@
 // API operations
-export const listApis = window.electron.apiDb.listApis;
-export const getApi = window.electron.apiDb.getApi;
-export const updateApi = window.electron.apiDb.updateApi;
-export const deleteApi = window.electron.apiDb.deleteApi;
+export const listApis = window.openapi.db.listApis;
+export const getApi = window.openapi.db.getApi;
+export const updateApi = window.openapi.db.updateApi;
+export const deleteApi = window.openapi.db.deleteApi;
 
 // Custom API operation for renaming an API
 export const renameApi = async (apiId: string, newName: string) => {
@@ -28,7 +28,7 @@ export const renameApi = async (apiId: string, newName: string) => {
 };
 
 // API Tool operations
-export const listApiTools = window.electron.apiDb.listApiTools;
-export const getApiTool = window.electron.apiDb.getApiTool;
-export const updateApiTool = window.electron.apiDb.updateApiTool;
-export const deleteApiTool = window.electron.apiDb.deleteApiTool;
+export const listApiTools = window.openapi.db.listApiTools;
+export const getApiTool = window.openapi.db.getApiTool;
+export const updateApiTool = window.openapi.db.updateApiTool;
+export const deleteApiTool = window.openapi.db.deleteApiTool;

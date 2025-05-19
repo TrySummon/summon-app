@@ -16,9 +16,7 @@ export function exposeOpenApiContext() {
   try {
     const { contextBridge, ipcRenderer } = window.require("electron");
     
-    contextBridge.exposeInMainWorld("electron", {
-      ...window.electron,
-      importApi: {
+    contextBridge.exposeInMainWorld("openapi", {
         import: (file: File, options: ImportApiOptions) => {
           // Convert File to buffer for IPC transfer
           return new Promise((resolve, reject) => {
@@ -39,9 +37,9 @@ export function exposeOpenApiContext() {
             reader.onerror = () => reject(new Error("Failed to read file"));
             reader.readAsArrayBuffer(file);
           });
-        }
-      },
-      apiDb: {
+        },  
+
+      db: {
         // API CRUD operations
         listApis: () => ipcRenderer.invoke(LIST_APIS_CHANNEL),
         getApi: (id: string) => ipcRenderer.invoke(GET_API_CHANNEL, id),
