@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, shell } from "electron";
 import registerListeners from "./helpers/ipc/listeners-register";
 // "electron-squirrel-startup" seems broken when packaging with vite
 //import started from "electron-squirrel-startup";
@@ -13,8 +13,8 @@ const inDevelopment = process.env.NODE_ENV === "development";
 function createWindow() {
   const preload = path.join(__dirname, "preload.js");
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1024,
+    height: 768,
     webPreferences: {
       devTools: inDevelopment,
       contextIsolation: true,
@@ -26,6 +26,13 @@ function createWindow() {
     titleBarStyle: "hidden",
   });
   registerListeners(mainWindow);
+
+  // Handle links with target='_blank' or with rel='external' attribute
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // Open all external links in the default browser
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);

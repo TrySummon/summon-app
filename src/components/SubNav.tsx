@@ -1,0 +1,70 @@
+import * as React from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+
+import { cn } from "@/utils/tailwind";
+import {
+  NavigationMenu,
+  NavigationMenuList,
+  NavigationMenuItem,
+} from "@/components/ui/navigation-menu";
+
+export interface NavItem {
+  name: string;
+  href: string;
+  value: string;
+}
+
+interface SubNavProps {
+  items: NavItem[];
+  defaultValue?: string;
+  className?: string;
+}
+
+export function SubNav({ items, defaultValue, className }: SubNavProps) {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(defaultValue || items[0]?.value || "");
+  const [pathname, setPathname] = useState("");
+
+  useEffect(() => {
+    // Set the initial pathname
+    setPathname(window.location.pathname);
+
+    // Update the active tab based on the current pathname
+    for (const item of items) {
+      if (pathname.includes(item.value)) {
+        setActiveTab(item.value);
+        return;
+      }
+    }
+    // If no match is found, use the default value or the first item
+    setActiveTab(defaultValue || items[0]?.value || "");
+  }, [pathname, items, defaultValue]);
+
+  const handleNavigation = (href: string) => {
+    navigate({ to: href });
+  };
+
+  return (
+    <div className={className}>
+        <NavigationMenu className="w-full">
+          <NavigationMenuList className="h-fit bg-transparent space-x-4 p-0 justify-start">
+            {items.map((item) => (
+              <NavigationMenuItem key={item.value}>
+                <div
+                  className={cn(
+                    "cursor-pointer h-full rounded-none border-0 border-b-2 border-transparent px-1 pb-1 text-sm",
+                    "text-muted-foreground hover:text-foreground transition-colors",
+                    activeTab === item.value && "border-primary text-foreground"
+                  )}
+                  onClick={() => handleNavigation(item.href)}
+                >
+                  {item.name}
+                </div>
+              </NavigationMenuItem>
+            ))}
+          </NavigationMenuList>
+        </NavigationMenu>
+    </div>
+  );
+}

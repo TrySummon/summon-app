@@ -12,19 +12,22 @@ import {
   } from "@/components/ui/sidebar"
 import { Box, Plug, SquareTerminal } from "lucide-react";
 import { ApiSection } from "@/components/ApiSection";
+import { Link } from "@tanstack/react-router";
    
   export function AppSidebar() {
 
   return (
     <>
     <Sidebar className="top-[var(--header-height)] !h-[calc(100svh-var(--header-height))]">
-      <SidebarHeader>
+      <SidebarHeader className="border-b">
         <SidebarMenu>
           <SidebarMenuItem>
+            <Link to="/">
             <SidebarMenuButton className="w-fit px-1.5">
               <Box />
-              <span className="truncate font-semibold">Local Workspace</span>
+              <span className="truncate font-semibold font-mono">Local Workspace</span>
             </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

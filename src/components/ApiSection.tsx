@@ -30,6 +30,23 @@ import {
 import { listApiTools } from "@/helpers/ipc/openapi/openapi-client";
 import { McpToolDefinition } from "@/helpers/openapi/types";
 import { ApiTool } from "@/components/ApiTool";
+import { useNavigate, useMatch, useRouterState } from "@tanstack/react-router";
+
+function useApiMatch() {
+  const router = useRouterState();
+  const currentPath = router.location.pathname;
+  
+  // Only try to use useMatch if we're actually on an API route
+  if (currentPath.startsWith('/api/')) {
+    try {
+      return useMatch({ from: "/api/$apiId" });
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  return null;
+}
 
 export function ApiSection() {
   const { apis, isLoading, error, isError, refetch, deleteApi, renameApi } = useApis();
@@ -39,6 +56,10 @@ export function ApiSection() {
   const [editingApiId, setEditingApiId] = useState<string | null>(null);
   const [tempApiName, setTempApiName] = useState<string>("");
   const editableNameRef = useRef<HTMLSpanElement>(null);
+  const navigate = useNavigate();
+
+    const apiMatch = useApiMatch();
+ 
   
   // Ref to track if rename action initiated the dropdown close
   const renameInitiatedRef = useRef(false); 
@@ -116,6 +137,10 @@ export function ApiSection() {
       finishRenameApi();
     } else if (e.key === 'Escape') {
       e.preventDefault();
+      // Reset the content editable to the original name before canceling edit mode
+      if (editableNameRef.current && tempApiName) {
+        editableNameRef.current.textContent = tempApiName;
+      }
       setEditingApiId(null);
     }
   };
@@ -202,29 +227,40 @@ export function ApiSection() {
               >
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                      <SidebarMenuButton className="flex-1 text-xs">
-                        <div className="flex items-center">
-                          <div className="mr-2 flex items-center">
-                            <ChevronRight className="h-3 w-3 ml-auto group-data-[state=open]/collapsible:hidden" />
-                            <ChevronDown className="h-3 w-3 ml-auto group-data-[state=closed]/collapsible:hidden" />
-                          </div>
-                          {editingApiId === apiItem.id ? (
-                            <span 
-                              ref={editableNameRef}
-                              contentEditable
-                              suppressContentEditableWarning
-                              onBlur={finishRenameApi}
-                              onKeyDown={handleRenameKeyDown}
-                              className="outline-none border-b border-dashed border-primary px-1"
-                            >
-                              {apiItem.api.name}
-                            </span>
-                          ) : (
-                            <span>{apiItem.api.name}</span>
-                          )}
+                    <SidebarMenuButton
+                    isActive={apiItem.id === apiMatch?.params.apiId}
+                    onClick={() => navigate({ to: "/api/$apiId", params: { apiId: apiItem.id } })} className="flex-1 text-xs">
+                      <div className="flex items-center">
+                        <div onClick={(e) => {
+                          e.stopPropagation()
+                          toggleApiCollapsible(apiItem.id)
+                        }} className="mr-2 flex items-center chevron">
+                          <ChevronRight className="h-3 w-3 ml-auto group-data-[state=open]/collapsible:hidden" />
+                          <ChevronDown className="h-3 w-3 ml-auto group-data-[state=closed]/collapsible:hidden" />
                         </div>
-                      </SidebarMenuButton>
+                        {editingApiId === apiItem.id ? (
+                          <span 
+                            ref={editableNameRef}
+                            contentEditable
+                            suppressContentEditableWarning
+                            onBlur={finishRenameApi}
+                            onKeyDown={handleRenameKeyDown}
+                            className="outline-none border-b border-dashed border-primary px-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {apiItem.api.name}
+                          </span>
+                        ) : (
+                          <span 
+                            className="cursor-pointer hover:text-primary transition-colors"
+                          >
+                            {apiItem.api.name}
+                          </span>
+                        )}
+                      </div>
+                    </SidebarMenuButton>
                   </CollapsibleTrigger>
+
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
