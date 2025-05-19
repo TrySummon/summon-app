@@ -13,7 +13,7 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Server, Globe, ExternalLink, Copy } from "lucide-react";
 import { SubNav } from "@/components/SubNav";
-import { Markdown } from "@/components/ui/markdown";
+import { Markdown } from "@/components/markdown";
 import { AuthorizationTab } from "@/components/AuthorizationTab";
 import { Toaster } from "@/components/ui/sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -186,7 +186,9 @@ export default function ApiPage() {
             )}
             
             {/* API Description */}
-            <Markdown content={api.api.info.description || '* No description provided *'} />
+            <Markdown>
+            {api.api.info.description || '* No description provided *'}
+            </Markdown>
           </div>
         )}
         {activeTab === "auth" && (

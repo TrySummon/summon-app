@@ -1,6 +1,5 @@
 import React from "react";
 import DragWindowRegion from "@/components/DragWindowRegion";
-import NavigationMenu from "@/components/template/NavigationMenu";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Toaster } from "@/components/ui/sonner";
@@ -23,7 +22,6 @@ export default function BaseLayout({
       </div>
 
     </SidebarProvider>
-      <NavigationMenu />
       </>
   );
 }

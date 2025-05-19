@@ -13,6 +13,7 @@ import {
 import { McpToolDefinition } from "./helpers/openapi/types";
 import { AuthCredentials } from "./types/auth";
 import { OpenAPIV3 } from "openapi-types";
+import { ThemeMode } from "./types/theme-mode";
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -32,6 +33,11 @@ const queryClient = new QueryClient()
 declare global {
   interface Window {
     require: (module: string) => any;
+    themeMode: {
+      current: () => Promise<ThemeMode>;
+      dark: () => Promise<void>;
+      light: () => Promise<void>;
+    };
     openapi: {
       db: {
         listApis: () => Promise<{ 
