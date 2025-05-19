@@ -15,7 +15,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { cn } from "@/utils/tailwind";
-import CodeSnippet from "./CodeSnippet";
+import { MarkdownCodeSnippet } from "./CodeSnippet";
 
 
 function omit<T extends object, K extends string>(obj: T, keys: K[]): Omit<T, K> {
@@ -64,7 +64,7 @@ const Markdown = ({
             );
           },
           pre({ children, ...props }: any) {
-            return <CodeSnippet {...props} />;
+            return <MarkdownCodeSnippet {...props} />;
           },
           img: (image: any) => {
             return (

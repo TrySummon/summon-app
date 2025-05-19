@@ -3,6 +3,7 @@ import { RootRoute } from "./__root";
 import HomePage from "../pages/HomePage";
 import SecondPage from "@/pages/SecondPage";
 import ApiPage from "@/pages/ApiPage";
+import EndpointPage from "@/pages/EndpointPage";
 
 // TODO: Steps to add a new route:
 // 1. Create a new page component in the '../pages/' directory (e.g., NewPage.tsx)
@@ -41,4 +42,10 @@ export const ApiRoute = createRoute({
   component: ApiPage,
 });
 
-export const rootTree = RootRoute.addChildren([HomeRoute, SecondPageRoute, ApiRoute]);
+export const EndpointRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/api/$apiId/endpoint/$endpointId",
+  component: EndpointPage,
+});
+
+export const rootTree = RootRoute.addChildren([HomeRoute, SecondPageRoute, ApiRoute, EndpointRoute]);

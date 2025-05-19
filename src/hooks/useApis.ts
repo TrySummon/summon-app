@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listApis, deleteApi, renameApi } from '@/helpers/ipc/openapi/openapi-client';
-import type { API } from '@/helpers/openapi/types';
 
 export const API_QUERY_KEY = 'apis';
 

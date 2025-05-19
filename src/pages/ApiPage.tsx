@@ -10,16 +10,12 @@ import {
   BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
 import { Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { Server, Globe, ExternalLink, Copy } from "lucide-react";
+import { Server } from "lucide-react";
 import { SubNav } from "@/components/SubNav";
-import { Markdown } from "@/components/markdown";
+import { Markdown } from "@/components/Markdown";
 import { AuthorizationTab } from "@/components/AuthorizationTab";
-import { Toaster } from "@/components/ui/sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { toast } from "sonner";
+import { ServerInformation } from "@/components/ServerInformation";
+import { NotFound } from "@/components/ui/NotFound";
 
 // Define the search params interface
 interface ApiPageSearchParams {
@@ -39,26 +35,14 @@ export default function ApiPage() {
   
   if (!api) {
     return (
-      <div className="p-6">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>API Not Found</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        
-        <div className="mt-8 text-center">
-          <h1 className="text-2xl font-bold text-red-500">API Not Found</h1>
-          <p className="mt-2">The API you're looking for doesn't exist or has been removed.</p>
-        </div>
-      </div>
+      <NotFound
+        title="API Not Found"
+        message="The API you're looking for doesn't exist or has been removed."
+        breadcrumbs={[
+          { label: "Home", to: "/" },
+          { label: "API Not Found", isActive: true }
+        ]}
+      />
     );
   }
   
@@ -75,9 +59,19 @@ export default function ApiPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-2 border-b -mt-[1px] flex-shrink-0">
-        <Button variant="ghost" size="sm"><Server className="size-3 mr-2" /> {api.api.info.title}</Button>
-      </div>
+                      <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link to="/api/$apiId" params={{apiId: api.id}}>
+                      <BreadcrumbPage>
+               <Server className="size-3 mr-2" /> {api.api.info.title}
+             </BreadcrumbPage></Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+ 
       <div className="p-3 flex-shrink-0">
         <SubNav 
           items={[
@@ -92,98 +86,7 @@ export default function ApiPage() {
         {activeTab === "overview" && (
           <div className="mx-20 mt-6 mb-4">
             {/* Server Information Section */}
-            {api.api.servers && api.api.servers.length > 0 && (
-              <Card className="mb-8">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center">
-                    <Globe className="mr-2 h-5 w-5 text-muted-foreground" />
-                    <CardTitle>Servers</CardTitle>
-                  </div>
-                  <CardDescription>
-                    Available server endpoints for this API
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {api.api.servers.map((server, index) => (
-                      <div key={index} className="rounded-md border p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Server className="mr-2 h-4 w-4 text-muted-foreground" />
-                            <h4 className="font-medium">
-                              {server.description || `Server ${index + 1}`}
-                            </h4>
-                          </div>
-                          <div className="flex space-x-2">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(server.url);
-                                      toast.success("Server URL copied to clipboard");
-                                    }}
-                                  >
-                                    <Copy className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Copy URL</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            
-                            {server.url.startsWith('http') && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => window.open(server.url, '_blank')}
-                                    >
-                                      <ExternalLink className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Open in new tab</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                          </div>
-                        </div>
-                        <div className="mt-2">
-                          <Badge variant="outline" className="font-mono text-xs">
-                            {server.url}
-                          </Badge>
-                        </div>
-                        {server.variables && Object.keys(server.variables).length > 0 && (
-                          <div className="mt-4">
-                            <h5 className="text-sm font-medium mb-2">Variables:</h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {Object.entries(server.variables).map(([name, variable]) => (
-                                <div key={name} className="flex items-center space-x-2 text-sm">
-                                  <span className="font-medium">{name}:</span>
-                                  <span>{variable.default}</span>
-                                  {variable.enum && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {variable.enum.length} options
-                                    </Badge>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <ServerInformation servers={api.api.servers || []} />
             
             {/* API Description */}
             <Markdown>
@@ -195,7 +98,6 @@ export default function ApiPage() {
           <AuthorizationTab apiId={api.id} />
         )}
       </div>
-      <Toaster />
     </div>
   );
 }

@@ -11,7 +11,7 @@ import {
     SidebarMenu
   } from "@/components/ui/sidebar"
 import { Box, Plug, SquareTerminal } from "lucide-react";
-import { ApiSection } from "@/components/ApiSection";
+import { ApiNav } from "@/components/api-nav";
 import { Link } from "@tanstack/react-router";
    
   export function AppSidebar() {
@@ -32,7 +32,7 @@ import { Link } from "@tanstack/react-router";
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <ApiSection />
+        <ApiNav />
           <SidebarGroup>
             <SidebarGroupLabel>MCPs</SidebarGroupLabel>
             <SidebarMenu>
