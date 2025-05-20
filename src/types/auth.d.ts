@@ -3,6 +3,7 @@ export type AuthType = "noAuth" | "basicAuth" | "bearerToken" | "apiKey";
 export interface AuthCredentials {
   apiId: string;
   type: AuthType;
+  baseUrl?: string;
   basicAuth?: {
     username: string;
     password: string;

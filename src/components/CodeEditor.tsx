@@ -45,6 +45,7 @@ interface Props {
   editorRef?: RefObject<EditorView | null>;
   defaultValue?: string;
   height?: string | number;
+  maxHeight?: string | number;
   fontSize?: number;
   language?: string;
   readOnly?: boolean;
@@ -61,6 +62,7 @@ export default function CodeMirrorEditor({
   editorRef,
   defaultValue,
   height,
+  maxHeight,
   fontSize,
   language,
   readOnly,
@@ -71,13 +73,15 @@ export default function CodeMirrorEditor({
   onChange,
   onFocusChange,
   onMount,
+
 }: Props) {
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const internalEditorRef = useRef<EditorView | null>(null);
   
   const isDarkTheme = React.useMemo(() => {
-    return document.documentElement.classList.contains("dark") ? "dark" : "light";
+    return document.documentElement.classList.contains("dark");
   }, []);
+
 
   // Use provided ref or internal ref
   const actualEditorRef = editorRef || internalEditorRef;
@@ -176,12 +180,11 @@ export default function CodeMirrorEditor({
     <div
       ref={editorContainerRef}
       data-testid={testId}
-      className="w-full"
-      style={
-        height
-          ? { height: typeof height === "string" ? height : `${height}px` }
-          : undefined
-      }
+      className="w-full overflow-y-auto"
+      style={{
+        height: height ? (typeof height === "string" ? height : `${height}px`) : undefined,
+        maxHeight: maxHeight ? (typeof maxHeight === "string" ? maxHeight : `${maxHeight}px`) : undefined,
+      }}
     />
   );
 }

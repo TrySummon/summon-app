@@ -9,6 +9,9 @@ import {
 import SwaggerParser from "@apidevtools/swagger-parser";
 import { OpenAPIV3 } from "openapi-types";
 import { apiDb } from "@/helpers/db/api-db";
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 interface ImportApiRequest {
   filename: string;
@@ -16,22 +19,28 @@ interface ImportApiRequest {
 }
 
 
-
 export function registerOpenApiListeners() {
   // Handle API import
   ipcMain.handle(IMPORT_API_CHANNEL, async (_, request: ImportApiRequest) => {
+    // Create a temporary file to store the OpenAPI spec
+    const tempDir = os.tmpdir();
+    const tempFilePath = path.join(tempDir, `openapi-spec-${Date.now()}.json`);
+    
     try {
-      const { filename, buffer } = request;
+      const { buffer } = request;
       
       // Reconstruct Buffer from the array of integers that came through IPC
       const reconstructedBuffer = Buffer.from(buffer);
-
-      // Validate the OpenAPI spec using swagger-parser
+      
+      // Write the buffer to the temporary file
+      fs.writeFileSync(tempFilePath, reconstructedBuffer);
+      
+      // Validate the OpenAPI spec using swagger-parser with the file path
       const parsedSpec = (await SwaggerParser.dereference(
-        JSON.parse(reconstructedBuffer.toString())
+        tempFilePath
       )) as OpenAPIV3.Document;
       
-      // Store the API in the file system (no tools for now, simplified approach)
+      // Store the API in the file system
       const apiId = await apiDb.createApi(parsedSpec);
       
       return {
@@ -45,6 +54,15 @@ export function registerOpenApiListeners() {
         success: false,
         message: error instanceof Error ? error.message : "Unknown error occurred"
       };
+    } finally {
+      // Clean up the temporary file
+      if (fs.existsSync(tempFilePath)) {
+        try {
+          fs.unlinkSync(tempFilePath);
+        } catch (cleanupError) {
+          console.error("Error cleaning up temporary file:", cleanupError);
+        }
+      }
     }
   });
 

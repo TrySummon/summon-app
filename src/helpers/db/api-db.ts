@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
 import { OpenAPIV3 } from 'openapi-types';
+import stringify from 'json-stringify-safe';
 
 // Define the API data structure that will be stored in files
 interface ApiData {
@@ -51,7 +52,7 @@ const createApi = async (api: OpenAPIV3.Document): Promise<string> => {
   
   // Create the API file
   const apiData: ApiData = { id: apiId, api };
-  await fs.writeFile(getApiFilePath(apiId), JSON.stringify(apiData, null, 2));
+  await fs.writeFile(getApiFilePath(apiId), stringify(apiData, null, 2));
   
   return apiId;
 };
@@ -108,7 +109,7 @@ const updateApi = async (id: string, api: OpenAPIV3.Document): Promise<boolean> 
   
   try {
     const apiData: ApiData = { id, api };
-    await fs.writeFile(getApiFilePath(id), JSON.stringify(apiData, null, 2));
+    await fs.writeFile(getApiFilePath(id), stringify(apiData, null, 2));
     return true;
   } catch (error) {
     console.error(`Error updating API with ID ${id}:`, error);

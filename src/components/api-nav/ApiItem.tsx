@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
@@ -6,9 +6,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from "@/components/ui/collapsible";
-import { SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
+import { SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from "@/components/ui/sidebar";
 import { ApiDropdownMenu } from "./ApiDropdownMenu";
 import { ApiEndpointList } from "./ApiEndpointList";
+import { toast } from "sonner";
 
 interface ApiItemProps {
   apiItem: {
@@ -22,32 +23,25 @@ interface ApiItemProps {
   };
   isOpen: boolean;
   isActive: boolean;
-  editingApiId: string | null;
   onToggle: (apiId: string) => void;
-  onRename: (apiId: string, currentName: string) => void;
-  onDelete: (apiId: string, apiName: string) => void;
-  onFinishRename: (newName?: string) => void;
-  onRenameKeyDown: (e: React.KeyboardEvent) => void;
-  tempApiName: string;
+  deleteApi: (apiId: string, options: any) => void;
+  renameApi: (params: { apiId: string, newName: string }, options: any) => void;
 }
 
 export function ApiItem({
   apiItem,
   isOpen,
   isActive,
-  editingApiId,
   onToggle,
-  onRename,
-  onDelete,
-  onFinishRename,
-  onRenameKeyDown,
-  tempApiName
+  deleteApi,
+  renameApi
 }: ApiItemProps) {
-  // Create refs with proper types to avoid TypeScript errors
+  const [editingApiId, setEditingApiId] = useState<string | null>(null);
+  const [tempApiName, setTempApiName] = useState<string>("");
+  
   const editableNameRef = useRef<HTMLSpanElement>(null);
   const renameInitiatedRef = useRef<boolean>(false);
 
-  // Set focus on the editable element when editing starts
   useEffect(() => {
     if (editingApiId === apiItem.id && editableNameRef.current) {
       editableNameRef.current.focus();
@@ -62,17 +56,64 @@ export function ApiItem({
       }
     }
   }, [editingApiId, apiItem.id]);
+  
+  // Handle delete API
+  const handleDeleteApi = (apiId: string, apiName: string) => {
+    if (confirm(`Are you sure you want to delete the API "${apiName}"?`)) {
+      deleteApi(apiId, {
+        onSuccess: () => {
+          toast.success(`API "${apiName}" deleted successfully`);
+        },
+        onError: (error: unknown) => {
+          toast.error(`Failed to delete API: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      });
+    }
+  };
 
-  const handleFinishRename = () => {
+  // Start rename process
+  const startRenameApi = (apiId: string, currentName: string) => {
+    setEditingApiId(apiId);
+    setTempApiName(currentName);
+    renameInitiatedRef.current = true;
+  };
+
+  // Finish rename process
+  const finishRenameApi = () => {
+    if (!editingApiId) {
+      setEditingApiId(null);
+      return;
+    }
+    
     if (editableNameRef.current) {
       const newName = editableNameRef.current.textContent?.trim();
       if (newName && newName !== tempApiName) {
-        onFinishRename(newName);
+        renameApi({ apiId: editingApiId, newName }, {
+          onSuccess: () => {
+            toast.success(`API renamed to "${newName}" successfully`);
+            setEditingApiId(null);
+          },
+          onError: (error: unknown) => {
+            toast.error(`Failed to rename API: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            setEditingApiId(null); 
+          }
+        });
       } else {
-        onFinishRename();
+        setEditingApiId(null);
       }
     } else {
-      onFinishRename();
+      setEditingApiId(null);
+    }
+  };
+
+  // Handle keyboard events during rename
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      finishRenameApi();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setEditingApiId(null);
     }
   };
 
@@ -90,18 +131,21 @@ export function ApiItem({
               isActive={isActive}
               className="flex-1 text-xs"
             >
-              <div className="flex items-center">
-                <div onClick={() => onToggle(apiItem.id)} className="mr-2 flex items-center chevron">
+              <div className="flex items-center pl-4">
+                <SidebarMenuAction onClick={(e) => {
+                  onToggle(apiItem.id)
+                  e.preventDefault()
+                }} className="left-0 flex items-center chevron">
                   <ChevronRight className="h-3 w-3 ml-auto group-data-[state=open]/collapsible:hidden" />
                   <ChevronDown className="h-3 w-3 ml-auto group-data-[state=closed]/collapsible:hidden" />
-                </div>
+                </SidebarMenuAction>
                 {editingApiId === apiItem.id ? (
                   <span 
                     ref={editableNameRef}
                     contentEditable
                     suppressContentEditableWarning
-                    onBlur={() => handleFinishRename()}
-                    onKeyDown={onRenameKeyDown}
+                    onBlur={() => finishRenameApi()}
+                    onKeyDown={handleRenameKeyDown}
                     className="outline-none border-b border-dashed border-primary px-1"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -122,8 +166,8 @@ export function ApiItem({
         <ApiDropdownMenu
           apiId={apiItem.id}
           apiTitle={apiItem.api.info.title}
-          onRename={onRename}
-          onDelete={onDelete}
+          onRename={startRenameApi}
+          onDelete={handleDeleteApi}
           editableNameRef={editableNameRef}
           renameInitiatedRef={renameInitiatedRef}
         />

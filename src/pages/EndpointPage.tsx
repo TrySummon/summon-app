@@ -1,18 +1,18 @@
 import React from "react";
-import { useParams, useSearch } from "@tanstack/react-router";
+import { useParams, useSearch, Link } from "@tanstack/react-router";
 import { useApis } from "@/hooks/useApis";
-import { 
-  Breadcrumb, 
-  BreadcrumbItem, 
-  BreadcrumbLink, 
-  BreadcrumbList, 
-  BreadcrumbPage, 
-  BreadcrumbSeparator 
-} from "@/components/ui/breadcrumb";
-import { Link } from "@tanstack/react-router";
-import { Server } from "lucide-react";
-import { NotFound } from "@/components/ui/NotFound";
 import { OpenAPIV3 } from "openapi-types";
+import { NotFound } from "@/components/ui/NotFound";
+import { Server } from "lucide-react";
+import { 
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { ApiExplorer } from "@/components/api-explorer";
 
 // Define the search params interface
 interface EndpointSearchParams {
@@ -54,14 +54,15 @@ export default function EndpointPage() {
 
   return (
     <div className="flex flex-col h-full">
-                <Breadcrumb>
+        <Breadcrumb className="flex-shrink-0">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
                 <Link to="/api/$apiId" params={{apiId: api.id}}>
                 <BreadcrumbPage>
-         <Server className="size-3 mr-2" /> {api.api.info.title}
-       </BreadcrumbPage></Link>
+                  <Server className="size-3 mr-2" /> {api.api.info.title}
+                </BreadcrumbPage>
+                </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -70,11 +71,15 @@ export default function EndpointPage() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-  
- 
-      <div className="flex flex-col overflow-y-auto flex-1">
-  
-      </div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="h-full">
+            <ApiExplorer
+              openapiSpec={api.api}
+              endpointPath={endpointId}
+              endpointMethod={method as any}
+            />
+          </div>
+        </div>
     </div>
   );
 }

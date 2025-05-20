@@ -65,6 +65,7 @@ declare global {
       getCredentials: (apiId: string) => Promise<AuthCredentials | null>;
       saveCredentials: (apiId: string, credentials: AuthCredentials) => Promise<boolean>;
       clearCredentials: (apiId: string) => Promise<boolean>;
+      testCredentials: (baseUrl: string, authType: string, authData: any) => Promise<{ status: number, success: boolean, message?: string }>;
     }
   }
 }

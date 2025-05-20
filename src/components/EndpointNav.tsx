@@ -2,37 +2,9 @@ import React, { useMemo } from "react";
 import { SidebarMenuSubItem, SidebarMenuSubButton } from "@/components/ui/sidebar";
 import { OpenAPIV3 } from "openapi-types";
 import { Link, useLocation } from "@tanstack/react-router";
+import { MethodBadge } from "@/components/MethodBadge";
 
-type MethodBadgeProps = {
-  method: string;
-};
 
-const MethodBadge: React.FC<MethodBadgeProps> = ({ method }) => {
-  // Define colors for different HTTP methods
-  const getMethodColor = (method: string) => {
-    const methodLower = method.toLowerCase();
-    switch (methodLower) {
-      case 'get':
-        return 'bg-blue-100 text-blue-800';
-      case 'post':
-        return 'bg-green-100 text-green-800';
-      case 'put':
-        return 'bg-amber-100 text-amber-800';
-      case 'delete':
-        return 'bg-red-100 text-red-800';
-      case 'patch':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  return (
-    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md mr-2 uppercase ${getMethodColor(method)}`}>
-      {method}
-    </span>
-  );
-};
 
 type Props = {
   apiId: string;
@@ -88,7 +60,7 @@ export const EndpointNav: React.FC<Props> = ({ apiId, def }) => {
     <SidebarMenuSubItem>
       <Link to="/api/$apiId/endpoint/$endpointId" params={{ apiId, endpointId: path }} search={{ method }}>
         <SidebarMenuSubButton className="text-xs" isActive={isActive}>
-          <MethodBadge method={method} />
+          <MethodBadge method={method} size="sm" className="w-[38px] justify-end" />
           <span>{displayName}</span>
         </SidebarMenuSubButton>
       </Link>
