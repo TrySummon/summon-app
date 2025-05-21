@@ -18,8 +18,8 @@ export const EndpointHeader: React.FC<EndpointHeaderProps> = ({ tags, summary, d
           </Badge>
         ))}
       </div>}
-      <h1 className="text-xl font-bold xl:text-2xl tracking-tight">{summary}</h1>
-      {description && <Markdown className='text-muted-foreground'>{description}</Markdown>}
+      <h1 className="text-lg font-bold xl:text-xl tracking-tight">{summary}</h1>
+      {description && <Markdown className='text-muted-foreground text-sm'>{description}</Markdown>}
     </div>
   );
 };

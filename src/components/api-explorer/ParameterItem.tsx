@@ -28,7 +28,7 @@ export const ParameterItem: React.FC<ParameterItemProps> = ({ name, schema, desc
   return (
     <div className="py-4 border-b border-border last:border-b-0">
       <div className="flex flex-wrap items-center gap-2 mb-1">
-        <span className="font-mono text-sm font-semibold text-foreground">{name}</span>
+        <span className="font-mono text-xs font-semibold text-foreground">{name}</span>
         {schema.type && (
           <Badge variant="outline" className="font-mono text-xs bg-muted text-muted-foreground">
             {schema.type}
@@ -63,7 +63,7 @@ export const ParameterItem: React.FC<ParameterItemProps> = ({ name, schema, desc
       )}
       
       {description && (
-        <Markdown>{description}</Markdown>
+        <Markdown className="text-sm">{description}</Markdown>
       )}
 
       {schema.enum && (

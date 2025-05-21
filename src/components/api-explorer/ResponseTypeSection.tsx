@@ -153,7 +153,7 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
     const responseType = responseTypes[0];
     return (
       <section>
-        <h2 className="text-lg font-semibold tracking-tight mb-4">{title}</h2>
+        <h2 className="text-base font-semibold tracking-tight mb-3">{title}</h2>
         <div className="divide-y divide-border rounded-md border border-border p-4 md:p-6">
           {responseType.properties.map((prop, index) => (
             <ParameterItem
@@ -178,7 +178,7 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
   // Multiple response types with tabs
   return (
     <section>
-      <h2 className="text-lg font-semibold tracking-tight mb-4">{title}</h2>
+      <h2 className="text-base font-semibold tracking-tight mb-3">{title}</h2>
       <Tabs defaultValue="0" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full">
           {responseTypes.map((type, index) => (
@@ -192,7 +192,7 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
           <TabsContent key={index} value={index.toString()}>
             <div className="divide-y divide-border rounded-md border border-border p-4 md:p-6">
               <div className="pb-2 mb-2 border-b border-border">
-                <span className="text-sm font-medium">{type.contentType}</span>
+                <span className="text-xs font-medium">{type.contentType}</span>
               </div>
               {type.properties.map((prop, propIndex) => (
                 <ParameterItem
@@ -205,7 +205,7 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
                 />
               ))}
               {type.properties.length === 0 && (
-                <div className="py-4 text-sm text-muted-foreground">
+                <div className="py-4 text-xs text-muted-foreground">
                   No detailed schema information available for this response.
                 </div>
               )}

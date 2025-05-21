@@ -3,6 +3,7 @@ import { SidebarMenuSubItem, SidebarMenuSubButton } from "@/components/ui/sideba
 import { OpenAPIV3 } from "openapi-types";
 import { Link, useLocation } from "@tanstack/react-router";
 import { MethodBadge } from "@/components/MethodBadge";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 
 
@@ -58,12 +59,22 @@ export const EndpointNav: React.FC<Props> = ({ apiId, def }) => {
 
   return (
     <SidebarMenuSubItem>
-      <Link to="/api/$apiId/endpoint/$endpointId" params={{ apiId, endpointId: path }} search={{ method }}>
-        <SidebarMenuSubButton className="text-xs" isActive={isActive}>
-          <MethodBadge method={method} size="sm" className="w-[38px] justify-end" />
-          <span>{displayName}</span>
-        </SidebarMenuSubButton>
-      </Link>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link to="/api/$apiId/endpoint/$endpointId" params={{ apiId, endpointId: path }} search={{ method }}>
+            <SidebarMenuSubButton className="text-xs" isActive={isActive}>
+              <MethodBadge method={method} size="sm" className="w-[38px] justify-end" />
+              <span>{displayName}</span>
+            </SidebarMenuSubButton>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          <div className="flex flex-col">
+            <span className="font-semibold">{method.toUpperCase()} {path}</span>
+            {def.summary && <span className="text-xs opacity-80">{def.summary}</span>}
+          </div>
+        </TooltipContent>
+      </Tooltip>
     </SidebarMenuSubItem>
   );
 };

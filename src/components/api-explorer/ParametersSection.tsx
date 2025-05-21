@@ -93,7 +93,7 @@ export const ParametersSection: React.FC<ParametersSectionProps> = ({ title, par
 
   return (
     <section>
-      <h2 className="text-lg font-semibold tracking-tight mb-4">{title}</h2>
+      <h2 className="text-base font-semibold tracking-tight mb-3">{title}</h2>
       <div className="divide-y divide-border rounded-md border border-border p-4 md:p-6">
         {itemsToRender.map((item, index) => (
           <React.Fragment key={item.key}>
