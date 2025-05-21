@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, Menu, MenuItem, shell } from "electron";
 import registerListeners from "./helpers/ipc/listeners-register";
 // "electron-squirrel-startup" seems broken when packaging with vite
 //import started from "electron-squirrel-startup";
@@ -7,6 +7,7 @@ import {
   installExtension,
   REACT_DEVELOPER_TOOLS,
 } from "electron-devtools-installer";
+import { getApiDataDir } from "./helpers/db/api-db";
 
 const inDevelopment = process.env.NODE_ENV === "development";
 
@@ -53,6 +54,29 @@ async function installExtensions() {
 }
 
 app.whenReady().then(createWindow).then(installExtensions);
+
+app.whenReady().then(() => {
+  const apiDataDir = getApiDataDir();
+  // Get the current application menu
+  const currentMenu = Menu.getApplicationMenu();
+  
+  // Find the Help menu in the current menu
+  const helpMenu = currentMenu?.items.find(item => item.role === 'help' || item.label === 'Help');
+  
+  if (helpMenu && helpMenu.submenu) {
+    // Add a separator and our custom menu item to the Help submenu
+    helpMenu.submenu.append(new MenuItem({ type: 'separator' }));
+    helpMenu.submenu.append(new MenuItem({
+      label: 'Open Api Data Folder',
+      click: () => {
+        shell.openPath(apiDataDir);
+      }
+    }));
+    
+    // Update the application menu
+    Menu.setApplicationMenu(currentMenu);
+  }
+});
 
 //osX only
 app.on("window-all-closed", () => {

@@ -17,7 +17,7 @@ export const LeftColumn: React.FC<LeftColumnProps> = ({ operation, path, method,
   const pathParams = operation.parameters?.filter(p => ('in' in p && p.in === 'path')) as (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[] | undefined;
   const queryParams = operation.parameters?.filter(p => ('in' in p && p.in === 'query')) as (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[] | undefined;
   const headerParams = operation.parameters?.filter(p => ('in' in p && p.in === 'header')) as (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[] | undefined;
-  console.log(operation)
+
   return (
     <div className="w-full xl:pr-8 flex flex-col gap-6">
       <EndpointHeader

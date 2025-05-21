@@ -8,12 +8,12 @@ import { useLocation } from "@tanstack/react-router";
 import { ApiHeader } from "./ApiHeader";
 import { ApiItem } from "./ApiItem";
 import { Loader } from "@/components/Loader";
+import { ApiItemErrorBoundary } from "./ApiItemErrorBoundary";
 
 
 export function ApiNav() {
   const { apis, isLoading, error, isError, refetch, deleteApi, renameApi } = useApis();
   const [openApiIds, setOpenApiIds] = useState<string[]>([]);
-  
   const location = useLocation();
   const { apiId, isExactMatch } = useMemo(() => {
     const match = location.pathname.match(/\/api\/([^/]+)/);
@@ -59,6 +59,8 @@ export function ApiNav() {
         ) : (
           <>
             {apis.map((apiItem) => (
+                  <ApiItemErrorBoundary apiId={apiItem.id}>
+
               <ApiItem
                 key={apiItem.id}
                 apiItem={apiItem}
@@ -68,6 +70,7 @@ export function ApiNav() {
                 deleteApi={deleteApi}
                 renameApi={renameApi}
               />
+              </ApiItemErrorBoundary>
             ))}
           </>
         )}

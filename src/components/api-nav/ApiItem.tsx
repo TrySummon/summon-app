@@ -10,6 +10,7 @@ import { SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from "@/compone
 import { ApiDropdownMenu } from "./ApiDropdownMenu";
 import { ApiEndpointList } from "./ApiEndpointList";
 import { toast } from "sonner";
+import { ApiItemErrorBoundary } from "./ApiItemErrorBoundary";
 
 interface ApiItemProps {
   apiItem: {
@@ -36,6 +37,7 @@ export function ApiItem({
   deleteApi,
   renameApi
 }: ApiItemProps) {
+  // Safely access API information with fallbacks
   const [editingApiId, setEditingApiId] = useState<string | null>(null);
   const [tempApiName, setTempApiName] = useState<string>("");
   
@@ -118,12 +120,12 @@ export function ApiItem({
   };
 
   return (
-    <Collapsible
-      key={apiItem.id}
-      open={isOpen}
-      onOpenChange={() => onToggle(apiItem.id)}
-      className="group/collapsible"
-    >
+      <Collapsible
+        key={apiItem.id}
+        open={isOpen}
+        onOpenChange={() => onToggle(apiItem.id)}
+        className="group/collapsible"
+      >
       <SidebarMenuItem>
         <Link to="/api/$apiId" params={{apiId: apiItem.id}}>
           <CollapsibleTrigger asChild>
@@ -175,7 +177,7 @@ export function ApiItem({
         <CollapsibleContent>
           <ApiEndpointList
             apiId={apiItem.id}
-            paths={apiItem.api.paths}
+            paths={apiItem.api?.paths || {}}
             isOpen={isOpen}
           />
         </CollapsibleContent>

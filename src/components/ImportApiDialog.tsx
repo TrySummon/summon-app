@@ -80,6 +80,7 @@ export function ImportApiDialog({
             if (result.success) {
               // Invalidate the APIs query to refresh the list
               queryClient.invalidateQueries({ queryKey: ['apis'] });
+              setFile(null);
               setOpen(false);
               
               // Navigate to the API page if we have an API ID
@@ -129,7 +130,7 @@ export function ImportApiDialog({
             Import API
           </DialogTitle>
           <DialogDescription>
-            Upload an OpenAPI specification file (JSON or YAML) to import.
+            Upload an OpenAPI specification file (JSON format only). We only support OpenAPI Spec 3.
           </DialogDescription>
         </DialogHeader>
         
@@ -170,7 +171,7 @@ export function ImportApiDialog({
                   Drag and drop your OpenAPI specification
                 </p>
                 <p className="mb-4 text-xs text-muted-foreground">
-                  Supports JSON and YAML files
+                  Supports JSON files
                 </p>
                 <label htmlFor="file-upload">
                   <Button
@@ -184,7 +185,7 @@ export function ImportApiDialog({
                   <input
                     id="file-upload"
                     type="file"
-                    accept=".json,.yaml,.yml"
+                    accept=".json"
                     className="sr-only"
                     onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                   />

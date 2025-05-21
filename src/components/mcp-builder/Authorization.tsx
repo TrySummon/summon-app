@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { LockKeyhole, Key, ShieldCheck, XCircle, CheckCircle2, AlertCircle } from "lucide-react";
+import { OpenAPIV3 } from "openapi-types";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +28,6 @@ import { AuthCredentials } from "@/types/auth";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useApis } from "@/hooks/useApis";
-import { joinUrl } from "@/helpers/openapi/utils/url";
 
 
 // Define the form schema with conditional fields based on auth type
@@ -52,11 +52,11 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface AuthorizationTabProps {
   apiId: string;
+  api: OpenAPIV3.Document;
 }
 
-export function AuthorizationTab({ apiId }: AuthorizationTabProps) {
+export function AuthorizationTab({ apiId, api }: AuthorizationTabProps) {
   const { credentials, saveCredentials, clearCredentials, loading } = useSecureCredentials(apiId);
-  const { apis } = useApis();
   const [testStatus, setTestStatus] = useState<{ status: 'idle' | 'loading' | 'success' | 'error', message?: string }>({ status: 'idle' });
 
   // Initialize the form with react-hook-form
@@ -87,20 +87,15 @@ export function AuthorizationTab({ apiId }: AuthorizationTabProps) {
 
   useEffect(() => {
     // Find the current API in the list of APIs
-    const currentApi = apis.find(api => api.id === apiId);
-    if (currentApi?.api?.servers && currentApi.api.servers.length > 0) {
-      setServerUrls(currentApi.api.servers);
+    if (api.servers && api.servers.length > 0) {
+      setServerUrls(api.servers);
       
       // Set the first server URL as the default if available
-      if (currentApi.api.servers[0]?.url) {
-        form.setValue('baseUrl', currentApi.api.servers[0].url);
+      if (api.servers[0]?.url) {
+        form.setValue('baseUrl', api.servers[0].url);
       }
-    } else {
-      // If no servers are defined, add a default localhost option
-      setServerUrls([{ url: 'http://localhost:8080', description: 'Default Local Server' }]);
-      form.setValue('baseUrl', 'http://localhost:8080');
     }
-  }, [apis, apiId, form]);
+  }, [api]);
 
   // Load saved credentials on mount
   useEffect(() => {

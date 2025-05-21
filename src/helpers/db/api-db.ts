@@ -3,16 +3,17 @@ import path from 'path';
 import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
 import { OpenAPIV3 } from 'openapi-types';
-import stringify from 'json-stringify-safe';
+import fsSync from 'fs';
 
 // Define the API data structure that will be stored in files
 interface ApiData {
   id: string;
-  api: OpenAPIV3.Document;
+  originalFilePath: string;
+  api?: OpenAPIV3.Document; // Optional as we'll load it on demand
 }
 
 // Define the directory where API data will be stored
-const getApiDataDir = () => {
+export const getApiDataDir = () => {
   const userDataPath = app.getPath('userData');
   return path.join(userDataPath, 'api-data');
 };
@@ -33,6 +34,10 @@ const getApiFilePath = (apiId: string) => {
   return path.join(getApiDataDir(), `${apiId}.json`);
 };
 
+const getApiOriginalFilePath = (apiId: string) => {
+  return path.join(getApiDataDir(), `${apiId}-original.json`);
+};
+
 // Check if an API exists
 const apiExists = async (apiId: string): Promise<boolean> => {
   try {
@@ -44,15 +49,18 @@ const apiExists = async (apiId: string): Promise<boolean> => {
 };
 
 // Create a new API and its tools
-const createApi = async (api: OpenAPIV3.Document): Promise<string> => {
+const createApi = async (buffer: Buffer): Promise<string> => {
   await ensureApiDataDir();
   
   // Generate a unique ID for the API
   const apiId = uuidv4();
+  // Save the original file
+  const originalFilePath = getApiOriginalFilePath(apiId);
+  await fs.writeFile(originalFilePath, buffer);
   
-  // Create the API file
-  const apiData: ApiData = { id: apiId, api };
-  await fs.writeFile(getApiFilePath(apiId), stringify(apiData, null, 2));
+  // Create the API metadata file
+  const apiData: ApiData = { id: apiId, originalFilePath };
+  await fs.writeFile(getApiFilePath(apiId), JSON.stringify(apiData, null, 2));
   
   return apiId;
 };
@@ -63,7 +71,8 @@ const listApis = async (): Promise<ApiData[]> => {
   
   try {
     const files = await fs.readdir(getApiDataDir());
-    const apiFiles = files.filter(file => file.endsWith('.json'));
+    // Filter only API metadata files (not the original spec files which end with -original.json)
+    const apiFiles = files.filter(file => file.endsWith('.json') && !file.endsWith('-original.json'));
     
     const apis: ApiData[] = [];
     
@@ -72,6 +81,17 @@ const listApis = async (): Promise<ApiData[]> => {
         const filePath = path.join(getApiDataDir(), file);
         const fileContent = await fs.readFile(filePath, 'utf-8');
         const apiData = JSON.parse(fileContent) as ApiData;
+        
+        // Load the original file content if the path exists
+        if (apiData.originalFilePath && fsSync.existsSync(apiData.originalFilePath)) {
+          try {
+            const originalContent = await fs.readFile(apiData.originalFilePath, 'utf-8');
+            apiData.api = JSON.parse(originalContent) as OpenAPIV3.Document;
+          } catch (specError) {
+            console.error(`Error loading API spec for file ${file}:`, specError);
+          }
+        }
+        
         apis.push(apiData);
       } catch (error) {
         console.error(`Error reading API file ${file}:`, error);
@@ -87,14 +107,26 @@ const listApis = async (): Promise<ApiData[]> => {
 };
 
 // Get an API by ID
-const getApiById = async (id: string): Promise<ApiData | null> => {
+const getApiById = async (id: string, loadSpec: boolean = true): Promise<ApiData | null> => {
   if (!await apiExists(id)) {
     return null;
   }
   
   try {
     const fileContent = await fs.readFile(getApiFilePath(id), 'utf-8');
-    return JSON.parse(fileContent) as ApiData;
+    const apiData = JSON.parse(fileContent) as ApiData;
+    
+    // Load and parse the spec if requested
+    if (loadSpec && apiData.originalFilePath) {
+      try {
+        const originalContent = await fs.readFile(apiData.originalFilePath, 'utf-8');
+        apiData.api = JSON.parse(originalContent) as OpenAPIV3.Document;
+      } catch (specError) {
+        console.error(`Error loading API spec for ID ${id}:`, specError);
+      }
+    }
+    
+    return apiData;
   } catch (error) {
     console.error(`Error getting API with ID ${id}:`, error);
     return null;
@@ -102,14 +134,24 @@ const getApiById = async (id: string): Promise<ApiData | null> => {
 };
 
 // Update an API
-const updateApi = async (id: string, api: OpenAPIV3.Document): Promise<boolean> => {
+const updateApi = async (id: string, buffer: Buffer): Promise<boolean> => {
   if (!await apiExists(id)) {
     return false;
   }
   
   try {
-    const apiData: ApiData = { id, api };
-    await fs.writeFile(getApiFilePath(id), stringify(apiData, null, 2));
+    // Get existing API data to keep the original file path
+    const existingApiData = await getApiById(id, false);
+    if (!existingApiData) {
+      return false;
+    }
+    
+    // Update the original file
+    await fs.writeFile(existingApiData.originalFilePath, buffer);
+    
+    const originalFilePath = getApiOriginalFilePath(id);
+    await fs.writeFile(originalFilePath, buffer);
+    
     return true;
   } catch (error) {
     console.error(`Error updating API with ID ${id}:`, error);
@@ -124,6 +166,17 @@ const deleteApi = async (id: string): Promise<boolean> => {
   }
   
   try {
+    // Get the API data to find the original file path
+    const apiData = await getApiById(id, false);
+    if (apiData && apiData.originalFilePath) {
+      try {
+        // Delete the original file
+        await fs.unlink(apiData.originalFilePath);
+      } catch (originalFileError) {
+        console.error(`Error deleting original file for API ${id}:`, originalFileError);
+      }
+    }
+    
     // Delete the API file
     await fs.unlink(getApiFilePath(id));
     
@@ -135,6 +188,21 @@ const deleteApi = async (id: string): Promise<boolean> => {
 };
 
 
+// Get the original file content
+const getOriginalFileContent = async (id: string): Promise<Buffer | null> => {
+  const apiData = await getApiById(id, false);
+  if (!apiData || !apiData.originalFilePath) {
+    return null;
+  }
+  
+  try {
+    return await fs.readFile(apiData.originalFilePath);
+  } catch (error) {
+    console.error(`Error reading original file for API ${id}:`, error);
+    return null;
+  }
+};
+
 // Export the API database functions
 export const apiDb = {
   createApi,
@@ -142,4 +210,5 @@ export const apiDb = {
   getApiById,
   updateApi,
   deleteApi,
+  getOriginalFileContent,
 };

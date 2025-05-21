@@ -7,13 +7,11 @@ import {
   BreadcrumbLink, 
   BreadcrumbList, 
   BreadcrumbPage, 
-  BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
 import { Link } from "@tanstack/react-router";
 import { Server } from "lucide-react";
 import { SubNav } from "@/components/SubNav";
 import { Markdown } from "@/components/Markdown";
-import { AuthorizationTab } from "@/components/AuthorizationTab";
 import { ServerInformation } from "@/components/ServerInformation";
 import { NotFound } from "@/components/ui/NotFound";
 
@@ -76,7 +74,6 @@ export default function ApiPage() {
         <SubNav 
           items={[
             { name: "Overview", href: `/api/${api.id}`, value: "overview" },
-            { name: "Authorization", href: `/api/${api.id}`, value: "auth" },
           ]} 
           value={activeTab}
           onValueChange={handleTabChange}
@@ -93,9 +90,6 @@ export default function ApiPage() {
             {api.api.info.description || '* No description provided *'}
             </Markdown>
           </div>
-        )}
-        {activeTab === "auth" && (
-          <AuthorizationTab apiId={api.id} />
         )}
       </div>
     </div>
