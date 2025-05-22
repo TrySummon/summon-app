@@ -3,7 +3,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription } from "@/
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LockKeyhole, Key, ShieldCheck, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { OpenAPIV3 } from "openapi-types";
 
@@ -25,7 +25,7 @@ export function isApiKeySecurityScheme(obj: any): obj is OpenAPIV3.ApiKeySecurit
 
 // Helper function to determine auth type from OpenAPI security schemes
 export function getAuthTypeFromSecuritySchemes(securitySchemes: Record<string, SecuritySchemeType> | undefined): {
-  authType: "noAuth" | "basicAuth" | "bearerToken" | "apiKey";
+  authType: "noAuth" | "bearerToken" | "apiKey";
   apiKeyDetails?: { name: string; in: "header" | "query" };
 } {
   if (!securitySchemes || Object.keys(securitySchemes).length === 0) {
@@ -41,9 +41,7 @@ export function getAuthTypeFromSecuritySchemes(securitySchemes: Record<string, S
     
     // Handle HTTP security schemes (Basic Auth, Bearer Token)
     if (isHttpSecurityScheme(schemeOrRef)) {
-      if (schemeOrRef.scheme === "basic") {
-        return { authType: "basicAuth" };
-      } else if (schemeOrRef.scheme === "bearer") {
+      if (schemeOrRef.scheme === "bearer") {
         return { authType: "bearerToken" };
       }
     } 
@@ -67,11 +65,6 @@ export function getAllowedAuthMethods(schemes: Record<string, SecuritySchemeType
   if (!schemes) return [];
   
   const allowedMethods = [];
-  
-  const hasBasicAuth = Object.values(schemes).some(s => 
-    !isReferenceObject(s) && isHttpSecurityScheme(s) && s.scheme === "basic"
-  );
-  if (hasBasicAuth) allowedMethods.push("basicAuth");
   
   const hasBearerToken = Object.values(schemes).some(s => 
     !isReferenceObject(s) && isHttpSecurityScheme(s) && s.scheme === "bearer"
@@ -117,42 +110,6 @@ export function MockDataToggle({ form, apiId, updateAuthType }: MockDataTogglePr
         </FormItem>
       )}
     />
-  );
-}
-
-interface BasicAuthFormProps {
-  form: UseFormReturn<any>;
-  apiId: string;
-}
-
-export function BasicAuthForm({ form, apiId }: BasicAuthFormProps) {
-  return (
-    <div className="space-y-2">
-      <FormField
-        control={form.control}
-        name={`apiAuth.${apiId}.auth.username`}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-xs">Username</FormLabel>
-            <FormControl>
-              <Input placeholder="Enter username" {...field} className="h-8" />
-            </FormControl>
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name={`apiAuth.${apiId}.auth.password`}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-xs">Password</FormLabel>
-            <FormControl>
-              <Input type="password" placeholder="Enter password" {...field} className="h-8" />
-            </FormControl>
-          </FormItem>
-        )}
-      />
-    </div>
   );
 }
 
@@ -250,11 +207,6 @@ export function AuthForm({ form, apiId, schemes }: AuthFormProps) {
               className="w-full"
             >
               <TabsList className="grid w-fit h-8 grid-flow-col gap-1">
-                {allowedAuthMethods.includes("basicAuth") && (
-                  <TabsTrigger value="basicAuth" className="p-1 text-xs">
-                    Basic Auth
-                  </TabsTrigger>
-                )}
                 {allowedAuthMethods.includes("bearerToken") && (
                   <TabsTrigger value="bearerToken" className="p-1 text-xs">
                     Bearer Token
@@ -267,10 +219,6 @@ export function AuthForm({ form, apiId, schemes }: AuthFormProps) {
                 )}
               </TabsList>
               
-              <TabsContent value="basicAuth">
-                <BasicAuthForm form={form} apiId={apiId} />
-              </TabsContent>
-              
               <TabsContent value="bearerToken">
                 <BearerTokenForm form={form} apiId={apiId} />
               </TabsContent>
@@ -281,7 +229,6 @@ export function AuthForm({ form, apiId, schemes }: AuthFormProps) {
             </Tabs>
           ) : (
             <div>
-              {authTypeField.value === "basicAuth" && <BasicAuthForm form={form} apiId={apiId} />}
               {authTypeField.value === "bearerToken" && <BearerTokenForm form={form} apiId={apiId} />}
               {authTypeField.value === "apiKey" && <ApiKeyForm form={form} apiId={apiId} />}
               {authTypeField.value === "noAuth" && <NoAuthWarning />}

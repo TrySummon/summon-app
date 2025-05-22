@@ -1,36 +1,4 @@
 /**
- * URL handling utilities for OpenAPI to MCP generator
- */
-import { OpenAPIV3 } from "openapi-types";
-
-/**
- * Determines the base URL from the OpenAPI document or CLI options
- *
- * @param api OpenAPI document
- * @param cmdLineBaseUrl Optional base URL from command line options
- * @returns The determined base URL or null if none is available
- */
-export function determineBaseUrl(
-  api: OpenAPIV3.Document
-): string | undefined {
-  // Single server in OpenAPI spec
-  if (api.servers && api.servers.length === 1 && api.servers[0].url) {
-    return normalizeUrl(api.servers[0].url);
-  }
-
-  // Multiple servers - use first one with warning
-  if (api.servers && api.servers.length > 1) {
-    console.warn(
-      `Multiple servers found. Using first: "${api.servers[0].url}".`
-    );
-    return normalizeUrl(api.servers[0].url);
-  }
-
-  // No server information available
-  return;
-}
-
-/**
  * Normalizes a URL by removing trailing slashes
  *
  * @param url URL to normalize

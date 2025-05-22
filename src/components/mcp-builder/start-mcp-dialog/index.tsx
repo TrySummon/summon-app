@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { McpData } from "@/helpers/db/mcp-db";
+import { McpData, McpEndpoint } from "@/helpers/db/mcp-db";
 import { Form } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { ServerNameField } from "./ServerNameField";
@@ -23,12 +23,6 @@ import { useMcps } from "@/hooks/useMcps";
 // Define the auth types as discriminated unions
 const noAuthSchema = z.object({
   type: z.literal("noAuth")
-});
-
-const basicAuthSchema = z.object({
-  type: z.literal("basicAuth"),
-  username: z.string().optional(),
-  password: z.string().optional()
 });
 
 const bearerTokenSchema = z.object({
@@ -46,7 +40,6 @@ const apiKeySchema = z.object({
 // Combine them into a discriminated union
 const authSchema = z.discriminatedUnion("type", [
   noAuthSchema,
-  basicAuthSchema,
   bearerTokenSchema,
   apiKeySchema
 ]);
@@ -78,13 +71,7 @@ type FormValues = z.infer<typeof formSchema>;
 export interface ApiGroup {
   apiId: string;
   apiName: string;
-  endpoints: Array<{
-    apiId: string;
-    apiName: string;
-    method: string;
-    path: string;
-    operation: any;
-  }>;
+  endpoints: McpEndpoint[];
 }
 
 interface StartMcpDialogProps {
@@ -169,6 +156,7 @@ export function StartMcpDialog({
       Object.entries(data.apiAuth).forEach(([apiId, apiConfig]) => {
         mcpData.apiGroups[apiId] = {
           ...apiConfig,
+          name: apiGroups[apiId]?.apiName,
           // Include the endpoints for this API
           endpoints: apiGroups[apiId]?.endpoints || []
         };
@@ -183,10 +171,7 @@ export function StartMcpDialog({
           // Store credentials based on auth type
           credentials[apiId] = { type: apiConfig.auth.type };
           
-          if (apiConfig.auth.type === 'basicAuth') {
-            credentials[apiId].username = apiConfig.auth.username;
-            credentials[apiId].password = apiConfig.auth.password;
-          } else if (apiConfig.auth.type === 'bearerToken') {
+          if (apiConfig.auth.type === 'bearerToken') {
             credentials[apiId].token = apiConfig.auth.token;
           } else if (apiConfig.auth.type === 'apiKey') {
             credentials[apiId].key = apiConfig.auth.key;

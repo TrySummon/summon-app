@@ -53,13 +53,7 @@ export function ApiGroupSection({
       const { authType, apiKeyDetails } = getAuthTypeFromSecuritySchemes(securitySchemes);
       
       // Initialize fields based on auth type
-      if (authType === "basicAuth") {
-        form.setValue(`apiAuth.${apiId}.auth`, { 
-          type: "basicAuth", 
-          username: "", 
-          password: "" 
-        });
-      } else if (authType === "bearerToken") {
+      if (authType === "bearerToken") {
         form.setValue(`apiAuth.${apiId}.auth`, { 
           type: "bearerToken", 
           token: "" 

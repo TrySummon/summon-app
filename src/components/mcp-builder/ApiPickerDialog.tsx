@@ -6,12 +6,13 @@ import {
 } from "@/components/ui/dialog";
 import { BadgeCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { OpenAPIV3 } from "openapi-types";
 
 interface ApiPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  apis: any[];
-  onApiSelect: (api: any) => void;
+  apis: {id: string, api: OpenAPIV3.Document}[];
+  onApiSelect: (api: {id: string, api: OpenAPIV3.Document}) => void;
 }
 
 export function ApiPickerDialog({ open, onOpenChange, apis, onApiSelect }: ApiPickerDialogProps) {

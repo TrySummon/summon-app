@@ -5,7 +5,8 @@ import type { JSONSchema7, JSONSchema7TypeName } from "json-schema";
 import { OpenAPIV3 } from "openapi-types";
 
 import { McpToolDefinition } from "../types/index";
-import { generateOperationId, kebabCase } from "../utils/helpers";
+import { McpEndpoint } from "@/helpers/db/mcp-db";
+import { generateOperationId, kebabCase } from "../utils";
 
 /**
  * Generates input schema and extracts parameter details from an operation
@@ -122,7 +123,6 @@ function mapOpenApiSchemaToJsonSchema(
 
   // Remove OpenAPI-specific properties that aren't in JSON Schema
   delete (jsonSchema as any).nullable;
-  // TODO: keep one example for mocking?
   delete (jsonSchema as any).example;
   delete (jsonSchema as any).xml;
   delete (jsonSchema as any).externalDocs;
@@ -173,85 +173,77 @@ function mapOpenApiSchemaToJsonSchema(
 }
 
 /**
- * Extracts tool definitions from an OpenAPI document
+ * Extracts tool definitions from an array of endpoints
  *
- * @param api OpenAPI document
+ * @param endpoints Array of endpoints
+ * @param options Options for extraction
  * @returns Array of MCP tool definitions
  */
 export function extractToolsFromApi(
-  api: OpenAPIV3.Document,
+  endpoints: McpEndpoint[],
   options?: { ignoreDeprecated?: boolean; ignoreOptional?: boolean }
 ): McpToolDefinition[] {
   const tools: McpToolDefinition[] = [];
   const usedNames = new Set<string>();
-  const globalSecurity = api.security || [];
-
-  if (!api.paths) return tools;
-
-  for (const [path, pathItem] of Object.entries(api.paths)) {
-    if (!pathItem) continue;
-
-    for (const method of Object.values(OpenAPIV3.HttpMethods)) {
-      const operation = pathItem[method];
-      if (!operation) continue;
-      if (options?.ignoreDeprecated && operation.deprecated) continue;
-
-      // Generate a unique name for the tool
-      let baseName = operation.operationId || generateOperationId(method, path);
-      if (!baseName) continue;
-
-      // Sanitize the name to be MCP-compatible (only a-z, 0-9, _, -)
-      baseName = baseName
-        .replace(/\./g, "_")
-        .replace(/[^a-z0-9_-]/gi, "_")
-        .toLowerCase();
-
-      let finalToolName = baseName;
-      let counter = 1;
-      while (usedNames.has(finalToolName)) {
-        finalToolName = `${baseName}_${counter++}`;
-      }
-      usedNames.add(finalToolName);
-
-      // Get or create a description
-      const description =
-        operation.description ||
-        operation.summary ||
-        `Executes ${method.toUpperCase()} ${path}`;
-
-      // Generate input schema and extract parameters
-      const { inputSchema, parameters, requestBodyContentType } =
-        generateInputSchemaAndDetails(operation, options);
-
-      // Extract parameter details for execution
-      const executionParameters = parameters.map((p) => ({
-        name: p.name,
-        in: p.in,
-      }));
-
-      // Determine security requirements
-      const securityRequirements =
-        operation.security === null
-          ? globalSecurity
-          : operation.security || globalSecurity;
-
-      // Create the tool definition
-      tools.push({
-        name: finalToolName,
-        description,
-        tags: operation.tags?.map((tag) => kebabCase(tag)) || [],
-        inputSchema,
-        method,
-        pathTemplate: path,
-        parameters,
-        executionParameters,
-        requestBodyContentType,
-        securityRequirements,
-        operationId: baseName,
-      });
+  
+  for (const endpoint of endpoints) {
+    if (!endpoint.operation) continue;
+    const operation = endpoint.operation;
+    if (options?.ignoreDeprecated && operation.deprecated) continue;
+    
+    // Generate a unique name for the tool
+    let baseName = operation.operationId || generateOperationId(endpoint.method, endpoint.path);
+    if (!baseName) continue;
+    
+    // Sanitize the name to be MCP-compatible (only a-z, 0-9, _, -)
+    baseName = baseName
+      .replace(/\./g, "_")
+      .replace(/[^a-z0-9_-]/gi, "_")
+      .toLowerCase();
+    
+    let finalToolName = baseName;
+    let counter = 1;
+    while (usedNames.has(finalToolName)) {
+      finalToolName = `${baseName}_${counter++}`;
     }
+    usedNames.add(finalToolName);
+    
+    // Get or create a description
+    const description =
+      operation.description ||
+      operation.summary ||
+      `Executes ${endpoint.method.toUpperCase()} ${endpoint.path}`;
+    
+    // Generate input schema and extract parameters
+    const { inputSchema, parameters, requestBodyContentType } =
+      generateInputSchemaAndDetails(operation, options);
+    
+    // Extract parameter details for execution
+    const executionParameters = parameters.map((p) => ({
+      name: p.name,
+      in: p.in,
+    }));
+    
+    // Determine security requirements
+    const securityRequirements = operation.security || [];
+    
+    // Create the tool definition
+    tools.push({
+      name: finalToolName,
+      description,
+      tags: operation.tags?.map((tag: string) => kebabCase(tag)) || [],
+      inputSchema,
+      method: endpoint.method,
+      pathTemplate: endpoint.path,
+      parameters,
+      executionParameters,
+      requestBodyContentType,
+      securityRequirements,
+      operationId: baseName,
+      apiId: endpoint.apiId
+    });
   }
-
+  
   return tools;
 }
 

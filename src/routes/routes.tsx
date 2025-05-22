@@ -1,7 +1,6 @@
 import { createRoute } from "@tanstack/react-router";
 import { RootRoute } from "./__root";
 import HomePage from "../pages/HomePage";
-import SecondPage from "@/pages/SecondPage";
 import ApiPage from "@/pages/ApiPage";
 import EndpointPage from "@/pages/EndpointPage";
 import BuildMcpPage from "@/pages/BuildMcpPage";
@@ -31,12 +30,6 @@ export const HomeRoute = createRoute({
   component: HomePage,
 });
 
-export const SecondPageRoute = createRoute({
-  getParentRoute: () => RootRoute,
-  path: "/second-page",
-  component: SecondPage,
-});
-
 export const ApiRoute = createRoute({
   getParentRoute: () => RootRoute,
   path: "/api/$apiId",
@@ -61,4 +54,4 @@ export const BuildMcpRoute = createRoute({
   },
 });
 
-export const rootTree = RootRoute.addChildren([HomeRoute, SecondPageRoute, ApiRoute, EndpointRoute, BuildMcpRoute]);
+export const rootTree = RootRoute.addChildren([HomeRoute, ApiRoute, EndpointRoute, BuildMcpRoute]);

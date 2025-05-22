@@ -4,9 +4,6 @@ import https from 'https';
 import http from 'http';
 import { URL } from 'url';
 import {
-  AUTH_GET_CREDENTIALS_CHANNEL,
-  AUTH_SAVE_CREDENTIALS_CHANNEL,
-  AUTH_CLEAR_CREDENTIALS_CHANNEL,
   AUTH_TEST_CREDENTIALS_CHANNEL,
 } from "./auth-channels";
 
@@ -78,50 +75,13 @@ async function makeRequest(url: string, headers: Record<string, string> = {}): P
 }
 
 export function registerAuthListeners() {
-  // Get credentials for a specific API
-  ipcMain.handle(AUTH_GET_CREDENTIALS_CHANNEL, async (_, apiId: string) => {
-    try {
-      const credentials = await keytar.getPassword(SERVICE_NAME, apiId);
-      return credentials ? JSON.parse(credentials) : null;
-    } catch (error) {
-      console.error("Error retrieving credentials:", error);
-      return null;
-    }
-  });
-
-  // Save credentials for a specific API
-  ipcMain.handle(AUTH_SAVE_CREDENTIALS_CHANNEL, async (_, apiId: string, credentials: any) => {
-    try {
-      await keytar.setPassword(SERVICE_NAME, apiId, JSON.stringify(credentials));
-      return true;
-    } catch (error) {
-      console.error("Error saving credentials:", error);
-      return false;
-    }
-  });
-
-  // Clear credentials for a specific API
-  ipcMain.handle(AUTH_CLEAR_CREDENTIALS_CHANNEL, async (_, apiId: string) => {
-    try {
-      await keytar.deletePassword(SERVICE_NAME, apiId);
-      return true;
-    } catch (error) {
-      console.error("Error clearing credentials:", error);
-      return false;
-    }
-  });
-
   // Test credentials against a base URL
   ipcMain.handle(AUTH_TEST_CREDENTIALS_CHANNEL, async (_, baseUrl: string, authType: string, authData: any) => {
     try {
       // Prepare headers based on auth type
       const headers: Record<string, string> = {};
       
-      if (authType === 'basicAuth' && authData) {
-        const { username, password } = authData;
-        const base64Credentials = Buffer.from(`${username}:${password}`).toString('base64');
-        headers['Authorization'] = `Basic ${base64Credentials}`;
-      } else if (authType === 'bearerToken' && authData) {
+      if (authType === 'bearerToken' && authData) {
         headers['Authorization'] = `Bearer ${authData.token}`;
       } else if (authType === 'apiKey' && authData) {
         const { key, name, in: location } = authData;

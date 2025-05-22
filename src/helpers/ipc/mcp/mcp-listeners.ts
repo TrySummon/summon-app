@@ -11,6 +11,7 @@ import {
   MCP_CLEAR_CREDENTIALS_CHANNEL
 } from "./mcp-channels";
 import { mcpDb, McpData } from "@/helpers/db/mcp-db";
+import { deleteMcpImpl, generateMcpImpl } from "@/helpers/mcp";
 
 // Service name for keytar - used for storing credentials
 const SERVICE_NAME = "toolman-mcp-credentials";
@@ -22,6 +23,7 @@ export function registerMcpListeners() {
   ipcMain.handle(CREATE_MCP_CHANNEL, async (_, mcpData: Omit<McpData, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const mcpId = await mcpDb.createMcp(mcpData);
+      await generateMcpImpl(mcpId);
       return {
         success: true,
         message: "MCP configuration created successfully",
@@ -82,8 +84,10 @@ export function registerMcpListeners() {
   ipcMain.handle(UPDATE_MCP_CHANNEL, async (_, request: { id: string; data: Partial<Omit<McpData, 'id' | 'createdAt' | 'updatedAt'>> }) => {
     try {
       const { id, data } = request;
-      const success = await mcpDb.updateMcp(id, data);
-      
+      const success = await mcpDb.updateMcp(id, data as any);
+      await deleteMcpImpl(id);
+      await generateMcpImpl(id);
+
       if (!success) {
         return {
           success: false,
@@ -108,6 +112,7 @@ export function registerMcpListeners() {
   ipcMain.handle(DELETE_MCP_CHANNEL, async (_, id: string) => {
     try {
       const success = await mcpDb.deleteMcp(id);
+      await deleteMcpImpl(id);
       
       if (!success) {
         return {

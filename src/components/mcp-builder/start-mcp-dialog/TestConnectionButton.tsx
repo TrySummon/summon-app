@@ -51,12 +51,7 @@ export function TestConnectionButton({ form, apiId }: TestConnectionButtonProps)
       let authData = null;
       const authValue = form.getValues(`apiAuth.${apiId}.auth`);
       
-      if (authType === 'basicAuth') {
-        authData = {
-          username: authValue.username,
-          password: authValue.password
-        };
-      } else if (authType === 'bearerToken') {
+      if (authType === 'bearerToken') {
         authData = {
           token: authValue.token
         };

@@ -10,8 +10,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
-import { McpToolDefinition } from "./helpers/openapi/types";
-import { AuthCredentials } from "./types/auth";
+import { McpToolDefinition } from "./helpers/mcp/types";
 import { OpenAPIV3 } from "openapi-types";
 import { ThemeMode } from "./types/theme-mode";
 
@@ -62,9 +61,6 @@ declare global {
       import: (file: File) => Promise<any>;
     }
     auth: {
-      getCredentials: (apiId: string) => Promise<AuthCredentials | null>;
-      saveCredentials: (apiId: string, credentials: AuthCredentials) => Promise<boolean>;
-      clearCredentials: (apiId: string) => Promise<boolean>;
       testCredentials: (baseUrl: string, authType: string, authData: any) => Promise<{ status: number, success: boolean, message?: string }>;
     },
     mcpApi: {

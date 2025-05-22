@@ -2,7 +2,7 @@ import { app } from 'electron';
 import path from 'path';
 import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
-import fsSync from 'fs';
+import { OpenAPIV3 } from "openapi-types";
 
 // Define endpoint data structure
 export interface McpEndpoint {
@@ -10,14 +10,12 @@ export interface McpEndpoint {
   apiName: string;
   method: string;
   path: string;
-  operation: any;
+  operation: OpenAPIV3.OperationObject;
 }
 
 // Define the MCP data structure that will be stored in files
-export interface McpData {
-  id: string;
-  name: string;
-  apiGroups: Record<string, {
+export interface McpApiGroup {
+    name: string;
     serverUrl?: string;
     useMockData: boolean;
     auth: {
@@ -25,7 +23,12 @@ export interface McpData {
       [key: string]: any;
     };
     endpoints?: McpEndpoint[];
-  }>;
+}
+
+export interface McpData {
+  id: string;
+  name: string;
+  apiGroups: Record<string, McpApiGroup>;
   createdAt: string;
   updatedAt: string;
   // Optional credentials property populated by getMcpById when includeCredentials is true
@@ -36,6 +39,11 @@ export interface McpData {
 export const getMcpDataDir = () => {
   const userDataPath = app.getPath('userData');
   return path.join(userDataPath, 'mcp-data');
+};
+
+export const getMcpImplDir = () => {
+  const userDataPath = app.getPath('userData');
+  return path.join(userDataPath, 'mcp-impl');
 };
 
 // Ensure the MCP data directory exists
@@ -52,6 +60,10 @@ const ensureMcpDataDir = async () => {
 // Get the file path for an MCP
 const getMcpFilePath = (mcpId: string) => {
   return path.join(getMcpDataDir(), `${mcpId}.json`);
+};
+
+export const getMcpImplPath = (mcpId: string) => {
+  return path.join(getMcpImplDir(), `${mcpId}`);
 };
 
 // Check if an MCP exists

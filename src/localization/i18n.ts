@@ -10,13 +10,6 @@ i18n.use(initReactI18next).init({
         titleHomePage: "Home Page",
         titleSecondPage: "Second Page",
       },
-    },
-    "pt-BR": {
-      translation: {
-        appName: "electron-shadcn",
-        titleHomePage: "Página Inicial",
-        titleSecondPage: "Segunda Página",
-      },
-    },
+    }
   },
 });

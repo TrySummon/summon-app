@@ -1,5 +1,3 @@
-// src/types/index.ts
-
 /**
  * Core type definitions for the openapi-to-mcp generator
  */
@@ -10,6 +8,7 @@ import type { OpenAPIV3 } from "openapi-types";
  * Transport types supported by the MCP server
  */
 export type TransportType = "stdio" | "web" | "streamable-http";
+
 
 /**
  * MCP Tool Definition describes a tool extracted from an OpenAPI spec
@@ -38,6 +37,18 @@ export interface McpToolDefinition {
   securityRequirements: OpenAPIV3.SecurityRequirementObject[];
   /** Original operation ID from the OpenAPI spec */
   operationId: string;
+  securityScheme: {
+    baseUrlEnvVar: string;
+    schema?: {
+      type: "apiKey"
+      keyEnvVar: string;
+      in: "header" | "query";
+      name: string;
+    } | {
+      type: "bearerToken"
+      tokenEnvVar: string;
+    }
+  }
 }
 
 /**

@@ -9,6 +9,8 @@ import { ApiPickerDialog } from "@/components/mcp-builder/ApiPickerDialog";
 import { SelectedEndpointsDisplay } from "@/components/mcp-builder/SelectedEndpointsDisplay";
 import { ApiGroup, StartMcpDialog } from "@/components/mcp-builder/start-mcp-dialog";
 import { useSearch } from "@tanstack/react-router";
+import { McpEndpoint } from "@/helpers/db/mcp-db";
+import { OpenAPIV3 } from "openapi-types";
 
 export default function BuildMcpPage() {
   const { apis, isLoading } = useApis();
@@ -26,19 +28,13 @@ export default function BuildMcpPage() {
   const [apiPickerOpen, setApiPickerOpen] = useState(false);
   
   // State for endpoint picker dialog
-  const [selectedApi, setSelectedApi] = useState<any>(null);
+  const [selectedApi, setSelectedApi] = useState<{id: string, api: OpenAPIV3.Document} | null>(null);
   const [endpointPickerOpen, setEndpointPickerOpen] = useState(false);
   // State for start MCP dialog
   const [startMcpOpen, setStartMcpOpen] = useState(false);
   
   // State for selected endpoints
-  const [selectedEndpoints, setSelectedEndpoints] = useState<Array<{
-    apiId: string;
-    apiName: string;
-    method: string;
-    path: string;
-    operation: any;
-  }>>([]);
+  const [selectedEndpoints, setSelectedEndpoints] = useState<Array<McpEndpoint>>([]);
   
   // Check for edit mode from Tanstack Router search params
   useEffect(() => {
@@ -78,13 +74,11 @@ export default function BuildMcpPage() {
 
     // Group endpoints by API
     const apiGroups = useMemo(() => selectedEndpoints.reduce((acc, endpoint) => {
+      const apiName = endpoint.apiName.split(' ')[0].trim().toLowerCase();
       if (!acc[endpoint.apiId]) {
-        // Find the API to get its spec
-        const api = apis.find(a => a.id === endpoint.apiId);
-        
         acc[endpoint.apiId] = {
           apiId: endpoint.apiId,
-          apiName: endpoint.apiName,
+          apiName,
           endpoints: [],
         };
       }   
@@ -99,7 +93,7 @@ export default function BuildMcpPage() {
   };
   
   // Handler for selecting an API from the API picker dialog
-  const handleApiSelect = (api: any) => {
+  const handleApiSelect = (api: {id: string, api: OpenAPIV3.Document}) => {
     setSelectedApi(api);
     setApiPickerOpen(false);
     setEndpointPickerOpen(true);
@@ -122,14 +116,14 @@ export default function BuildMcpPage() {
     const newEndpoints = selectedEndpointIds.map(id => {
       const [method, path] = id.split('-');
       const pathObj = api.api.paths[path] || {};
-      const operation = method in pathObj ? pathObj[method as keyof typeof pathObj] : {};
+      const operation = (method in pathObj ? pathObj[method as keyof typeof pathObj] : {}) as OpenAPIV3.OperationObject;
       
       return {
         apiId,
         apiName,
         method,
         path,
-        operation
+        operation,
       };
     });
     
@@ -163,7 +157,7 @@ export default function BuildMcpPage() {
       <div className="flex flex-1 overflow-y-auto">
 
       <div className="flex flex-col items-center p-10 mx-auto w-full max-w-4xl">
-        <h1 className="text-3xl font-bold mb-2">{isEditMode ? 'Edit MCP Server' : 'Build an MCP Server'}</h1>
+        <h1 className="text-3xl font-bold mb-2">{isEditMode ? `Edit MCP Server ${editMcpData?.name}` : 'Build an MCP Server'}</h1>
         <p className="text-muted-foreground mb-8">
           Generate your own MCP Server using your APIs.
         </p>

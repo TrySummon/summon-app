@@ -9,21 +9,14 @@ import { ChevronLeft, BadgeCheck, Folder } from "lucide-react";
 import { cn } from "@/utils/tailwind";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MethodBadge } from "@/components/MethodBadge";
+import { OpenAPIV3 } from "openapi-types";
 
 interface EndpointPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   api: {
     id: string;
-    api: {
-      info: {
-        title: string;
-        contact?: {
-          name?: string;
-        };
-      };
-      paths: Record<string, any>;
-    };
+    api: OpenAPIV3.Document;
   };
   onEndpointsUpdate?: (selectedEndpointIds: string[]) => void;
   initialSelectedEndpoints?: string[];

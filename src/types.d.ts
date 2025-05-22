@@ -18,7 +18,7 @@ interface ElectronWindow {
   close: () => Promise<void>;
 }
 
-import type { API, McpToolDefinition } from '@/helpers/openapi/types';
+import type { API, McpToolDefinition } from '@/helpers/mcp/types';
 
 declare interface Window {
   themeMode: ThemeModeContext;
