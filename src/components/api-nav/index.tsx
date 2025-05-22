@@ -59,10 +59,10 @@ export function ApiNav() {
         ) : (
           <>
             {apis.map((apiItem) => (
-                  <ApiItemErrorBoundary apiId={apiItem.id}>
+                  <ApiItemErrorBoundary                 key={apiItem.id}
+                  apiId={apiItem.id}>
 
               <ApiItem
-                key={apiItem.id}
                 apiItem={apiItem}
                 isOpen={openApiIds.includes(apiItem.id)}
                 isActive={apiItem.id === apiId && isExactMatch}

@@ -37,9 +37,11 @@ import { Link } from "@tanstack/react-router";
             <SidebarGroupLabel>My MCPs</SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton className="text-xs">
-                <Hammer className="!size-3" /> Build MCP
-                </SidebarMenuButton>
+                <Link to="/build-mcp">
+                  <SidebarMenuButton className="text-xs">
+                  <Hammer className="!size-3" /> Build MCP
+                  </SidebarMenuButton>
+                </Link>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>

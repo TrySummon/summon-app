@@ -36,7 +36,7 @@ interface CodeSnippetProps {
 
 export function CodeSnippet({ children, className, language, title, maxHeight }: CodeSnippetProps) {
     return (
-      <Card className={cn("relative w-full py-0 gap-2 bg-transparent", className)}>
+      <Card className={cn("relative w-full py-0 gap-2 bg-accent/10", className)}>
         <CardHeader className="flex flex-row items-center justify-between py-1 px-4">
           <span className="text-sm text-muted-foreground">
             {title || language || 'Code'}

@@ -4,6 +4,7 @@ import HomePage from "../pages/HomePage";
 import SecondPage from "@/pages/SecondPage";
 import ApiPage from "@/pages/ApiPage";
 import EndpointPage from "@/pages/EndpointPage";
+import BuildMcpPage from "@/pages/BuildMcpPage";
 
 // TODO: Steps to add a new route:
 // 1. Create a new page component in the '../pages/' directory (e.g., NewPage.tsx)
@@ -48,4 +49,10 @@ export const EndpointRoute = createRoute({
   component: EndpointPage,
 });
 
-export const rootTree = RootRoute.addChildren([HomeRoute, SecondPageRoute, ApiRoute, EndpointRoute]);
+export const BuildMcpRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/build-mcp",
+  component: BuildMcpPage,
+});
+
+export const rootTree = RootRoute.addChildren([HomeRoute, SecondPageRoute, ApiRoute, EndpointRoute, BuildMcpRoute]);

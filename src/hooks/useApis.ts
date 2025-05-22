@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listApis, deleteApi, renameApi } from '@/helpers/ipc/openapi/openapi-client';
+import { listApis, getApi, deleteApi, renameApi } from '@/helpers/ipc/openapi/openapi-client';
 
-export const API_QUERY_KEY = 'apis';
+export const LIST_API_QUERY_KEY = 'list_apis';
+export const GET_API_QUERY_KEY = 'get_api';
 
 export function useApis() {
   const queryClient = useQueryClient();
@@ -14,7 +15,7 @@ export function useApis() {
     error, 
     refetch 
   } = useQuery({
-    queryKey: [API_QUERY_KEY],
+    queryKey: [LIST_API_QUERY_KEY],
     queryFn: async () => {
       const result = await listApis();
       if (!result.success) {
@@ -29,7 +30,7 @@ export function useApis() {
     mutationFn: (apiId: string) => deleteApi(apiId),
     onSuccess: () => {
       // Invalidate the APIs query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: [API_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [LIST_API_QUERY_KEY] });
     }
   });
 
@@ -38,7 +39,7 @@ export function useApis() {
     mutationFn: ({ apiId, newName }: { apiId: string; newName: string }) => renameApi(apiId, newName),
     onSuccess: () => {
       // Invalidate the APIs query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: [API_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [LIST_API_QUERY_KEY] });
     }
   });
 
@@ -50,5 +51,35 @@ export function useApis() {
     refetch,
     deleteApi: deleteApiMutation.mutate,
     renameApi: renameApiMutation.mutate
+  };
+}
+
+export function useApi(apiId: string) {
+  const queryClient = useQueryClient();
+
+  // Query to fetch all APIs
+  const { 
+    data, 
+    isLoading, 
+    isError, 
+    error, 
+    refetch 
+  } = useQuery({
+    queryKey: [GET_API_QUERY_KEY, apiId],
+    queryFn: async () => {
+      const result = await getApi(apiId);
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch APIs');
+      }
+      return result.api;
+    }
+  });
+
+  return {
+    api: data,
+    isLoading,
+    isError,
+    error,
+    refetch,
   };
 }
