@@ -53,6 +53,12 @@ export const BuildMcpRoute = createRoute({
   getParentRoute: () => RootRoute,
   path: "/build-mcp",
   component: BuildMcpPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    // Define the search parameters schema
+    return {
+      edit: search.edit as string | undefined,
+    };
+  },
 });
 
 export const rootTree = RootRoute.addChildren([HomeRoute, SecondPageRoute, ApiRoute, EndpointRoute, BuildMcpRoute]);

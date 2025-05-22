@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useApis } from "@/hooks/useApis";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
@@ -8,9 +8,19 @@ import { EndpointPickerDialog } from "@/components/mcp-builder/EndpointPickerDia
 import { ApiPickerDialog } from "@/components/mcp-builder/ApiPickerDialog";
 import { SelectedEndpointsDisplay } from "@/components/mcp-builder/SelectedEndpointsDisplay";
 import { ApiGroup, StartMcpDialog } from "@/components/mcp-builder/start-mcp-dialog";
+import { useSearch } from "@tanstack/react-router";
 
 export default function BuildMcpPage() {
   const { apis, isLoading } = useApis();
+  // Get search params from Tanstack Router
+  const search = useSearch({ from: '/build-mcp' });
+  const editParam = search.edit as string | undefined;
+  
+  // State for edit mode
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editMcpId, setEditMcpId] = useState<string | null>(null);
+  const [editMcpData, setEditMcpData] = useState<any>(null);
+  const [isLoadingMcp, setIsLoadingMcp] = useState(false);
   
   // State for API picker dialog
   const [apiPickerOpen, setApiPickerOpen] = useState(false);
@@ -18,7 +28,6 @@ export default function BuildMcpPage() {
   // State for endpoint picker dialog
   const [selectedApi, setSelectedApi] = useState<any>(null);
   const [endpointPickerOpen, setEndpointPickerOpen] = useState(false);
-  
   // State for start MCP dialog
   const [startMcpOpen, setStartMcpOpen] = useState(false);
   
@@ -30,6 +39,42 @@ export default function BuildMcpPage() {
     path: string;
     operation: any;
   }>>([]);
+  
+  // Check for edit mode from Tanstack Router search params
+  useEffect(() => {
+    if (editParam) {
+      setIsEditMode(true);
+      setEditMcpId(editParam);
+      loadMcpData(editParam);
+    }
+  }, [editParam]);
+  
+  // Load MCP data for edit mode
+  const loadMcpData = async (mcpId: string) => {
+    setIsLoadingMcp(true);
+    try {
+      const result = await window.mcpApi.getMcp(mcpId);
+      if (result.success && result.mcp) {
+        setEditMcpData(result.mcp);
+        
+        // Extract endpoints from the MCP data
+        const endpoints: any[] = [];
+        
+        // Process each API group to extract endpoints
+        Object.entries(result.mcp.apiGroups).forEach(([apiId, apiConfig]: [string, any]) => {
+          if (apiConfig.endpoints && apiConfig.endpoints.length > 0) {
+            endpoints.push(...apiConfig.endpoints);
+          }
+        });
+        
+        setSelectedEndpoints(endpoints);
+      }
+    } catch (error) {
+      console.error('Error loading MCP data:', error);
+    } finally {
+      setIsLoadingMcp(false);
+    }
+  };
 
     // Group endpoints by API
     const apiGroups = useMemo(() => selectedEndpoints.reduce((acc, endpoint) => {
@@ -100,20 +145,13 @@ export default function BuildMcpPage() {
     );
   };
 
-  // Handler for starting the MCP server
-  const handleStartMcp = (name: string, authConfig: any) => {
-    console.log('Starting MCP server:', name, authConfig);
-    // Here you would implement the logic to start the MCP server
-    // For now, we'll just log the details
-  };
-
   return (
     <div className="flex flex-col h-full">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link to="/build-mcp">
+              <Link to="/build-mcp" search={{ edit: undefined }}>
                 <BreadcrumbPage>
                   <Wrench className="size-3 mr-2" /> Build an MCP Server
                 </BreadcrumbPage>
@@ -125,12 +163,12 @@ export default function BuildMcpPage() {
       <div className="flex flex-1 overflow-y-auto">
 
       <div className="flex flex-col items-center p-10 mx-auto w-full max-w-4xl">
-        <h1 className="text-3xl font-bold mb-2">Build an MCP Server</h1>
+        <h1 className="text-3xl font-bold mb-2">{isEditMode ? 'Edit MCP Server' : 'Build an MCP Server'}</h1>
         <p className="text-muted-foreground mb-8">
           Generate your own MCP Server using your APIs.
         </p>
 
-        {isLoading ? (
+        {isLoading || isLoadingMcp ? (
           <div className="flex items-center justify-center w-full">
             <p>Loading APIs...</p>
           </div>
@@ -151,7 +189,7 @@ export default function BuildMcpPage() {
                 variant="outline"
               >
                 <PlusCircle className="h-4 w-4" />
-                Pick Endpoints
+                {isEditMode ? 'Edit Endpoints' : 'Pick Endpoints'}
               </Button>
             </div>
             
@@ -177,7 +215,7 @@ export default function BuildMcpPage() {
                   onClick={() => setStartMcpOpen(true)}
                 >
                   <Rocket className="h-4 w-4 mr-2" />
-                  Start Server
+                  {isEditMode ? 'Update & Start Server' : 'Start Server'}
                 </Button>
               </div>
             
@@ -215,7 +253,9 @@ export default function BuildMcpPage() {
               open={startMcpOpen}
               onOpenChange={setStartMcpOpen}
               apiGroups={apiGroups}
-              onStart={handleStartMcp}
+              isEditMode={isEditMode}
+              editMcpData={editMcpData}
+              editMcpId={editMcpId}
             />
           </div>
         )}

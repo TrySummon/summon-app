@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { FileJson, Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { API_QUERY_KEY } from "@/hooks/useApis";
 import { 
   Dialog,
   DialogContent,

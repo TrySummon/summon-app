@@ -10,8 +10,9 @@ import {
     SidebarMenuButton,
     SidebarMenu
   } from "@/components/ui/sidebar"
-import { Box, Hammer, Plug, SquareTerminal } from "lucide-react";
+import { Box, Plug, SquareTerminal } from "lucide-react";
 import { ApiNav } from "@/components/api-nav";
+import { McpNav } from "@/components/mcp-nav";
 import { Link } from "@tanstack/react-router";
    
   export function AppSidebar() {
@@ -33,18 +34,7 @@ import { Link } from "@tanstack/react-router";
       </SidebarHeader>
       <SidebarContent>
         <ApiNav />
-          <SidebarGroup>
-            <SidebarGroupLabel>My MCPs</SidebarGroupLabel>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <Link to="/build-mcp">
-                  <SidebarMenuButton className="text-xs">
-                  <Hammer className="!size-3" /> Build MCP
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
+          <McpNav />
           <SidebarGroup>
             <SidebarGroupLabel>External MCPs</SidebarGroupLabel>
             <SidebarMenu>

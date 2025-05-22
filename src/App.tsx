@@ -66,6 +66,16 @@ declare global {
       saveCredentials: (apiId: string, credentials: AuthCredentials) => Promise<boolean>;
       clearCredentials: (apiId: string) => Promise<boolean>;
       testCredentials: (baseUrl: string, authType: string, authData: any) => Promise<{ status: number, success: boolean, message?: string }>;
+    },
+    mcpApi: {
+      createMcp: (mcpData: any) => Promise<{ success: boolean; mcpId?: string; message?: string }>;
+      listMcps: () => Promise<{ success: boolean; mcps?: any[]; message?: string }>;
+      getMcp: (id: string) => Promise<{ success: boolean; mcp?: any; message?: string }>;
+      updateMcp: (id: string, data: any) => Promise<{ success: boolean; message?: string }>;
+      deleteMcp: (id: string) => Promise<{ success: boolean; message?: string }>;
+      getCredentials: (mcpId: string) => Promise<any>;
+      saveCredentials: (mcpId: string, credentials: any) => Promise<boolean>;
+      clearCredentials: (mcpId: string) => Promise<boolean>;
     }
   }
 }

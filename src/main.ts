@@ -8,6 +8,7 @@ import {
   REACT_DEVELOPER_TOOLS,
 } from "electron-devtools-installer";
 import { getApiDataDir } from "./helpers/db/api-db";
+import { getMcpDataDir } from "./helpers/db/mcp-db";
 
 const inDevelopment = process.env.NODE_ENV === "development";
 
@@ -57,6 +58,7 @@ app.whenReady().then(createWindow).then(installExtensions);
 
 app.whenReady().then(() => {
   const apiDataDir = getApiDataDir();
+  const mcpDataDir = getMcpDataDir();
   // Get the current application menu
   const currentMenu = Menu.getApplicationMenu();
   
@@ -64,12 +66,18 @@ app.whenReady().then(() => {
   const helpMenu = currentMenu?.items.find(item => item.role === 'help' || item.label === 'Help');
   
   if (helpMenu && helpMenu.submenu) {
-    // Add a separator and our custom menu item to the Help submenu
+    // Add a separator and our custom menu items to the Help submenu
     helpMenu.submenu.append(new MenuItem({ type: 'separator' }));
     helpMenu.submenu.append(new MenuItem({
       label: 'Open Api Data Folder',
       click: () => {
         shell.openPath(apiDataDir);
+      }
+    }));
+    helpMenu.submenu.append(new MenuItem({
+      label: 'Open MCP Data Folder',
+      click: () => {
+        shell.openPath(mcpDataDir);
       }
     }));
     
