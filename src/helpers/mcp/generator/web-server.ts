@@ -5,10 +5,9 @@
 /**
  * Generates web server code for the MCP server (using Hono and SSE)
  *
- * @param port Server port (default: 3000)
  * @returns Generated code for the web server
  */
-export function generateWebServerCode(port: number = 3000): string {
+export function generateWebServerCode(): string {
   return `
 /**
 * Web server setup for HTTP-based MCP communication using Hono
@@ -152,10 +151,10 @@ async send(message: JSONRPCMessage): Promise<void> {
 * Sets up a web server for the MCP server using Server-Sent Events (SSE)
 * 
 * @param server The MCP Server instance
-* @param port The port to listen on (default: ${port})
+* @param port The port to listen on (default: port)
 * @returns The Hono app instance
 */
-export async function setupWebServer(server: Server, port = ${port}) {
+export async function setupWebServer(server: Server, port: number) {
 // Create Hono app
 const app = new Hono();
 

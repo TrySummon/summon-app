@@ -3,9 +3,9 @@
  */
 import { OpenAPIV3 } from "openapi-types";
 
-import { getEnvVarName } from "../utils/security";
+import { getEnvVarName } from "./utils/security";
 import { McpApiGroup } from "@/helpers/db/mcp-db";
-import { apiKeyEnvVarName, baseUrlEnvVarName, bearerTokenEnvVarName } from "../utils";
+import { apiKeyEnvVarName, baseUrlEnvVarName, bearerTokenEnvVarName } from "./utils";
 
 /**
  * Generates the content of .env.example file for the MCP server

@@ -72,6 +72,12 @@ declare global {
       getCredentials: (mcpId: string) => Promise<any>;
       saveCredentials: (mcpId: string, credentials: any) => Promise<boolean>;
       clearCredentials: (mcpId: string) => Promise<boolean>;
+      // MCP server operations
+      getMcpServerStatus: (mcpId: string) => Promise<{ success: boolean; data?: any; message?: string }>;
+      getAllMcpServerStatuses: () => Promise<{ success: boolean; data?: Record<string, any>; message?: string }>;
+      startMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: any; message?: string }>;
+      stopMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: any; message?: string }>;
+      restartMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: any; message?: string }>;
     }
   }
 }

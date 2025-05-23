@@ -4,6 +4,9 @@ import { SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from "@/compone
 import { McpDropdownMenu } from "@/components/mcp-nav/McpDropdownMenu";
 import { toast } from "sonner";
 import { McpData } from "@/helpers/db/mcp-db";
+import { useMcpServerStatus } from "@/hooks/useMcpServerStatus";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/utils/tailwind";
 
 interface McpItemProps {
   mcpItem: McpData;
@@ -30,6 +33,45 @@ export function McpItem({
     }
   };
 
+  // Use the hook to get server status
+  const { status, isLoading: statusLoading, startServer, stopServer, restartServer } = 
+    useMcpServerStatus(mcpItem.id);
+  
+  // Determine status indicator color
+  const getStatusColor = () => {
+    if (statusLoading) return "bg-gray-300";
+    
+    switch (status) {
+      case "running":
+        return "bg-green-500";
+      case "starting":
+        return "bg-yellow-500";
+      case "error":
+        return "bg-red-500";
+      case "stopped":
+      default:
+        return "bg-gray-500";
+    }
+  };
+  
+  // Get status text for tooltip
+  const getStatusText = () => {
+    if (statusLoading) return "Checking status...";
+    
+    switch (status) {
+      case "running":
+        return "MCP server is running";
+      case "starting":
+        return "MCP server is starting";
+      case "error":
+        return "MCP server encountered an error";
+      case "stopped":
+        return "MCP server is stopped";
+      default:
+        return "MCP server status unknown";
+    }
+  };
+
   return (
     <SidebarMenuItem>
       <Link to="/build-mcp" search={{ edit: undefined }}>
@@ -37,18 +79,35 @@ export function McpItem({
           className="flex-1 text-xs"
         >
           <div className="flex items-center">
-                <span className="cursor-pointer hover:text-primary transition-colors">
-                  {mcpItem.name}
-                </span>
-              </div>
-            </SidebarMenuButton>
-        </Link>
-        
-        <McpDropdownMenu
-          mcpId={mcpItem.id}
-          mcpName={mcpItem.name}
-          onDelete={handleDeleteMcp}
-        />
-      </SidebarMenuItem>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={cn(
+                    "w-2 h-2 rounded-full mr-2",
+                    getStatusColor()
+                  )} />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{getStatusText()}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <span className="cursor-pointer hover:text-primary transition-colors">
+              {mcpItem.name}
+            </span>
+          </div>
+        </SidebarMenuButton>
+      </Link>
+      
+      <McpDropdownMenu
+        mcpId={mcpItem.id}
+        mcpName={mcpItem.name}
+        onDelete={handleDeleteMcp}
+        status={status}
+        onStart={startServer}
+        onStop={stopServer}
+        onRestart={restartServer}
+      />
+    </SidebarMenuItem>
   );
 }

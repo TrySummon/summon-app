@@ -1,7 +1,7 @@
 import { McpApiGroup } from "@/helpers/db/mcp-db";
 import { McpToolDefinition } from "../types";
 import { extractToolsFromApi } from "../parser/extract-tools";
-import { apiKeyEnvVarName, baseUrlEnvVarName, bearerTokenEnvVarName, kebabCase } from "../utils";
+import { apiKeyEnvVarName, baseUrlEnvVarName, bearerTokenEnvVarName, kebabCase } from "./utils";
 
 export function generateMcpTools(apiGroups: Record<string, McpApiGroup>) {
       const tools: McpToolDefinition[] = [];

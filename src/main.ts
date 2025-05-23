@@ -8,7 +8,12 @@ import {
   REACT_DEVELOPER_TOOLS,
 } from "electron-devtools-installer";
 import { getApiDataDir } from "./helpers/db/api-db";
-import { getMcpDataDir, getMcpImplDir } from "./helpers/db/mcp-db";
+import { getMcpDataDir, getMcpImplDir, mcpDb } from "./helpers/db/mcp-db";
+import { startMcpServer } from "./helpers/mcp";
+
+// These are defined by Vite during build
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
+declare const MAIN_WINDOW_VITE_NAME: string | undefined;
 
 const inDevelopment = process.env.NODE_ENV === "development";
 
@@ -54,7 +59,7 @@ async function installExtensions() {
   }
 }
 
-app.whenReady().then(createWindow).then(installExtensions);
+app.whenReady().then(createWindow).then(installExtensions).then(startAllMcpServers);
 
 app.whenReady().then(() => {
   const apiDataDir = getApiDataDir();
@@ -92,6 +97,25 @@ app.whenReady().then(() => {
     Menu.setApplicationMenu(currentMenu);
   }
 });
+
+// Start all MCP servers when the app starts
+async function startAllMcpServers(): Promise<void> {
+  try {
+    console.info('Starting all MCP servers...');
+    const mcps = await mcpDb.listMcps();
+    
+    for (const mcp of mcps) {
+      console.info(`Starting MCP server: ${mcp.id}`);
+      startMcpServer(mcp.id).catch((error: Error) => {
+        console.error(`Failed to start MCP server ${mcp.id}:`, error);
+      });
+    }
+    
+    console.info('All MCP servers started');
+  } catch (error) {
+    console.error('Error starting MCP servers:', error instanceof Error ? error.message : String(error));
+  }
+}
 
 //osX only
 app.on("window-all-closed", () => {

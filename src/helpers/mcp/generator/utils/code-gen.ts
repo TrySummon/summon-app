@@ -175,7 +175,9 @@ const crudToHttpMethod = {
 
 export function loadTools(toolOptions: { [key: string]: string } = {}) {
   // Load all tool definitions from JSON files in the tools directory
-  const toolsDir = path.resolve(__dirname, './tools');
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const toolsDir = path.join(__dirname, '..', 'src', 'tools');
+
   const toolDefinitionMap = new Map<string, McpToolDefinition>();
   
   try {

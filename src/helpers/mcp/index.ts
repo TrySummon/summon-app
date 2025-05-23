@@ -1,5 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
+import { spawn, exec, ChildProcess } from "child_process";
+import { promisify } from "util";
 
 import {
   generateEnvExample,
@@ -19,6 +21,27 @@ import {
 } from "./generator";
 import { getMcpImplPath, mcpDb } from "../db/mcp-db";
 import { console } from "inspector/promises";
+import { mockApi, MockApiResult } from "../mock";
+import { apiKeyEnvVarName, baseUrlEnvVarName, bearerTokenEnvVarName } from "./generator/utils";
+import { findFreePort } from "../port";
+
+// Define the status types for MCP servers
+export type McpServerStatus = 'starting' | 'running' | 'error' | 'stopped';
+
+// Define the structure for tracking MCP server state
+export interface McpServerState {
+  mcpId: string;
+  status: McpServerStatus;
+  error?: string;
+  serverProcess?: ChildProcess;
+  mockProcesses: Record<string, MockApiResult>;
+  port?: number;
+  startedAt: Date;
+  stoppedAt?: Date;
+}
+
+// Global state to track running MCP servers
+const runningMcpServers: Record<string, McpServerState> = {};
 
 /**
  * Creates a directory if it doesn't exist
@@ -155,7 +178,7 @@ export async function generateMcpImpl(mcpId: string) {
     await ensureDirectoryExists(publicDir);
 
     // Generate web server code
-    const webServerCode = generateWebServerCode(port);
+    const webServerCode = generateWebServerCode();
     await writeFileWithDir(webServerPath, webServerCode);
 
     // Generate test client
@@ -171,7 +194,7 @@ export async function generateMcpImpl(mcpId: string) {
     await ensureDirectoryExists(publicDir);
 
     // Generate StreamableHTTP server code
-    const streamableHttpCode = generateStreamableHttpCode(port);
+    const streamableHttpCode = generateStreamableHttpCode();
     await writeFileWithDir(streamableHttpPath, streamableHttpCode);
 
     // Generate test client
@@ -213,4 +236,252 @@ export async function deleteMcpImpl(mcpId: string) {
     console.info(`MCP implementation directory does not exist: ${implPath}`);
   }
 }
+
+/**
+ * Get the status of an MCP server
+ * 
+ * @param mcpId The ID of the MCP to get status for
+ * @returns The current state of the MCP server or null if not found
+ */
+export function getMcpServerStatus(mcpId: string): McpServerState | null {
+  return runningMcpServers[mcpId] || null;
+}
+
+/**
+ * Get all running MCP servers
+ * 
+ * @returns A record of all running MCP servers
+ */
+export function getAllMcpServerStatuses(): Record<string, McpServerState> {
+  return { ...runningMcpServers };
+}
+
+/**
+ * Start an MCP server with proper environment setup
+ * 
+ * @param mcpId The ID of the MCP to start
+ * @returns A promise that resolves with the server state when the server is started
+ */
+export async function startMcpServer(mcpId: string): Promise<McpServerState> {
+  // Check if the server is already running
+  if (runningMcpServers[mcpId]) {
+    const currentState = runningMcpServers[mcpId];
+    if (currentState.status === 'running' || currentState.status === 'starting') {
+      console.info(`MCP server ${mcpId} is already ${currentState.status}`);
+      return currentState;
+    }
+  }
+  // Initialize server state
+  const serverState: McpServerState = {
+    mcpId,
+    status: 'starting',
+    mockProcesses: {},
+    startedAt: new Date()
+  };
   
+  // Store the initial state
+  runningMcpServers[mcpId] = serverState;
+
+  try {
+    const execPromise = promisify(exec);
+    const mcp = await mcpDb.getMcpById(mcpId, true);
+
+    if (!mcp) {
+      const error = `MCP with ID ${mcpId} not found`;
+      serverState.status = 'error';
+      serverState.error = error;
+      return serverState;
+    }
+
+    const implPath = getMcpImplPath(mcpId);
+    console.info(`Starting MCP server from: ${implPath}`);
+
+    // Prepare environment variables for the MCP server
+    const env: Record<string, string> = { ...process.env as Record<string, string> };
+
+    // Process each API group
+    for (const apiGroup of Object.values(mcp.apiGroups)) {
+      // Set base URL environment variable
+      const baseUrlEnvVar = baseUrlEnvVarName(apiGroup.name);
+      
+      // Check if this API should be mocked
+      if (apiGroup.useMockData && apiGroup.endpoints && apiGroup.endpoints.length > 0) {
+        // Get the API ID from the first endpoint
+        const apiId = apiGroup.endpoints[0].apiId;
+        console.info(`Mocking API: ${apiGroup.name}`);
+        // Start the mock server and get the URL
+        const mockResult = await mockApi(apiId);
+        // Store the mock result for cleanup later
+        serverState.mockProcesses[apiId] = mockResult;
+        env[baseUrlEnvVar] = mockResult.url;
+      } else if (apiGroup.serverUrl) {
+        // Use the provided server URL
+        env[baseUrlEnvVar] = apiGroup.serverUrl;
+      }
+      
+      // Set security-related environment variables
+      if (apiGroup.auth) {
+        const auth = apiGroup.auth;
+        
+        if (auth.type === 'apiKey' && auth.key) {
+          const keyEnvVar = apiKeyEnvVarName(apiGroup.name);
+          env[keyEnvVar] = auth.key;
+        } else if (auth.type === 'bearer' && auth.token) {
+          const tokenEnvVar = bearerTokenEnvVarName(apiGroup.name);
+          env[tokenEnvVar] = auth.token;
+        }
+      }
+    }
+    
+    serverState.port = (await findFreePort());
+    env.PORT = serverState.port.toString();
+
+    // Check if node_modules exists, if not run npm install
+    try {
+      await fs.access(path.join(implPath, 'node_modules'));
+      console.info('node_modules directory exists, skipping npm install');
+    } catch (error) {
+      console.info('node_modules directory not found, running npm install...');
+      try {
+        const { stdout, stderr } = await execPromise('npm install', { cwd: implPath });
+        console.info('npm install completed successfully');
+        console.info(stdout);
+        if (stderr) console.error(stderr);
+      } catch (error) {
+        const installError = error as Error;
+        console.error('Error during npm install:', installError);
+        serverState.status = 'error';
+        serverState.error = `npm install failed: ${installError.message || String(installError)}`;
+        return serverState;
+      }
+    }
+
+    // Start the MCP server with the prepared environment variables
+    console.info('Starting MCP server with npm start...');
+    
+    const npmStart = spawn('npm', ['start'], {
+      cwd: implPath,
+      env,
+      stdio: 'inherit'
+    });
+    
+    // Update server state with process information
+    serverState.serverProcess = npmStart;
+    
+    // Handle process events
+    npmStart.on('error', (error) => {
+      console.error('Error starting MCP server:', error);
+      serverState.status = 'error';
+      serverState.error = `Server process error: ${error.message}`;
+    });
+    
+    npmStart.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`MCP server process exited with code ${code}`);
+        serverState.status = 'error';
+        serverState.error = `Server process exited with code ${code}`;
+      } else {
+        console.info('MCP server process completed successfully');
+        serverState.status = 'stopped';
+      }
+      serverState.stoppedAt = new Date();
+    });
+    
+    // Wait a moment to ensure the server has time to start
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // If no errors occurred during startup, mark as running
+    if (serverState.status === 'starting') {
+      serverState.status = 'running';
+    }
+    
+    console.info(`MCP server ${mcpId} started with status: ${serverState.status}`);
+    return serverState;
+  } catch (error) {
+    // Handle any unexpected errors
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Unexpected error starting MCP server ${mcpId}:`, errorMessage);
+    serverState.status = 'error';
+    serverState.error = `Unexpected error: ${errorMessage}`;
+    return serverState;
+  }
+}
+
+/**
+ * Stop an MCP server and all its associated mock processes
+ * 
+ * @param mcpId The ID of the MCP to stop
+ * @returns A promise that resolves with the server state when the server is stopped
+ */
+export async function stopMcpServer(mcpId: string): Promise<McpServerState | null> {
+  // Check if the server is running
+  if (!runningMcpServers[mcpId]) {
+    console.info(`MCP server ${mcpId} is not running`);
+    return null;
+  }
+  
+  const serverState = runningMcpServers[mcpId];
+  
+  // Stop all mock processes
+  for (const apiId in serverState.mockProcesses) {
+    try {
+      const mockProcess = serverState.mockProcesses[apiId].process;
+      if (mockProcess && mockProcess.listening) {
+        console.info(`Stopping mock process for API ${apiId}`);
+        mockProcess.close();
+      }
+    } catch (error) {
+      console.error(`Error stopping mock process for API ${apiId}:`, error);
+    }
+  }
+  
+  // Stop the server process
+  if (serverState.serverProcess && !serverState.serverProcess.killed) {
+    console.info(`Stopping MCP server ${mcpId}`);
+    serverState.serverProcess.kill();
+    
+    // Wait for the process to terminate
+    await new Promise<void>((resolve) => {
+      if (!serverState.serverProcess) {
+        resolve();
+        return;
+      }
+      
+      const timeout = setTimeout(() => {
+        console.warn(`Timeout waiting for MCP server ${mcpId} to stop, forcing termination`);
+        if (serverState.serverProcess && !serverState.serverProcess.killed) {
+          serverState.serverProcess.kill('SIGKILL');
+        }
+        resolve();
+      }, 5000);
+      
+      serverState.serverProcess.once('close', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+    });
+  }
+  
+  // Update state
+  serverState.status = 'stopped';
+  serverState.stoppedAt = new Date();
+  
+  console.info(`MCP server ${mcpId} stopped`);
+  return serverState;
+}
+
+/**
+ * Restart an MCP server
+ * 
+ * @param mcpId The ID of the MCP to restart
+ * @returns A promise that resolves with the new server state
+ */
+export async function restartMcpServer(mcpId: string): Promise<McpServerState> {
+  console.info(`Restarting MCP server ${mcpId}`);
+  
+  // Stop the server if it's running
+  await stopMcpServer(mcpId);
+  
+  // Start the server again
+  return startMcpServer(mcpId);
+}

@@ -5,10 +5,9 @@
 /**
  * Generates StreamableHTTP server code for the MCP server
  *
- * @param port Server port (default: 3000)
  * @returns Generated code for the StreamableHTTP server
  */
-export function generateStreamableHttpCode(port: number = 3000): string {
+export function generateStreamableHttpCode(): string {
   return `
 /**
  * StreamableHTTP server setup for HTTP-based MCP communication using Hono
@@ -170,10 +169,10 @@ class MCPStreamableHttpServer {
  * Sets up a web server for the MCP server using StreamableHTTP transport
  * 
  * @param server The MCP Server instance
- * @param port The port to listen on (default: ${port})
+ * @param port The port to listen on (default: port)
  * @returns The Hono app instance
  */
-export async function setupStreamableHttpServer(server: Server, port = ${port}) {
+export async function setupStreamableHttpServer(server: Server, port: number) {
   // Create Hono app
   const app = new Hono();
   

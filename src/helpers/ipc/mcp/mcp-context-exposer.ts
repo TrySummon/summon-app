@@ -7,7 +7,12 @@ import {
   DELETE_MCP_CHANNEL,
   MCP_GET_CREDENTIALS_CHANNEL,
   MCP_SAVE_CREDENTIALS_CHANNEL,
-  MCP_CLEAR_CREDENTIALS_CHANNEL
+  MCP_CLEAR_CREDENTIALS_CHANNEL,
+  GET_MCP_SERVER_STATUS_CHANNEL,
+  GET_ALL_MCP_SERVER_STATUSES_CHANNEL,
+  START_MCP_SERVER_CHANNEL,
+  STOP_MCP_SERVER_CHANNEL,
+  RESTART_MCP_SERVER_CHANNEL
 } from './mcp-channels';
 import { McpData } from '@/helpers/db/mcp-db';
 
@@ -35,6 +40,22 @@ export function exposeMcpContext() {
       ipcRenderer.invoke(MCP_SAVE_CREDENTIALS_CHANNEL, mcpId, credentials),
       
     clearCredentials: (mcpId: string) => 
-      ipcRenderer.invoke(MCP_CLEAR_CREDENTIALS_CHANNEL, mcpId)
+      ipcRenderer.invoke(MCP_CLEAR_CREDENTIALS_CHANNEL, mcpId),
+      
+    // MCP server operations
+    getMcpServerStatus: (mcpId: string) => 
+      ipcRenderer.invoke(GET_MCP_SERVER_STATUS_CHANNEL, mcpId),
+      
+    getAllMcpServerStatuses: () => 
+      ipcRenderer.invoke(GET_ALL_MCP_SERVER_STATUSES_CHANNEL),
+      
+    startMcpServer: (mcpId: string) => 
+      ipcRenderer.invoke(START_MCP_SERVER_CHANNEL, mcpId),
+      
+    stopMcpServer: (mcpId: string) => 
+      ipcRenderer.invoke(STOP_MCP_SERVER_CHANNEL, mcpId),
+      
+    restartMcpServer: (mcpId: string) => 
+      ipcRenderer.invoke(RESTART_MCP_SERVER_CHANNEL, mcpId)
   });
 }

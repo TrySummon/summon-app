@@ -3,8 +3,8 @@ import {
   generateListToolsHandler,
   generateLoadToolsFunction,
   generateParseToolArgsFunction,
-} from "../utils/code-gen";
-import { generateExecuteApiToolFunction } from "../utils/security";
+} from "./utils/code-gen";
+import { generateExecuteApiToolFunction } from "./utils/security";
 
 
 export async function generateMcpServerCode(
@@ -36,7 +36,7 @@ export async function generateMcpServerCode(
       transportImport = `\nimport { setupWebServer } from "./web-server.js";`;
       transportCode = `// Set up Web Server transport
   try {
-    await setupWebServer(server, ${port});
+    await setupWebServer(server, port);
   } catch (error) {
     console.error("Error setting up web server:", error);
     process.exit(1);
@@ -46,7 +46,7 @@ export async function generateMcpServerCode(
       transportImport = `\nimport { setupStreamableHttpServer } from "./streamable-http.js";`;
       transportCode = `// Set up StreamableHTTP transport
   try {
-    await setupStreamableHttpServer(server, ${port});
+    await setupStreamableHttpServer(server, port);
   } catch (error) {
     console.error("Error setting up StreamableHTTP server:", error);
     process.exit(1);
@@ -77,6 +77,7 @@ export async function generateMcpServerCode(
 import dotenv from 'dotenv';
 dotenv.config();
 
+import { fileURLToPath } from 'url';
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -158,6 +159,7 @@ const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
     { capabilities: { tools: {} } }
 );
+const port = Number(process.env.PORT) || ${port};
 
 ${loadToolsFunctionCode}
 

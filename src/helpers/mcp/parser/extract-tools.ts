@@ -6,7 +6,7 @@ import { OpenAPIV3 } from "openapi-types";
 
 import { McpToolDefinition } from "../types/index";
 import { McpEndpoint } from "@/helpers/db/mcp-db";
-import { generateOperationId, kebabCase } from "../utils";
+import { generateOperationId, kebabCase } from "../generator/utils";
 
 /**
  * Generates input schema and extracts parameter details from an operation
