@@ -106,7 +106,7 @@ async function startAllMcpServers(): Promise<void> {
     
     for (const mcp of mcps) {
       console.info(`Starting MCP server: ${mcp.id}`);
-      startMcpServer(mcp.id).catch((error: Error) => {
+      await startMcpServer(mcp.id).catch((error: Error) => {
         console.error(`Failed to start MCP server ${mcp.id}:`, error);
       });
     }

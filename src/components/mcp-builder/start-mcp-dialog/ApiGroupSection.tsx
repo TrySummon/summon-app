@@ -8,18 +8,13 @@ import { getAuthTypeFromSecuritySchemes } from "./AuthComponents";
 import { ServerUrlField } from "./ServerUrlField";
 import { TestConnectionButton } from "./TestConnectionButton";
 import { useApi } from "@/hooks/useApis";
+import { McpEndpoint } from "@/helpers/db/mcp-db";
 
 interface ApiGroupProps {
   api: {
     apiId: string;
     apiName: string;
-    endpoints: Array<{
-      apiId: string;
-      apiName: string;
-      method: string;
-      path: string;
-      operation: any;
-    }>;
+    endpoints: McpEndpoint[];
   };
   form: UseFormReturn<any>;
   isLast: boolean;

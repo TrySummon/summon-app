@@ -50,7 +50,6 @@ export default function ApiPage() {
     // Use the to parameter with search params to avoid type errors
     navigate({
       to: `/api/${apiId}`,
-      search: { tab: value },
       replace: true
     });
   };

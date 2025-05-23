@@ -12,6 +12,7 @@ export default defineConfig({
     rollupOptions: {
       external: [
         'openapi-backend',
+        '@apidevtools/swagger-parser',
         'keytar',
       ]
     }

@@ -49,7 +49,7 @@ export function McpHeader({ isLoading, refetch }: McpHeaderProps) {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link to="/build-mcp">
+              <Link to="/build-mcp" search={{ edit: undefined }}>
                 <Button 
                   variant="ghost" 
                   size="icon" 

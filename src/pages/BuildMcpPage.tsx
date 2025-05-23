@@ -42,6 +42,12 @@ export default function BuildMcpPage() {
       setIsEditMode(true);
       setEditMcpId(editParam);
       loadMcpData(editParam);
+    } else {
+      // Reset edit mode when edit parameter is removed
+      setIsEditMode(false);
+      setEditMcpId(null);
+      setEditMcpData(null);
+      setSelectedEndpoints([]);
     }
   }, [editParam]);
   
@@ -209,7 +215,7 @@ export default function BuildMcpPage() {
                   onClick={() => setStartMcpOpen(true)}
                 >
                   <Rocket className="h-4 w-4 mr-2" />
-                  {isEditMode ? 'Update & Start Server' : 'Start Server'}
+                  {isEditMode ? 'Update & Restart Server' : 'Create & Start Server'}
                 </Button>
               </div>
             

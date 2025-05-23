@@ -13,6 +13,10 @@ import {
 import { McpToolDefinition } from "./helpers/mcp/types";
 import { OpenAPIV3 } from "openapi-types";
 import { ThemeMode } from "./types/theme-mode";
+import { McpTransport } from "./helpers/ipc/mcp";
+import { McpData } from "./helpers/db/mcp-db";
+import { McpServerState } from "./helpers/mcp";
+import { Tool } from "@modelcontextprotocol/sdk/types";
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -65,19 +69,18 @@ declare global {
     },
     mcpApi: {
       createMcp: (mcpData: any) => Promise<{ success: boolean; mcpId?: string; message?: string }>;
-      listMcps: () => Promise<{ success: boolean; mcps?: any[]; message?: string }>;
-      getMcp: (id: string) => Promise<{ success: boolean; mcp?: any; message?: string }>;
+      listMcps: () => Promise<{ success: boolean; mcps?: McpData[]; message?: string }>;
+      getMcp: (id: string) => Promise<{ success: boolean; mcp?: McpData; message?: string }>;
       updateMcp: (id: string, data: any) => Promise<{ success: boolean; message?: string }>;
       deleteMcp: (id: string) => Promise<{ success: boolean; message?: string }>;
-      getCredentials: (mcpId: string) => Promise<any>;
-      saveCredentials: (mcpId: string, credentials: any) => Promise<boolean>;
-      clearCredentials: (mcpId: string) => Promise<boolean>;
+
       // MCP server operations
-      getMcpServerStatus: (mcpId: string) => Promise<{ success: boolean; data?: any; message?: string }>;
-      getAllMcpServerStatuses: () => Promise<{ success: boolean; data?: Record<string, any>; message?: string }>;
-      startMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: any; message?: string }>;
-      stopMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: any; message?: string }>;
-      restartMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: any; message?: string }>;
+      getMcpServerStatus: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
+      getAllMcpServerStatuses: () => Promise<{ success: boolean; data?: Record<string, McpServerState>; message?: string }>;
+      startMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
+      stopMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
+      restartMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
+      getMcpTools: (config: McpTransport) => Promise<{ success: boolean; data?: Tool[]; message?: string }>;
     }
   }
 }

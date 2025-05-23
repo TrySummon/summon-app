@@ -13,8 +13,10 @@ import {
   GET_ALL_MCP_SERVER_STATUSES_CHANNEL,
   START_MCP_SERVER_CHANNEL,
   STOP_MCP_SERVER_CHANNEL,
-  RESTART_MCP_SERVER_CHANNEL
+  RESTART_MCP_SERVER_CHANNEL,
+  GET_MCP_TOOLS_CHANNEL
 } from "./mcp-channels";
+import { getMcpTools, McpTransport } from "./mcp-tools";
 import { mcpDb, McpData } from "@/helpers/db/mcp-db";
 import { 
   deleteMcpImpl, 
@@ -341,6 +343,23 @@ export function registerMcpListeners() {
       };
     } catch (error) {
       console.error(`Error restarting MCP server ${mcpId}:`, error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      };
+    }
+  });
+
+  // Get MCP tools
+  ipcMain.handle(GET_MCP_TOOLS_CHANNEL, async (_, config: McpTransport) => {
+    try {
+      const tools = await getMcpTools(config);
+      return {
+        success: true,
+        data: tools
+      };
+    } catch (error) {
+      console.error(`Error getting MCP tools:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : "Unknown error occurred"

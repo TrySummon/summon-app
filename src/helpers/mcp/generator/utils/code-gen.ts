@@ -131,6 +131,7 @@ export function generateParseToolArgsFunction(tags: string[]) {
   return `
 export function parseToolArgs(args: string[]) {
   const options: { [key: string]: string } = {};
+  const tags = ${JSON.stringify(kebabCaseTags)};
 
   args.forEach((arg) => {
     if (arg.startsWith('--')) {
@@ -142,11 +143,11 @@ export function parseToolArgs(args: string[]) {
           const toolsParts = tool.split('.');
           const toolName = toolsParts[0];
           const toolPermission = toolsParts.length > 1 ? toolsParts[1] : 'all';
-          if (!${JSON.stringify(kebabCaseTags)}.includes(toolName.trim())) {
+          ${tags.length ? `if (!tags.includes(toolName.trim())) {
             throw new Error(
-              \`Invalid tool scope: \${tool}. Accepted tool scopes are: \${${JSON.stringify(kebabCaseTags)}.join(", ")}\`
+              \`Invalid tool scope: \${tool}. Accepted tool scopes are: \${tags.join(", ")}\`
             );
-          }
+          }` : ''}
           if (!['all', 'create', 'read', 'update', 'delete'].includes(toolPermission.trim())) {
             throw new Error(
               \`Invalid tool action: \${toolPermission}. Accepted actions are: all, create, read, update, delete\`

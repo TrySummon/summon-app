@@ -36,7 +36,6 @@ export async function mockApi(apiId: string): Promise<MockApiResult> {
         try {
             return originalValidateDefinition();
         } catch (error) {
-            console.warn('OpenAPI definition validation failed:', error);
             return apiBackend.document;
         }
     };

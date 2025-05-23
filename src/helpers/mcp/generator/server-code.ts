@@ -121,8 +121,6 @@ export interface McpToolDefinition {
   executionParameters: { name: string; in: string }[];
   /** Content type for request body, if applicable */
   requestBodyContentType?: string;
-  /** Security requirements for this operation */
-  securityRequirements: any;
   /** Original operation ID from the OpenAPI spec */
   operationId: string;
   securityScheme: {

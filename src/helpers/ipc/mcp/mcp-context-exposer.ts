@@ -12,9 +12,11 @@ import {
   GET_ALL_MCP_SERVER_STATUSES_CHANNEL,
   START_MCP_SERVER_CHANNEL,
   STOP_MCP_SERVER_CHANNEL,
-  RESTART_MCP_SERVER_CHANNEL
+  RESTART_MCP_SERVER_CHANNEL,
+  GET_MCP_TOOLS_CHANNEL
 } from './mcp-channels';
 import { McpData } from '@/helpers/db/mcp-db';
+import { McpTransport } from './mcp-tools';
 
 export function exposeMcpContext() {
   contextBridge.exposeInMainWorld('mcpApi', {
@@ -33,15 +35,6 @@ export function exposeMcpContext() {
     deleteMcp: (id: string) => 
       ipcRenderer.invoke(DELETE_MCP_CHANNEL, id),
       
-    getCredentials: (mcpId: string) => 
-      ipcRenderer.invoke(MCP_GET_CREDENTIALS_CHANNEL, mcpId),
-      
-    saveCredentials: (mcpId: string, credentials: any) => 
-      ipcRenderer.invoke(MCP_SAVE_CREDENTIALS_CHANNEL, mcpId, credentials),
-      
-    clearCredentials: (mcpId: string) => 
-      ipcRenderer.invoke(MCP_CLEAR_CREDENTIALS_CHANNEL, mcpId),
-      
     // MCP server operations
     getMcpServerStatus: (mcpId: string) => 
       ipcRenderer.invoke(GET_MCP_SERVER_STATUS_CHANNEL, mcpId),
@@ -56,6 +49,9 @@ export function exposeMcpContext() {
       ipcRenderer.invoke(STOP_MCP_SERVER_CHANNEL, mcpId),
       
     restartMcpServer: (mcpId: string) => 
-      ipcRenderer.invoke(RESTART_MCP_SERVER_CHANNEL, mcpId)
+      ipcRenderer.invoke(RESTART_MCP_SERVER_CHANNEL, mcpId),
+      
+    getMcpTools: (config: McpTransport) => 
+      ipcRenderer.invoke(GET_MCP_TOOLS_CHANNEL, config)
   });
 }

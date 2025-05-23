@@ -19,6 +19,7 @@ import { ServerNameField } from "./ServerNameField";
 import { ApiGroupSection } from "./ApiGroupSection";
 import { toast } from "sonner";
 import { useMcps } from "@/hooks/useMcps";
+import { useNavigate } from "@tanstack/react-router";
 
 // Define the auth types as discriminated unions
 const noAuthSchema = z.object({
@@ -96,6 +97,7 @@ export function StartMcpDialog({
 }: StartMcpDialogProps) {
   const { createMcp, updateMcp: updateMcpMutation } = useMcps();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   // Form setup with initial values based on edit mode
   const form = useForm<FormValues>({
@@ -149,6 +151,7 @@ export function StartMcpDialog({
       // First, create a copy of the form data
       const mcpData: Omit<McpData, 'id' | 'createdAt' | 'updatedAt'> = {
         name: data.name,
+        transport: "http",
         apiGroups: {}
       };
       
@@ -204,6 +207,9 @@ export function StartMcpDialog({
               
               // Close the dialog
               onOpenChange(false);
+              
+              // Navigate to the McpPage
+              navigate({ to: "/mcp/$mcpId", params: { mcpId } });
             },
             onError: (error: unknown) => {
               toast.error(`Failed to update MCP server: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -230,6 +236,9 @@ export function StartMcpDialog({
                 
                 // Close the dialog
                 onOpenChange(false);
+                
+                // Navigate to the McpPage
+                navigate({ to: "/mcp/$mcpId", params: { mcpId } });
               } else {
                 toast.error('Failed to create MCP server: No MCP ID returned');
               }
@@ -290,7 +299,7 @@ export function StartMcpDialog({
             onClick={form.handleSubmit(onSubmit as any)}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Saving..." : "Start Server"}
+            {isSubmitting ? "Saving..." : isEditMode ? "Restart Server" : "Start Server"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -172,6 +172,10 @@ function mapOpenApiSchemaToJsonSchema(
   return jsonSchema;
 }
 
+interface DereferencedMcpEndpoint extends McpEndpoint {
+  operation: OpenAPIV3.OperationObject;
+}
+
 /**
  * Extracts tool definitions from an array of endpoints
  *
@@ -180,10 +184,10 @@ function mapOpenApiSchemaToJsonSchema(
  * @returns Array of MCP tool definitions
  */
 export function extractToolsFromApi(
-  endpoints: McpEndpoint[],
+  endpoints: DereferencedMcpEndpoint[],
   options?: { ignoreDeprecated?: boolean; ignoreOptional?: boolean }
-): McpToolDefinition[] {
-  const tools: McpToolDefinition[] = [];
+) {
+  const tools: Omit<McpToolDefinition, "securityScheme">[] = [];
   const usedNames = new Set<string>();
   
   for (const endpoint of endpoints) {
@@ -224,9 +228,6 @@ export function extractToolsFromApi(
       in: p.in,
     }));
     
-    // Determine security requirements
-    const securityRequirements = operation.security || [];
-    
     // Create the tool definition
     tools.push({
       name: finalToolName,
@@ -238,9 +239,7 @@ export function extractToolsFromApi(
       parameters,
       executionParameters,
       requestBodyContentType,
-      securityRequirements,
-      operationId: baseName,
-      apiId: endpoint.apiId
+      operationId: baseName
     });
   }
   

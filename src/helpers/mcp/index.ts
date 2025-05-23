@@ -120,7 +120,7 @@ export async function generateMcpImpl(mcpId: string) {
 
   // Generate and write core files
   console.info("Generating tools code...");
-  const tools = generateMcpTools(mcp.apiGroups);
+  const tools = await generateMcpTools(mcp.apiGroups);
   
   const tags = tools.map((tool) => tool.tags).flat().filter((tag, index, self) => self.indexOf(tag) === index);
 

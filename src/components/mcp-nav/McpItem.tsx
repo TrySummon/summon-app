@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "@tanstack/react-router";
+import React, { useMemo } from "react";
+import { Link, useLocation } from "@tanstack/react-router";
 import { SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from "@/components/ui/sidebar";
 import { McpDropdownMenu } from "@/components/mcp-nav/McpDropdownMenu";
 import { toast } from "sonner";
@@ -17,6 +17,12 @@ export function McpItem({
   mcpItem,
   deleteMcp,
 }: McpItemProps) {
+  // Check if this MCP is currently selected/active using URL pattern matching
+  const location = useLocation();
+  const isActive = useMemo(() => {
+    const match = location.pathname.match(/\/mcp\/([^/]+)/);
+    return match ? match[1] === mcpItem.id : false;
+  }, [location.pathname, mcpItem.id]);
   // No state needed for edit functionality
 
   // Handle delete MCP
@@ -74,9 +80,10 @@ export function McpItem({
 
   return (
     <SidebarMenuItem>
-      <Link to="/build-mcp" search={{ edit: undefined }}>
+      <Link to="/mcp/$mcpId" params={{ mcpId: mcpItem.id }}>
         <SidebarMenuButton
           className="flex-1 text-xs"
+          isActive={isActive}
         >
           <div className="flex items-center">
             <TooltipProvider>

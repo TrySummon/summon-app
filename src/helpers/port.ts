@@ -1,5 +1,11 @@
 import * as net from 'net';
 
+// Cache to store recently returned ports with their timestamps
+const recentlyUsedPorts = new Map<number, number>();
+
+// Time in milliseconds to consider a port as recently used (60 seconds)
+const PORT_CACHE_DURATION = 60 * 1000;
+
 /**
  * Finds a free port by attempting to bind to it
  * @param startPort - Port to start searching from (default: 3000)
@@ -7,8 +13,23 @@ import * as net from 'net';
  * @returns Promise that resolves to a free port number
  */
 export async function findFreePort(startPort: number = 3000, maxPort: number = 65535): Promise<number> {
+  // Clean up expired entries from the cache
+  const now = Date.now();
+  for (const [port, timestamp] of recentlyUsedPorts.entries()) {
+    if (now - timestamp > PORT_CACHE_DURATION) {
+      recentlyUsedPorts.delete(port);
+    }
+  }
+
   for (let port = startPort; port <= maxPort; port++) {
+    // Skip ports that were recently returned
+    if (recentlyUsedPorts.has(port)) {
+      continue;
+    }
+
     if (await isPortFree(port)) {
+      // Add the port to the recently used cache with current timestamp
+      recentlyUsedPorts.set(port, Date.now());
       return port;
     }
   }

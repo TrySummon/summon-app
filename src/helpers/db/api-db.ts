@@ -107,7 +107,7 @@ const listApis = async (): Promise<ApiData[]> => {
 };
 
 // Get an API by ID
-const getApiById = async (id: string, loadSpec: boolean = true): Promise<ApiData | null> => {
+export const getApiById = async (id: string, loadSpec: boolean = true): Promise<ApiData | null> => {
   if (!await apiExists(id)) {
     return null;
   }

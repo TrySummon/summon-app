@@ -44,7 +44,6 @@ export function EndpointPickerDialog({
     const result: Record<string, Array<{
       path: string;
       method: string;
-      operation: any;
     }>> = {};
     const folderList: string[] = [];
 
@@ -74,11 +73,6 @@ export function EndpointPickerDialog({
         result[folderName].push({
           path,
           method,
-          operation: {
-            ...operation,
-            "x-path": path,
-            "x-method": method,
-          },
         });
       });
     });
@@ -266,9 +260,6 @@ export function EndpointPickerDialog({
                             <MethodBadge method={endpoint.method} size="md" />
                             <span className="font-mono text-sm">{endpoint.path}</span>
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {endpoint.operation.summary || endpoint.operation.operationId || "No description"}
-                          </p>
                         </div>
                       </div>
                     </div>

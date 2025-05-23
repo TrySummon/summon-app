@@ -2,15 +2,10 @@ import React from "react";
 import { MethodBadge } from "@/components/MethodBadge";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { McpEndpoint } from "@/helpers/db/mcp-db";
 
 interface SelectedEndpointsDisplayProps {
-  selectedEndpoints: Array<{
-    apiId: string;
-    apiName: string;
-    method: string;
-    path: string;
-    operation: any;
-  }>;
+  selectedEndpoints: McpEndpoint[];
   onRemoveEndpoint: (apiId: string, method: string, path: string) => void;
 }
 

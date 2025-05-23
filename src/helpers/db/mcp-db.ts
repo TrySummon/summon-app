@@ -10,7 +10,6 @@ export interface McpEndpoint {
   apiName: string;
   method: string;
   path: string;
-  operation: OpenAPIV3.OperationObject;
 }
 
 // Define the MCP data structure that will be stored in files
@@ -28,6 +27,7 @@ export interface McpApiGroup {
 export interface McpData {
   id: string;
   name: string;
+  transport: "http";
   apiGroups: Record<string, McpApiGroup>;
   createdAt: string;
   updatedAt: string;
@@ -198,6 +198,7 @@ const updateMcp = async (id: string, mcpData: Omit<McpData, 'id' | 'createdAt' |
       createdAt: existingMcpData.createdAt,
       updatedAt: new Date().toISOString(),
       name: mcpData.name,
+      transport: mcpData.transport,
       apiGroups: mcpData.apiGroups
     };
     
