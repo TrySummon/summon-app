@@ -17,7 +17,7 @@ interface SchemaDialogProps {
   onOpenChange: (open: boolean) => void;
   schema: OpenAPIV3.SchemaObject;
   title?: string;
-  openapiSpec: OpenAPIV3.Document;
+  openapiSpec?: OpenAPIV3.Document;
 }
 
 interface SchemaHistoryItem {
@@ -45,7 +45,7 @@ export const SchemaDialog: React.FC<SchemaDialogProps> = ({
   const navigateToSchema = (schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject, title: string) => {
     let resolvedSchema: OpenAPIV3.SchemaObject;
     
-    if ('$ref' in schema && typeof schema.$ref === 'string') {
+    if ('$ref' in schema && typeof schema.$ref === 'string' && openapiSpec) {
       const resolved = resolveRef<OpenAPIV3.SchemaObject>(schema.$ref, openapiSpec);
       if (resolved) {
         resolvedSchema = resolved;

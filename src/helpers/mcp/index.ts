@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import { spawn, exec, ChildProcess } from "child_process";
+import { spawn, exec } from "child_process";
 import { promisify } from "util";
 
 import {
@@ -21,27 +21,13 @@ import {
 } from "./generator";
 import { getMcpImplPath, mcpDb } from "../db/mcp-db";
 import { console } from "inspector/promises";
-import { mockApi, MockApiResult } from "../mock";
+import { mockApi } from "../mock";
 import { apiKeyEnvVarName, baseUrlEnvVarName, bearerTokenEnvVarName } from "./generator/utils";
 import { findFreePort } from "../port";
+import { McpServerState, runningMcpServers } from "./state";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
 
-// Define the status types for MCP servers
-export type McpServerStatus = 'starting' | 'running' | 'error' | 'stopped';
-
-// Define the structure for tracking MCP server state
-export interface McpServerState {
-  mcpId: string;
-  status: McpServerStatus;
-  error?: string;
-  serverProcess?: ChildProcess;
-  mockProcesses: Record<string, MockApiResult>;
-  port?: number;
-  startedAt: Date;
-  stoppedAt?: Date;
-}
-
-// Global state to track running MCP servers
-const runningMcpServers: Record<string, McpServerState> = {};
 
 /**
  * Creates a directory if it doesn't exist
@@ -333,8 +319,8 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
       }
     }
     
-    serverState.port = (await findFreePort());
-    env.PORT = serverState.port.toString();
+    const port = (await findFreePort());
+    env.PORT = port.toString();
 
     // Check if node_modules exists, if not run npm install
     try {
@@ -388,12 +374,24 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
     });
     
     // Wait a moment to ensure the server has time to start
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // If no errors occurred during startup, mark as running
     if (serverState.status === 'starting') {
       serverState.status = 'running';
     }
+
+    const transport = { type: 'http' as const, url: `http://localhost:${port}/mcp` };
+    serverState.transport = transport;
+
+    const client = new Client({
+      name: "toolman",
+      version: "1.0.0"
+    });
+    serverState.client = client;
+    await client.connect(new StreamableHTTPClientTransport(
+      new URL(transport.url)
+    ));
     
     console.info(`MCP server ${mcpId} started with status: ${serverState.status}`);
     return serverState;
@@ -460,6 +458,10 @@ export async function stopMcpServer(mcpId: string): Promise<McpServerState | nul
         resolve();
       });
     });
+  }
+
+  if (serverState.client) {
+    await serverState.client.close();
   }
   
   // Update state

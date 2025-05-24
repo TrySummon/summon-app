@@ -15,8 +15,8 @@ import { OpenAPIV3 } from "openapi-types";
 import { ThemeMode } from "./types/theme-mode";
 import { McpTransport } from "./helpers/ipc/mcp";
 import { McpData } from "./helpers/db/mcp-db";
-import { McpServerState } from "./helpers/mcp";
 import { Tool } from "@modelcontextprotocol/sdk/types";
+import { McpServerState } from "./helpers/mcp/state";
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -80,7 +80,7 @@ declare global {
       startMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
       stopMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
       restartMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
-      getMcpTools: (config: McpTransport) => Promise<{ success: boolean; data?: Tool[]; message?: string }>;
+      getMcpTools: (mcpId: string) => Promise<{ success: boolean; data?: Tool[]; message?: string }>;
     }
   }
 }

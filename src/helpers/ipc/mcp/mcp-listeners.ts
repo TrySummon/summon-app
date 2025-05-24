@@ -16,7 +16,7 @@ import {
   RESTART_MCP_SERVER_CHANNEL,
   GET_MCP_TOOLS_CHANNEL
 } from "./mcp-channels";
-import { getMcpTools, McpTransport } from "./mcp-tools";
+import { getMcpTools } from "./mcp-tools";
 import { mcpDb, McpData } from "@/helpers/db/mcp-db";
 import { 
   deleteMcpImpl, 
@@ -193,6 +193,7 @@ export function registerMcpListeners() {
       // by removing the non-serializable serverProcess property
       const serializableStatus = status ? {
         ...status,
+        client: undefined,
         serverProcess: undefined, // Remove the non-serializable process
         // Convert any other non-serializable properties if needed
         mockProcesses: Object.keys(status.mockProcesses || {}).reduce((acc, key) => {
@@ -229,6 +230,7 @@ export function registerMcpListeners() {
         const status = statuses[mcpId];
         serializableStatuses[mcpId] = {
           ...status,
+          client: undefined,
           serverProcess: undefined, // Remove the non-serializable process
           // Convert any other non-serializable properties if needed
           mockProcesses: Object.keys(status.mockProcesses || {}).reduce((acc, key) => {
@@ -262,6 +264,7 @@ export function registerMcpListeners() {
       // Create a serializable version of the server state
       const serializableState = {
         ...serverState,
+        client: undefined,
         serverProcess: undefined, // Remove the non-serializable process
         // Convert any other non-serializable properties if needed
         mockProcesses: Object.keys(serverState.mockProcesses || {}).reduce((acc, key) => {
@@ -294,6 +297,7 @@ export function registerMcpListeners() {
       // Create a serializable version of the server state
       const serializableState = serverState ? {
         ...serverState,
+        client: undefined,
         serverProcess: undefined, // Remove the non-serializable process
         // Convert any other non-serializable properties if needed
         mockProcesses: Object.keys(serverState.mockProcesses || {}).reduce((acc, key) => {
@@ -351,9 +355,9 @@ export function registerMcpListeners() {
   });
 
   // Get MCP tools
-  ipcMain.handle(GET_MCP_TOOLS_CHANNEL, async (_, config: McpTransport) => {
+  ipcMain.handle(GET_MCP_TOOLS_CHANNEL, async (_, mcpId: string) => {
     try {
-      const tools = await getMcpTools(config);
+      const tools = await getMcpTools(mcpId);
       return {
         success: true,
         data: tools
