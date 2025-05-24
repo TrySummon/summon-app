@@ -13,7 +13,6 @@ import {
 import { McpToolDefinition } from "./helpers/mcp/types";
 import { OpenAPIV3 } from "openapi-types";
 import { ThemeMode } from "./types/theme-mode";
-import { McpTransport } from "./helpers/ipc/mcp";
 import { McpData } from "./helpers/db/mcp-db";
 import { Tool } from "@modelcontextprotocol/sdk/types";
 import { McpServerState } from "./helpers/mcp/state";

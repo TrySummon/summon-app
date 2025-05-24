@@ -4,9 +4,9 @@ import { SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from "@/compone
 import { McpDropdownMenu } from "@/components/mcp-nav/McpDropdownMenu";
 import { toast } from "sonner";
 import { McpData } from "@/helpers/db/mcp-db";
-import { useMcpServerStatus } from "@/hooks/useMcpServerStatus";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/utils/tailwind";
+import { useMcpServerState } from "@/hooks/useMcpServerState";
 
 interface McpItemProps {
   mcpItem: McpData;
@@ -40,14 +40,14 @@ export function McpItem({
   };
 
   // Use the hook to get server status
-  const { status, isLoading: statusLoading, startServer, stopServer, restartServer } = 
-    useMcpServerStatus(mcpItem.id);
+  const { state, isLoading: statusLoading, startServer, stopServer, restartServer } = 
+    useMcpServerState(mcpItem.id);
   
   // Determine status indicator color
   const getStatusColor = () => {
     if (statusLoading) return "bg-gray-300";
     
-    switch (status) {
+    switch (state?.status) {
       case "running":
         return "bg-green-500";
       case "starting":
@@ -64,7 +64,7 @@ export function McpItem({
   const getStatusText = () => {
     if (statusLoading) return "Checking status...";
     
-    switch (status) {
+    switch (state?.status) {
       case "running":
         return "MCP server is running";
       case "starting":
@@ -110,7 +110,7 @@ export function McpItem({
         mcpId={mcpItem.id}
         mcpName={mcpItem.name}
         onDelete={handleDeleteMcp}
-        status={status}
+        status={state?.status}
         onStart={startServer}
         onStop={stopServer}
         onRestart={restartServer}

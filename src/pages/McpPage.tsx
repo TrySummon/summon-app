@@ -1,7 +1,6 @@
 import React from "react";
 import { useParams } from "@tanstack/react-router";
 import { useMcps } from "@/hooks/useMcps";
-import { useMcpServerStatus } from "@/hooks/useMcpServerStatus";
 import { 
   Breadcrumb, 
   BreadcrumbItem, 
@@ -13,17 +12,17 @@ import { Link } from "@tanstack/react-router";
 import { Server } from "lucide-react";
 import { NotFound } from "@/components/ui/NotFound";
 import { McpExplorer } from "@/components/mcp-explorer";
+import { useMcpServerState } from "@/hooks/useMcpServerState";
 
 export default function McpPage() {
   const { mcpId } = useParams({ from: "/mcp/$mcpId" });
   const { mcps } = useMcps();
   const { 
-    status,
-    url,
-    error,
+    state,
     isLoading, 
+    error,
     refreshStatus
-  } = useMcpServerStatus(mcpId);
+  } = useMcpServerState(mcpId);
   
   const mcp = mcps.find(m => m.id === mcpId);
   
@@ -61,9 +60,8 @@ export default function McpPage() {
           <McpExplorer
             mcpId={mcpId}
             mcpName={mcp.name}
-            transport={mcp.transport}
-            status={status}
-            url={url}
+            transport={state?.transport}
+            status={state?.status}
             error={error}
             isLoading={isLoading}
             refreshStatus={refreshStatus}

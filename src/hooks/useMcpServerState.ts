@@ -5,11 +5,10 @@ import {
   stopMcpServer,
   restartMcpServer 
 } from '@/helpers/ipc/mcp/mcp-client';
-import { McpServerStatus } from '@/helpers/mcp';
+import { McpServerState } from '@/helpers/mcp/state';
 
-interface UseMcpServerStatusResult {
-  status: McpServerStatus | null;
-  url: string | null;
+interface useMcpServerStateResult {
+  state: McpServerState | null;
   isLoading: boolean;
   error: Error | null;
   startServer: () => Promise<void>;
@@ -25,12 +24,11 @@ interface UseMcpServerStatusResult {
  * @param pollingInterval Polling interval in milliseconds (default: 5000)
  * @returns Status information and control functions
  */
-export function useMcpServerStatus(
+export function useMcpServerState(
   mcpId: string,
   pollingInterval = 2000
-): UseMcpServerStatusResult {
-  const [status, setStatus] = useState<McpServerStatus | null>(null);
-  const [url, setUrl] = useState<string | null>(null);
+): useMcpServerStateResult {
+  const [state, setState] = useState<McpServerState | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -39,8 +37,7 @@ export function useMcpServerStatus(
     try {
       const response = await getMcpServerStatus(mcpId);
       if (response.success) {
-        setStatus(response.data ? response.data.status : null);
-        setUrl(response.data ? `http://localhost:${response.data.port}/mcp` : null);
+        setState(response.data ? response.data : null);
       } else {
         setError(new Error(response.message || 'Failed to get server status'));
       }
@@ -69,7 +66,7 @@ export function useMcpServerStatus(
     try {
       const response = await startMcpServer(mcpId);
       if (response.success) {
-        setStatus(response.data?.status || null);
+        setState(response.data || null);
       } else {
         setError(new Error(response.message || 'Failed to start server'));
       }
@@ -86,7 +83,7 @@ export function useMcpServerStatus(
     try {
       const response = await stopMcpServer(mcpId);
       if (response.success) {
-        setStatus(response.data ? response.data.status : 'stopped');
+        setState(response.data || null);
       } else {
         setError(new Error(response.message || 'Failed to stop server'));
       }
@@ -103,7 +100,7 @@ export function useMcpServerStatus(
     try {
       const response = await restartMcpServer(mcpId);
       if (response.success) {
-        setStatus(response.data?.status || null);
+        setState(response.data || null);
       } else {
         setError(new Error(response.message || 'Failed to restart server'));
       }
@@ -121,8 +118,7 @@ export function useMcpServerStatus(
   };
 
   return {
-    status,
-    url,
+    state,
     isLoading,
     error,
     startServer,

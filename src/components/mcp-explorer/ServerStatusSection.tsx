@@ -10,7 +10,7 @@ interface ServerStatusSectionProps {
   url?: string;
   error?: Error | string | null;
   serverName: string;
-  transport: string;
+  transport?: string;
   refreshStatus: () => void;
 }
 
@@ -37,12 +37,14 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
           </Badge>
         </div>
         
-        <div className="flex items-center justify-between p-3 border rounded-md">
-          <code className="text-sm font-mono">{url}</code>
-          <div className="flex items-center gap-2">
-            <CopyButton content={url || ""} />
+        {url ? (
+          <div className="flex items-center justify-between p-3 border rounded-md">
+            <code className="text-sm font-mono">{url}</code>
+            <div className="flex items-center gap-2">
+              <CopyButton content={url || ""} />
+            </div>
           </div>
-        </div>
+        ) : null}
         
         <div className="flex justify-end mt-4">
           <Button onClick={refreshStatus} variant="outline" size="sm" className="gap-1">
@@ -66,8 +68,8 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
           </AlertDescription>
         </Alert>
         <div className="flex justify-end mt-4">
-          <Button onClick={refreshStatus} className="gap-1">
-            <RefreshCw className="h-3.5 w-3.5" />
+        <Button onClick={refreshStatus} variant="outline" size="sm" className="gap-1">
+        <RefreshCw className="h-3.5 w-3.5" />
             Refresh Status
           </Button>
         </div>
@@ -108,7 +110,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
         </AlertDescription>
       </Alert>
       <div className="flex justify-end mt-4">
-        <Button onClick={refreshStatus} variant="outline" className="gap-1">
+        <Button onClick={refreshStatus} variant="outline" size="sm" className="gap-1">
           <RefreshCw className="h-3.5 w-3.5" />
           Refresh Status
         </Button>

@@ -2,14 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Tool } from "@modelcontextprotocol/sdk/types";
 import { ServerStatusSection } from "./ServerStatusSection";
 import { ToolsList } from "./ToolsList";
-import { McpServerStatus } from "@/helpers/mcp/state";
+import { McpServerStatus, McpTransport } from "@/helpers/mcp/state";
 
 interface McpExplorerProps {
   mcpId: string;
   mcpName: string;
-  transport: string;
-  status: McpServerStatus | null;
-  url?: string | null;
+  transport?: McpTransport;
+  status?: McpServerStatus;
   error?: Error | string | null;
   isLoading: boolean;
   refreshStatus: () => void;
@@ -20,12 +19,12 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
   mcpName,
   transport,
   status,
-  url,
   error,
   isLoading,
   refreshStatus,
 }) => {
   const [mcpTools, setMcpTools] = useState<Tool[]>([]);
+  const url = transport && "url" in transport ? transport.url : undefined;
 
   useEffect(() => {
     const fetchMcpTools = async () => {
@@ -42,7 +41,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
     };
     
     fetchMcpTools();
-  }, [mcpId, status, url, transport]);
+  }, [mcpId, status, url]);
 
   if (isLoading) {
     return (
@@ -55,8 +54,6 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
     );
   }
 
-  console.log("MCP Tools:", mcpTools)
-
   return (
     <div className="space-y-6">
       <ServerStatusSection 
@@ -64,7 +61,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
         url={url || undefined}
         error={error}
         serverName={mcpName}
-        transport={transport}
+        transport={transport?.type}
         refreshStatus={refreshStatus}
       />
       
