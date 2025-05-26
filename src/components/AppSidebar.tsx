@@ -1,4 +1,4 @@
-THIS SHOULD BE A LINTER ERRORimport React from "react";
+import React from "react";
 import {
     Sidebar,
     SidebarContent,
