@@ -80,6 +80,7 @@ declare global {
       stopMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
       restartMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
       getMcpTools: (mcpId: string) => Promise<{ success: boolean; data?: Tool[]; message?: string }>;
+      callMcpTool: (mcpId: string, name: string, args: Record<string, any>) => Promise<{ success: boolean; data?: any; message?: string }>;
     }
   }
 }

@@ -56,6 +56,7 @@ interface Props {
   onChange?: (value: string) => void;
   onFocusChange?: (focused: boolean, viewUpdate: ViewUpdate) => void;
   onMount?: (view: EditorView) => void;
+  onPaste?: (event: ClipboardEvent) => void;
 }
 
 export default function CodeMirrorEditor({
@@ -73,7 +74,7 @@ export default function CodeMirrorEditor({
   onChange,
   onFocusChange,
   onMount,
-
+  onPaste,
 }: Props) {
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const internalEditorRef = useRef<EditorView | null>(null);
@@ -97,6 +98,17 @@ export default function CodeMirrorEditor({
 
   useEffect(() => {
     if (!editorContainerRef.current) return;
+    
+    // Set up paste event listener if onPaste is provided
+    const handlePaste = (event: ClipboardEvent) => {
+      if (onPaste) {
+        onPaste(event);
+      }
+    };
+    
+    if (onPaste && editorContainerRef.current) {
+      editorContainerRef.current.addEventListener('paste', handlePaste as EventListener);
+    }
 
     const editorTheme = EditorView.theme({
       "&": {
@@ -171,6 +183,10 @@ export default function CodeMirrorEditor({
     }
 
     return () => {
+      // Clean up paste event listener
+      if (onPaste && editorContainerRef.current) {
+        editorContainerRef.current.removeEventListener('paste', handlePaste as EventListener);
+      }
       view.destroy();
       actualEditorRef.current = null;
     };
@@ -180,7 +196,7 @@ export default function CodeMirrorEditor({
     <div
       ref={editorContainerRef}
       data-testid={testId}
-      className="w-full overflow-y-auto"
+      className="w-full overflow-y-auto min-h-[24px]"
       style={{
         height: height ? (typeof height === "string" ? height : `${height}px`) : undefined,
         maxHeight: maxHeight ? (typeof maxHeight === "string" ? maxHeight : `${maxHeight}px`) : undefined,

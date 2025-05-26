@@ -19,3 +19,19 @@ export async function getMcpTools(mcpId: string) {
 
   return (await (serverState.client.listTools())).tools;
 }
+
+export async function callMcpTool(mcpId: string, name: string, args: Record<string, any>) {
+
+  const serverState = runningMcpServers[mcpId];
+  if (!serverState) {
+    throw new Error(`MCP server with ID ${mcpId} not found`);
+  }
+
+  if (!serverState.client) {
+    throw new Error(`MCP server with ID ${mcpId} is not running`);
+  }
+
+  const result = await (serverState.client.callTool({name, args}));
+
+  return result;
+}

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { FileJson, Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useDropzone } from "react-dropzone";
 import { 
   Dialog,
   DialogContent,
@@ -30,42 +31,36 @@ export function ImportApiDialog({
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const handleFileChange = (file: File | null) => {    
-    if (!file) {
-      setFile(null);
-      return;
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles && acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
+      // Check file extension
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      if (extension !== 'json' && extension !== 'yaml' && extension !== 'yml') {
+        toast.error('Only JSON, YAML, and YML files are supported');
+        return;
+      }
+      
+      setFile(file);
     }
-    
-    // Check file extension
-    const extension = file.name.split('.').pop()?.toLowerCase();
-    if (extension !== 'json' && extension !== 'yaml' && extension !== 'yml') {
-      setFile(null);
-      return;
-    }
-    
-    setFile(file);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileChange(e.dataTransfer.files[0]);
-    }
-  };
+  }, []);
+  
+  const { 
+    getRootProps, 
+    getInputProps, 
+    isDragActive,
+    isDragAccept,
+    isDragReject
+  } = useDropzone({
+    onDrop,
+    accept: {
+      'application/json': ['.json'],
+      'application/x-yaml': ['.yaml', '.yml']
+    },
+    maxFiles: 1
+  });
 
   const handleImport = async () => {
     if (file) {
@@ -135,14 +130,13 @@ export function ImportApiDialog({
         
         <div className="py-4">
           <div
+            {...getRootProps()}
             className={cn(
               "relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors",
-              isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25",
+              isDragActive && !isDragReject ? "border-primary bg-primary/5" : "border-muted-foreground/25",
+              isDragReject ? "border-destructive bg-destructive/5" : "",
               file ? "bg-primary/5" : "hover:bg-muted/50"
             )}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
           >
             {file ? (
               <div className="flex w-full flex-col items-center gap-2">
@@ -172,23 +166,15 @@ export function ImportApiDialog({
                 <p className="mb-4 text-xs text-muted-foreground">
                   Supports JSON files
                 </p>
-                <label htmlFor="file-upload">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="relative cursor-pointer"
-                    onClick={() => document.getElementById("file-upload")?.click()}
-                  >
-                    Browse files
-                  </Button>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept=".json"
-                    className="sr-only"
-                    onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-                  />
-                </label>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="relative cursor-pointer"
+                  type="button"
+                >
+                  Browse files
+                </Button>
+                <input {...getInputProps()} />
               </>
             )}
           </div>

@@ -12,3 +12,4 @@ export const startMcpServer = window.mcpApi.startMcpServer;
 export const stopMcpServer = window.mcpApi.stopMcpServer;
 export const restartMcpServer = window.mcpApi.restartMcpServer;
 export const getMcpTools = window.mcpApi.getMcpTools;
+export const callMcpTool = window.mcpApi.callMcpTool;

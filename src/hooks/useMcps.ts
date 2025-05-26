@@ -32,11 +32,6 @@ export function useMcps() {
         throw new Error(result.message || 'Failed to create MCP');
       }
       
-      // If credentials are provided, save them
-      if (credentials && Object.keys(credentials).length > 0 && result.mcpId) {
-        await window.mcpApi.saveCredentials(result.mcpId, credentials);
-      }
-      
       return result;
     },
     onSuccess: () => {
@@ -50,11 +45,6 @@ export function useMcps() {
       const result = await window.mcpApi.updateMcp(mcpId, mcpData);
       if (!result.success) {
         throw new Error(result.message || 'Failed to update MCP');
-      }
-      
-      // If credentials are provided, save them
-      if (credentials && Object.keys(credentials).length > 0) {
-        await window.mcpApi.saveCredentials(mcpId, credentials);
       }
       
       return result;

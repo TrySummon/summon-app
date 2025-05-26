@@ -5,18 +5,15 @@ import {
   GET_MCP_CHANNEL,
   UPDATE_MCP_CHANNEL,
   DELETE_MCP_CHANNEL,
-  MCP_GET_CREDENTIALS_CHANNEL,
-  MCP_SAVE_CREDENTIALS_CHANNEL,
-  MCP_CLEAR_CREDENTIALS_CHANNEL,
   GET_MCP_SERVER_STATUS_CHANNEL,
   GET_ALL_MCP_SERVER_STATUSES_CHANNEL,
   START_MCP_SERVER_CHANNEL,
   STOP_MCP_SERVER_CHANNEL,
   RESTART_MCP_SERVER_CHANNEL,
-  GET_MCP_TOOLS_CHANNEL
+  GET_MCP_TOOLS_CHANNEL,
+  CALL_MCP_TOOL_CHANNEL
 } from './mcp-channels';
 import { McpData } from '@/helpers/db/mcp-db';
-import { McpTransport } from './mcp-tools';
 
 export function exposeMcpContext() {
   contextBridge.exposeInMainWorld('mcpApi', {
@@ -51,7 +48,10 @@ export function exposeMcpContext() {
     restartMcpServer: (mcpId: string) => 
       ipcRenderer.invoke(RESTART_MCP_SERVER_CHANNEL, mcpId),
       
-    getMcpTools: (config: McpTransport) => 
-      ipcRenderer.invoke(GET_MCP_TOOLS_CHANNEL, config)
+    getMcpTools: (mcpId: string) => 
+      ipcRenderer.invoke(GET_MCP_TOOLS_CHANNEL, mcpId),
+
+    callMcpTool: (mcpId: string, name: string, args: Record<string, any>) => 
+      ipcRenderer.invoke(CALL_MCP_TOOL_CHANNEL, {mcpId, name, args})
   });
 }

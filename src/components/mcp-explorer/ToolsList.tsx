@@ -23,7 +23,7 @@ export const ToolsList: React.FC<ToolsListProps> = ({ tools }) => {
       
       <Accordion type="single" collapsible className="w-full">
         {tools.map((tool, index) => (
-          <AccordionItem key={tool.name} value={`tool-${index}`} className="border-t">
+          <AccordionItem key={tool.name} value={`tool-${index}`}>
             <AccordionTrigger className="hover:no-underline">
               <div className="flex flex-col items-start gap-1 text-left w-full">
                 <span className="font-medium">{tool.name}</span>

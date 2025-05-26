@@ -13,9 +13,10 @@ import {
 import { Box, Plug, SquareTerminal } from "lucide-react";
 import { ApiNav } from "@/components/api-nav";
 import { McpNav } from "@/components/mcp-nav";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
    
   export function AppSidebar() {
+  const location = useLocation();
 
   return (
     <>
@@ -48,9 +49,11 @@ import { Link } from "@tanstack/react-router";
           <SidebarGroup>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton>
+                <Link to="/playground">
+                <SidebarMenuButton isActive={location.pathname === "/playground"}>
                   <SquareTerminal className="h-4 w-4" /> Playground
                 </SidebarMenuButton>
+                </Link>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>

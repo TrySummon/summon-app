@@ -6,17 +6,15 @@ import {
   GET_MCP_CHANNEL,
   UPDATE_MCP_CHANNEL,
   DELETE_MCP_CHANNEL,
-  MCP_GET_CREDENTIALS_CHANNEL,
-  MCP_SAVE_CREDENTIALS_CHANNEL,
-  MCP_CLEAR_CREDENTIALS_CHANNEL,
   GET_MCP_SERVER_STATUS_CHANNEL,
   GET_ALL_MCP_SERVER_STATUSES_CHANNEL,
   START_MCP_SERVER_CHANNEL,
   STOP_MCP_SERVER_CHANNEL,
   RESTART_MCP_SERVER_CHANNEL,
-  GET_MCP_TOOLS_CHANNEL
+  GET_MCP_TOOLS_CHANNEL,
+  CALL_MCP_TOOL_CHANNEL
 } from "./mcp-channels";
-import { getMcpTools } from "./mcp-tools";
+import { callMcpTool, getMcpTools } from "./mcp-tools";
 import { mcpDb, McpData } from "@/helpers/db/mcp-db";
 import { 
   deleteMcpImpl, 
@@ -148,39 +146,6 @@ export function registerMcpListeners() {
         success: false,
         message: error instanceof Error ? error.message : "Unknown error occurred"
       };
-    }
-  });
-
-  // Get credentials for a specific MCP
-  ipcMain.handle(MCP_GET_CREDENTIALS_CHANNEL, async (_, mcpId: string) => {
-    try {
-      const credentials = await keytar.getPassword(SERVICE_NAME, `${ACCOUNT_NAME}-${mcpId}`);
-      return credentials ? JSON.parse(credentials) : null;
-    } catch (error) {
-      console.error("Error retrieving MCP credentials:", error);
-      return null;
-    }
-  });
-
-  // Save credentials for a specific MCP
-  ipcMain.handle(MCP_SAVE_CREDENTIALS_CHANNEL, async (_, mcpId: string, credentials: any) => {
-    try {
-      await keytar.setPassword(SERVICE_NAME, `${ACCOUNT_NAME}-${mcpId}`, JSON.stringify(credentials));
-      return true;
-    } catch (error) {
-      console.error("Error saving MCP credentials:", error);
-      return false;
-    }
-  });
-
-  // Clear credentials for a specific MCP
-  ipcMain.handle(MCP_CLEAR_CREDENTIALS_CHANNEL, async (_, mcpId: string) => {
-    try {
-      await keytar.deletePassword(SERVICE_NAME, `${ACCOUNT_NAME}-${mcpId}`);
-      return true;
-    } catch (error) {
-      console.error("Error clearing MCP credentials:", error);
-      return false;
     }
   });
 
@@ -364,6 +329,23 @@ export function registerMcpListeners() {
       };
     } catch (error) {
       console.error(`Error getting MCP tools:`, error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      };
+    }
+  });
+
+  // Call an MCP tool
+  ipcMain.handle(CALL_MCP_TOOL_CHANNEL, async (_, {mcpId, name, args}: {mcpId: string, name: string, args: Record<string, any>}) => {
+    try {
+      const result = await callMcpTool(mcpId, name, args);
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error) {
+      console.error(`Error calling MCP tool:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : "Unknown error occurred"
