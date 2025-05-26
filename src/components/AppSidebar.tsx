@@ -38,36 +38,24 @@ import { Link } from "@tanstack/react-router";
           
           {/* Placeholder sections for future features */}
           <SidebarGroup>
-            <SidebarGroupLabel>Datasets</SidebarGroupLabel>
+            <SidebarGroupLabel>Lab (coming soon)</SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton className="text-muted-foreground cursor-default">
+                <SidebarMenuButton className="text-xs">
                   <Database className="h-4 w-4" />
-                  Coming Soon
+                  Datasets
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>Prompts</SidebarGroupLabel>
-            <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton className="text-muted-foreground cursor-default">
+                <SidebarMenuButton className="text-xs">
                   <MessageSquare className="h-4 w-4" />
-                  Coming Soon
+                  Prompts
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>AI Context</SidebarGroupLabel>
-            <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton className="text-muted-foreground cursor-default">
+                <SidebarMenuButton className="text-xs">
                   <Brain className="h-4 w-4" />
-                  Coming Soon
+                  AI Context
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
