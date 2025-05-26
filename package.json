@@ -17,7 +17,10 @@
     "test:watch": "vitest watch",
     "test:unit": "vitest",
     "test:e2e": "playwright test",
-    "test:all": "vitest run && playwright test"
+    "test:all": "vitest run && playwright test",
+    "postinstall": "playwright install",
+    "playwright:install": "playwright install",
+    "test:e2e:install": "playwright install && playwright test"
   },
   "author": "ROG <luan.roger.2003@gmail.com>",
   "license": "MIT",

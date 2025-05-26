@@ -136,11 +136,58 @@ Or use it as a template on GitHub
 npm install
 ```
 
-3. Run the app
+3. Set up development environment (optional)
+
+```bash
+# Run the setup script to install all testing dependencies
+./scripts/setup-dev.sh
+
+# Or manually install Playwright browsers
+npm run playwright:install
+```
+
+4. Run the app
 
 ```bash
 npm run start
 ```
+
+## Testing
+
+This project includes a comprehensive test suite with both unit and end-to-end tests.
+
+### Quick Start
+
+```bash
+# Run unit tests
+npm run test
+
+# Run unit tests in watch mode (recommended for development)
+npm run test:unit
+
+# Install Playwright browsers (required for E2E tests)
+npm run playwright:install
+
+# Run end-to-end tests
+npm run test:e2e
+
+# Run all tests
+npm run test:all
+```
+
+### Playwright Browser Installation
+
+The project automatically installs Playwright browsers when you run `npm install` via the `postinstall` script. If you need to install them manually:
+
+```bash
+# Install all browsers
+npm run playwright:install
+
+# Or use npx directly
+npx playwright install
+```
+
+For more detailed testing information, see [TESTING.md](./TESTING.md).
 
 ## Used by
 
