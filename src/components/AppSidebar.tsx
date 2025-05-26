@@ -1,4 +1,4 @@
-import React from "react";
+THIS SHOULD BE A LINTER ERRORimport React from "react";
 import {
     Sidebar,
     SidebarContent,
@@ -10,7 +10,7 @@ import {
     SidebarMenuButton,
     SidebarMenu
   } from "@/components/ui/sidebar"
-import { Box, Plug, SquareTerminal } from "lucide-react";
+import { Box, Plug, SquareTerminal, Database, MessageSquare, Brain } from "lucide-react";
 import { ApiNav } from "@/components/api-nav";
 import { McpNav } from "@/components/mcp-nav";
 import { Link } from "@tanstack/react-router";
@@ -35,6 +35,44 @@ import { Link } from "@tanstack/react-router";
       <SidebarContent>
         <ApiNav />
           <McpNav />
+          
+          {/* Placeholder sections for future features */}
+          <SidebarGroup>
+            <SidebarGroupLabel>Datasets</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton className="text-muted-foreground cursor-default">
+                  <Database className="h-4 w-4" />
+                  Coming Soon
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Prompts</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton className="text-muted-foreground cursor-default">
+                  <MessageSquare className="h-4 w-4" />
+                  Coming Soon
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>AI Context</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton className="text-muted-foreground cursor-default">
+                  <Brain className="h-4 w-4" />
+                  Coming Soon
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+          
           <SidebarGroup>
             <SidebarGroupLabel>External MCPs</SidebarGroupLabel>
             <SidebarMenu>
