@@ -1,5 +1,4 @@
 import { ipcMain } from "electron";
-import keytar from "keytar";
 import {
   CREATE_MCP_CHANNEL,
   LIST_MCPS_CHANNEL,

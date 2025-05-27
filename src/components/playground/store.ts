@@ -327,7 +327,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     get().updateCurrentState(state => ({
       ...state,
       model
-    }), true, `Changed model to ${model}`);
+    }));
   },
   
   updateProvider: (provider) => {
@@ -344,14 +344,14 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
         ...state.settings,
         ...settings
       }
-    }), true, `Updated settings: ${Object.keys(settings).join(', ')}`);
+    }));
   },
   
   updateSystemPrompt: (systemPrompt) => {
     get().updateCurrentState(state => ({
       ...state,
       systemPrompt
-    }), true, `Updated system prompt`);
+    }));
   },
   
   updateEnabledTools: (toolProvider, toolIds) => {
@@ -361,7 +361,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
         ...state.enabledTools,
         [toolProvider]: toolIds
       }
-    }), true, `Updated enabled tools`);
+    }));
   },
 
   updateAiToolMap: (aiToolMap) => {

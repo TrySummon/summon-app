@@ -64,9 +64,7 @@ export default function Playground() {
             state => ({
               ...state,
               enabledTools: allTools
-            }),
-            true,
-            'Enabled all available tools'
+            })
           );
           
           // Restore the original current tab
