@@ -1,33 +1,10 @@
 import posthog from 'posthog-js'
 
-// Environment variables interface for better type safety
-interface ViteEnv {
-  VITE_PUBLIC_POSTHOG_KEY?: string;
-  VITE_PUBLIC_POSTHOG_HOST?: string;
-}
-
-// Get environment variables safely
-const getEnvVar = (key: keyof ViteEnv): string | undefined => {
-  if (typeof window !== 'undefined' && (window as any).process?.env) {
-    return (window as any).process.env[key];
-  }
-  // Fallback for Vite environment variables
-  if (typeof globalThis !== 'undefined' && (globalThis as any).import?.meta?.env) {
-    return (globalThis as any).import.meta.env[key];
-  }
-  return undefined;
-}
-
 // PostHog configuration for Electron app
 export const initPostHog = () => {
   // Only initialize PostHog in the renderer process and if we have the required env vars
   const posthogKey = process.env.VITE_PUBLIC_POSTHOG_KEY;
   const posthogHost = process.env.VITE_PUBLIC_POSTHOG_HOST;
-//   const posthogKey = 'phc_aWB7o0rSkrv2DLEJu9fLGHlaJyR9Xs7nZaEW2PPWWk7';
-//   const posthogHost = 'https://eu.i.posthog.com';
-  
-  console.log('posthogKey', posthogKey)
-  console.log('posthogHost', posthogHost)
   
   if (typeof window !== 'undefined' && posthogKey) {
     try {
@@ -63,7 +40,7 @@ export const initPostHog = () => {
 
       // Identify the user as an Electron app user
       posthog.register({
-        app_type: 'electron',
+        app_type: 'agentport',
         app_version: '1.0.0', // You can get this from package.json
       })
 
