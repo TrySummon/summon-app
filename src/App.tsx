@@ -10,6 +10,8 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
+import { initPostHog } from "./lib/posthog";
+import { PostHogRouter } from "./components/PostHogRouter";
 import { McpToolDefinition } from "./helpers/mcp/types";
 import { OpenAPIV3 } from "openapi-types";
 import { ThemeMode } from "./types/theme-mode";
@@ -23,9 +25,17 @@ export default function App() {
   useEffect(() => {
     syncThemeWithLocal();
     updateAppLanguage(i18n);
+    
+    // Initialize PostHog after other setup
+    initPostHog();
   }, [i18n]);
 
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <PostHogRouter />
+      <RouterProvider router={router} />
+    </>
+  );
 }
 
 const queryClient = new QueryClient()

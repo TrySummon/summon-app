@@ -3,8 +3,11 @@ import { createOpenAI } from '@ai-sdk/openai';
 import type { PlaygroundStore } from './store';
 import { v4 as uuidv4 } from 'uuid';
 import { UIMessage } from 'ai';
+import { captureEvent } from '@/lib/posthog';
 
 export async function runAgent(get: () => PlaygroundStore) {
+    const startTime = Date.now();
+    
     try {
         get().updateCurrentState((state) => ({
             ...state,
@@ -12,6 +15,17 @@ export async function runAgent(get: () => PlaygroundStore) {
         }));
         const {aiToolMap, getCurrentState} = get();
         const {messages, model, settings, maxSteps} = getCurrentState();
+        
+        // Track AI agent start
+        captureEvent('playground_ai_agent_started', {
+            model: model,
+            conversation_length: messages.length,
+            max_steps: maxSteps,
+            tools_available: Object.keys(aiToolMap).length,
+            temperature: settings.temperature,
+            max_tokens: settings.maxTokens,
+            timestamp: new Date().toISOString()
+        });
 
         const toolSet: ToolSet = {}
         Object.values(aiToolMap).forEach((tools) => {
@@ -64,10 +78,12 @@ export async function runAgent(get: () => PlaygroundStore) {
         });
         
         let fullResponse = '';
+        let tokenCount = 0;
         
         // Process each chunk of the stream
         for await (const textPart of textStream) {
             fullResponse += textPart;
+            tokenCount++;
             
             // Create the assistant message on first token if it doesn't exist yet
             if (!assistantMessageCreated) {
@@ -105,8 +121,33 @@ export async function runAgent(get: () => PlaygroundStore) {
                 }
             }
         }
+        
+        // Track successful AI response completion
+        const endTime = Date.now();
+        const currentState = getCurrentState();
+        captureEvent('playground_ai_response_completed', {
+            model: model,
+            response_length: fullResponse.length,
+            token_count: tokenCount,
+            duration_ms: endTime - startTime,
+            conversation_length: currentState.messages.length,
+            timestamp: new Date().toISOString()
+        });
+        
     } catch (error) {
         console.error('Error generating response:', error);
+        
+        // Track AI agent error
+        const endTime = Date.now();
+        const {getCurrentState: getState} = get();
+        const errorState = getState();
+        captureEvent('playground_ai_agent_error', {
+            model: errorState.model,
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            duration_ms: endTime - startTime,
+            conversation_length: errorState.messages.length,
+            timestamp: new Date().toISOString()
+        });
         
         // Add an error message to the chat
         const errorMessage: UIMessage = {

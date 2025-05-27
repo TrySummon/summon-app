@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button';
 import { usePlaygroundStore } from '../store';
 import { UIMessage } from 'ai';
 import { v4 as uuidv4 } from 'uuid';
+import { usePostHog } from '@/hooks/usePostHog';
 
 export default function MessageComposer({ running }: { running: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const {
     addMessage,
+    getCurrentState,
   } = usePlaygroundStore();
+  const { captureEvent } = usePostHog();
   
   const [composer, setComposer] = useState<UIMessage>({
     id: uuidv4(),
@@ -37,6 +40,19 @@ export default function MessageComposer({ running }: { running: boolean }) {
     () => {
       if (disabled) return;
       
+      // Track the message submission with PostHog
+      const currentState = getCurrentState();
+      captureEvent('playground_message_submitted', {
+        message_length: composer.content.length,
+        message_role: composer.role,
+        model: currentState.model,
+        provider: currentState.provider,
+        has_system_prompt: !!currentState.systemPrompt,
+        enabled_tools_count: Object.values(currentState.enabledTools).flat().length,
+        conversation_length: currentState.messages.length,
+        timestamp: new Date().toISOString()
+      });
+      
       // Add the message to the current state using the zustand store
       addMessage(composer);
       // Reset the composer
@@ -47,7 +63,7 @@ export default function MessageComposer({ running }: { running: boolean }) {
         parts: [{ type: 'text', text: '' }]
       }));
     },
-    [disabled, composer, addMessage]
+    [disabled, composer, addMessage, captureEvent, getCurrentState]
   );
 
   // Keyboard shortcut handler
