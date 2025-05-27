@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
   define: {
     'process.env.VITE_PUBLIC_POSTHOG_KEY': JSON.stringify(env.VITE_PUBLIC_POSTHOG_KEY),
     'process.env.VITE_PUBLIC_POSTHOG_HOST': JSON.stringify(env.VITE_PUBLIC_POSTHOG_HOST),
+    'process.env.DISABLE_ANALYTICS': JSON.stringify(env.DISABLE_ANALYTICS),
     }
   }
 });

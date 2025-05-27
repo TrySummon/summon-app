@@ -2,6 +2,19 @@ import posthog from 'posthog-js'
 
 // PostHog configuration for Electron app
 export const initPostHog = () => {
+  // Check if analytics is disabled
+  if (process.env.DISABLE_ANALYTICS === 'true') {
+    // Mock PostHog object
+    (posthog as any).__loaded = true;
+    (posthog as any).init = () => posthog;
+    (posthog as any).capture = () => undefined;
+    (posthog as any).identify = () => undefined;
+    (posthog as any).register = () => undefined;
+    (posthog as any).reset = () => undefined;
+    console.log('Analytics disabled - PostHog mocked');
+    return;
+  }
+
   // Only initialize PostHog in the renderer process and if we have the required env vars
   const posthogKey = process.env.VITE_PUBLIC_POSTHOG_KEY;
   const posthogHost = process.env.VITE_PUBLIC_POSTHOG_HOST;
@@ -28,12 +41,12 @@ export const initPostHog = () => {
         // Disable automatic error tracking
         capture_performance: false,
         // Custom configuration for Electron
-        loaded: (posthog) => {
+        loaded: (posthog: any) => {
           // Only capture pageviews manually when routes change
           console.log('PostHog loaded successfully')
         },
         // Handle errors gracefully
-        on_xhr_error: (failedRequest) => {
+        on_xhr_error: (failedRequest: any) => {
           console.warn('PostHog request failed:', failedRequest)
         }
       } as any)
