@@ -1,10 +1,10 @@
 import React from "react";
 import { Clock, Check, Wrench } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-import CodeEditor from "@/components/CodeEditor";
 import { cn } from "@/utils/tailwind";
 import { ToolInvocation } from "ai";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { CodeSnippet } from "@/components/CodeSnippet";
 
 interface ToolCallProps {
   invocation: ToolInvocation;
@@ -32,7 +32,7 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center justify-between w-full">
-          <div className="font-medium text-sm text-foreground flex gap-1 items-center"><Wrench className="h-3.5 w-3.5" /> {invocation.toolName}</div>
+          <div className="font-medium text-sm text-foreground flex gap-2 items-center"><Wrench className="h-3.5 w-3.5" /> {invocation.toolName}</div>
           {invocation.step !== undefined && (
             <Badge variant="secondary" className="text-xs">Step {invocation.step}</Badge>
           )}
@@ -50,11 +50,11 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
           </AccordionTrigger>
           <AccordionContent>
             <div className="rounded-md overflow-hidden">
-              <CodeEditor
-                defaultValue={JSON.stringify(invocation.args, null, 2)}
+              <CodeSnippet
                 language="json"
-                readOnly
-              />
+              >
+                {JSON.stringify(invocation.args, null, 2)}
+              </CodeSnippet>
             </div>
           </AccordionContent>
         </AccordionItem>
@@ -71,11 +71,11 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
                 typeof invocation.result === 'object' ? "" : "p-3 bg-muted text-sm"
               )}>
                 {typeof invocation.result === 'object' ? (
-                  <CodeEditor
-                    defaultValue={JSON.stringify(invocation.result, null, 2)}
+                  <CodeSnippet
                     language="json"
-                    readOnly
-                  />
+                  >
+                    {JSON.stringify(invocation.result, null, 2)}
+                  </CodeSnippet>
                 ) : (
                   <div className="whitespace-pre-wrap font-mono text-sm">
                     {String(invocation.result)}

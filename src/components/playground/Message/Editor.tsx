@@ -26,6 +26,7 @@ const MessageEditor = ({
 }: Props) => {
   const editorRef = useRef<EditorView | null>(null);
   const [isEditorEmpty, setIsEditorEmpty] = useState(!value);
+  const isProgrammaticChangeRef = useRef(false);
 
   const handlePaste = useCallback(
     (event: ClipboardEvent) => {
@@ -52,7 +53,13 @@ const MessageEditor = ({
   const handleEditorChange = useCallback(
     (value: string) => {
       setIsEditorEmpty(!value);
-      onChange?.(value);
+      // Only trigger onChange if the change wasn't programmatic
+      if (!isProgrammaticChangeRef.current) {
+        onChange?.(value);
+      } else {
+        // Reset the flag after handling the programmatic change
+        isProgrammaticChangeRef.current = false;
+      }
     },
     [onChange]
   );
@@ -66,6 +73,8 @@ const MessageEditor = ({
     const newValue = value;
 
     if (currentValue !== newValue) {
+      // Set flag to indicate this is a programmatic change
+      isProgrammaticChangeRef.current = true;
       editor.dispatch({
         changes: { from: 0, to: currentValue.length, insert: newValue },
       });
@@ -73,7 +82,7 @@ const MessageEditor = ({
   }, [value]);
 
   const placeholderEl = isEditorEmpty ? (
-    <div className="pointer-events-none absolute left-[1px] top-[3px] z-10 text-sm text-muted-foreground">
+    <div className="pointer-events-none absolute left-[1px] top-[3px] z-10 text-[14px] text-muted-foreground">
       {placeholder || "Enter a message..."}
     </div>
   ) : null;

@@ -141,7 +141,7 @@ const listMcps = async (): Promise<McpData[]> => {
 import keytar from 'keytar';
 
 // Service name for keytar - must match the one in mcp-listeners.ts
-const SERVICE_NAME = "toolman-mcp-credentials";
+const SERVICE_NAME = "agentport-mcp-credentials";
 // Account name for keytar - must match the one in mcp-listeners.ts
 const ACCOUNT_NAME = "tar";
 
@@ -228,28 +228,6 @@ const deleteMcp = async (id: string): Promise<boolean> => {
   }
 };
 
-// Save credentials for an MCP
-const saveCredentials = async (mcpId: string, credentials: Record<string, any>): Promise<boolean> => {
-  try {
-    await keytar.setPassword(SERVICE_NAME, `${ACCOUNT_NAME}-${mcpId}`, JSON.stringify(credentials));
-    return true;
-  } catch (error) {
-    console.error(`Error saving credentials for MCP with ID ${mcpId}:`, error);
-    return false;
-  }
-};
-
-// Clear credentials for an MCP
-const clearCredentials = async (mcpId: string): Promise<boolean> => {
-  try {
-    await keytar.deletePassword(SERVICE_NAME, `${ACCOUNT_NAME}-${mcpId}`);
-    return true;
-  } catch (error) {
-    console.error(`Error clearing credentials for MCP with ID ${mcpId}:`, error);
-    return false;
-  }
-};
-
 // Export the MCP database functions
 export const mcpDb = {
   createMcp,
@@ -257,7 +235,5 @@ export const mcpDb = {
   getMcpById,
   updateMcp,
   deleteMcp,
-  mcpExists,
-  saveCredentials,
-  clearCredentials
+  mcpExists
 };

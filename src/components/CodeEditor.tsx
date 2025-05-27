@@ -112,7 +112,7 @@ export default function CodeMirrorEditor({
 
     const editorTheme = EditorView.theme({
       "&": {
-        fontSize: `${fontSize || 13}px`,
+        fontSize: `${fontSize || 14}px`,
         fontFamily: "var(--font-mono)",
         height: "100%",
         backgroundColor: "transparent",

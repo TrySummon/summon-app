@@ -10,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
+import { cn } from "@/utils/tailwind";
 
 interface Props {
   content: unknown;
@@ -46,12 +47,12 @@ const CopyButton = ({ content, className }: Props) => {
             onClick={copyToClipboard}
             variant="ghost"
             size="icon"
-            className={`text-muted-foreground ${className}`}
+            className={"text-muted-foreground"}
           >
             {copied ? (
-              <Check className="h-4 w-4" />
+              <Check className={cn("h-4 w-4", className)} />
             ) : (
-              <Copy className="h-4 w-4" />
+              <Copy className={cn("h-4 w-4", className)} />
             )}
           </Button>
         </TooltipTrigger>

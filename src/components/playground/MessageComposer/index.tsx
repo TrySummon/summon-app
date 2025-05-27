@@ -1,16 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Message from '../Message';
-import { Kbd } from '@/components/Kbd';
 import { Button } from '@/components/ui/button';
 import { usePlaygroundStore } from '../store';
-import { UIMessage } from 'ai';
+import { Attachment, UIMessage } from 'ai';
 import { v4 as uuidv4 } from 'uuid';
+import { runAgent } from '../agent';
+import { ArrowUp, Square } from 'lucide-react';
+import { MessageContent } from '../Message/Content';
+import ImageDialog from '@/components/ImageDialog';
 
 export default function MessageComposer({ running }: { running: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
-  const {
-    addMessage,
-  } = usePlaygroundStore();
+  const playgroundStore = usePlaygroundStore();
   
   const [composer, setComposer] = useState<UIMessage>({
     id: uuidv4(),
@@ -21,24 +22,34 @@ export default function MessageComposer({ running }: { running: boolean }) {
   
   // Function to handle changes to the message content
   const handleMessageChange = useCallback((updatedMessage: UIMessage) => {
-    // Ensure content and parts are in sync
-    const textPart = updatedMessage.parts.find(part => part.type === 'text');
-    const updatedContent = textPart ? textPart.text.trim() : '';
-    
     setComposer({
       ...updatedMessage,
-      content: updatedContent
+      parts: updatedMessage.parts,
     });
   }, []);
 
-  const disabled = running || !composer.content;
+  const isComposerEmpty = !composer.parts.find(part => part.type === 'text' && part.text.trim() !== '');
+
+  const disabled = running || isComposerEmpty;
 
   const handleAddMessage = useCallback(
     () => {
       if (disabled) return;
       
+      // Trim the text before adding the message
+      const trimmedComposer = {
+        ...composer,
+        parts: composer.parts.map(part => {
+          if (part.type === 'text') {
+            // Trim the text and remove leading/trailing new lines
+            return { ...part, text: part.text.trim().replace(/^\n+|\n+$/g, '') };
+          }
+          return part;
+        })
+      };
+      
       // Add the message to the current state using the zustand store
-      addMessage(composer);
+      playgroundStore.addMessage(trimmedComposer);
       // Reset the composer
       setComposer((prev) => ({
         id: uuidv4(),
@@ -46,8 +57,9 @@ export default function MessageComposer({ running }: { running: boolean }) {
         content: '',
         parts: [{ type: 'text', text: '' }]
       }));
+      runAgent(playgroundStore);
     },
-    [disabled, composer, addMessage]
+    [disabled, composer, playgroundStore]
   );
 
   // Keyboard shortcut handler
@@ -55,8 +67,9 @@ export default function MessageComposer({ running }: { running: boolean }) {
     if (!ref.current) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       // Check for Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
-      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      if (event.key === 'Enter') {
         event.preventDefault();
+        event.stopPropagation();
         handleAddMessage();
       }
     };
@@ -69,42 +82,55 @@ export default function MessageComposer({ running }: { running: boolean }) {
     };
   }, [handleAddMessage]);
 
-  const addMessageButton = (
-    <Button
-      data-testid="add-message-tabs"
-      onClick={handleAddMessage}
-      size="sm"
-      variant="outline"
-      disabled={disabled}
-    >
-      Add
-    </Button>
+  const addImage = useCallback(
+    (url: string, mimeType: string) => {
+      const toAdd: Attachment = { url, contentType: mimeType };
+      handleMessageChange({
+        ...composer,
+        experimental_attachments: [...(composer.experimental_attachments || []), toAdd]
+      });
+    },
+    [composer, handleMessageChange]
   );
 
+  const handleStopAgent = useCallback(() => {
+    playgroundStore.stopAgent();
+  }, [playgroundStore.stopAgent]);
+
   const submitButton = useMemo(() => {
+    if (running) {
+      return (
+        <Button className='rounded-full' size="icon" onClick={handleStopAgent}>
+            <Square className="fill-current h-4 w-4" />
+        </Button>
+      );
+    }
+    
     return (
-      <Button className='gap-2' size="sm" disabled={disabled} onClick={handleAddMessage}>
-        Submit <Kbd>Cmd+Enter</Kbd>
+      <Button className='rounded-full' size="icon" disabled={disabled} onClick={handleAddMessage}>
+        <ArrowUp className='h-4 w-4' />
       </Button>
     );
-  }, [handleAddMessage, disabled]);
+  }, [handleAddMessage, disabled, running, handleStopAgent]);
 
   return (
     <div className='flex flex-col w-full max-w-4xl mx-auto px-4'>
-      <div ref={ref} className="flex flex-col bg-card gap-1 border rounded-md px-4 py-2">
-        <Message
-          autoFocus
-          message={composer}
-          onChange={handleMessageChange}
-          maxHeight={200}
-        >
-          <div className="flex justify-end">
-            <div className="flex items-center gap-2">
-              {addMessageButton}
-              {submitButton}
-            </div>
+      <div ref={ref} className="flex flex-col bg-card gap-4 border rounded-md p-4">
+              <MessageContent
+                autoFocus
+                maxHeight={200}
+                parts={composer.parts}
+                attachments={composer.experimental_attachments}
+                onChange={(parts, attachments) => handleMessageChange({ ...composer, parts, experimental_attachments: attachments })}
+              />
+        <div className="flex justify-between">
+          <div className="flex items-center gap-2 -ml-2">
+            <ImageDialog className="h-4 w-4" onAddImage={addImage} />
           </div>
-        </Message>
+          <div className="flex items-center gap-2">
+            {submitButton}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { SidebarGroup, SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
+import { SidebarGroup, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { Upload } from "lucide-react";
 import { ImportApiDialog } from "@/components/ImportApiDialog";
 import { useApis } from "@/hooks/useApis";
@@ -51,9 +51,9 @@ export function ApiNav() {
         ) : apis.length === 0 ? (
           <SidebarMenuItem>
             <ImportApiDialog>
-              <div className="text-xs flex items-center px-2 py-1">
-                <Upload className="size-3 mr-2" /> Upload OpenAPI spec
-              </div>
+            <SidebarMenuButton className="text-xs">
+            <Upload className="!size-3" /> Upload OpenAPI spec
+            </SidebarMenuButton>
             </ImportApiDialog>
           </SidebarMenuItem>
         ) : (

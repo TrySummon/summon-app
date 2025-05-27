@@ -19,22 +19,31 @@ const Kbd = forwardRef(
 
     const formatChildren = (child: React.ReactNode): React.ReactNode => {
       if (typeof child === 'string') {
-        const lowerChild = child.toLowerCase();
+        let lowerChild = child.toLowerCase();
         if (lowerChild === 'enter') {
-          return <CornerDownLeft className="!size-3" />;
+          return <CornerDownLeft className="!size-2.5 mt-[1px]" />;
         }
         if (lowerChild === 'cmd+enter' || lowerChild === 'ctrl+enter') {
-          const cmdKey = isMac ? <Command className="!size-3" /> : 'Ctrl';
+          const cmdKey = isMac ? <Command className="!size-2.5 mt-[1px]" /> : 'Ctrl';
           return (
             <>
               {cmdKey}
-              <CornerDownLeft className="!size-3 ml-0.5" />
+              <CornerDownLeft className="!size-2.5 mt-[1px] ml-0.5" />
             </>
           );
         }
-        return isMac
-          ? child.replace(/cmd/i, '⌘')
-          : child.replace(/cmd/i, 'Ctrl');
+        // Handle shift replacement
+        if (lowerChild.includes('shift')) {
+          lowerChild = lowerChild.replace(/shift/i, '⇧');
+        }
+        if (lowerChild.includes('cmd')) {
+          if (isMac) {
+            lowerChild = lowerChild.replace(/cmd/i, '⌘');
+          } else {
+            lowerChild = lowerChild.replace(/cmd/i, 'Ctrl');
+          }
+        }
+        return lowerChild;
       }
       return child;
     };
@@ -47,7 +56,7 @@ const Kbd = forwardRef(
       <Comp
         {...kbdProps}
         className={cn(
-          'inline-flex select-none items-center justify-center whitespace-nowrap rounded-[4px] bg-muted px-1 py-[1px] font-mono text-xs tracking-tight text-muted-foreground shadow',
+          'inline-flex select-none items-center justify-center whitespace-nowrap rounded-[4px] bg-muted px-1 font-mono text-xs tracking-tight text-muted-foreground text-sm',
           className
         )}
         ref={forwardedRef}

@@ -26,7 +26,7 @@ export default function Logo({ className = "" }: LogoProps) {
   return (
     <div className={`flex items-center gap-2 select-none whitespace-nowrap p-2 text-sm font-medium font-mono ${className}`}>
       {svg}
-      Toolman
+      AgentPort
     </div>
   );
 }

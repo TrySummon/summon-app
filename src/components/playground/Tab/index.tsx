@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { usePlaygroundStore } from '../store';
 import Messages from '../Messages';
 import MessageComposer from '../MessageComposer';
+import TabHeader from './Header';
 
 interface PlaygroundTabProps {
   tabId: string;
@@ -9,7 +10,7 @@ interface PlaygroundTabProps {
 
 export default function PlaygroundTab({ tabId }: PlaygroundTabProps) {
   const {
-    tabs
+    tabs,
   } = usePlaygroundStore();
 
   const tab = useMemo(() => tabs[tabId], [tabs, tabId]);
@@ -18,8 +19,10 @@ export default function PlaygroundTab({ tabId }: PlaygroundTabProps) {
     return null;
   }
 
+
   return (
     <div className='flex flex-col flex-1 gap-4 overflow-y-auto'>
+        <TabHeader />
         <Messages />
         <MessageComposer running={tab.state.running} />
     </div>

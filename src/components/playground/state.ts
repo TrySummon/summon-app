@@ -1,4 +1,3 @@
-import { Tool } from "@modelcontextprotocol/sdk/types";
 import { UIMessage } from "ai";
 
 type LLMProvider = "openai" | "anthropic" | "google" | "xai";
@@ -84,7 +83,16 @@ export interface IPlaygroundState {
     settings: LLMSettings;
     systemPrompt?: string;
     messages: UIMessage[];
-    enabledTools: Record<string, string[]>;
+    enabledTools?: Record<string, string[]>;
     running: boolean;
     maxSteps: number;
+    shouldScrollToDock?: boolean;
+    abortController?: AbortController;
+    // Token usage information
+    tokenUsage?: {
+        inputTokens: number;
+        outputTokens: number;
+    };
+    // Latency in milliseconds
+    latency?: number;
 }

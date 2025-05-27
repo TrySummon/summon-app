@@ -26,10 +26,6 @@ import {
   getAllMcpServerStatuses,
 } from "@/helpers/mcp";
 
-// Service name for keytar - used for storing credentials
-const SERVICE_NAME = "toolman-mcp-credentials";
-// Account name for keytar - used as a key for storing MCP credentials
-const ACCOUNT_NAME = "tar";
 
 export function registerMcpListeners() {
   // Create a new MCP configuration

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { MessageContent } from './Content';
 import RoleSelect from './RoleSelect';
 import {
@@ -7,11 +7,12 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { ListPlusIcon, Trash2 } from 'lucide-react';
+import { Trash2, PlayCircle } from 'lucide-react';
 import { useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import ImageDialog from "@/components/ImageDialog";
 import { Attachment, UIMessage } from "ai";
+import CopyButton from "@/components/CopyButton";
 
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
   autoFocus?: boolean;
   onChange?: (message: UIMessage) => void;
   onDelete?: () => void;
+  onRerun?: () => void;
   maxHeight?: number;
   children?: React.ReactNode;
 }
@@ -27,10 +29,12 @@ export default function Message({
   message,
   onChange,
   onDelete,
+  onRerun,
   autoFocus,
   maxHeight,
-  children
+  children,
 }: Props) {
+
   const addText = useCallback(() => {
     const toAdd = { type: 'text' as const, text: '' };
     if (typeof message.content === 'string') {
@@ -63,17 +67,13 @@ export default function Message({
     [message, onChange]
   );
 
-  const [isHovering, setIsHovering] = useState(false);
+  // Determine if buttons should be visible based on autoFocus
+  const showButtons = autoFocus;
 
-  // Determine if buttons should be visible based on autoFocus and hover state
-  const showButtons = autoFocus || isHovering;
+  const messageContent = message.parts.length === 1 && message.parts[0].type === 'text' ? message.parts[0].text : JSON.stringify(message.parts, null, 2);
 
   return (
-    <div 
-      className="flex flex-col gap-1"
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-    >
+    <div className="flex flex-col gap-1 group">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-1">
           <RoleSelect
@@ -87,41 +87,42 @@ export default function Message({
             }}
           />
         </div>
-
-        {onChange ? (
-          <TooltipProvider delayDuration={100}>
-            <div 
-              className={`flex -mr-2 transition-opacity duration-150 ${showButtons ? 'opacity-100' : 'opacity-0'}`}
-            >
+        <TooltipProvider delayDuration={100}>
+          <div 
+            className={`flex -mr-2 ${showButtons ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+          >
+            {children}
+            <CopyButton className='h-3.5 w-3.5' content={messageContent} />
+            {onRerun && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     className="text-muted-foreground"
-                    onClick={addText}
+                    onClick={onRerun}
                     variant="ghost"
                     size="icon"
                   >
-                    <ListPlusIcon size={14} />
+                    <PlayCircle size={14} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Add Text Block</p>
+                <TooltipContent side="top">
+                  <p>Rerun from this message</p>
                 </TooltipContent>
               </Tooltip>
-              <ImageDialog onAddImage={addImage} />
-              {onDelete ? (
-                <Button
-                  className="text-muted-foreground"
-                  onClick={onDelete}
-                  variant="ghost"
-                  size="icon"
-                >
-                  <Trash2 size={14} />
-                </Button>
-              ) : null}
-            </div>
-          </TooltipProvider>
-        ) : null}
+            )}
+            <ImageDialog onAddImage={addImage} />
+            {onDelete ? (
+              <Button
+                className="text-muted-foreground"
+                onClick={onDelete}
+                variant="ghost"
+                size="icon"
+              >
+                <Trash2 size={14} />
+              </Button>
+            ) : null}
+          </div>
+        </TooltipProvider>
       </div>
       <MessageContent
         autoFocus={autoFocus}
@@ -132,7 +133,6 @@ export default function Message({
           onChange ? (parts, attachments) => onChange({ ...message, parts, experimental_attachments: attachments }) : undefined
         }
       />
-      {children}
     </div>
   );
 }

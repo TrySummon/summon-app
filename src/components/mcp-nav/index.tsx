@@ -1,5 +1,5 @@
 import React from "react";
-import { SidebarGroup, SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
+import { SidebarGroup, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Plus } from "lucide-react";
 import { useMcps } from "@/hooks/useMcps";
 import { McpHeader } from "@/components/mcp-nav/McpHeader";
@@ -30,10 +30,10 @@ export function McpNav() {
         ) : mcps.length === 0 ? (
           <SidebarMenuItem>
             <Link to="/build-mcp" search={{ edit: undefined }}>
-              <div className="text-xs flex items-center px-2 py-1">
-                <Plus className="size-3 mr-2" /> Create MCP
-              </div>
-            </Link>
+            <SidebarMenuButton className="text-xs">
+                <Plus className="size-3" /> Create MCP
+                </SidebarMenuButton>
+                </Link>
           </SidebarMenuItem>
         ) : (
           <>

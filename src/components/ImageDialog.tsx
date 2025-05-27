@@ -30,12 +30,14 @@ import { useDropzone } from 'react-dropzone';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { cn } from "@/utils/tailwind";
 
 interface Props {
   onAddImage: (url: string, mimeType: string) => void;
+  className?: string;
 }
 
-export default function ImageDialog({ onAddImage }: Props) {
+export default function ImageDialog({ onAddImage, className }: Props) {
   const [open, setOpen] = useState(false);
   const formSchema = z.object({
     url: z.string().url(),
@@ -125,7 +127,7 @@ export default function ImageDialog({ onAddImage }: Props) {
               variant="ghost"
               size="icon"
             >
-              <ImagePlusIcon size={14} />
+              <ImagePlusIcon className={cn("h-3.5 w-3.5", className)} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -160,7 +162,7 @@ export default function ImageDialog({ onAddImage }: Props) {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-slate-500">
+              <span className="bg-background px-2 text-muted-foreground">
                 Or add image URL
               </span>
             </div>

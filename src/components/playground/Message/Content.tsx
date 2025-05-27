@@ -22,7 +22,7 @@ export function MessageContent({
   autoFocus,
   maxHeight
 }: Props) {
-  const placeholder = autoFocus ? 'Type your message here.' : 'Empty';
+  const placeholder = autoFocus ? 'Type your message here. Shift+Enter for new line.' : 'Empty';
   const addImage = useCallback(
     (url: string) => {
       const toAdd: Attachment = { url };

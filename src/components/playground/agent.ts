@@ -4,36 +4,95 @@ import type { PlaygroundStore } from './store';
 import { v4 as uuidv4 } from 'uuid';
 import { UIMessage } from 'ai';
 
-export async function runAgent(get: () => PlaygroundStore) {
+export async function runAgent(store: PlaygroundStore) {
+    // Track start time for latency calculation
+    const startTime = Date.now();
+    // Track token usage if available from API response
+    const tokenUsageData = {
+        inputTokens: 0,
+        outputTokens: 0
+    };
+    
     try {
-        get().updateCurrentState((state) => ({
+        const {aiToolMap, updateCurrentState, updateMessage, getCurrentState, updateShouldScrollToDock} = store;
+        const {messages, model, settings, maxSteps} = getCurrentState();
+
+        // Create a new AbortController for this run
+        const abortController = new AbortController();
+        updateCurrentState((state) => ({
+            ...state,
+            tokenUsage: undefined,
+            abortController
+        }));
+        const abortSignal = abortController.signal;
+        
+        // Set shouldScrollToDock to true when agent starts running
+        updateShouldScrollToDock(true);
+
+        updateCurrentState((state) => ({
             ...state,
             running: true
         }));
-        const {aiToolMap, getCurrentState} = get();
-        const {messages, model, settings, maxSteps} = getCurrentState();
 
+        // Get the current state to access enabledTools
+        const currentState = getCurrentState();
+        const enabledTools = currentState.enabledTools || {};
+        
+        // Create a filtered toolset based on selected tools
         const toolSet: ToolSet = {}
-        Object.values(aiToolMap).forEach((tools) => {
+        
+        // Iterate through each MCP's tools
+        Object.entries(aiToolMap).forEach(([mcpId, tools]) => {
+            // Get the list of enabled tool IDs for this MCP
+            const enabledToolIds = enabledTools[mcpId] || [];
+            
+            // Only add tools that are enabled
             Object.entries(tools).forEach(([toolName, tool]) => {
-                toolSet[toolName] = tool;
-            })
+                // Check if this tool is enabled for this MCP
+                if (enabledToolIds.includes(toolName)) {
+                    toolSet[toolName] = tool;
+                }
+            });
         });
         
-        const openai = createOpenAI({ apiKey: "PLACEHOLDER" });
+        const openai = createOpenAI({ apiKey: "PLACEHOLDER", compatibility: "strict" });
         
         // We'll create the assistant message only when we receive the first token
-        const assistantMessageId = uuidv4();
+        let assistantMessageId = uuidv4();
         let assistantMessageCreated = false;
 
+        let fullResponse = '';
+
         // Stream the response
+        
         const { textStream } = streamText({
             model: openai(model),
             tools: toolSet,
             messages: messages,
             maxSteps,
+            abortSignal,
             onStepFinish: (step) => {
+                // Capture token usage when the step finishes with 'stop' reason
+                if(step.finishReason === "stop" && step.usage) {
+                    // Update token usage data
+                    tokenUsageData.inputTokens = step.usage.promptTokens || 0;
+                    tokenUsageData.outputTokens = step.usage.completionTokens || 0;
+                    
+                    // Update token usage in state
+                    updateCurrentState((state) => ({
+                        ...state,
+                        tokenUsage: {
+                            inputTokens: tokenUsageData.inputTokens,
+                            outputTokens: tokenUsageData.outputTokens
+                        }
+                    }), true, "Add assistant response");
+                }
+                
                 if(step.finishReason === "tool-calls") {
+                    assistantMessageId = uuidv4();
+                    assistantMessageCreated = false;
+                    fullResponse = '';
+                    
                     const toolMessages: UIMessage[] = [];
                     step.toolCalls.forEach((toolCall, i) => {
                         const toolMessage: UIMessage = {
@@ -51,35 +110,42 @@ export async function runAgent(get: () => PlaygroundStore) {
                         };
                         toolMessages.push(toolMessage);
                     });
-                    get().updateCurrentState((state) => ({
+                    updateCurrentState((state) => ({
                         ...state,
                         messages: [
                             ...state.messages,
                             ...toolMessages
                         ]
-                    }));
+                    }), true, "Add tool messages");
                 }
             },
             ...settings,
         });
-        
-        let fullResponse = '';
-        
+                
         // Process each chunk of the stream
         for await (const textPart of textStream) {
             fullResponse += textPart;
+            
+            // Calculate latency (ongoing)
+            const currentLatency = Date.now() - startTime;
+            
+            // Update latency in state
+            updateCurrentState((state) => ({
+                ...state,
+                latency: currentLatency
+            }), false);
             
             // Create the assistant message on first token if it doesn't exist yet
             if (!assistantMessageCreated) {
                 const initialAssistantMessage: UIMessage = {
                     id: assistantMessageId,
                     role: 'assistant',
-                    content: fullResponse,
+                    content: '',
                     parts: [{ type: 'text', text: fullResponse }],
                     createdAt: new Date()
                 };
                 
-                get().updateCurrentState((state) => ({
+                updateCurrentState((state) => ({
                     ...state,
                     messages: [
                         ...state.messages, 
@@ -90,18 +156,18 @@ export async function runAgent(get: () => PlaygroundStore) {
                 assistantMessageCreated = true;
             } else {
                 // Update the assistant message with the accumulated text
-                const messageIndex = get().getCurrentState().messages.findIndex(msg => msg.id === assistantMessageId);
+                const messageIndex = getCurrentState().messages.findIndex(msg => msg.id === assistantMessageId);
                 
                 if (messageIndex !== -1) {
                     const updatedAssistantMessage: UIMessage = {
                         id: assistantMessageId,
                         role: 'assistant',
-                        content: fullResponse,
+                        content: '',
                         parts: [{ type: 'text', text: fullResponse }],
                         createdAt: new Date()
                     };
                     
-                    get().updateExistingMessage(messageIndex, updatedAssistantMessage);
+                    updateMessage(messageIndex, updatedAssistantMessage);
                 }
             }
         }
@@ -112,15 +178,15 @@ export async function runAgent(get: () => PlaygroundStore) {
         const errorMessage: UIMessage = {
         id: uuidv4(),
         role: 'assistant',
-        content: 'Sorry, there was an error generating a response. Please try again.',
+        content: '',
         parts: [{ 
             type: 'text', 
-            text: 'Sorry, there was an error generating a response. Please try again.' 
+            text: `Sorry, there was an error generating a response: ${error}` 
         }],
         createdAt: new Date()
         };
         
-        get().updateCurrentState((state) => ({
+        store.updateCurrentState((state) => ({
         ...state,
         messages: [
             ...state.messages,
@@ -128,10 +194,21 @@ export async function runAgent(get: () => PlaygroundStore) {
         ]
         }));
     } finally {
-        get().updateCurrentState((state) => ({
-            ...state,
-            running: false
-        }));
+        // Calculate final latency
+        const endTime = Date.now();
+        const finalLatency = endTime - startTime;
+        
+        // Update the state with the final latency and any token usage information
+        store.updateCurrentState((state) => {
+            // Reset the running state and abort controller
+            return {
+                ...state,
+                running: false,
+                abortController: undefined,
+                latency: finalLatency,
+                tokenUsage: tokenUsageData
+            };
+        }, false);
     }
           
 }

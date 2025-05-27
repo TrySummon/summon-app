@@ -348,7 +348,7 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
     const npmStart = spawn('npm', ['start'], {
       cwd: implPath,
       env,
-      stdio: 'inherit'
+      stdio: ['inherit', 'pipe', 'pipe'] // Pipe stdout and stderr so we can check for server start message
     });
     
     // Update server state with process information
@@ -373,19 +373,61 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
       serverState.stoppedAt = new Date();
     });
     
-    // Wait a moment to ensure the server has time to start
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Forward stdout and stderr to console while checking for server start message
+    let serverStarted = false;
     
-    // If no errors occurred during startup, mark as running
+    if (npmStart.stdout) {
+      npmStart.stdout.on('data', (data) => {
+        const output = data.toString();
+        process.stdout.write(output);
+        
+        if (output.includes('Server running at')) {
+          serverStarted = true;
+        }
+      });
+    }
+    
+    if (npmStart.stderr) {
+      npmStart.stderr.on('data', (data) => {
+        const output = data.toString();
+        process.stderr.write(output);
+        
+        if (output.includes('Server running at')) {
+          serverStarted = true;
+        }
+      });
+    }
+    
+    // Wait for the server to start with a timeout of 10 seconds
+    const startTime = Date.now();
+    const maxWaitTime = 10000; // 10 seconds
+    
+    while (!serverStarted && Date.now() - startTime < maxWaitTime) {
+      // Check every 100ms
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // If there was an error during startup, break out of the loop
+      if (serverState.status === 'error') {
+        break;
+      }
+    }
+    
+    // If no errors occurred during startup and we detected the server is running, mark as running
     if (serverState.status === 'starting') {
-      serverState.status = 'running';
+      if (serverStarted) {
+        serverState.status = 'running';
+      } else {
+        console.warn(`MCP server ${mcpId} did not output 'Server running at' within ${maxWaitTime/1000} seconds`);
+        // Still mark as running but log a warning
+        serverState.status = 'running';
+      }
     }
 
     const transport = { type: 'http' as const, url: `http://localhost:${port}/mcp` };
     serverState.transport = transport;
 
     const client = new Client({
-      name: "toolman",
+      name: "AgentPort",
       version: "1.0.0"
     });
     serverState.client = client;
@@ -411,7 +453,7 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
  * @param mcpId The ID of the MCP to stop
  * @returns A promise that resolves with the server state when the server is stopped
  */
-export async function stopMcpServer(mcpId: string): Promise<McpServerState | null> {
+export async function stopMcpServer(mcpId: string, remove?: boolean): Promise<McpServerState | null> {
   // Check if the server is running
   if (!runningMcpServers[mcpId]) {
     console.info(`MCP server ${mcpId} is not running`);
@@ -469,6 +511,10 @@ export async function stopMcpServer(mcpId: string): Promise<McpServerState | nul
   serverState.stoppedAt = new Date();
   
   console.info(`MCP server ${mcpId} stopped`);
+  
+  if (remove) {
+    delete runningMcpServers[mcpId];
+  }
   return serverState;
 }
 

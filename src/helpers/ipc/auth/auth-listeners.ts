@@ -7,9 +7,6 @@ import {
   AUTH_TEST_CREDENTIALS_CHANNEL,
 } from "./auth-channels";
 
-// Service name for keytar
-const SERVICE_NAME = "toolman-api-credentials";
-
 // Helper function to make HTTP requests from the main process
 async function makeRequest(url: string, headers: Record<string, string> = {}): Promise<{ status: number, success: boolean, message?: string }> {
   return new Promise((resolve) => {
