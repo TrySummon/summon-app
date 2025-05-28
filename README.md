@@ -1,156 +1,205 @@
-# electron-shadcn
+# AgentPort
 
-Electron in all its glory. Everything you will need to develop your beautiful desktop application.
+**The Postman for AI Agents & MCP Servers**
 
-![Demo GIF](https://github.com/LuanRoger/electron-shadcn/blob/main/images/demo.gif)
+AgentPort is an open-source, local-first desktop application that bridges the gap between your existing APIs and the AI ecosystem. Transform any OpenAPI specification into production-ready MCP (Model Context Protocol) servers and AI agents that work seamlessly with ChatGPT, GitHub Copilot, Google Gemini, and other AI clients.
 
-## Libs and tools
+![AgentPort Demo](https://img.shields.io/badge/Status-Open%20Source-brightgreen)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
-To develop a Electron app, you probably will need some UI, test, formatter, style or other kind of library or framework, so let me install and configure some of them to you.
+## 🚀 Why AgentPort?
 
-### Core 🏍️
+The AI landscape is rapidly shifting toward interconnected agents, but connecting your existing APIs to this ecosystem is complex. AgentPort solves this by:
 
-- [Electron 35](https://www.electronjs.org)
-- [Vite 6](https://vitejs.dev)
-- [SWC](https://swc.rs)
+- **🔄 Automated Generation**: Transform OpenAPI specs into standards-compliant MCP servers in seconds
+- **🛠️ Developer-First**: Local-first desktop app with secure credential management and intuitive debugging
+- **🧪 Testing Made Easy**: Mock servers, playground environment, and real-time debugging tools
+- **🔒 Security Built-In**: OS-level credential storage with support for API keys, OAuth 2.0, and more
+- **🌐 Universal Compatibility**: Works with any MCP-compatible AI client
 
-### DX 🛠️
+## ✨ Key Features
 
-- [TypeScript 5.8](https://www.typescriptlang.org)
-- [Prettier](https://prettier.io)
-- [ESLint 9](https://eslint.org)
-- [Zod](https://zod.dev)
-- [React Query (TanStack)](https://react-query.tanstack.com)
+### 🎯 **MCP Generation & Management**
+- **One-Click Generation**: Upload OpenAPI v3.x specs (YAML/JSON) and generate complete MCP servers
+- **Tool Definition Editor**: Visual editor for modifying and optimizing tool definitions
+- **Multi-API Support**: Combine multiple APIs into unified MCP servers
+- **Standards Compliant**: Generated servers work across the entire AI ecosystem
 
-### UI 🎨
+### 🔌 **Flexible Connectivity**
+- **Local MCPs**: Connect to stdio-based MCP servers for development
+- **Remote MCPs**: HTTP/HTTPS support with full OAuth 2.0 flows
+- **Mock Servers**: Instant local mocking based on OpenAPI examples
+- **Real-time Debugging**: Observe raw input/output between AgentPort and MCPs
 
-- [React 19](https://reactjs.org)
-- [Tailwind 4](https://tailwindcss.com)
-- [Shadcn UI](https://ui.shadcn.com)
-- [Geist](https://vercel.com/font) as default font
-- [i18next](https://www.i18next.com)
-- [TanStack Router](https://tanstack.com/router)
-- [Lucide](https://lucide.dev)
+### 🎮 **Interactive Playground**
+- **Multi-Provider Support**: Test with OpenAI, Anthropic, Google, Mistral, and more
+- **Tool Selection**: Pick and choose which tools to enable for each session
+- **Message History**: Full conversation history with undo/redo capabilities
+- **Performance Metrics**: Track token usage, latency, and success rates
 
-### Test 🧪
+### 🔐 **Enterprise-Grade Security**
+- **OS Keychain Integration**: Secure credential storage using your system's native keychain
+- **Multiple Auth Methods**: API keys, Basic Auth, OAuth 2.0 Bearer tokens
+- **Credential Management**: Visual interface for managing API credentials across projects
+- **Local-First**: All data stays on your machine by default
 
-- [Vitest](https://vitest.dev)
-- [Playwright](https://playwright.dev)
-- [React Testing Library](https://testing-library.com/docs/react-testing-library/intro)
+## 🏗️ Architecture
 
-### Packing and distribution 📦
+AgentPort is built with modern technologies for performance and reliability:
 
-- [Electron Forge](https://www.electronforge.io)
+- **Frontend**: React 19 + TypeScript + Tailwind CSS
+- **Backend**: Electron with Node.js
+- **UI Components**: Radix UI + shadcn/ui
+- **Code Editor**: CodeMirror 6 with syntax highlighting
+- **MCP SDK**: Official Model Context Protocol SDK
+- **AI Integration**: Vercel AI SDK with multi-provider support
 
-### CI/CD 🚀
+## 🚀 Quick Start
 
-- Pre-configured [GitHub Actions workflow](https://github.com/LuanRoger/electron-shadcn/blob/main/.github/workflows/playwright.yml), for test with Playwright
+### Installation
 
-### Project preferences 🎯
+Download the latest release for your platform:
 
-- Use Context isolation
-- [React Compiler](https://react.dev/learn/react-compiler) is enabled by default.
-- `titleBarStyle`: hidden (Using custom title bar)
-- Geist as default font
-- Some default styles was applied, check the [`styles`](https://github.com/LuanRoger/electron-shadcn/tree/main/src/styles) directory
-- React DevTools are installed by default
+- **Windows**: `AgentPort-Setup-1.0.0.exe`
+- **macOS**: `AgentPort-1.0.0.dmg`
+- **Linux**: `AgentPort-1.0.0.AppImage`
 
-> If you don't know some of these libraries or tools, I recommend you to check their documentation to understand how they work and how to use them.
+### First Steps
 
-> [!WARNING]
-> Prefer to use the [`canary` release of `shadcn/ui`](https://ui.shadcn.com/docs/tailwind-v4) to avoid compatibility issues with React 19 and Tailwind v4.
+1. **Import an API**: Upload your OpenAPI specification or start with our examples
+2. **Generate MCP Server**: One-click generation of production-ready MCP servers
+3. **Configure Credentials**: Securely store API keys and authentication details
+4. **Test in Playground**: Use the built-in playground to test your tools with various AI providers
+5. **Deploy**: Export your MCP server for production deployment
 
-```bash
-npx shadcn@canary add button
-```
-
-## Directory structure
-
-```plaintext
-.
-└── ./src/
-    ├── ./src/assets/
-    │   └── ./src/assets/fonts/
-    ├── ./src/components/
-    │   ├── ./src/components/template
-    │   └── ./src/components/ui/
-    ├── ./src/helpers/
-    │   └── ./src/helpers/ipc/
-    ├── ./src/layout/
-    ├── ./src/lib/
-    ├── ./src/pages/
-    ├── ./src/style/
-    └── ./src/tests/
-```
-
-- `src/`: Main directory
-  - `assets/`: Store assets like images, fonts, etc.
-  - `components/`: Store UI components
-    - `template/`: Store the all not important components used by the template. It doesn't include the `WindowRegion` or the theme toggler, if you want to start an empty project, you can safely delete this directory.
-    - `ui/`: Store Shadcn UI components (this is the default direcotry used by Shadcn UI)
-  - `helpers/`: Store IPC related functions to be called in the renderer process
-    - `ipc/`: Directory to store IPC context and listener functions
-      - Some implementations are already done, like `theme` and `window` for the custom title bar
-  - `layout/`: Directory to store layout components
-  - `lib/`: Store libraries and other utilities
-  - `pages/`: Store app's pages
-  - `style/`: Store global styles
-  - `tests/`: Store tests (from Vitest and Playwright)
-
-## NPM script
-
-To run any of those scripts:
+### Example Workflow
 
 ```bash
-npm run <script>
+# 1. Import your OpenAPI spec
+File → Import API → Select your openapi.yaml
+
+# 2. Generate MCP server
+APIs → [Your API] → Generate MCP Server
+
+# 3. Configure authentication
+MCPs → [Your MCP] → Configure → Add API Key
+
+# 4. Test in playground
+Playground → Select Tools → Start Conversation
 ```
 
-- `start`: Start the app in development mode
-- `package`: Package your application into a platform-specific executable bundle and put the result in a folder.
-- `make`: Generate platform-specific distributables (e.g. .exe, .dmg, etc) of your application for distribution.
-- `publish`: Electron Forge's way of taking the artifacts generated by the `make` command and sending them to a service somewhere for you to distribute or use as updates.
-- `lint`: Run ESLint to lint the code
-- `format`: Run Prettier to check the code (it doesn't change the code)
-- `format:write`: Run Prettier to format the code
-- `test`: Run the default unit-test script (Vitest)
-- `test:watch`: Run the default unit-test script in watch mode (Vitest)
-- `test:unit`: Run the Vitest tests
-- `test:e2e`: Run the Playwright tests
-- `test:all`: Run all tests (Vitest and Playwright)
+## 🛠️ Development
 
-> The test scripts involving Playwright require the app be builded before running the tests. So, before run the tests, run the `package`, `make` or `publish` script.
+### Prerequisites
 
-## How to use
+- Node.js 18+ 
+- npm or yarn
 
-1. Clone this repository
+### Setup
 
 ```bash
-git clone https://github.com/LuanRoger/electron-shadcn.git
-```
+# Clone the repository
+git clone https://github.com/agentport/agentport.git
+cd agentport
 
-Or use it as a template on GitHub
-
-2. Install dependencies
-
-```bash
+# Install dependencies
 npm install
-```
 
-3. Run the app
-
-```bash
+# Start development server
 npm run start
+
+# Run tests
+npm run test
+
+# Build for production
+npm run make
 ```
 
-## Used by
+### Project Structure
 
-- [yaste](https://github.com/LuanRoger/yaste) - yaste (Yet another super ₛᵢₘₚₗₑ text editor) is a text editor, that can be used as an alternative to the native text editor of your SO, maybe.
-- [eletric-drizzle](https://github.com/LuanRoger/electric-drizzle) - shadcn-ui and Drizzle ORM with Electron.
-- [Wordle Game](https://github.com/masonyekta/wordle-game) - A Wordle game which features interactive gameplay, cross-platform compatibility, and integration with a custom Wordle API for word validation and letter correctness.
-- [Mehr 🌟](https://github.com/xmannii/MehrLocalChat) - A modern, elegant local AI chatbot application using Electron, React, shadcn/ui, and Ollama.
+```
+src/
+├── components/          # React components
+│   ├── api-explorer/   # OpenAPI spec visualization
+│   ├── mcp-builder/    # MCP server generation
+│   ├── playground/     # AI testing environment
+│   └── ui/             # Reusable UI components
+├── helpers/            # Core business logic
+│   ├── mcp/           # MCP server generation
+│   ├── db/            # Local data management
+│   └── ipc/           # Electron IPC handlers
+├── pages/             # Application pages
+└── types/             # TypeScript definitions
+```
 
-> Does you've used this template in your project? Add it here and open a PR.
+## 🌟 Use Cases
 
-## License
+### **API Providers**
+Make your APIs instantly accessible to AI agents and applications:
+- Generate MCP servers for your REST APIs
+- Enable AI-powered integrations for your customers
+- Provide AI-native interfaces alongside traditional SDKs
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/LuanRoger/electron-shadcn/blob/main/LICENSE) file for details.
+### **Developers & Teams**
+Streamline AI agent development and testing:
+- Rapid prototyping of AI-powered applications
+- Testing and debugging MCP integrations
+- Local development with mock servers
+
+### **Enterprises**
+Secure, compliant AI integrations:
+- Local-first approach for sensitive data
+- Comprehensive audit trails and logging
+- Integration with existing authentication systems
+
+## 🗺️ Roadmap
+
+### Open Source (Available Now)
+- ✅ OpenAPI to MCP generation
+- ✅ Local mock servers
+- ✅ Multi-provider AI playground
+- ✅ Secure credential management
+- ✅ Real-time debugging tools
+
+### Enterprise Features (Coming Soon)
+- 🔄 Continuous optimization with AI
+- 📊 Advanced observability and analytics
+- 👥 Team collaboration and sharing
+- 🔄 GitHub integration and CI/CD
+- ☁️ Cloud hosting and deployment
+- 📈 Performance monitoring and alerts
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **Documentation**: [docs.agentport.dev](https://docs.agentport.dev)
+- **Community**: [GitHub Discussions](https://github.com/agentport/agentport/discussions)
+- **Issues**: [GitHub Issues](https://github.com/agentport/agentport/issues)
+- **Enterprise**: [Contact Sales](mailto:enterprise@agentport.dev)
+
+## 🙏 Acknowledgments
+
+- [Anthropic](https://anthropic.com) for the Model Context Protocol specification
+- [Vercel](https://vercel.com) for the AI SDK
+- [Electron](https://electronjs.org) for the desktop framework
+- The open-source community for countless contributions
+
+---
+
+**Ready to connect your APIs to the AI ecosystem?** [Download AgentPort](https://github.com/agentport/agentport/releases) and start building AI-powered integrations in minutes.
