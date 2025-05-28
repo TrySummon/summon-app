@@ -5,6 +5,11 @@
   "description": "Electron Forge with shadcn-ui (Vite + Typescript)",
   "main": ".vite/build/main.js",
   "private": true,
+  "homepage": "https://yourwebsite.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/yourrepo.git"
+  },
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
@@ -120,6 +125,7 @@
     "clsx": "^2.1.1",
     "codemirror": "^6.0.1",
     "electron-squirrel-startup": "^1.0.1",
+    "electron-updater": "^6.6.2",
     "express": "^5.1.0",
     "i18next": "^25.0.1",
     "keytar": "^7.9.0",

@@ -10,6 +10,7 @@ import {
 import { getApiDataDir } from "./helpers/db/api-db";
 import { getMcpDataDir, getMcpImplDir, mcpDb } from "./helpers/db/mcp-db";
 import { startMcpServer } from "./helpers/mcp";
+import { autoUpdaterService } from "./helpers/auto-updater";
 
 // These are defined by Vite during build
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
@@ -34,6 +35,9 @@ function createWindow() {
   });
   registerListeners(mainWindow);
 
+  // Set up auto-updater with main window reference
+  autoUpdaterService.setMainWindow(mainWindow);
+
   // Handle links with target='_blank' or with rel='external' attribute
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     // Open all external links in the default browser
@@ -48,6 +52,8 @@ function createWindow() {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
+
+  return mainWindow;
 }
 
 async function installExtensions() {
@@ -59,7 +65,10 @@ async function installExtensions() {
   }
 }
 
-app.whenReady().then(createWindow).then(installExtensions).then(startAllMcpServers);
+app.whenReady().then(createWindow).then(installExtensions).then(startAllMcpServers).then(() => {
+  // Start periodic update checks (every 4 hours)
+  autoUpdaterService.startPeriodicUpdateCheck(240);
+});
 
 app.whenReady().then(() => {
   const apiDataDir = getApiDataDir();
@@ -90,6 +99,15 @@ app.whenReady().then(() => {
       label: 'Open MCP Implementation Folder',
       click: () => {
         shell.openPath(mcpImplDir);
+      }
+    }));
+    
+    // Add manual update check option
+    helpMenu.submenu.append(new MenuItem({ type: 'separator' }));
+    helpMenu.submenu.append(new MenuItem({
+      label: 'Check for Updates',
+      click: () => {
+        autoUpdaterService.checkForUpdates();
       }
     }));
     

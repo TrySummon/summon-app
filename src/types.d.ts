@@ -12,15 +12,22 @@ interface ThemeModeContext {
   system: () => Promise<boolean>;
   current: () => Promise<"dark" | "light" | "system">;
 }
+
 interface ElectronWindow {
   minimize: () => Promise<void>;
   maximize: () => Promise<void>;
   close: () => Promise<void>;
 }
 
-import type { API, McpToolDefinition } from '@/helpers/mcp/types';
+interface UpdaterContext {
+  checkForUpdates: () => Promise<void>;
+  installUpdate: () => Promise<void>;
+  onUpdateStatus: (callback: (status: string) => void) => void;
+  removeUpdateStatusListener: () => void;
+}
 
 declare interface Window {
-  themeMode: ThemeModeContext;
   electronWindow: ElectronWindow;
+  themeMode: ThemeModeContext;
+  updater: UpdaterContext;
 }

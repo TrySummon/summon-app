@@ -4,6 +4,7 @@ import { exposeOpenApiContext } from "./openapi/openapi-context";
 import { exposeAuthContext } from "./auth/auth-context";
 import { exposeMcpContext } from "./mcp/mcp-context-exposer";
 import { exposeAIProvidersContext } from "./ai-providers/ai-providers-context";
+import { exposeUpdateContext } from "./update/update-context";
 
 export default function exposeContexts() {
   exposeWindowContext();
@@ -12,4 +13,5 @@ export default function exposeContexts() {
   exposeAuthContext();
   exposeMcpContext();
   exposeAIProvidersContext();
+  exposeUpdateContext();
 }
