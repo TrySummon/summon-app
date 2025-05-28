@@ -1,4 +1,4 @@
-import { streamText, ToolSet } from 'ai';
+import { CoreSystemMessage, streamText, ToolSet } from 'ai';
 import { createLLMProvider } from "@/helpers/llm";
 import type { PlaygroundStore } from './store';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,7 +15,7 @@ export async function runAgent(store: PlaygroundStore) {
     
     try {
         const {aiToolMap, updateCurrentState, updateMessage, getCurrentState, updateShouldScrollToDock} = store;
-        const {messages, model, settings, maxSteps} = getCurrentState();
+        const {messages, systemPrompt, model, settings, maxSteps} = getCurrentState();
 
         // Create a new AbortController for this run
         const abortController = new AbortController();
@@ -31,7 +31,9 @@ export async function runAgent(store: PlaygroundStore) {
 
         updateCurrentState((state) => ({
             ...state,
-            running: true
+            running: true,
+            latency: undefined,
+            tokenUsage: undefined
         }));
 
         // Get the current state to access enabledTools
@@ -55,9 +57,14 @@ export async function runAgent(store: PlaygroundStore) {
             });
         });
 
-        if(!currentState.model) {
+        if(!model) {
             throw new Error("Model not set");
         }
+
+        const systemPromptMessage: CoreSystemMessage | undefined = systemPrompt?.trim().replace(/^\n+|\n+$/g, '') ? {
+            role: 'system',
+            content: systemPrompt
+        } : undefined;
 
         const credentials = await window.aiProviders.getCredentials()
         const credential = credentials.find(c => c.id === currentState.credentialId)
@@ -76,9 +83,9 @@ export async function runAgent(store: PlaygroundStore) {
         // Stream the response
         
         const { textStream } = streamText({
-            model: llmProvider(currentState.model),
+            model: llmProvider(model),
             tools: toolSet,
-            messages: messages,
+            messages: systemPromptMessage ? [systemPromptMessage, ...messages] : messages,
             maxSteps,
             abortSignal,
             onStepFinish: (step) => {
@@ -128,6 +135,9 @@ export async function runAgent(store: PlaygroundStore) {
                         ]
                     }), true, "Add tool messages");
                 }
+            },
+            onError: (error) => {
+                handleAgentError(error, store);
             },
             ...settings,
         });
@@ -182,27 +192,7 @@ export async function runAgent(store: PlaygroundStore) {
             }
         }
     } catch (error) {
-        console.error('Error generating response:', error);
-        
-        // Add an error message to the chat
-        const errorMessage: UIMessage = {
-        id: uuidv4(),
-        role: 'assistant',
-        content: '',
-        parts: [{ 
-            type: 'text', 
-            text: `Sorry, there was an error generating a response: ${error}` 
-        }],
-        createdAt: new Date()
-        };
-        
-        store.updateCurrentState((state) => ({
-        ...state,
-        messages: [
-            ...state.messages,
-            errorMessage
-        ]
-        }));
+        handleAgentError(error, store);
     } finally {
         // Calculate final latency
         const endTime = Date.now();
@@ -221,4 +211,34 @@ export async function runAgent(store: PlaygroundStore) {
         }, false);
     }
           
+}
+
+/**
+ * Handles errors that occur during agent execution
+ * @param error The error that occurred
+ * @param store The playground store instance
+ */
+function handleAgentError(error: unknown, store: PlaygroundStore) {
+    console.error('Error generating response:', error);
+    
+    // Add an error message to the chat
+    const errorMessage: UIMessage = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: '',
+        parts: [{ 
+            type: 'text', 
+            text: `Sorry, there was an error generating a response:\n \`\`\`json\n${JSON.stringify(error, null, 2)}\n\`\`\`` 
+        }],
+        createdAt: new Date()
+    };
+    
+    store.updateCurrentState((state) => ({
+        ...state,
+        running: false,
+        messages: [
+            ...state.messages,
+            errorMessage
+        ]
+    }));
 }

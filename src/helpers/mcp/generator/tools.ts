@@ -1,6 +1,6 @@
 import { McpApiGroup } from "@/helpers/db/mcp-db";
 import { McpToolDefinition } from "../types";
-import { extractToolsFromApi } from "../parser/extract-tools";
+import { convertEndpointsToTools } from "../parser/extract-tools";
 import { apiKeyEnvVarName, baseUrlEnvVarName, bearerTokenEnvVarName, kebabCase } from "./utils";
 import { getApiById } from "@/helpers/db/api-db";
 import SwaggerParser from '@apidevtools/swagger-parser';
@@ -30,7 +30,7 @@ export async function generateMcpTools(apiGroups: Record<string, McpApiGroup>) {
             });
 
               // Use extractToolsFromApi to process the endpoints directly
-              const extractedTools = extractToolsFromApi(dereferencedEndpoints);
+              const extractedTools = convertEndpointsToTools(dereferencedEndpoints);
               
               // Add tools to the map
               extractedTools.forEach(tool => {

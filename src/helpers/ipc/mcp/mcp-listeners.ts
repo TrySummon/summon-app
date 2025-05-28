@@ -290,6 +290,7 @@ export function registerMcpListeners() {
       // Create a serializable version of the server state
       const serializableState = {
         ...serverState,
+        client: undefined,
         serverProcess: undefined, // Remove the non-serializable process
         // Convert any other non-serializable properties if needed
         mockProcesses: Object.keys(serverState.mockProcesses || {}).reduce((acc, key) => {

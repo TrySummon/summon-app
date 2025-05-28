@@ -6,6 +6,7 @@ import { cn } from '@/utils/tailwind';
 import { MessageCircle, ChevronDown, Clock, Hash, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import SystemPrompt from '../SystemPrompt';
 
 export default function Messages() {
   // Subscribe to the messages state directly from the store
@@ -14,9 +15,11 @@ export default function Messages() {
   const shouldScrollToDock = usePlaygroundStore(state => state.getCurrentState().shouldScrollToDock);
   const tokenUsage = usePlaygroundStore(state => state.getCurrentState().tokenUsage);
   const latency = usePlaygroundStore(state => state.getCurrentState().latency);
+  const systemPrompt = usePlaygroundStore(state => state.getCurrentState().systemPrompt || '');
   const updateMessage = usePlaygroundStore(state => state.updateMessage);
   const deleteMessage = usePlaygroundStore(state => state.deleteMessage);
   const rerunFromMessage = usePlaygroundStore(state => state.rerunFromMessage);
+  const updateSystemPrompt = usePlaygroundStore(state => state.updateSystemPrompt);
   const updateShouldScrollToDock = usePlaygroundStore(state => state.updateShouldScrollToDock);
   
   // Ref for the messages container
@@ -107,6 +110,16 @@ export default function Messages() {
         className="flex flex-col overflow-y-auto flex-1"
         onScroll={checkIfScrollDocked}>
         <div className='flex flex-col flex-grow max-w-4xl mx-auto px-4 w-full gap-2'>
+          {/* System Prompt */}
+          <div className="px-2 pb-4">
+            <SystemPrompt
+              value={systemPrompt}
+              onChange={updateSystemPrompt}
+              readOnly={isRunning}
+              className="hover:bg-background/20"
+            />
+          </div>
+          
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full">
               <div className="bg-accent p-2 rounded-md mb-4">

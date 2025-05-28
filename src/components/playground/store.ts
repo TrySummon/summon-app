@@ -276,7 +276,10 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
           ...state.tabs,
           [state.currentTabId]: {
             ...tab,
-            state: previousHistoryEntry.state,
+            state: {
+              ...previousHistoryEntry.state,
+              running: false // Always ensure running is false when restoring state
+            },
             historyIndex: newHistoryIndex
           }
         }
@@ -302,7 +305,10 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
           ...state.tabs,
           [state.currentTabId]: {
             ...tab,
-            state: nextHistoryEntry.state,
+            state: {
+              ...nextHistoryEntry.state,
+              running: false // Always ensure running is false when restoring state
+            },
             historyIndex: newHistoryIndex
           }
         }

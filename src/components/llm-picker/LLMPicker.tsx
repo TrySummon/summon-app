@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { AI_PROVIDERS_CONFIG, PersistedAIProviderCredential } from "@/components/ai-providers/types";
+import { AI_PROVIDERS_CONFIG, AIProviderType, PersistedAIProviderCredential } from "@/components/ai-providers/types";
 import { useAIProviders } from "@/hooks/useAIProviders";
 
 import { MaxLengthSelector } from "./MaxLength";
@@ -155,10 +155,35 @@ export default function LLMPicker({
                             id={`model-${m}`}
                             key={m}
                             onClick={() => {
+                              // Get the provider configuration
+                              const providerConfig = AI_PROVIDERS_CONFIG[providerName as AIProviderType];
+                              
+                              // Get temperature range for the selected model
+                              let temperatureRange: [number, number] = [0, 1];
+                              if (providerConfig) {
+                                if (m in providerConfig.models) {
+                                  temperatureRange = providerConfig.models[m].temperatureRange;
+                                } else {
+                                  temperatureRange = providerConfig.defaultTemperatureRange;
+                                }
+                              }
+                              
+                              // Adjust temperature to fit within the valid range if needed
+                              let adjustedTemperature = config.settings.temperature ?? 0;
+                              if (adjustedTemperature < temperatureRange[0]) {
+                                adjustedTemperature = temperatureRange[0];
+                              } else if (adjustedTemperature > temperatureRange[1]) {
+                                adjustedTemperature = temperatureRange[1];
+                              }
+                              
                               onChange({
                                 ...config,
                                 credentialId: providerDetails.credentialId,
                                 model: m,
+                                settings: {
+                                  ...config.settings,
+                                  temperature: adjustedTemperature
+                                }
                               });
                             }}
                           >
@@ -177,10 +202,35 @@ export default function LLMPicker({
                             id={`model-${m}`}
                             key={m}
                             onClick={() => {
+                              // Get the provider configuration
+                              const providerConfig = AI_PROVIDERS_CONFIG[providerName as AIProviderType];
+                              
+                              // Get temperature range for the selected model
+                              let temperatureRange: [number, number] = [0, 1];
+                              if (providerConfig) {
+                                if (m in providerConfig.models) {
+                                  temperatureRange = providerConfig.models[m].temperatureRange;
+                                } else {
+                                  temperatureRange = providerConfig.defaultTemperatureRange;
+                                }
+                              }
+                              
+                              // Adjust temperature to fit within the valid range if needed
+                              let adjustedTemperature = config.settings.temperature ?? 0;
+                              if (adjustedTemperature < temperatureRange[0]) {
+                                adjustedTemperature = temperatureRange[0];
+                              } else if (adjustedTemperature > temperatureRange[1]) {
+                                adjustedTemperature = temperatureRange[1];
+                              }
+                              
                               onChange({
                                 ...config,
                                 credentialId: providerDetails.credentialId,
                                 model: m,
+                                settings: {
+                                  ...config.settings,
+                                  temperature: adjustedTemperature
+                                }
                               });
                             }}
                           >

@@ -71,7 +71,7 @@ function generateInputSchemaAndDetails(
       }
 
       properties["requestBody"] = bodySchema;
-      if (opRequestBody.required) required.push("requestBody");
+      required.push("requestBody");
     } else if (firstContent) {
       const [contentType] = firstContent;
       requestBodyContentType = contentType;
@@ -83,7 +83,7 @@ function generateInputSchemaAndDetails(
           `Request body (content type: ${contentType})`,
       };
 
-      if (opRequestBody.required) required.push("requestBody");
+      required.push("requestBody");
     }
   }
 
@@ -154,7 +154,7 @@ function mapOpenApiSchemaToJsonSchema(
         mappedProps[key] = propSchema;
       }
     }
-
+    jsonSchema.additionalProperties = false;
     jsonSchema.properties = mappedProps;
   }
 
@@ -183,7 +183,7 @@ interface DereferencedMcpEndpoint extends McpEndpoint {
  * @param options Options for extraction
  * @returns Array of MCP tool definitions
  */
-export function extractToolsFromApi(
+export function convertEndpointsToTools(
   endpoints: DereferencedMcpEndpoint[],
   options?: { ignoreDeprecated?: boolean; ignoreOptional?: boolean }
 ) {
