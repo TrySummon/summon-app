@@ -18,7 +18,7 @@ export default function ImageEditor({
 }: Props) {
   return (
     <div
-      className={`group relative flex h-[168px] w-[300px] overflow-hidden rounded-md border`}
+      className={`group relative flex max-w-[100px] overflow-hidden rounded-md border`}
     >
       {!readOnly && (
         <Button

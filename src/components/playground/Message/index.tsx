@@ -10,8 +10,7 @@ import {
 import { Trash2, PlayCircle } from 'lucide-react';
 import { useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import ImageDialog from "@/components/ImageDialog";
-import { Attachment, UIMessage } from "ai";
+import { UIMessage } from "ai";
 import CopyButton from "@/components/CopyButton";
 
 
@@ -56,17 +55,6 @@ export default function Message({
     }
   }, [message.content, onChange]);
 
-  const addImage = useCallback(
-    (url: string, mimeType: string) => {
-      const toAdd: Attachment = { url, contentType: mimeType };
-      onChange?.({
-        ...message,
-        experimental_attachments: [...(message.experimental_attachments || []), toAdd]
-      });
-    },
-    [message, onChange]
-  );
-
   // Determine if buttons should be visible based on autoFocus
   const showButtons = autoFocus;
 
@@ -110,7 +98,6 @@ export default function Message({
                 </TooltipContent>
               </Tooltip>
             )}
-            <ImageDialog onAddImage={addImage} />
             {onDelete ? (
               <Button
                 className="text-muted-foreground"
@@ -127,11 +114,8 @@ export default function Message({
       <MessageContent
         autoFocus={autoFocus}
         maxHeight={maxHeight}
-        parts={message.parts}
-        attachments={message.experimental_attachments}
-        onChange={
-          onChange ? (parts, attachments) => onChange({ ...message, parts, experimental_attachments: attachments }) : undefined
-        }
+        message={message}
+        onChange={onChange}
       />
     </div>
   );

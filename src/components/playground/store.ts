@@ -46,6 +46,7 @@ export interface PlaygroundStore {
   updateMessage: (messageIndex: number, message: UIMessage) => void;
   deleteMessage: (messageIndex: number) => void;
   rerunFromMessage: (messageIndex: number) => void;
+  clearCurrentTab: () => void;
   
   // Agent control
   stopAgent: () => void;
@@ -427,6 +428,37 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
       
       // We don't need to force scroll docking anymore
       get().updateShouldScrollToDock(false);
+  },
+  
+  clearCurrentTab: () => {
+    const currentTab = get().getCurrentTab();
+    if (!currentTab) return;
+    
+    // Create a fresh state with the same settings but cleared messages
+    const freshState = {
+      ...currentTab.state,
+      id: uuidv4(),
+      messages: [],
+      tokenUsage: undefined,
+      latency: undefined,
+    };
+    
+    set(state => {
+      const updatedTab = {
+        ...state.tabs[state.currentTabId],
+        state: freshState,
+        // Reset history to just have this clean state
+        history: [{ state: freshState, description: 'Cleared messages and history' }],
+        historyIndex: 0
+      };
+      
+      return {
+        tabs: {
+          ...state.tabs,
+          [state.currentTabId]: updatedTab
+        }
+      };
+    });
   },
     }),
     persistOptions

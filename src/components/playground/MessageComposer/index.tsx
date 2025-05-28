@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Message from '../Message';
 import { Button } from '@/components/ui/button';
 import { usePlaygroundStore } from '../store';
 import { Attachment, UIMessage } from 'ai';
@@ -19,14 +18,6 @@ export default function MessageComposer({ running }: { running: boolean }) {
     content: '',
     parts: [{ type: 'text', text: '' }]
   });
-  
-  // Function to handle changes to the message content
-  const handleMessageChange = useCallback((updatedMessage: UIMessage) => {
-    setComposer({
-      ...updatedMessage,
-      parts: updatedMessage.parts,
-    });
-  }, []);
 
   const isComposerEmpty = !composer.parts.find(part => part.type === 'text' && part.text.trim() !== '');
 
@@ -66,7 +57,6 @@ export default function MessageComposer({ running }: { running: boolean }) {
   useEffect(() => {
     if (!ref.current) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Check for Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
       if (event.key === 'Enter') {
         event.preventDefault();
         event.stopPropagation();
@@ -83,24 +73,20 @@ export default function MessageComposer({ running }: { running: boolean }) {
   }, [handleAddMessage]);
 
   const addImage = useCallback(
-    (url: string, mimeType: string) => {
-      const toAdd: Attachment = { url, contentType: mimeType };
-      handleMessageChange({
+    (url: string, contentType: string) => {
+      const toAdd: Attachment = { url, contentType };
+      setComposer({
         ...composer,
         experimental_attachments: [...(composer.experimental_attachments || []), toAdd]
       });
     },
-    [composer, handleMessageChange]
+    [composer, setComposer]
   );
-
-  const handleStopAgent = useCallback(() => {
-    playgroundStore.stopAgent();
-  }, [playgroundStore.stopAgent]);
 
   const submitButton = useMemo(() => {
     if (running) {
       return (
-        <Button className='rounded-full' size="icon" onClick={handleStopAgent}>
+        <Button className='rounded-full' size="icon" onClick={playgroundStore.stopAgent}>
             <Square className="fill-current h-4 w-4" />
         </Button>
       );
@@ -111,18 +97,17 @@ export default function MessageComposer({ running }: { running: boolean }) {
         <ArrowUp className='h-4 w-4' />
       </Button>
     );
-  }, [handleAddMessage, disabled, running, handleStopAgent]);
+  }, [handleAddMessage, disabled, running,  playgroundStore.stopAgent]);
 
   return (
     <div className='flex flex-col w-full max-w-4xl mx-auto px-4'>
       <div ref={ref} className="flex flex-col bg-card gap-4 border rounded-md p-4">
-              <MessageContent
-                autoFocus
-                maxHeight={200}
-                parts={composer.parts}
-                attachments={composer.experimental_attachments}
-                onChange={(parts, attachments) => handleMessageChange({ ...composer, parts, experimental_attachments: attachments })}
-              />
+          <MessageContent
+            autoFocus
+            maxHeight={200}
+            message={composer}
+            onChange={setComposer}
+          />
         <div className="flex justify-between">
           <div className="flex items-center gap-2 -ml-2">
             <ImageDialog className="h-4 w-4" onAddImage={addImage} />

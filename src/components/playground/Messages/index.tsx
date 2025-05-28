@@ -111,7 +111,7 @@ export default function Messages() {
         onScroll={checkIfScrollDocked}>
         <div className='flex flex-col flex-grow max-w-4xl mx-auto px-4 w-full gap-2'>
           {/* System Prompt */}
-          <div className="px-2 pb-4">
+          <div className="px-2">
             <SystemPrompt
               value={systemPrompt}
               onChange={updateSystemPrompt}

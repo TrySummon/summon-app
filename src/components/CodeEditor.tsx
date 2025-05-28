@@ -99,15 +99,8 @@ export default function CodeMirrorEditor({
   useEffect(() => {
     if (!editorContainerRef.current) return;
     
-    // Set up paste event listener if onPaste is provided
-    const handlePaste = (event: ClipboardEvent) => {
-      if (onPaste) {
-        onPaste(event);
-      }
-    };
-    
     if (onPaste && editorContainerRef.current) {
-      editorContainerRef.current.addEventListener('paste', handlePaste as EventListener);
+      editorContainerRef.current.addEventListener('paste', onPaste);
     }
 
     const editorTheme = EditorView.theme({
@@ -139,7 +132,7 @@ export default function CodeMirrorEditor({
         },
     });
 
-    const themeExtension =isDarkTheme ? vscodeDark : vscodeLight;
+    const themeExtension = isDarkTheme ? vscodeDark : vscodeLight;
 
     const customExtensions = [
       ...(additionalExtensions || []),
@@ -185,12 +178,12 @@ export default function CodeMirrorEditor({
     return () => {
       // Clean up paste event listener
       if (onPaste && editorContainerRef.current) {
-        editorContainerRef.current.removeEventListener('paste', handlePaste as EventListener);
+        editorContainerRef.current.removeEventListener('paste', onPaste);
       }
       view.destroy();
       actualEditorRef.current = null;
     };
-  }, [defaultValue, language]);
+  }, [defaultValue, language, onPaste]);
 
   return (
     <div

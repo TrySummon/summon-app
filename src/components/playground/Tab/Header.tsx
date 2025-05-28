@@ -51,12 +51,8 @@ export default function TabHeader() {
     }, [canUndoState, canRedoState]);
 
     const clearMessages = () => {
-        updateCurrentState((state) => ({
-          ...state,
-          messages: [],
-          tokenUsage: undefined,
-          latency: undefined,
-        }), true, "Cleared all messages");
+        // Use the new clearCurrentTab method to properly clear messages and history
+        usePlaygroundStore.getState().clearCurrentTab();
     };
     
     const handleUndo = () => {

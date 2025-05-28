@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
 import CodeMirrorEditor from '../../CodeEditor';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/utils/tailwind';
 import { EditorView } from 'codemirror';
 
@@ -11,7 +11,7 @@ interface Props {
     readOnly?: boolean;
     maxHeight?: number;
     onChange?: (value: string) => void;
-    onPasteImage?: (base64Url: string) => void;
+    onPasteImage?: (base64Url: string, contentType: string) => void;
 }
 
 const MessageEditor = ({
@@ -39,7 +39,7 @@ const MessageEditor = ({
               const reader = new FileReader();
               reader.onload = () => {
                 const base64Url = reader.result;
-                onPasteImage?.(base64Url as string);
+                onPasteImage?.(base64Url as string, file.type);
               };
               reader.readAsDataURL(file);
             }
@@ -79,7 +79,7 @@ const MessageEditor = ({
         changes: { from: 0, to: currentValue.length, insert: newValue },
       });
     }
-  }, [value]);
+  }, [value, handlePaste]);
 
   const placeholderEl = isEditorEmpty ? (
     <div className="pointer-events-none absolute left-[1px] top-[3px] z-10 text-[14px] text-muted-foreground">
@@ -89,8 +89,15 @@ const MessageEditor = ({
 
   return (
     <div className={cn("relative w-full", className)}>
-    {placeholderEl}
-    <CodeMirrorEditor autoFocus={autoFocus} editorRef={editorRef} readOnly={readOnly} language='markdown' onChange={handleEditorChange} maxHeight={maxHeight} onPaste={handlePaste} />
+      {placeholderEl}
+      <CodeMirrorEditor
+      autoFocus={autoFocus}
+      editorRef={editorRef}
+      readOnly={readOnly}
+      language='markdown'
+      onChange={handleEditorChange}
+      maxHeight={maxHeight}
+      onPaste={handlePaste} />
     </div>
   );
 };
