@@ -99,7 +99,6 @@ export default function ToolPicker() {
   
   return (
     <DropdownMenu>
-      
           <DropdownMenuTrigger asChild>
             <Button 
               variant="outline"
@@ -107,7 +106,7 @@ export default function ToolPicker() {
               aria-label="Select Tools"
               className="gap-2"
             >
-              Tools <Badge variant="outline">{toolCount}</Badge> <ChevronsUpDown className="h-3.5 w-3.5" />
+              <Badge variant="outline">{toolCount}</Badge> Tools <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
@@ -130,6 +129,7 @@ export default function ToolPicker() {
                   <DropdownMenuItem 
                     onSelect={(e) => {
                       e.preventDefault();
+                      handleToggleAllTools(mcpId, tools);
                     }}
                     className="flex items-center gap-2 py-2"
                   >
@@ -137,14 +137,10 @@ export default function ToolPicker() {
                       className="flex items-center space-x-2 w-full cursor-pointer"
                     >
                       <Checkbox 
-                        id={`select-all-${mcpId}`}
                         checked={areAllToolsSelected(mcpId, tools)}
-                        onCheckedChange={() => handleToggleAllTools(mcpId, tools)}
-                        onClick={(e) => e.stopPropagation()}
                       />
                       <Label
                         className="font-normal"
-                        htmlFor={`select-all-${mcpId}`}
                       >
                         Select All
                       </Label>
@@ -157,6 +153,7 @@ export default function ToolPicker() {
                       key={tool.name}
                       onSelect={(e) => {
                         e.preventDefault();
+                        handleToggleTool(mcpId, tool.name);
                       }}
                       className="flex items-center gap-2 py-1.5"
                     >
@@ -164,13 +161,9 @@ export default function ToolPicker() {
                         className="flex items-center space-x-2 w-full cursor-pointer"
                       >
                         <Checkbox 
-                          id={`tool-${mcpId}-${tool.name}`}
                           checked={isToolSelected(mcpId, tool.name)}
-                          onCheckedChange={() => handleToggleTool(mcpId, tool.name)}
-                          onClick={(e) => e.stopPropagation()}
                         />
                         <Label 
-                          htmlFor={`tool-${mcpId}-${tool.name}`}
                           title={tool.name}
                           className="font-normal"
                         >

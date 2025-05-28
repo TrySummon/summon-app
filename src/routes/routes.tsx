@@ -1,12 +1,12 @@
 import { createRoute } from "@tanstack/react-router";
 import { RootRoute } from "./__root";
-import HomePage from "../pages/HomePage";
+import HomePage from "@/pages/HomePage";
 import ApiPage from "@/pages/ApiPage";
 import EndpointPage from "@/pages/EndpointPage";
 import BuildMcpPage from "@/pages/BuildMcpPage";
 import McpPage from "@/pages/McpPage";
 import PlaygroundPage from "@/pages/PlaygroundPage";
-import AIProvidersPage from "@/pages/AIProvidersPage";
+import SettingsPage from "@/pages/SettingsPage";
 
 // TODO: Steps to add a new route:
 // 1. Create a new page component in the '../pages/' directory (e.g., NewPage.tsx)
@@ -69,10 +69,10 @@ export const PlaygroundRoute = createRoute({
   component: PlaygroundPage,
 });
 
-export const AIProvidersRoute = createRoute({
+export const SettingsRoute = createRoute({
   getParentRoute: () => RootRoute,
-  path: "/ai-providers",
-  component: AIProvidersPage,
+  path: "/settings",
+  component: SettingsPage,
 });
 
-export const rootTree = RootRoute.addChildren([HomeRoute, ApiRoute, EndpointRoute, BuildMcpRoute, McpRoute, PlaygroundRoute, AIProvidersRoute]);
+export const rootTree = RootRoute.addChildren([HomeRoute, ApiRoute, EndpointRoute, BuildMcpRoute, McpRoute, PlaygroundRoute, SettingsRoute]);

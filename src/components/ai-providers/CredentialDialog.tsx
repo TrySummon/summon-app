@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { DialogDescription } from '@radix-ui/react-dialog';
-import { AIProviderType, AI_PROVIDERS_CONFIG } from './types';
+import { AIProviderCredential, AIProviderType, AI_PROVIDERS_CONFIG } from './types';
 import { Button } from '@/components/ui/button';
 import ProviderLogo from './Logo';
 import {
@@ -24,50 +24,61 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import ChipInput from '../ChipInput';
+import { TestProviderButton } from './TestButton';
 
-// Create a schema for the credential form
-const baseCredentialSchema = z.object({
-  form: z.never().nullish(),
-  type: z.nativeEnum(AIProviderType),
-  name: z.string().optional(),
-  apiKey: z.string().min(1, 'API key is required'),
-});
+export const credentialFormSchema = z
+  .object({
+    form: z.never().optional(),
+    provider: z.nativeEnum(AIProviderType),
+    key: z.string(),
+    resourceName: z
+      .string()
+      .min(1, "Resource name must not be empty")
+      .optional(),
+    apiVersion: z.string().min(1, "API version must not be empty").optional(),
+    models: z.array(z.string()).optional(),
+    baseUrl: z
+      .union([z.string().url(), z.literal("")])
+      .optional()
+      .transform((value) => {
+        if (value?.trim().length === 0) {
+          return undefined;
+        }
+        return value;
+      }),
+    displayName: z.string().min(1, "Custom provider name is required.").optional(),
+  })
+  .superRefine(function refineAzureOpenAI(data, ctx) {
+    if (data.provider !== AIProviderType.AzureOpenAI) {
+      return;
+    }
+    if (data.resourceName == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["resourceName"],
+        message: "Azure resource name must not be empty",
+      });
+    }
+    if (data.apiVersion == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["apiVersion"],
+        message: "Azure API version must not be empty",
+      });
+    }
+    if (!data.models?.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["models"],
+        message: "Please provide at least one model deployed on Azure.",
+      });
+    }
+  });
 
-// Extended schemas for specific providers
-const azureOpenAISchema = baseCredentialSchema.extend({
-  resourceName: z.string().min(1, 'Resource name is required'),
-  apiVersion: z.string().min(1, 'API version is required'),
-  deploymentId: z.array(z.string()).min(1, 'At least one deployment ID is required'),
-});
-
-const amazonBedrockSchema = baseCredentialSchema.extend({
-  secretKey: z.string().min(1, 'Secret key is required'),
-  region: z.string().min(1, 'Region is required'),
-});
-
-const customProviderSchema = baseCredentialSchema.extend({
-  name: z.string().min(1, 'Provider name is required'),
-  baseUrl: z.string().url('Must be a valid URL'),
-  models: z.array(z.string()).min(1, 'At least one model is required'),
-});
-
-// Union type for all possible credential schemas
-const credentialSchema = z.discriminatedUnion('type', [
-  baseCredentialSchema.extend({ type: z.literal(AIProviderType.OpenAI) }),
-  baseCredentialSchema.extend({ type: z.literal(AIProviderType.Anthropic) }),
-  baseCredentialSchema.extend({ type: z.literal(AIProviderType.Mistral) }),
-  baseCredentialSchema.extend({ type: z.literal(AIProviderType.Grok) }),
-  baseCredentialSchema.extend({ type: z.literal(AIProviderType.Google) }),
-  azureOpenAISchema.extend({ type: z.literal(AIProviderType.AzureOpenAI) }),
-  amazonBedrockSchema.extend({ type: z.literal(AIProviderType.AWSBedrock) }),
-  customProviderSchema.extend({ type: z.literal(AIProviderType.Custom) }),
-]);
-
-export type CredentialFormValues = z.infer<typeof credentialSchema>;
+export type CredentialFormValues = z.infer<typeof credentialFormSchema>;
 
 interface CredentialDialogProps {
   children?: React.ReactNode;
-  providerId?: string;
   providerType: AIProviderType;
   defaultValues?: Partial<CredentialFormValues>;
   isOpen?: boolean;
@@ -77,7 +88,6 @@ interface CredentialDialogProps {
 
 export const CredentialDialog: React.FC<CredentialDialogProps> = ({
   children,
-  providerId,
   providerType,
   defaultValues,
   isOpen,
@@ -94,29 +104,65 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
   // Get the provider configuration
   const providerConfig = AI_PROVIDERS_CONFIG[providerType];
 
+  const resolver = useMemo(() => {
+    return zodResolver(
+      credentialFormSchema
+        .superRefine(function refineCustomProvider(data, ctx) {
+          if (providerType === AIProviderType.Custom) {
+            if (!data.displayName) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["displayName"],
+                message: "Custom provider name is required.",
+              });
+            }
+            if (!data.models?.length) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["models"],
+                message:
+                  "At least one custom model is required for a custom provider.",
+              });
+            }
+            if (!data.baseUrl) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["baseUrl"],
+                message: "Base URL is required for a custom provider.",
+              });
+            }
+          }
+        })
+    );
+  }, [providerType]);
+
   // Create form with dynamic validation based on provider type
   const form = useForm<CredentialFormValues>({
-    resolver: zodResolver(credentialSchema),
+    resolver,
     defaultValues: {
-      type: providerType,
+      provider: providerType,
       ...defaultValues,
-    } as any, // Use type assertion to avoid TypeScript errors with discriminated unions
+    },
     mode: 'onChange', // Validate on change to update isValid state
   });
 
   // Watch the provider type to update validation when it changes
-  const currentType = form.watch('type') as AIProviderType;
-
-  console.log(form.formState)
+  const currentType = form.watch('provider') as AIProviderType;
+  
+  // Watch all form values for the test button
+  const formValues = useWatch({
+    control: form.control,
+    defaultValue: form.getValues()
+  });
 
   // Reset form fields when provider type changes
   useEffect(() => {
     if (currentType !== providerType) {
       // Reset fields except for the type
       form.reset({ 
-        type: providerType, // Always use the providerType prop to avoid type issues
+        provider: providerType,
         ...defaultValues 
-      } as any); // Use type assertion to avoid TypeScript errors with discriminated unions
+      });
     }
   }, [currentType, defaultValues, form, providerType]);
 
@@ -124,7 +170,6 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
   const onSubmit = useCallback(
     (values: CredentialFormValues) => {
       try {
-        console.log("Form values:", values);
         // Call onSave callback if provided
         if (onSave) {
           onSave(values);
@@ -182,9 +227,7 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
   };
 
   // Generate dialog title
-  const dialogTitle = providerId
-    ? `Update ${providerConfig.displayName} configuration`
-    : `Configure ${providerConfig.displayName}`;
+  const dialogTitle = `Configure ${providerType}`;
 
   return (
     <Dialog
@@ -233,7 +276,7 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
             {providerType === AIProviderType.Custom && (
               <FormField
                 control={form.control}
-                name="name"
+                name="displayName"
                 render={({ field }) => (
                   <FormItem className="w-full">
                     <FormLabel>Custom Provider Name *</FormLabel>
@@ -270,6 +313,7 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
         </Form>
 
         <DialogFooter>
+          <TestProviderButton disabled={!form.formState.isValid} credential={formValues as AIProviderCredential} />
           <Button
             className="ml-auto"
             type="submit"

@@ -17,16 +17,11 @@ export function registerAIProvidersListeners() {
       // Get all accounts (provider names) from keytar
       const accounts = await keytar.findCredentials(SERVICE_NAME);
       
-      // Map accounts to provider objects with masked API keys
+      // Map accounts to provider objects
       return accounts.map(({ account, password }) => {
         try {
           // Parse the stored JSON data
           const providerData = JSON.parse(password);
-          
-          // Mask the API key for security
-          if (providerData.apiKey) {
-            providerData.apiKey = maskApiKey(providerData.apiKey);
-          }
           
           return {
             id: account,
@@ -76,12 +71,4 @@ export function registerAIProvidersListeners() {
       throw new Error(`Failed to delete credential: ${error.message}`);
     }
   });
-}
-
-// Helper function to mask API key for display
-function maskApiKey(apiKey: string): string {
-  if (!apiKey) return '';
-  if (apiKey.length <= 6) return '*'.repeat(apiKey.length);
-  
-  return '*'.repeat(apiKey.length - 6) + apiKey.slice(-6);
 }

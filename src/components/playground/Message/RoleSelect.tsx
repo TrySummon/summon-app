@@ -29,7 +29,7 @@ export default function RoleSelect({ value, disabled, onValueChange }: Props) {
     <div className="group/role">
       <Select onValueChange={onValueChange} value={value} disabled={disabled}>
         <SelectTrigger className={cn(
-          "gap-1 w-fit shadow-none border-none bg-transparent px-0 font-medium focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-muted-foreground",
+          "gap-1 w-fit shadow-none border-none bg-transparent dark:bg-transparent px-0 font-medium focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-muted-foreground",
           "[&>svg]:opacity-0 group-hover/role:[&>svg]:opacity-100 [&>svg]:transition-opacity"
         )}>
           <SelectValue placeholder="Role" />

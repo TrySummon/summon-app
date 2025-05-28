@@ -1,8 +1,6 @@
 import { UIMessage } from "ai";
 
-type LLMProvider = "openai" | "anthropic" | "google" | "xai";
-
-type LLMSettings = {
+export type LLMSettings = {
     /**
   Maximum number of tokens to generate.
      */
@@ -78,8 +76,8 @@ type LLMSettings = {
 
 export interface IPlaygroundState {
     id: string;
-    provider: LLMProvider;
-    model: string;
+    credentialId?: string;
+    model?: string;
     settings: LLMSettings;
     systemPrompt?: string;
     messages: UIMessage[];

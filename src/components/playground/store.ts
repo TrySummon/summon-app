@@ -52,7 +52,7 @@ export interface PlaygroundStore {
   
   // Specific state updates
   updateModel: (model: string) => void;
-  updateProvider: (provider: IPlaygroundState['provider']) => void;
+  updateProviderCredential: (credentialId: string | undefined) => void;
   updateSettings: (settings: Partial<IPlaygroundState['settings']>) => void;
   updateSystemPrompt: (systemPrompt: string) => void;
   updateEnabledTools: (toolProvider: string, toolIds: string[]) => void;
@@ -69,8 +69,8 @@ export interface PlaygroundStore {
 
 const createDefaultState = (): IPlaygroundState => ({
   id: uuidv4(),
-  provider: 'openai',
-  model: 'gpt-4o',
+  credentialId: undefined,
+  model: undefined,
   settings: {
     temperature: 0,
     maxTokens: 4096
@@ -330,10 +330,10 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     }));
   },
   
-  updateProvider: (provider) => {
+  updateProviderCredential: (credentialId) => {
     get().updateCurrentState(state => ({
       ...state,
-      provider
+      credentialId
     }), false); // Don't track provider changes in history
   },
   

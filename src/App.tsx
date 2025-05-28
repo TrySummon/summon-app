@@ -16,6 +16,7 @@ import { ThemeMode } from "./types/theme-mode";
 import { McpData } from "./helpers/db/mcp-db";
 import { Tool } from "@modelcontextprotocol/sdk/types";
 import { McpServerState } from "./helpers/mcp/state";
+import { AIProviderCredential, PersistedAIProviderCredential } from "./components/ai-providers/types";
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -67,9 +68,9 @@ declare global {
       testCredentials: (baseUrl: string, authType: string, authData: any) => Promise<{ status: number, success: boolean, message?: string }>;
     },
     aiProviders: {
-      getCredentials: () => Promise<any[]>;
-      saveCredential: (providerId: string, providerData: any) => Promise<{ success: boolean }>;
-      deleteCredential: (providerId: string) => Promise<{ success: boolean }>;
+      getCredentials: () => Promise<PersistedAIProviderCredential[]>;
+      saveCredential: (id: string, providerData: AIProviderCredential) => Promise<{ success: boolean }>;
+      deleteCredential: (id: string) => Promise<{ success: boolean }>;
     },
     mcpApi: {
       createMcp: (mcpData: any) => Promise<{ success: boolean; mcpId?: string; message?: string }>;

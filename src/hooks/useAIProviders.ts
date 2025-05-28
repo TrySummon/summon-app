@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { AIProviderCredential } from '@/components/ai-providers/types';
+import { PersistedAIProviderCredential, AIProviderCredential } from '@/components/ai-providers/types';
 
 // Query key for AI providers
 export const AI_PROVIDERS_QUERY_KEY = 'aiProviders';
@@ -14,7 +14,7 @@ export function useAIProviders() {
     isError,
     error,
     refetch
-  } = useQuery<AIProviderCredential[]>({
+  } = useQuery<PersistedAIProviderCredential[]>({
     queryKey: [AI_PROVIDERS_QUERY_KEY],
     queryFn: async () => {
       const result = await window.aiProviders.getCredentials();
@@ -24,8 +24,8 @@ export function useAIProviders() {
 
   // Save a provider credential
   const saveCredential = useMutation({
-    mutationFn: async ({ providerId, providerData }: { providerId: string, providerData: any }) => {
-      return await window.aiProviders.saveCredential(providerId, providerData);
+    mutationFn: async ({ id, providerData }: { id: string, providerData: AIProviderCredential }) => {
+      return await window.aiProviders.saveCredential(id, providerData);
     },
     onSuccess: () => {
       // Invalidate the query to refetch providers
@@ -35,8 +35,8 @@ export function useAIProviders() {
 
   // Delete a provider credential
   const deleteCredential = useMutation({
-    mutationFn: async (providerId: string) => {
-      return await window.aiProviders.deleteCredential(providerId);
+    mutationFn: async (id: string) => {
+      return await window.aiProviders.deleteCredential(id);
     },
     onSuccess: () => {
       // Invalidate the query to refetch providers
@@ -45,7 +45,7 @@ export function useAIProviders() {
   });
 
   return {
-    providers: data,
+    credentials: data,
     isLoading,
     isError,
     error,

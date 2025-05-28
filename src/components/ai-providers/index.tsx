@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { 
   Table, 
   TableHeader, 
@@ -9,8 +10,8 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { PencilIcon, TrashIcon, PlusIcon } from 'lucide-react';
-import { AIProviderType, AIProviderCredential, AI_PROVIDERS_CONFIG } from './types';
-import { CredentialDialog } from './CredentialDialog';
+import { AIProviderType, AI_PROVIDERS_CONFIG, PersistedAIProviderCredential } from './types';
+import { CredentialDialog, CredentialFormValues } from './CredentialDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useAIProviders } from '@/hooks/useAIProviders';
 import ProviderLogo from './Logo';
@@ -18,18 +19,17 @@ import ProviderLogo from './Logo';
 
 export const AIProvidersTable: React.FC = () => {
   const { 
-    providers, 
+    credentials, 
     isLoading, 
     isError, 
     error, 
     saveCredential, 
     deleteCredential 
   } = useAIProviders();
-  
-  const [selectedProvider, setSelectedProvider] = useState<AIProviderCredential | null>(null);
+  const [id, setId] = useState<string | null>(null);
+  const [providerType, setProviderType] = useState<AIProviderType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedProviderType, setSelectedProviderType] = useState<AIProviderType | null>(null);
   
   // Format date for display
   const formatDate = (dateStr: string | Date | null) => {
@@ -47,52 +47,81 @@ export const AIProvidersTable: React.FC = () => {
     }).format(date);
   };
   
-
+  // Mask API key to show only last 4 characters
+  const maskApiKey = (key: string | null | undefined) => {
+    if (!key) return 'N/A';
+    if (key.length <= 4) return key;
+    
+    return '****' + key.slice(-4);
+  };
   
   // Handle opening the credential dialog for a specific provider
-  const handleConfigureProvider = (providerType: AIProviderType, provider?: AIProviderCredential) => {
-    setSelectedProviderType(providerType);
-    setSelectedProvider(provider || null);
+  const handleConfigureProvider = (providerType: AIProviderType, id?: string) => {
+    setProviderType(providerType);
+    setId(id || null);
     setDialogOpen(true);
   };
   
   // Handle deletion of a provider
   const handleDeleteProvider = async () => {
-    if (!selectedProvider) return;
+    if (!id) return;
     
     try {
-      await deleteCredential.mutateAsync(selectedProvider.id);
+      await deleteCredential.mutateAsync(id);
       setDeleteDialogOpen(false);
-      setSelectedProvider(null);
+      setId(null);
     } catch (err) {
       console.error('Error deleting provider:', err);
     }
   };
   
   // Handle saving a provider
-  const handleProviderSaved = (values: any) => {
-    const id = selectedProvider?.id || `${values.type}-${Date.now()}`;
+  const handleProviderSaved = (values: CredentialFormValues) => {
     saveCredential.mutate({ 
-      providerId: id, 
+      id: id || uuidv4(), 
       providerData: {
         ...values,
         configured: true,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date(),
       }
     });
   };
 
-  // Get available provider types that aren't configured yet
-  const getAvailableProviderTypes = () => {
-    const configuredTypes = new Set(providers.map(p => p.type));
-    return Object.values(AIProviderType).filter(type => 
-      type !== AIProviderType.Custom && !configuredTypes.has(type)
-    );
+  // Organize providers to show each provider only once
+  const organizeProviders = () => {
+    // Track which provider types we've seen
+    const seenTypes = new Set<string>();
+    const customProviders: PersistedAIProviderCredential[] = [];
+    const standardProviders: PersistedAIProviderCredential[] = [];
+    const unconfiguredProviders: AIProviderType[] = [];
+    
+    // First, process all configured providers
+    credentials.forEach(credential => {
+      // Add custom providers to their own array
+      if (credential.provider === AIProviderType.Custom) {
+        customProviders.push(credential);
+      } else if (!seenTypes.has(credential.provider)) {
+        // Add standard providers if we haven't seen this type yet
+        standardProviders.push(credential);
+        seenTypes.add(credential.provider);
+      }
+    });
+    
+    // Then, add unconfigured standard providers
+    Object.values(AIProviderType).forEach(type => {
+      if (type !== AIProviderType.Custom && !seenTypes.has(type)) {
+        unconfiguredProviders.push(type);
+      }
+    });
+    
+    return { customProviders, standardProviders, unconfiguredProviders };
   };
+  
+  const { customProviders, standardProviders, unconfiguredProviders } = organizeProviders();
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">AI Providers</h2>
         <Button 
           size="sm"
@@ -131,107 +160,158 @@ export const AIProvidersTable: React.FC = () => {
                 Loading providers...
               </TableCell>
             </TableRow>
-          ) : providers.length === 0 ? (
+          ) : customProviders.length === 0 && standardProviders.length === 0 && unconfiguredProviders.length === 0 ? (
             null
           ) : (
-            providers.map((provider) => (
-              <TableRow key={provider.id}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-2">
-                    <ProviderLogo 
-                      svgString={AI_PROVIDERS_CONFIG[provider.type as AIProviderType]?.logo || ''} 
-                      width={24} 
-                    />
-                    <span>{provider.name || provider.type}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {provider.configured ? (
-                    <span className="text-green-500">✓</span>
-                  ) : (
-                    <span className="text-red-500">✗</span>
-                  )}
-                </TableCell>
-                <TableCell>{provider.apiKey || 'N/A'}</TableCell>
-                <TableCell>{formatDate(provider.createdAt)}</TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
+            <>
+              {/* Custom providers first */}
+              {customProviders.map((provider) => (
+                <TableRow key={provider.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <ProviderLogo 
+                        svgString={AI_PROVIDERS_CONFIG[provider.provider]?.logo || ''} 
+                        width={24} 
+                      />
+                      <span>{provider.displayName || provider.provider}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     {provider.configured ? (
-                      <>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleConfigureProvider(provider.type as AIProviderType, provider)}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => {
-                            setSelectedProvider(provider);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      </>
+                      <span className="text-green-500">✓</span>
                     ) : (
+                      <span className="text-red-500">✗</span>
+                    )}
+                  </TableCell>
+                  <TableCell>{maskApiKey(provider.key)}</TableCell>
+                  <TableCell>{formatDate(provider.createdAt)}</TableCell>
+                  <TableCell>
+                    <div className="flex">
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleConfigureProvider(provider.provider, provider.id)}
+                          >
+                            <PencilIcon className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => {
+                              setId(provider.id);
+                              setProviderType(provider.provider);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <TrashIcon className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              
+              {/* Standard providers (configured) */}
+              {standardProviders.map((provider) => (
+                <TableRow key={provider.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <ProviderLogo 
+                        svgString={AI_PROVIDERS_CONFIG[provider.provider]?.logo} 
+                        width={24} 
+                      />
+                      <span>{provider.provider}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {provider.configured ? (
+                      <span className="text-green-500">✓</span>
+                    ) : (
+                      <span className="text-red-500">✗</span>
+                    )}
+                  </TableCell>
+                  <TableCell>{maskApiKey(provider.key)}</TableCell>
+                  <TableCell>{formatDate(provider.createdAt)}</TableCell>
+                  <TableCell>
+                    <div className="flex">
+                      {provider.configured ? (
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleConfigureProvider(provider.provider, provider.id)}
+                          >
+                            <PencilIcon className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => {
+                              setId(provider.id);
+                              setProviderType(provider.provider);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <TrashIcon className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleConfigureProvider(provider.provider)}
+                        >
+                          <PlusIcon className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              
+              {/* Unconfigured standard providers */}
+              {unconfiguredProviders.map((type) => (
+                <TableRow key={type}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <ProviderLogo 
+                        svgString={AI_PROVIDERS_CONFIG[type]?.logo || ''} 
+                        width={24} 
+                      />
+                      <span>{type}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-red-500">✗</span>
+                  </TableCell>
+                  <TableCell>N/A</TableCell>
+                  <TableCell>N/A</TableCell>
+                  <TableCell>
+                    <div className="flex">
                       <Button 
                         variant="ghost" 
                         size="icon"
-                        onClick={() => handleConfigureProvider(provider.type as AIProviderType)}
+                        onClick={() => handleConfigureProvider(type)}
                       >
-                        <PlusIcon className="h-4 w-4" />
+                        <PlusIcon className="h-3.5 w-3.5" />
                       </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-          
-          {/* Add rows for unconfigured providers */}
-          {getAvailableProviderTypes().map((type) => (
-            <TableRow key={type}>
-              <TableCell className="font-medium">
-                <div className="flex items-center gap-2">
-                  <ProviderLogo 
-                    svgString={AI_PROVIDERS_CONFIG[type]?.logo || ''} 
-                    width={24} 
-                  />
-                  <span>{AI_PROVIDERS_CONFIG[type]?.displayName || type}</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <span className="text-red-500">✗</span>
-              </TableCell>
-              <TableCell>N/A</TableCell>
-              <TableCell>N/A</TableCell>
-              <TableCell>
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => handleConfigureProvider(type)}
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </>
+          )}        
         </TableBody>
       </Table>
 
       {/* Credential Dialog */}
-      {selectedProviderType && (
+      {providerType && (
         <CredentialDialog
           isOpen={dialogOpen}
           onOpenChange={setDialogOpen}
-          providerType={selectedProviderType}
-          providerId={selectedProvider?.id}
-          defaultValues={selectedProvider as any}
+          providerType={providerType}
+          defaultValues={credentials.find((c) => c.id === id)}
           onSave={handleProviderSaved}
         />
       )}

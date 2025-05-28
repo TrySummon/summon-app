@@ -1,3 +1,4 @@
+import { AIProviderCredential } from '@/components/ai-providers/types';
 import {
   AI_PROVIDERS_GET_CREDENTIALS_CHANNEL,
   AI_PROVIDERS_SAVE_CREDENTIAL_CHANNEL,
@@ -11,10 +12,10 @@ export function exposeAIProvidersContext() {
     getCredentials: () => 
       ipcRenderer.invoke(AI_PROVIDERS_GET_CREDENTIALS_CHANNEL),
     
-    saveCredential: (providerId: string, providerData: any) => 
-      ipcRenderer.invoke(AI_PROVIDERS_SAVE_CREDENTIAL_CHANNEL, providerId, providerData),
+    saveCredential: (id: string, providerData: AIProviderCredential) => 
+      ipcRenderer.invoke(AI_PROVIDERS_SAVE_CREDENTIAL_CHANNEL, id, providerData),
     
-    deleteCredential: (providerId: string) => 
-      ipcRenderer.invoke(AI_PROVIDERS_DELETE_CREDENTIAL_CHANNEL, providerId),
+    deleteCredential: (id: string) => 
+      ipcRenderer.invoke(AI_PROVIDERS_DELETE_CREDENTIAL_CHANNEL, id),
   });
 }

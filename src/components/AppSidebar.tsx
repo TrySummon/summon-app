@@ -57,20 +57,15 @@ import { Link, useLocation } from "@tanstack/react-router";
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
-          <SidebarGroup>
-            <SidebarGroupLabel>Settings</SidebarGroupLabel>
-            <SidebarMenu>
-            <SidebarMenuItem>
-  <Link to="/ai-providers">
-  <SidebarMenuButton isActive={location.pathname === "/ai-providers"}>
-    <Settings className="h-4 w-4" /> AI Providers
-  </SidebarMenuButton>
-  </Link>
-</SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter />
+        <SidebarFooter>
+        <Link to="/settings">
+        <SidebarMenuButton size="lg" isActive={location.pathname === "/settings"}>
+
+    <Settings className="h-4 w-4" /> Settings
+      </SidebarMenuButton>
+      </Link>
+      </SidebarFooter>
       </Sidebar>
       </>
     )

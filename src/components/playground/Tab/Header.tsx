@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/Kbd';
 import { toast } from 'sonner';
 import ToolPicker from './ToolPicker';
+import { LLMPicker } from '@/components/llm-picker';
 
 export default function TabHeader() {
     const {
@@ -21,11 +22,11 @@ export default function TabHeader() {
     const [canUndoState, setCanUndoState] = useState(canUndo());
     const [canRedoState, setCanRedoState] = useState(canRedo());
     
-    // Get the current state to check if it's running
-    const currentState = getCurrentState();
+    // Use state to track the current playground state
+    const [currentState, setCurrentState] = useState(getCurrentState());
     const isRunning = currentState.running;
     
-    // Update undo/redo state when history changes
+    // Update state when store changes
     useEffect(() => {
       // Create a subscription to the store
       const unsubscribe = usePlaygroundStore.subscribe((state) => {
@@ -40,6 +41,9 @@ export default function TabHeader() {
         if (canRedoCurrent !== canRedoState) {
           setCanRedoState(canRedoCurrent);
         }
+        
+        // Update current state to reflect latest changes
+        setCurrentState(getCurrentState());
       });
       
       // Cleanup subscription
@@ -102,7 +106,17 @@ export default function TabHeader() {
     }, [canUndoState, canRedoState, isRunning]);
 
     return <div className='flex justify-between items-center gap-2 px-4'>
-      <div>
+      <div className='flex gap-2'>
+        <LLMPicker config={{
+          credentialId: currentState.credentialId,
+          model: currentState.model,
+          settings: currentState.settings,
+          }} onChange={(config) => updateCurrentState((state) => ({
+            ...state,
+            credentialId: config.credentialId,
+            model: config.model,
+            settings: config.settings,
+          }))} />
       <ToolPicker />
       </div>
       <div>
@@ -150,6 +164,7 @@ export default function TabHeader() {
         <TooltipTrigger asChild>
           <Button 
             onClick={clearMessages}
+            disabled={isRunning || !currentState.messages.length}
             variant="ghost"
             size="icon"
             aria-label="Clear messages"

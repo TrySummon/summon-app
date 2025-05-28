@@ -1,5 +1,5 @@
 import { streamText, ToolSet } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
+import { createLLMProvider } from "@/helpers/llm";
 import type { PlaygroundStore } from './store';
 import { v4 as uuidv4 } from 'uuid';
 import { UIMessage } from 'ai';
@@ -54,8 +54,18 @@ export async function runAgent(store: PlaygroundStore) {
                 }
             });
         });
-        
-        const openai = createOpenAI({ apiKey: "PLACEHOLDER", compatibility: "strict" });
+
+        if(!currentState.model) {
+            throw new Error("Model not set");
+        }
+
+        const credentials = await window.aiProviders.getCredentials()
+        const credential = credentials.find(c => c.id === currentState.credentialId)
+
+        if (!credential) {
+            throw new Error("Credential not found");
+        }
+        const llmProvider = createLLMProvider(credential)
         
         // We'll create the assistant message only when we receive the first token
         let assistantMessageId = uuidv4();
@@ -66,7 +76,7 @@ export async function runAgent(store: PlaygroundStore) {
         // Stream the response
         
         const { textStream } = streamText({
-            model: openai(model),
+            model: llmProvider(currentState.model),
             tools: toolSet,
             messages: messages,
             maxSteps,
