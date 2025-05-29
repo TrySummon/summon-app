@@ -137,7 +137,7 @@ export async function runAgent(store: PlaygroundStore) {
                 }
             },
             onError: (error) => {
-                handleAgentError(error, store);
+                handleAgentError(error.error, store);
             },
             ...settings,
         });
@@ -218,9 +218,8 @@ export async function runAgent(store: PlaygroundStore) {
  * @param error The error that occurred
  * @param store The playground store instance
  */
-function handleAgentError(error: unknown, store: PlaygroundStore) {
-    console.error('Error generating response:', error);
-    
+function handleAgentError(error: unknown, store: PlaygroundStore) {    
+    console.error(error);
     // Add an error message to the chat
     const errorMessage: UIMessage = {
         id: uuidv4(),
@@ -228,7 +227,7 @@ function handleAgentError(error: unknown, store: PlaygroundStore) {
         content: '',
         parts: [{ 
             type: 'text', 
-            text: `Sorry, there was an error generating a response:\n \`\`\`json\n${JSON.stringify(error, null, 2)}\n\`\`\`` 
+            text: `Sorry, there was an error generating a response:\n\`\`\`\n${String(error)}\n\`\`\`` 
         }],
         createdAt: new Date()
     };
