@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Brush, Undo, Redo } from 'lucide-react';
+import { Brush, Undo, Redo, GitMerge } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { usePlaygroundStore } from '../store';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,14 @@ import { LLMPicker } from '@/components/llm-picker';
 
 export default function TabHeader() {
     const {
+      duplicateTab,
       updateCurrentState,
       undo,
       redo,
       canUndo,
       canRedo,
       getCurrentState,
+      currentTabId
     } = usePlaygroundStore();
     
     // Track undo/redo state
@@ -116,6 +118,25 @@ export default function TabHeader() {
       <ToolPicker />
       </div>
       <div>
+      
+              <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            onClick={() => duplicateTab(currentTabId)}
+            variant="ghost"
+            size="icon"
+            aria-label="Duplicate tab"
+            disabled={isRunning}
+          >
+            <GitMerge className='h-4 w-4' />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <div className="flex items-center gap-1">
+            <p>Duplicate tab</p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button 
@@ -169,7 +190,7 @@ export default function TabHeader() {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Clear messages</p>
+          <p>Reset tab</p>
         </TooltipContent>
       </Tooltip>
       </div>

@@ -36,6 +36,7 @@ export interface PlaygroundStore {
   
   // Tab management
   createTab: (initialState?: Partial<IPlaygroundState>, name?: string) => string; // returns new tab ID
+  duplicateTab: (tabId: string) => string; // returns new tab ID
   renameTab: (tabId: string, name: string) => void;
   closeTab: (tabId: string) => void;
   setCurrentTab: (tabId: string) => void;
@@ -146,6 +147,24 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     }));
     
     return tabId;
+  },
+
+  duplicateTab: (tabId) => {
+    const tabToDuplicate = get().tabs[tabId];
+    if (!tabToDuplicate) return tabId; // Return original if not found
+    
+    // Create a partial state with the properties we want to duplicate
+    const partialState: Partial<IPlaygroundState> = {
+      systemPrompt: tabToDuplicate.state.systemPrompt,
+      messages: [...tabToDuplicate.state.messages],
+      settings: { ...tabToDuplicate.state.settings },
+      enabledTools: tabToDuplicate.state.enabledTools,
+      model: tabToDuplicate.state.model,
+      credentialId: tabToDuplicate.state.credentialId
+    };
+    
+    // Create a new tab with the duplicated state
+    return get().createTab(partialState, `${tabToDuplicate.name} (copy)`);
   },
 
   renameTab: (tabId, name) => {

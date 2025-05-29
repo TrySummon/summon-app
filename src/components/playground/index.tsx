@@ -1,13 +1,7 @@
 import React, { useEffect } from 'react';
-import { 
-  Breadcrumb, 
-  BreadcrumbItem, 
-  BreadcrumbLink, 
-  BreadcrumbList, 
-  BreadcrumbPage, 
-} from "@/components/ui/breadcrumb";
 import { usePlaygroundStore } from './store';
 import PlaygroundTab from './Tab';
+import TabNavigation from './TabNavigation';
 import useToolMap from '@/hooks/useToolMap';
 
 export default function Playground() {
@@ -76,17 +70,7 @@ export default function Playground() {
 
   return (
     <div className='flex flex-col h-full'>
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <BreadcrumbPage>
-                Playground
-              </BreadcrumbPage>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <TabNavigation />
 
       <div className='flex flex-col overflow-y-auto py-4 flex-1'>
         <PlaygroundTab tabId={currentTabId} />

@@ -142,7 +142,7 @@ export default function LLMPicker({
                   id={`provider-${providerName}`}
                   className="flex items-center gap-2"
                 >
-                  <ProviderLogo svgString={providerDetails.logo} width={24} />
+                  <ProviderLogo svgString={providerDetails.logo} width={22} />
                   {providerName}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
@@ -270,7 +270,7 @@ export default function LLMPicker({
                 <Skeleton className="h-4 w-full" />
               ) : model && provider && currentProvider ? (
                 <div className="flex items-center gap-2">
-                  <ProviderLogo svgString={currentProvider.logo} width={24} />
+                  <ProviderLogo svgString={currentProvider.logo} width={22} />
                   <span>{model}</span>
                 </div>
               ) : (
