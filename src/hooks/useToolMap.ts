@@ -26,12 +26,18 @@ export default function useToolMap() {
               [mcpId]: { name, tools: response.data as McpTool[] }
             };
           });
+        } else {
+          setOrigToolMap((prevToolMap) => {
+            return {
+              ...prevToolMap,
+              [mcpId]: { name, tools: [] }
+            };
+          });
         }
       } catch (err) {
         console.error("Failed to fetch MCP tools:", err);
       }
     };
-
 
     Object.keys(externalMcps.externalMcps).forEach(mcpId => {
       fetchMcpTools(mcpId, mcpId);

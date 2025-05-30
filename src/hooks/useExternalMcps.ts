@@ -1,38 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { McpServerState } from '@/helpers/mcp/state';
+import { useEffect } from 'react';
+
+// Query key for External MCPs
+export const EXTERNAL_MCPS_QUERY_KEY = 'externalMcps';
 
 export function useExternalMcps() {
-  const [externalMcps, setExternalMcps] = useState<Record<string, McpServerState>>({});
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchExternalMcps = () => {
-    setIsLoading(true);
-    setError(null);
-    window.mcpApi.getAllMcpServerStatuses().then((response) => {
-      if (response.success) {
-        const externalMcps: Record<string, McpServerState> = {}
-        Object.values(response.data || {}).forEach((mcp) => {
-          if (mcp.isExternal) {
-            externalMcps[mcp.mcpId] = mcp;
-          }
-        });
-        setExternalMcps(externalMcps);
-      } else {
-        setError(new Error(response.message || 'Failed to fetch external MCPs'));
+  // Fetch all external MCPs using react-query
+  const {
+    data: externalMcps = {},
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: [EXTERNAL_MCPS_QUERY_KEY],
+    queryFn: async () => {
+      const response = await window.mcpApi.getAllMcpServerStatuses();
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch external MCPs');
       }
-    }).catch((error) => {
-      setError(error instanceof Error ? error : new Error('Unknown error'));
-    }).finally(() => {
-      setIsLoading(false);
-    });
-  };
+      
+      const externalMcps: Record<string, McpServerState> = {};
+      Object.values(response.data || {}).forEach((mcp) => {
+        if (mcp.isExternal) {
+          externalMcps[mcp.mcpId] = mcp;
+        }
+      });
+      
+      return externalMcps;
+    }
+  });
 
   useEffect(() => {  
-    fetchExternalMcps();
     // Add IPC listener using the contextBridge API
     // This uses the exposed IPC event listener from external-mcp-context-exposer.ts
-    const unsubscribe = window.externalMcpApi.onExternalMcpServersUpdated(setExternalMcps);
+    const unsubscribe = window.externalMcpApi.onExternalMcpServersUpdated((updatedMcps) => {
+      // Update the query cache with the new data
+      queryClient.setQueryData([EXTERNAL_MCPS_QUERY_KEY], updatedMcps);
+    });
     
     // Clean up on unmount
     return () => {
@@ -40,12 +47,12 @@ export function useExternalMcps() {
         unsubscribe();
       }
     };
-  }, []);
+  }, [queryClient]);
 
   return {
     externalMcps,
     isLoading,
     error,
-    refetch: fetchExternalMcps
+    refetch
   };
 }

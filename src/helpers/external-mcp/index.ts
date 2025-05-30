@@ -90,7 +90,7 @@ export const validateMcpJsonConfig = (config: unknown): McpJsonConfig => {
 /**
  * Connect to an external MCP server based on configuration
  */
-export const connectExternalMcp = async (serverName: string, config: McpServerConfig): Promise<McpServerState> => {
+export const connectExternalMcp = async (serverName: string, config: McpServerConfig, force?: boolean): Promise<McpServerState> => {
   console.info(`Starting external MCP server: ${serverName}`);
   
   // Check if the server is already running
@@ -100,7 +100,7 @@ export const connectExternalMcp = async (serverName: string, config: McpServerCo
   }
 
   // Check if the server is manually stopped
-  if (runningMcpServers[serverName] && runningMcpServers[serverName].status === 'stopped') {
+  if (!force && runningMcpServers[serverName] && runningMcpServers[serverName].status === 'stopped') {
     console.info(`External MCP server ${serverName} is already stopped`);
     return runningMcpServers[serverName];
   }

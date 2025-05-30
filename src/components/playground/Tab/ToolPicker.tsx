@@ -96,6 +96,8 @@ export default function ToolPicker() {
   if (!origToolMap || Object.keys(origToolMap).length === 0) {
     return null;
   }
+
+  const mcps = Object.entries(origToolMap).filter(([mcpId, { tools }]) => tools.length > 0);
   
   return (
     <DropdownMenu>
@@ -109,11 +111,11 @@ export default function ToolPicker() {
               <Badge variant="outline">{toolCount}</Badge> Tools <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
+      <DropdownMenuContent align="start" className="w-64">
         <DropdownMenuLabel>Enabled MCP Tools</DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        {Object.entries(origToolMap).map(([mcpId, { name, tools }]) => (
+        {mcps.map(([mcpId, { name, tools }]) => (
           <DropdownMenuGroup key={mcpId}>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="flex items-center justify-between py-1.5 hover:bg-accent">

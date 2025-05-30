@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
-import { 
-  getMcpServerStatus,
-  startMcpServer,
-  stopMcpServer,
-  restartMcpServer 
-} from '@/helpers/ipc/mcp/mcp-client';
 import { McpServerState } from '@/helpers/mcp/state';
+import { useQueryClient } from '@tanstack/react-query';
+import { MCP_QUERY_KEY } from './useMcps';
+import { EXTERNAL_MCPS_QUERY_KEY } from './useExternalMcps';
 
 interface useMcpServerStateResult {
   state: McpServerState | null;
@@ -26,16 +23,19 @@ interface useMcpServerStateResult {
  */
 export function useMcpServerState(
   mcpId: string,
+  isExternal?: boolean,
   pollingInterval = 2000
 ): useMcpServerStateResult {
   const [state, setState] = useState<McpServerState | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  
+  const queryClient = useQueryClient();
 
   // Function to fetch the current status
   const fetchStatus = async () => {
     try {
-      const response = await getMcpServerStatus(mcpId);
+      const response = await window.mcpApi.getMcpServerStatus(mcpId);
       if (response.success) {
         setState(response.data ? response.data : null);
       } else {
@@ -64,9 +64,15 @@ export function useMcpServerState(
   const startServer = async () => {
     setIsLoading(true);
     try {
-      const response = await startMcpServer(mcpId);
+      const promise = isExternal ? window.externalMcpApi.connectExternalMcpServer(mcpId, true) : window.mcpApi.startMcpServer(mcpId);
+      const response = await promise;
       if (response.success) {
         setState(response.data || null);
+        if(isExternal) {
+          queryClient.invalidateQueries({ queryKey: [EXTERNAL_MCPS_QUERY_KEY] });
+        } else {
+          queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+        }
       } else {
         setError(new Error(response.message || 'Failed to start server'));
       }
@@ -81,9 +87,15 @@ export function useMcpServerState(
   const stopServer = async () => {
     setIsLoading(true);
     try {
-      const response = await stopMcpServer(mcpId);
+      const fn = isExternal ? window.externalMcpApi.stopExternalMcpServer : window.mcpApi.stopMcpServer;
+      const response = await fn(mcpId);
       if (response.success) {
         setState(response.data || null);
+        if(isExternal) {
+          queryClient.invalidateQueries({ queryKey: [EXTERNAL_MCPS_QUERY_KEY] });
+        } else {
+          queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+        }
       } else {
         setError(new Error(response.message || 'Failed to stop server'));
       }
@@ -98,7 +110,7 @@ export function useMcpServerState(
   const restartServer = async () => {
     setIsLoading(true);
     try {
-      const response = await restartMcpServer(mcpId);
+      const response = await window.mcpApi.restartMcpServer(mcpId);
       if (response.success) {
         setState(response.data || null);
       } else {

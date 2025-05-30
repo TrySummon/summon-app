@@ -15,7 +15,7 @@ interface ExternalMcpItemProps {
 export function ExternalMcpItem({
   mcpId,
 }: ExternalMcpItemProps) {
-    const { state } = useMcpServerState(mcpId);
+    const { state, startServer, stopServer } = useMcpServerState(mcpId, true);
   
   // Check if this MCP is currently selected/active using URL pattern matching
   const location = useLocation();
@@ -23,34 +23,6 @@ export function ExternalMcpItem({
     const match = location.pathname.match(/\/external-mcp\/([^/]+)/);
     return match ? match[1] === mcpId : false;
   }, [location.pathname, mcpId]);
-
-  // Connect to external MCP server
-  const handleConnect = async () => {
-    try {
-      const response = await window.externalMcpApi.connectExternalMcpServer(mcpId);
-      if (response.success) {
-        toast.success(`Connected to external MCP server "${mcpId}"`);
-      } else {
-        toast.error(`Failed to connect to external MCP server: ${response.message}`);
-      }
-    } catch (error) {
-      toast.error(`Error connecting to external MCP server: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
-  // Disconnect from external MCP server
-  const handleDisconnect = async () => {
-    try {
-      const response = await window.externalMcpApi.stopExternalMcpServer(mcpId);
-      if (response.success) {
-        toast.success(`Disconnected from external MCP server "${mcpId}"`);
-      } else {
-        toast.error(`Failed to disconnect from external MCP server: ${response.message}`);
-      }
-    } catch (error) {
-      toast.error(`Error disconnecting from external MCP server: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
   
   // Determine status indicator color
   const getStatusColor = () => {
@@ -117,8 +89,8 @@ export function ExternalMcpItem({
       <ExternalMcpDropdownMenu
         mcpId={mcpId}
         status={state?.status}
-        onConnect={handleConnect}
-        onDisconnect={handleDisconnect}
+        onConnect={startServer}
+        onDisconnect={stopServer}
       />
     </SidebarMenuItem>
   );

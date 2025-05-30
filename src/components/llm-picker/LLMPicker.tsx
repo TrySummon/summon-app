@@ -277,7 +277,7 @@ export default function LLMPicker({
               <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-[200px]">
+          <DropdownMenuContent align="end" className="w-[200px]">
             <div className="flex items-center justify-between px-2 py-1.5">
               <span className="text-xs font-semibold">Models</span>
               <div className="flex items-center gap-1">

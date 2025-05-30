@@ -8,11 +8,11 @@ import { connectExternalMcp, readMcpJsonFile, stopExternalMcp } from "@/helpers/
 
 export function registerExternalMcpListeners() {
   // Start an MCP server
-  ipcMain.handle(CONNECT_EXTERNAL_MCP_SERVER_CHANNEL, async (_, mcpId: string) => {
+  ipcMain.handle(CONNECT_EXTERNAL_MCP_SERVER_CHANNEL, async (_, mcpId: string, force?: boolean) => {
     try {
       const config = await readMcpJsonFile();
       const serverConfig = config.mcpServers[mcpId];
-      const serverState = await connectExternalMcp(mcpId, serverConfig);
+      const serverState = await connectExternalMcp(mcpId, serverConfig, force);
       
       // Create a serializable version of the server state
       const serializableState = {

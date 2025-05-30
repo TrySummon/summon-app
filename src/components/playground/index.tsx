@@ -28,15 +28,17 @@ export default function Playground() {
       updateAiToolMap(aiToolMap);
   }, [aiToolMap, updateAiToolMap]);
 
-  // Save origToolMap to the store when it changes and enable all tools for tabs with undefined enabledTools
+  // Save origToolMap to the store when it changes, enable all tools for tabs with undefined enabledTools,
+  // and remove tools that are no longer available
   useEffect(() => {
     // First, update the store with the new origToolMap
     updateOrigToolMap(origToolMap);
     
     // If we have tools available, check each tab
     if (Object.keys(origToolMap).length > 0) {
-      // For each tab, check if enabledTools is undefined and enable all tools if so
+      // For each tab, process its enabledTools
       Object.entries(tabs).forEach(([tabId, tab]) => {
+        // Case 1: enabledTools is undefined - enable all tools
         if (tab.state.enabledTools === undefined) {
           // Create a map of all available tools
           const allTools: Record<string, string[]> = {};
@@ -63,6 +65,60 @@ export default function Playground() {
           
           // Restore the original current tab
           usePlaygroundStore.getState().setCurrentTab(currentTabId);
+        } 
+        // Case 2: enabledTools is defined - check for tools that are no longer available
+        else if (tab.state.enabledTools) {
+          let needsUpdate = false;
+          const updatedEnabledTools: Record<string, string[]> = {};
+          
+          // For each MCP in the tab's enabledTools
+          Object.entries(tab.state.enabledTools).forEach(([mcpId, enabledToolIds]) => {
+            // Check if this MCP still exists in origToolMap
+            if (origToolMap[mcpId]) {
+              // Get the available tool IDs for this MCP
+              const availableToolIds = origToolMap[mcpId].tools.map(tool => tool.name);
+              
+              // Filter out tools that are no longer available
+              const validToolIds = enabledToolIds.filter(toolId => 
+                availableToolIds.includes(toolId)
+              );
+              
+              // If some tools were removed, mark for update
+              if (validToolIds.length !== enabledToolIds.length) {
+                needsUpdate = true;
+              }
+              
+              // Only add this MCP if it has valid tools
+              if (validToolIds.length > 0) {
+                updatedEnabledTools[mcpId] = validToolIds;
+              } else {
+                needsUpdate = true; // MCP had tools but now has none valid
+              }
+            } else {
+              // MCP no longer exists, mark for update
+              needsUpdate = true;
+            }
+          });
+          
+          // If we need to update the tab's enabledTools
+          if (needsUpdate) {
+            // We need to temporarily set this tab as current to update its state
+            const currentTabId = usePlaygroundStore.getState().currentTabId;
+            
+            // Set the tab we want to update as current
+            usePlaygroundStore.getState().setCurrentTab(tabId);
+            
+            // Update the state
+            usePlaygroundStore.getState().updateCurrentState(
+              state => ({
+                ...state,
+                enabledTools: updatedEnabledTools
+              })
+            );
+            
+            // Restore the original current tab
+            usePlaygroundStore.getState().setCurrentTab(currentTabId);
+          }
         }
       });
     }

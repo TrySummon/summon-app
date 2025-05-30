@@ -8,8 +8,8 @@ import { McpServerState } from '@/helpers/mcp/state';
 
 export function exposeExternalMcpContext() {
   contextBridge.exposeInMainWorld('externalMcpApi', {
-    connectExternalMcpServer: (mcpId: string) => 
-      ipcRenderer.invoke(CONNECT_EXTERNAL_MCP_SERVER_CHANNEL, mcpId),
+    connectExternalMcpServer: (mcpId: string, force?: boolean) => 
+      ipcRenderer.invoke(CONNECT_EXTERNAL_MCP_SERVER_CHANNEL, mcpId, force),
       
     stopExternalMcpServer: (mcpId: string) => 
       ipcRenderer.invoke(STOP_EXTERNAL_MCP_SERVER_CHANNEL, mcpId),

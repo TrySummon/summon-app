@@ -90,7 +90,7 @@ declare global {
       openUserDataMcpJsonFile: () => Promise<{ success: boolean; message?: string }>;
     }
     externalMcpApi: {
-      connectExternalMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
+      connectExternalMcpServer: (mcpId: string, force?: boolean) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
       stopExternalMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
       onExternalMcpServersUpdated: (callback: (mcpServers: Record<string, McpServerState>) => void) => () => void;
     }
