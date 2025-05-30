@@ -1,4 +1,5 @@
-import { ipcMain } from "electron";
+import { ipcMain, shell, app } from "electron";
+import path from "path";
 import {
   CREATE_MCP_CHANNEL,
   LIST_MCPS_CHANNEL,
@@ -11,7 +12,8 @@ import {
   STOP_MCP_SERVER_CHANNEL,
   RESTART_MCP_SERVER_CHANNEL,
   GET_MCP_TOOLS_CHANNEL,
-  CALL_MCP_TOOL_CHANNEL
+  CALL_MCP_TOOL_CHANNEL,
+  OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL
 } from "./mcp-channels";
 import { callMcpTool, getMcpTools } from "./mcp-tools";
 import { mcpDb, McpData } from "@/helpers/db/mcp-db";
@@ -342,6 +344,27 @@ export function registerMcpListeners() {
       };
     } catch (error) {
       console.error(`Error calling MCP tool:`, error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      };
+    }
+  });
+  
+  // Open the mcp.json file in the user data directory
+  ipcMain.handle(OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL, async () => {
+    try {
+      const userDataPath = app.getPath('userData');
+      const mcpJsonPath = path.join(userDataPath, 'mcp.json');
+      
+      // Open the file with the default editor
+      await shell.openPath(mcpJsonPath);
+      
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error('Error opening mcp.json file:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : "Unknown error occurred"

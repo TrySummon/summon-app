@@ -125,7 +125,7 @@ export default function ToolPicker() {
                 </div>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
-                <DropdownMenuSubContent className="w-56">
+                <DropdownMenuSubContent className="w-56 max-h-[60vh] overflow-y-auto">
                   <DropdownMenuItem 
                     onSelect={(e) => {
                       e.preventDefault();

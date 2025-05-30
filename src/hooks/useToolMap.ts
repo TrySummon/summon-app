@@ -2,28 +2,45 @@ import { Tool as McpTool } from "@modelcontextprotocol/sdk/types";
 import { useMcps } from "./useMcps";
 import { useEffect, useState } from "react";
 import { jsonSchema, Tool, tool } from "ai";
+import { useExternalMcps } from "./useExternalMcps";
 
- export default function useToolMap() {
-    const mcps = useMcps();
-    const [origToolMap, setOrigToolMap] = useState<Record<string, {name: string, tools: McpTool[]}>>({})
-    const [aiToolMap, setAiToolMap] = useState<Record<string, Record<string, Tool>>>({})
+type ToolMapEntry = {
+  name: string;
+  tools: McpTool[];
+};
 
- useEffect(() => {
-    const fetchMcpTools = async (mcpId: string, name: string ) => {
-        try {          
-          const response = await window.mcpApi.getMcpTools(mcpId);
-          if (response.success && response.data) {
-            setOrigToolMap({...origToolMap, [mcpId]: {name, tools: response.data}});
-          }
-        } catch (err) {
-          console.error("Failed to fetch MCP tools:", err);
+export default function useToolMap() {
+  const mcps = useMcps();
+  const externalMcps = useExternalMcps();
+  const [origToolMap, setOrigToolMap] = useState<Record<string, ToolMapEntry>>({});
+  const [aiToolMap, setAiToolMap] = useState<Record<string, Record<string, Tool>>>({});
+
+  useEffect(() => {
+    const fetchMcpTools = async (mcpId: string, name: string) => {
+      try {
+        const response = await window.mcpApi.getMcpTools(mcpId);
+        if (response.success && response.data) {
+          setOrigToolMap((prevToolMap) => {
+            return {
+              ...prevToolMap,
+              [mcpId]: { name, tools: response.data as McpTool[] }
+            };
+          });
         }
+      } catch (err) {
+        console.error("Failed to fetch MCP tools:", err);
+      }
     };
+
+
+    Object.keys(externalMcps.externalMcps).forEach(mcpId => {
+      fetchMcpTools(mcpId, mcpId);
+    });
 
     mcps.mcps.forEach(mcp => {
       fetchMcpTools(mcp.id, mcp.name);
     });
-  }, [mcps]);
+  }, [mcps, externalMcps]);
 
   useEffect(() => {
     const mcpTools = Object.entries(origToolMap);

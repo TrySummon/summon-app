@@ -26,7 +26,7 @@ export function useMcps() {
   });
 
   const createMcpMutation = useMutation({
-    mutationFn: async ({ mcpData, credentials }: { mcpData: Omit<McpData, 'id' | 'createdAt' | 'updatedAt'>, credentials?: Record<string, any> }) => {
+    mutationFn: async ({ mcpData }: { mcpData: Omit<McpData, 'id' | 'createdAt' | 'updatedAt'>, credentials?: Record<string, any> }) => {
       const result = await window.mcpApi.createMcp(mcpData);
       if (!result.success) {
         throw new Error(result.message || 'Failed to create MCP');
@@ -41,7 +41,7 @@ export function useMcps() {
   
   // Update an MCP
   const updateMcpMutation = useMutation({
-    mutationFn: async ({ mcpId, mcpData, credentials }: { mcpId: string, mcpData: Omit<McpData, 'id' | 'createdAt' | 'updatedAt'>, credentials?: Record<string, any> }) => {
+    mutationFn: async ({ mcpId, mcpData }: { mcpId: string, mcpData: Omit<McpData, 'id' | 'createdAt' | 'updatedAt'>, credentials?: Record<string, any> }) => {
       const result = await window.mcpApi.updateMcp(mcpId, mcpData);
       if (!result.success) {
         throw new Error(result.message || 'Failed to update MCP');

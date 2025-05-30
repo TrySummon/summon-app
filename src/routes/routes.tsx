@@ -5,8 +5,10 @@ import ApiPage from "@/pages/ApiPage";
 import EndpointPage from "@/pages/EndpointPage";
 import BuildMcpPage from "@/pages/BuildMcpPage";
 import McpPage from "@/pages/McpPage";
+import ExternalMcpPage from "@/pages/ExternalMcpPage";
 import PlaygroundPage from "@/pages/PlaygroundPage";
 import SettingsPage from "@/pages/SettingsPage";
+import ConnectMcpPage from "@/pages/ConnectMcpPage";
 
 // TODO: Steps to add a new route:
 // 1. Create a new page component in the '../pages/' directory (e.g., NewPage.tsx)
@@ -75,4 +77,16 @@ export const SettingsRoute = createRoute({
   component: SettingsPage,
 });
 
-export const rootTree = RootRoute.addChildren([HomeRoute, ApiRoute, EndpointRoute, BuildMcpRoute, McpRoute, PlaygroundRoute, SettingsRoute]);
+export const ConnectMcpRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/connect-mcp",
+  component: ConnectMcpPage,
+});
+
+export const ExternalMcpRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/external-mcp/$mcpId",
+  component: ExternalMcpPage,
+});
+
+export const rootTree = RootRoute.addChildren([HomeRoute, ApiRoute, EndpointRoute, BuildMcpRoute, McpRoute, ExternalMcpRoute, PlaygroundRoute, SettingsRoute, ConnectMcpRoute]);

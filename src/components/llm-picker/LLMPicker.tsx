@@ -7,10 +7,8 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -146,7 +144,7 @@ export default function LLMPicker({
                   {providerName}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
-                  <DropdownMenuSubContent>
+                <DropdownMenuSubContent className="w-56 max-h-[60vh] overflow-y-auto">
                     {/* Default Models Section */}
                     {hasDefaultModels && (
                       <>

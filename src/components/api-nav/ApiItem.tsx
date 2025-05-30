@@ -10,7 +10,6 @@ import { SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from "@/compone
 import { ApiDropdownMenu } from "./ApiDropdownMenu";
 import { ApiEndpointList } from "./ApiEndpointList";
 import { toast } from "sonner";
-import { ApiItemErrorBoundary } from "./ApiItemErrorBoundary";
 
 interface ApiItemProps {
   apiItem: {

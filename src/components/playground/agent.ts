@@ -210,7 +210,6 @@ export async function runAgent(store: PlaygroundStore) {
             };
         }, false);
     }
-          
 }
 
 /**

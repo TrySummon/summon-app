@@ -20,7 +20,6 @@ import {
   generateWebServerCode,
 } from "./generator";
 import { getMcpImplPath, mcpDb } from "../db/mcp-db";
-import { console } from "inspector/promises";
 import { mockApi } from "../mock";
 import { apiKeyEnvVarName, baseUrlEnvVarName, bearerTokenEnvVarName } from "./generator/utils";
 import { findFreePort } from "../port";
@@ -261,6 +260,7 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
   const serverState: McpServerState = {
     mcpId,
     status: 'starting',
+    isExternal: false,
     mockProcesses: {},
     startedAt: new Date()
   };

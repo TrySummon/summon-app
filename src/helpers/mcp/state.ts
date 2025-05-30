@@ -21,6 +21,7 @@ export interface McpServerState {
   mcpId: string;
   status: McpServerStatus;
   error?: string;
+  isExternal?: boolean;
   serverProcess?: ChildProcess;
   mockProcesses: Record<string, MockApiResult>;
   transport?: McpTransport

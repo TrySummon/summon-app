@@ -3,6 +3,8 @@ import registerListeners from "./helpers/ipc/listeners-register";
 // "electron-squirrel-startup" seems broken when packaging with vite
 //import started from "electron-squirrel-startup";
 import path from "path";
+import fs from "fs";
+import fsPromises from "fs/promises";
 import {
   installExtension,
   REACT_DEVELOPER_TOOLS,
@@ -10,6 +12,9 @@ import {
 import { getApiDataDir } from "./helpers/db/api-db";
 import { getMcpDataDir, getMcpImplDir, mcpDb } from "./helpers/db/mcp-db";
 import { startMcpServer } from "./helpers/mcp";
+import { connectAllExternalMcps, stopExternalMcp } from './helpers/external-mcp';
+import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from './helpers/ipc/external-mcp/external-mcp-channels';
+import { runningMcpServers } from "./helpers/mcp/state";
 
 // These are defined by Vite during build
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
@@ -59,7 +64,13 @@ async function installExtensions() {
   }
 }
 
-app.whenReady().then(createWindow).then(installExtensions).then(startAllMcpServers);
+app.whenReady()
+.then(createWindow)
+.then(installExtensions)
+.then(ensureMcpJsonFile)
+.then(watchMcpJsonFile)
+.then(startAllMcpServers)
+.then(connectAllExternalMcps);
 
 app.whenReady().then(() => {
   const apiDataDir = getApiDataDir();
@@ -97,6 +108,90 @@ app.whenReady().then(() => {
     Menu.setApplicationMenu(currentMenu);
   }
 });
+
+// Get the path to the mcp.json file in the user data directory
+const getMcpJsonFilePath = () => {
+  const userDataPath = app.getPath('userData');
+  return path.join(userDataPath, 'mcp.json');
+};
+
+// Ensure the mcp.json file exists with default content
+async function ensureMcpJsonFile(): Promise<void> {
+  const mcpJsonPath = getMcpJsonFilePath();
+  try {
+    // Check if the file exists
+    await fsPromises.access(mcpJsonPath, fs.constants.F_OK);
+    console.info('mcp.json file already exists');
+  } catch (error) {
+    // File doesn't exist, create it with default content
+    const defaultContent = {
+      mcpServers: {}
+    };
+    try {
+      await fsPromises.writeFile(mcpJsonPath, JSON.stringify(defaultContent, null, 2), 'utf8');
+      console.info('Created default mcp.json file');
+    } catch (writeError) {
+      console.error('Failed to create mcp.json file:', writeError);
+    }
+  }
+}
+
+// Watch for changes to the mcp.json file
+function watchMcpJsonFile(): void {
+  const mcpJsonPath = getMcpJsonFilePath();
+  try {
+    const watcher = fs.watch(mcpJsonPath, async (eventType) => {
+      if (eventType === 'change') {
+        console.info('mcp.json file changed, reloading MCP servers...');
+        try {
+          // Get the current list of external MCP servers before updating
+          const currentExternalMcpIds = Object.keys(runningMcpServers)
+            .filter(id => runningMcpServers[id].isExternal);
+          
+          // Connect to all external MCPs based on the updated configuration
+          const results = await connectAllExternalMcps();
+          
+          // Clean up state for external MCPs that are no longer in the file
+          const newExternalMcpIds = Object.keys(results);
+          const removedMcpIds = currentExternalMcpIds.filter(id => !newExternalMcpIds.includes(id));
+          
+          // Stop and clean up removed MCPs
+          if (removedMcpIds.length > 0) {
+            console.info(`Cleaning up ${removedMcpIds.length} external MCP servers that are no longer in the config...`);
+            
+            for (const mcpId of removedMcpIds) {
+              try {
+                await stopExternalMcp(mcpId);
+                console.info(`Stopped external MCP server: ${mcpId}`);
+                // Remove from runningMcpServers after stopping
+                delete runningMcpServers[mcpId];
+              } catch (stopError) {
+                console.error(`Failed to stop external MCP server ${mcpId}:`, stopError);
+              }
+            }
+          }
+          
+          // Notify the renderer process about the update
+          const mainWindow = BrowserWindow.getAllWindows()[0];
+          if (mainWindow) {
+            mainWindow.webContents.send(EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL, results);
+          }
+        } catch (error) {
+          console.error('Error processing mcp.json changes:', error);
+        }
+      }
+    });
+    
+    // Handle watcher errors
+    watcher.on('error', (error) => {
+      console.error('Error watching mcp.json file:', error);
+    });
+    
+    console.info('Watching mcp.json file for changes');
+  } catch (error) {
+    console.error('Failed to set up watcher for mcp.json:', error);
+  }
+}
 
 // Start all MCP servers when the app starts
 async function startAllMcpServers(): Promise<void> {

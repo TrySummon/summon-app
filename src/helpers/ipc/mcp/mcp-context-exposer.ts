@@ -11,7 +11,8 @@ import {
   STOP_MCP_SERVER_CHANNEL,
   RESTART_MCP_SERVER_CHANNEL,
   GET_MCP_TOOLS_CHANNEL,
-  CALL_MCP_TOOL_CHANNEL
+  CALL_MCP_TOOL_CHANNEL,
+  OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL
 } from './mcp-channels';
 import { McpData } from '@/helpers/db/mcp-db';
 
@@ -52,6 +53,9 @@ export function exposeMcpContext() {
       ipcRenderer.invoke(GET_MCP_TOOLS_CHANNEL, mcpId),
 
     callMcpTool: (mcpId: string, name: string, args: Record<string, any>) => 
-      ipcRenderer.invoke(CALL_MCP_TOOL_CHANNEL, {mcpId, name, args})
+      ipcRenderer.invoke(CALL_MCP_TOOL_CHANNEL, {mcpId, name, args}),
+      
+    openUserDataMcpJsonFile: () => 
+      ipcRenderer.invoke(OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL)
   });
 }

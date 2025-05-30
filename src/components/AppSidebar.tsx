@@ -5,14 +5,14 @@ import {
     SidebarFooter,
     SidebarGroup,
     SidebarHeader,
-    SidebarGroupLabel,
     SidebarMenuItem,
     SidebarMenuButton,
     SidebarMenu
-  } from "@/components/ui/sidebar"
+  } from "@/components/ui/sidebar";
 import { Box, Plug, SquareTerminal, Settings } from "lucide-react";
 import { ApiNav } from "@/components/api-nav";
 import { McpNav } from "@/components/mcp-nav";
+import { ExternalMcpNav } from "@/components/external-mcp-nav";
 import { Link, useLocation } from "@tanstack/react-router";
    
   export function AppSidebar() {
@@ -36,16 +36,7 @@ import { Link, useLocation } from "@tanstack/react-router";
       <SidebarContent>
         <ApiNav />
           <McpNav />
-          <SidebarGroup>
-            <SidebarGroupLabel>External MCPs</SidebarGroupLabel>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="text-xs">
-                <Plug className="!size-3" /> Connect MCP
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
+          <ExternalMcpNav />
           <SidebarGroup>
             <SidebarMenu>
               <SidebarMenuItem>

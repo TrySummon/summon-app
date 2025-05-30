@@ -28,7 +28,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
 
   useEffect(() => {
     const fetchMcpTools = async () => {
-      if (status === "running" && url) {
+      if (status === "running") {
         try {          
           const response = await window.mcpApi.getMcpTools(mcpId);
           if (response.success && response.data) {
@@ -41,7 +41,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
     };
     
     fetchMcpTools();
-  }, [mcpId, status, url]);
+  }, [mcpId, status]);
 
   if (isLoading) {
     return (
