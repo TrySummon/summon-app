@@ -31,7 +31,7 @@ export async function callMcpTool(mcpId: string, name: string, args: Record<stri
     throw new Error(`MCP server with ID ${mcpId} is not running`);
   }
 
-  const result = await (serverState.client.callTool({name, args}));
+  const result = await (serverState.client.callTool({name: name, arguments: args}));
 
   return result;
 }

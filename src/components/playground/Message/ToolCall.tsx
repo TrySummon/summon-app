@@ -12,7 +12,6 @@ interface ToolCallProps {
 
 export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
 
-
   // Determine the status badge based on the state
   const renderStatusBadge = () => {
     switch (invocation.state) {
@@ -21,7 +20,12 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
       case 'call':
         return <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-300"><Clock className="h-3 w-3 mr-1" />Processing</Badge>;
       case 'result':
-        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-300"><Check className="h-3 w-3 mr-1" />Completed</Badge>;
+        const success: boolean = invocation.result.success;
+        if (success) {
+          return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-300"><Check className="h-3 w-3 mr-1" />Completed</Badge>;
+        } else {
+          return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-300">Failed</Badge>;
+        }
       default:
         return null;
     }
