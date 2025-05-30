@@ -15,6 +15,7 @@ import { EditorState, Extension } from "@codemirror/state";
 import { drawSelection, keymap, ViewUpdate } from "@codemirror/view";
 import { vscodeDark, vscodeLight } from "@uiw/codemirror-theme-vscode";
 import { EditorView } from "codemirror";
+import { cn } from "@/utils/tailwind";
 
 const getLanguageExtension = (language?: string) => {
   switch (language?.toLowerCase()) {
@@ -42,6 +43,7 @@ const getLanguageExtension = (language?: string) => {
 };
 
 interface Props {
+  className?: string;
   editorRef?: RefObject<EditorView | null>;
   defaultValue?: string;
   height?: string | number;
@@ -60,6 +62,7 @@ interface Props {
 }
 
 export default function CodeMirrorEditor({
+  className,
   editorRef,
   defaultValue,
   height,
@@ -189,7 +192,7 @@ export default function CodeMirrorEditor({
     <div
       ref={editorContainerRef}
       data-testid={testId}
-      className="w-full overflow-y-auto min-h-[24px]"
+      className={cn("w-full overflow-y-auto min-h-[24px]", className)}
       style={{
         height: height ? (typeof height === "string" ? height : `${height}px`) : undefined,
         maxHeight: maxHeight ? (typeof maxHeight === "string" ? maxHeight : `${maxHeight}px`) : undefined,

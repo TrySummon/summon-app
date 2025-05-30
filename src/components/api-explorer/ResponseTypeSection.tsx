@@ -1,7 +1,6 @@
 import React from 'react';
 import { OpenAPIV3 } from 'openapi-types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
-import { resolveRef } from './utils';
 import { ParameterItem } from './ParameterItem';
 
 interface ResponseTypeSectionProps {
@@ -35,12 +34,7 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
     
     // Process all response status codes
     Object.entries(responses).forEach(([statusCode, response]) => {
-      if ('$ref' in response) {
-        const resolvedResponse = resolveRef<OpenAPIV3.ResponseObject>(response.$ref, openapiSpec);
-        if (resolvedResponse?.content) {
-          processResponseContent(statusCode, resolvedResponse.content, resolvedResponse.description);
-        }
-      } else if ('content' in response && response.content) {
+      if ('content' in response && response.content) {
         processResponseContent(statusCode, response.content, response.description);
       }
     });
@@ -51,14 +45,6 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
         if (mediaTypeObject.schema) {
           let schema = mediaTypeObject.schema;
           
-          // Resolve schema reference if needed
-          if ('$ref' in schema) {
-            const resolvedSchema = resolveRef<OpenAPIV3.SchemaObject>(schema.$ref, openapiSpec);
-            if (resolvedSchema) {
-              schema = resolvedSchema;
-            }
-          }
-          
           const properties: ResponseTypeInfo['properties'] = [];
           
           // Extract properties from schema
@@ -67,16 +53,7 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
               Object.entries(schema.properties).forEach(([propName, propSchema]) => {
                 let resolvedPropSchema: OpenAPIV3.SchemaObject;
                 
-                if ('$ref' in propSchema && typeof propSchema.$ref === 'string') {
-                  const resolved = resolveRef<OpenAPIV3.SchemaObject>(propSchema.$ref, openapiSpec);
-                  if (resolved) {
-                    resolvedPropSchema = resolved;
-                  } else {
-                    resolvedPropSchema = { type: 'object', description: `Reference to ${propSchema.$ref}` };
-                  }
-                } else {
-                  resolvedPropSchema = propSchema as OpenAPIV3.SchemaObject;
-                }
+                resolvedPropSchema = propSchema as OpenAPIV3.SchemaObject;
                 
                 properties.push({
                   name: propName,
@@ -89,16 +66,9 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
               // For array types, we show the array item type
               let itemSchema: OpenAPIV3.SchemaObject;
               
-              if ('$ref' in schema.items && typeof schema.items.$ref === 'string') {
-                const resolved = resolveRef<OpenAPIV3.SchemaObject>(schema.items.$ref, openapiSpec);
-                if (resolved) {
-                  itemSchema = resolved;
-                } else {
-                  itemSchema = { type: 'object', description: `Reference to ${schema.items.$ref}` };
-                }
-              } else {
-                itemSchema = schema.items as OpenAPIV3.SchemaObject;
-              }
+
+              itemSchema = schema.items as OpenAPIV3.SchemaObject;
+              
               
               properties.push({
                 name: 'Array items',

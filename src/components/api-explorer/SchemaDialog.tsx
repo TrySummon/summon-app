@@ -10,7 +10,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft } from 'lucide-react';
-import { resolveRef } from './utils';
 
 interface SchemaDialogProps {
   open: boolean;
@@ -45,19 +44,7 @@ export const SchemaDialog: React.FC<SchemaDialogProps> = ({
   const navigateToSchema = (schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject, title: string) => {
     let resolvedSchema: OpenAPIV3.SchemaObject;
     
-    if ('$ref' in schema && typeof schema.$ref === 'string' && openapiSpec) {
-      const resolved = resolveRef<OpenAPIV3.SchemaObject>(schema.$ref, openapiSpec);
-      if (resolved) {
-        resolvedSchema = resolved;
-        // Extract type name from reference for better title
-        const parts = schema.$ref.split('/');
-        title = parts[parts.length - 1];
-      } else {
-        resolvedSchema = { type: 'object', description: `Reference to ${schema.$ref}` };
-      }
-    } else {
-      resolvedSchema = schema as OpenAPIV3.SchemaObject;
-    }
+    resolvedSchema = schema as OpenAPIV3.SchemaObject;
     
     setSchemaHistory([...schemaHistory, { schema: resolvedSchema, title }]);
   };

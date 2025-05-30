@@ -78,11 +78,13 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({
 
   const hasMultipleLines = value.includes('\n');
 
+  const showEditor = isExpanded || !!value.trim();
+
   return (
     <div 
       className={cn(
         "relative rounded-md transition-all duration-200 flex flex-col",
-        isExpanded ? "bg-card/80 shadow-sm p-3 flex-grow" : "bg-transparent p-1 pt-0 cursor-pointer",
+        isExpanded ? "bg-card/80 shadow-sm p-3 flex-grow" : "bg-transparent pt-0 cursor-pointer",
         className
       )}
       onClick={!isExpanded ? toggleExpand : undefined}
@@ -108,11 +110,12 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({
       <div 
         className={cn(
           "relative transition-all duration-200 overflow-hidden",
-          isExpanded ? "mt-2" : "max-h-[24px]"
+          isExpanded ? "mt-2" : showEditor ? "h-[24px]" : "h-0"
         )}
         onClick={e => isExpanded ? undefined : (e.stopPropagation(), toggleExpand())}
       >
         <CodeMirrorEditor
+        className={showEditor ? "translate-y-0 opacity-100" : "translate-y-[-100%] opacity-0"}
           editorRef={editorRef}
           onChange={onChange}
           readOnly={readOnly}

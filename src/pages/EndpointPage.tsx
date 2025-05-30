@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams, useSearch, Link } from "@tanstack/react-router";
-import { useApis } from "@/hooks/useApis";
+import { useApi } from "@/hooks/useApis";
 import { OpenAPIV3 } from "openapi-types";
 import { NotFound } from "@/components/ui/NotFound";
 import { Server } from "lucide-react";
@@ -22,9 +22,8 @@ interface EndpointSearchParams {
 export default function EndpointPage() {
   const { apiId, endpointId } = useParams({ from: "/api/$apiId/endpoint/$endpointId" });
   const {method} = useSearch({ from: "/api/$apiId/endpoint/$endpointId" }) as EndpointSearchParams;
-  const { apis } = useApis();
+  const { api } = useApi(apiId);
   
-  const api = apis.find(a => a.id === apiId);
   const path = api?.api.paths?.[endpointId]
 
   const endpoint = path && method in path ? path[method as keyof typeof path] as OpenAPIV3.OperationObject : undefined

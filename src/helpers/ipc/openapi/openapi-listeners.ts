@@ -10,6 +10,7 @@ import { apiDb } from "@/helpers/db/api-db";
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import SwaggerParser from "@apidevtools/swagger-parser";
 
 interface ImportApiRequest {
   filename: string;
@@ -109,6 +110,10 @@ export function registerOpenApiListeners() {
   ipcMain.handle(GET_API_CHANNEL, async (_, id: string) => {
     try {
       const apiData = await apiDb.getApiById(id, true);
+
+      if (apiData?.api) {
+        apiData.api = await SwaggerParser.dereference(apiData.api) as any;
+      }
       
       if (!apiData) {
         return {
