@@ -125,12 +125,16 @@ export default function Playground() {
   }, [origToolMap, updateOrigToolMap, tabs]);
 
   return (
-    <div className='flex flex-col h-full'>
-      <TabNavigation />
+    <div className="flex h-full">
+      <div className="flex-1 overflow-hidden">
+      <div className='flex flex-col h-full'>
+        <TabNavigation />
 
-      <div className='flex flex-col overflow-y-auto py-4 flex-1'>
-        <PlaygroundTab tabId={currentTabId} />
+        <div className='flex flex-col overflow-y-auto flex-1'>
+          <PlaygroundTab tabId={currentTabId} />
+        </div>
       </div>
+    </div>
     </div>
   )
 }

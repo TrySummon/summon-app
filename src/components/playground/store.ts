@@ -29,6 +29,8 @@ export interface PlaygroundStore {
   origToolMap: Record<string, {name: string, tools: McpTool[]}>;
   // Current active tab ID
   currentTabId: string;
+  // Tool sidebar visibility
+  showToolSidebar: boolean;
   
   // Getters
   getCurrentTab: () => PlaygroundTab | undefined;
@@ -61,6 +63,7 @@ export interface PlaygroundStore {
   updateAiToolMap: (aiToolMap: Record<string, Record<string, Tool>>) => void;
   updateOrigToolMap: (origToolMap: Record<string, {name: string, tools: McpTool[]}>) => void;
   updateShouldScrollToDock: (shouldScrollToDock: boolean) => void;
+  setShowToolSidebar: (show: boolean) => void;
   
   // History management
   undo: () => string | null;
@@ -111,6 +114,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
   aiToolMap: {},
   origToolMap: {},
   currentTabId: '',
+  showToolSidebar: false,
 
   getCurrentTab: () => {
     const { tabs, currentTabId } = get();
@@ -399,10 +403,17 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
   },
   
   updateShouldScrollToDock: (shouldScrollToDock) => {
-    get().updateCurrentState((state) => ({
+    get().updateCurrentState(state => ({
       ...state,
       shouldScrollToDock
-    }), false);
+    }));
+  },
+  
+  setShowToolSidebar: (show) => {
+    set(state => ({
+      ...state,
+      showToolSidebar: show
+    }));
   },
 
   deleteMessage: (messageIndex) => {

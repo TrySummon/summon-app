@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Edit2, GitMerge } from 'lucide-react';
+import { X, Edit2, Plus } from 'lucide-react';
 import { usePlaygroundStore } from './store';
 
 import { Button } from '@/components/ui/button';
@@ -134,7 +134,7 @@ export default function TabNavigation() {
                 Rename tab
               </ContextMenuItem>
               <ContextMenuItem onClick={() => duplicateTab(tabId)}>
-                <GitMerge className="h-3 w-3 mr-2" />
+                <Plus className="h-3 w-3 mr-2" />
                 Duplicate tab
               </ContextMenuItem>
               <ContextMenuItem 

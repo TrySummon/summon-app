@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Brush, Undo, Redo, GitMerge } from 'lucide-react';
+import { Brush, Undo, Redo, Plus } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { usePlaygroundStore } from '../store';
 import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/Kbd';
 import { toast } from 'sonner';
-import ToolPicker from './ToolPicker';
 import { LLMPicker } from '@/components/llm-picker';
 
 export default function TabHeader() {
@@ -115,7 +114,7 @@ export default function TabHeader() {
             model: config.model,
             settings: config.settings,
           }))} />
-      <ToolPicker />
+      {/* Tools button removed as sidebar is now always visible */}
       </div>
       <div>
       
@@ -128,7 +127,7 @@ export default function TabHeader() {
             aria-label="Duplicate tab"
             disabled={isRunning}
           >
-            <GitMerge className='h-4 w-4' />
+            <Plus className='h-4 w-4' />
           </Button>
         </TooltipTrigger>
         <TooltipContent>

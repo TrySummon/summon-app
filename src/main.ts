@@ -27,6 +27,7 @@ function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1024,
     height: 768,
+    minWidth: 768,
     webPreferences: {
       devTools: inDevelopment,
       contextIsolation: true,

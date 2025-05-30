@@ -99,7 +99,7 @@ export default function ConnectMcpPage() {
 
               <Button className="w-full" onClick={handleOpenUserDataFolder}>
                 <FileJson className="h-4 w-4 mr-2" />
-                Edit mcp.json
+                Open mcp.json
               </Button>
 
               <TabbedCodeSnippet tabs={codeSnippets} defaultValue="nodejs" />
