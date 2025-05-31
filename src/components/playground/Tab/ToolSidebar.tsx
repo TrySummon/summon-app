@@ -1,12 +1,10 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { ChevronRight, ChevronDown, Pencil } from 'lucide-react';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { usePlaygroundStore } from '../store';
 import { cn } from '@/utils/tailwind';
 import {
@@ -20,6 +18,7 @@ import {
   SidebarContent,
 } from "@/components/ui/sidebar";
 import SidebarTrigger from './SidebarTrigger';
+import { ToolParameterSchema } from '@/components/mcp-explorer/ToolParameterSchema';
 
 interface ToolParameter {
   description?: string;
@@ -48,7 +47,6 @@ export default function ToolSidebar() {
   
   // State for expanded MCP sections - all expanded by default
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  const [selectedTool, setSelectedTool] = useState<{mcpId: string, tool: Tool} | null>(null);
   
   // Initialize all sections as expanded
   useEffect(() => {
@@ -128,16 +126,6 @@ export default function ToolSidebar() {
     return currentToolsForMcp.includes(toolId);
   };
   
-  // Check if the MCP has any selected tools
-  const mcpHasSelectedTools = (mcpId: string) => {
-    return (enabledTools[mcpId] || []).length > 0;
-  };
-  
-  // Open tool details modal
-  const openToolDetails = (mcpId: string, tool: Tool) => {
-    setSelectedTool({ mcpId, tool });
-  };
-  
   if (!origToolMap || Object.keys(origToolMap).length === 0) {
     return null;
   }
@@ -146,33 +134,33 @@ export default function ToolSidebar() {
   
   return (
     <Sidebar side="right" className='top-[var(--tab-header-height)] !h-[calc(100svh-var(--tab-header-height))]'>
-            <SidebarHeader className="border-b px-3">
+            <SidebarHeader className="border-b px-2">
 <div className='flex items-center justify-between'>
   <div className='flex items-center'>
     <SidebarTrigger showOnlyOnDesktop className="-ml-1.5" />
           <div className="text-sm font-medium">Enabled Tools</div>
           </div>
-          <Badge variant="outline">{toolCount}</Badge>
+          <Badge className='select-none' variant="outline">{toolCount}</Badge>
       </div>
       </SidebarHeader>
-      <SidebarContent className='p-2 overflow-y-auto overflow-x-hidden'>
+      <SidebarContent className='overflow-y-auto overflow-x-hidden gap-0 py-1'>
           {mcps.map(([mcpId, { name, tools }]) => (
             <div key={mcpId}>
               <div 
-                className={`flex items-center justify-between p-1 rounded-md cursor-pointer`}
+                className={`flex items-center justify-between p-2 cursor-pointer sticky z-10 top-0 bg-sidebar text-muted-foreground`}
                 onClick={() => toggleSection(mcpId)}
               >
                 <div className="flex items-center gap-2 select-none">
                 {expandedSections[mcpId] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 <span className="font-medium text-sm">{name}</span>
                 </div>
-                  <Badge variant="outline" className={cn("text-xs", !selectedToolCounts[mcpId] && "opacity-0")}>{selectedToolCounts[mcpId] || 0}</Badge>
+                  <Badge variant="outline" className={cn("text-xs select-none", !selectedToolCounts[mcpId] && "opacity-0")}>{selectedToolCounts[mcpId] || 0}</Badge>
               </div>
               
               {expandedSections[mcpId] && (
-                <div className="ml-2 mt-2 space-y-2">
+                <div className="">
                   <div 
-                    className="flex items-center px-1 py-1 rounded-md cursor-pointer"
+                    className="flex items-center p-2 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleToggleAllTools(mcpId, tools);
@@ -191,14 +179,13 @@ export default function ToolSidebar() {
                     </div>
                   </div>
                   
-                  <Separator className="my-1" />
-                  
                   {tools.map((tool) => (
                     <div 
                       key={mcpId + tool.name}
-                      className={`px-1 py-1 rounded-md group/tool`}
+                      className={cn(`group/tool border-b relative`)}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="p-2 py-4">
+                      <div className="flex items-start justify-between">
                         <div 
                           className="flex items-center gap-2 cursor-pointer"
                           onClick={(e) => {
@@ -217,18 +204,7 @@ export default function ToolSidebar() {
                             {tool.name}
                           </Label>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="ml-auto h-6 w-6 group-hover/tool:opacity-100 opacity-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openToolDetails(mcpId, tool);
-                          }}
-                        >
-                          <Pencil className='!size-3' />
-                                  </Button>
-                      
+                        <ToolParameterSchema editable schema={tool.inputSchema} name={tool.name} className='opacity-0 group-hover/tool:opacity-100 -mt-1' />
                       </div>
                       {tool.description && (
                         <HoverCard openDelay={100} closeDelay={100}>
@@ -246,6 +222,7 @@ export default function ToolSidebar() {
                         </HoverCard>
                       )}
                     </div>
+                  </div>
                   ))}
                 </div>
               )}

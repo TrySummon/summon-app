@@ -180,11 +180,11 @@ export default function TabHeader() {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button 
-            onClick={clearMessages}
+            onClick={() => confirm(`Are you sure you want to reset the tab?`) && clearMessages()}
             disabled={isRunning || !currentState.messages.length}
             variant="ghost"
             size="icon"
-            aria-label="Clear messages"
+            aria-label="Reset tab"
           >
             <Brush className='h-4 w-4' />
           </Button>

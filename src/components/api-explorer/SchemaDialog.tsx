@@ -16,7 +16,6 @@ interface SchemaDialogProps {
   onOpenChange: (open: boolean) => void;
   schema: OpenAPIV3.SchemaObject;
   title?: string;
-  openapiSpec?: OpenAPIV3.Document;
 }
 
 interface SchemaHistoryItem {
@@ -29,7 +28,6 @@ export const SchemaDialog: React.FC<SchemaDialogProps> = ({
   onOpenChange,
   schema: initialSchema,
   title: initialTitle = 'Schema Details',
-  openapiSpec
 }) => {
   // Schema navigation history
   const [schemaHistory, setSchemaHistory] = useState<SchemaHistoryItem[]>([
