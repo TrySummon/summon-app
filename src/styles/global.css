@@ -6,6 +6,7 @@
 
 @theme {
   --header-height: calc(theme(spacing.9));
+  --tab-header-height: calc(theme(spacing.9) + 49px);
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));

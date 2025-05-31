@@ -1,30 +1,25 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { ChevronRight, ChevronDown, Info } from 'lucide-react';
+import { ChevronRight, ChevronDown, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { usePlaygroundStore } from '../store';
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetHeader, 
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-  SheetClose
-} from '@/components/ui/sheet';
-// Using the ToolParameterDetails component
-import { ToolParameterDetails } from "./ToolParameterDetails";
 import { cn } from '@/utils/tailwind';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger
 } from '@/components/ui/hover-card';
+import {
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+} from "@/components/ui/sidebar";
+import SidebarTrigger from './SidebarTrigger';
 
 interface ToolParameter {
   description?: string;
@@ -150,33 +145,34 @@ export default function ToolSidebar() {
   const mcps = Object.entries(origToolMap).filter(([mcpId, { tools }]) => tools.length > 0);
   
   return (
-    <aside className="w-96 border-l border-border h-full bg-background">
-      <div className="p-3 border-b border-border">
-        <div className="flex items-center justify-between">
+    <Sidebar side="right" className='top-[var(--tab-header-height)] !h-[calc(100svh-var(--tab-header-height))]'>
+            <SidebarHeader className="border-b px-3">
+<div className='flex items-center justify-between'>
+  <div className='flex items-center'>
+    <SidebarTrigger showOnlyOnDesktop className="-ml-1.5" />
           <div className="text-sm font-medium">Enabled Tools</div>
+          </div>
           <Badge variant="outline">{toolCount}</Badge>
-        </div>
       </div>
-      
-      <div className="h-[calc(100%-48px)] overflow-auto">
-        <div className="p-2">
+      </SidebarHeader>
+      <SidebarContent className='p-2 overflow-y-auto overflow-x-hidden'>
           {mcps.map(([mcpId, { name, tools }]) => (
-            <div key={mcpId} className="mb-2">
+            <div key={mcpId}>
               <div 
-                className={`flex items-center justify-between p-1 rounded-md cursor-pointer hover:bg-secondary/50 ${mcpHasSelectedTools(mcpId) ? 'bg-secondary/30' : ''}`}
+                className={`flex items-center justify-between p-1 rounded-md cursor-pointer`}
                 onClick={() => toggleSection(mcpId)}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 select-none">
+                {expandedSections[mcpId] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 <span className="font-medium text-sm">{name}</span>
-                  {expandedSections[mcpId] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </div>
                   <Badge variant="outline" className={cn("text-xs", !selectedToolCounts[mcpId] && "opacity-0")}>{selectedToolCounts[mcpId] || 0}</Badge>
               </div>
               
               {expandedSections[mcpId] && (
-                <div className="mt-1 space-y-1">
+                <div className="ml-2 mt-2 space-y-2">
                   <div 
-                    className="flex items-center px-1 py-1 rounded-md hover:bg-secondary/50 cursor-pointer"
+                    className="flex items-center px-1 py-1 rounded-md cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleToggleAllTools(mcpId, tools);
@@ -199,8 +195,8 @@ export default function ToolSidebar() {
                   
                   {tools.map((tool) => (
                     <div 
-                      key={tool.name}
-                      className={`px-1 py-1 rounded-md ${isToolSelected(mcpId, tool.name) ? 'bg-secondary/40' : 'hover:bg-secondary/50'}`}
+                      key={mcpId + tool.name}
+                      className={`px-1 py-1 rounded-md group/tool`}
                     >
                       <div className="flex items-center justify-between">
                         <div 
@@ -221,22 +217,23 @@ export default function ToolSidebar() {
                             {tool.name}
                           </Label>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5"
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="ml-auto h-6 w-6 group-hover/tool:opacity-100 opacity-0"
                           onClick={(e) => {
                             e.stopPropagation();
                             openToolDetails(mcpId, tool);
                           }}
                         >
-                          <Info className="h-3 w-3" />
-                        </Button>
+                          <Pencil className='!size-3' />
+                                  </Button>
+                      
                       </div>
                       {tool.description && (
-                        <HoverCard>
+                        <HoverCard openDelay={100} closeDelay={100}>
                           <HoverCardTrigger asChild>
-                            <p className="text-xs text-muted-foreground ml-6 mt-1 line-clamp-2 cursor-help">
+                            <p className="text-xs text-muted-foreground ml-6 mt-1 line-clamp-2">
                               {tool.description}
                             </p>
                           </HoverCardTrigger>
@@ -254,29 +251,8 @@ export default function ToolSidebar() {
               )}
             </div>
           ))}
-        </div>
-      </div>
-      
-      {selectedTool && (
-        <Sheet open={!!selectedTool} onOpenChange={() => setSelectedTool(null)}>
-          <SheetContent className="sm:max-w-md">
-            <SheetHeader>
-              <SheetTitle>{selectedTool.tool.name}</SheetTitle>
-              <SheetDescription className="text-left">
-                {selectedTool.tool.description}
-              </SheetDescription>
-            </SheetHeader>
-            <div className="py-4">
-              <ToolParameterDetails tool={selectedTool.tool} />
-            </div>
-            <SheetFooter>
-              <SheetClose asChild>
-                <Button>Close</Button>
-              </SheetClose>
-            </SheetFooter>
-          </SheetContent>
-        </Sheet>
-      )}
-    </aside>
+      </SidebarContent>
+
+    </Sidebar>
   );
 }

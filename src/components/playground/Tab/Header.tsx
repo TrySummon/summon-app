@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/Kbd';
 import { toast } from 'sonner';
 import { LLMPicker } from '@/components/llm-picker';
+import SidebarTrigger from './SidebarTrigger';
 
 export default function TabHeader() {
     const {
@@ -102,7 +103,7 @@ export default function TabHeader() {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [canUndoState, canRedoState, isRunning]);
 
-    return <div className='flex justify-between items-center gap-2 px-4'>
+    return <div className='flex justify-between items-center gap-2 px-3'>
       <div className='flex gap-2'>
         <LLMPicker config={{
           credentialId: currentState.credentialId,
@@ -190,6 +191,14 @@ export default function TabHeader() {
         </TooltipTrigger>
         <TooltipContent>
           <p>Reset tab</p>
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <SidebarTrigger showOnlyOnOpen />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Open tools</p>
         </TooltipContent>
       </Tooltip>
       </div>

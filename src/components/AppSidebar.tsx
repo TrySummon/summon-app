@@ -9,7 +9,7 @@ import {
     SidebarMenuButton,
     SidebarMenu
   } from "@/components/ui/sidebar";
-import { Box, Plug, SquareTerminal, Settings } from "lucide-react";
+import { Box, SquareTerminal, Settings } from "lucide-react";
 import { ApiNav } from "@/components/api-nav";
 import { McpNav } from "@/components/mcp-nav";
 import { ExternalMcpNav } from "@/components/external-mcp-nav";

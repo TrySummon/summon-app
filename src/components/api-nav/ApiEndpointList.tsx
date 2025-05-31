@@ -104,7 +104,7 @@ export function ApiEndpointList({ apiId, paths, isOpen }: ApiEndpointListProps) 
   }, [paths]);
 
   return (
-    <SidebarMenuSub>
+    <SidebarMenuSub className="mx-2.5">
       {isOpen && paths && (
         <>
           {/* Render root-level endpoints that don't belong to any group */}
