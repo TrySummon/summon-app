@@ -5,22 +5,21 @@ import { EditorView } from "codemirror";
 import { keymap } from "@codemirror/view";
 import { Extension } from "@codemirror/state";
 import CodeMirrorEditor from '@/components/CodeEditor';
+import { usePlaygroundStore } from '../store';
 
 interface SystemPromptProps {
-  value: string;
-  onChange?: (value: string) => void;
   className?: string;
-  readOnly?: boolean;
 }
 
 const SystemPrompt: React.FC<SystemPromptProps> = ({
-  value,
-  onChange,
   className,
-  readOnly = false,
 }) => {
   const editorRef = useRef<EditorView | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const systemPrompt = usePlaygroundStore(state => state.getCurrentState().systemPrompt || '');
+  const isRunning = usePlaygroundStore(state => state.getCurrentState().running);
+  const updateSystemPrompt = usePlaygroundStore(state => state.updateSystemPrompt);
+
 
   // Update editor content when text changes
    useEffect(() => {
@@ -28,14 +27,14 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({
     if (!editor) return;
 
     const currentValue = editor.state.doc.toString();
-    const newValue = value;
+    const newValue = systemPrompt;
 
     if (currentValue !== newValue) {
       editor.dispatch({
         changes: { from: 0, to: currentValue.length, insert: newValue },
       });
     }
-  }, [value]);
+  }, [systemPrompt]);
 
   const toggleExpand = useCallback(() => {
     const expanding = !isExpanded;
@@ -76,9 +75,9 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({
     ]);
   }, []);
 
-  const hasMultipleLines = value.includes('\n');
+  const hasMultipleLines = systemPrompt.includes('\n');
 
-  const showEditor = isExpanded || !!value.trim();
+  const showEditor = isExpanded || !!systemPrompt.trim();
 
   return (
     <div 
@@ -100,7 +99,7 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({
         <div className="flex items-center gap-2 text-muted-foreground/70 hover:text-muted-foreground">
           {!isExpanded && hasMultipleLines && (
             <div className="text-xs">
-              {value.split('\n').length} lines
+              {systemPrompt.split('\n').length} lines
             </div>
           )}
           {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -117,8 +116,8 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({
         <CodeMirrorEditor
         className={showEditor ? "translate-y-0 opacity-100" : "translate-y-[-100%] opacity-0"}
           editorRef={editorRef}
-          onChange={onChange}
-          readOnly={readOnly}
+          onChange={updateSystemPrompt}
+          readOnly={isRunning}
           language='markdown'
           additionalExtensions={[keyboardShortcuts]}
         />

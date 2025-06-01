@@ -61,7 +61,7 @@ interface Props {
   onPaste?: (event: ClipboardEvent) => void;
 }
 
-export default function CodeMirrorEditor({
+ function CodeMirrorEditor({
   className,
   editorRef,
   defaultValue,
@@ -200,3 +200,5 @@ export default function CodeMirrorEditor({
     />
   );
 }
+
+export default React.memo(CodeMirrorEditor);

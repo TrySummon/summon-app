@@ -12,48 +12,40 @@ import { useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { UIMessage } from "ai";
 import CopyButton from "@/components/CopyButton";
+import { usePlaygroundStore } from "../store";
 
 
 interface Props {
   message: UIMessage;
   autoFocus?: boolean;
-  onChange?: (message: UIMessage) => void;
-  onDelete?: () => void;
-  onRerun?: () => void;
+  index: number;
   maxHeight?: number;
   children?: React.ReactNode;
 }
 
 export default function Message({
   message,
-  onChange,
-  onDelete,
-  onRerun,
+  index,
   autoFocus,
   maxHeight,
   children,
 }: Props) {
+  const updateMessage = usePlaygroundStore(state => state.updateMessage);
+  const deleteMessage = usePlaygroundStore(state => state.deleteMessage);
+  const rerunFromMessage = usePlaygroundStore(state => state.rerunFromMessage);
 
-  const addText = useCallback(() => {
-    const toAdd = { type: 'text' as const, text: '' };
-    if (typeof message.content === 'string') {
-      onChange?.({
-        ...message,
-        parts: [
-          {
-            type: 'text',
-            text: message.content as string
-          },
-          toAdd
-        ]
-      });
-    } else {
-      onChange?.({
-        ...message,
-        parts: [...(message.parts || []), toAdd]
-      });
-    }
-  }, [message.content, onChange]);
+  const onChange = useCallback((message: UIMessage) => {
+    updateMessage(index, message);
+  }, [index, updateMessage]);
+
+  const onDelete = useCallback(() => {
+    deleteMessage(index);
+  }, [index, deleteMessage]);
+
+  const onRerun = useCallback(() => {
+    rerunFromMessage(index);
+  }, [index, rerunFromMessage]);
+
 
   // Determine if buttons should be visible based on autoFocus
   const showButtons = autoFocus;

@@ -37,6 +37,8 @@ export interface PlaygroundStore {
   getCurrentState: () => IPlaygroundState;
   
   // Tab management
+  getTabs: () => Record<string, PlaygroundTab>;
+  updateTab: (tabId: string, updatedTab: PlaygroundTab) => void;
   createTab: (initialState?: Partial<IPlaygroundState>, name?: string) => string; // returns new tab ID
   duplicateTab: (tabId: string) => string; // returns new tab ID
   renameTab: (tabId: string, name: string) => void;
@@ -60,6 +62,7 @@ export interface PlaygroundStore {
   updateSettings: (settings: Partial<IPlaygroundState['settings']>) => void;
   updateSystemPrompt: (systemPrompt: string) => void;
   updateEnabledTools: (toolProvider: string, toolIds: string[]) => void;
+  updateToolModification: (mcpId: string, toolName: string, modifiedSchema: any, modifiedName?: string) => void;
   updateAiToolMap: (aiToolMap: Record<string, Record<string, Tool>>) => void;
   updateOrigToolMap: (origToolMap: Record<string, {name: string, tools: McpTool[]}>) => void;
   updateShouldScrollToDock: (shouldScrollToDock: boolean) => void;
@@ -68,8 +71,6 @@ export interface PlaygroundStore {
   // History management
   undo: () => string | null;
   redo: () => string | null;
-  canUndo: () => boolean;
-  canRedo: () => boolean;
 }
 
 const createDefaultState = (): IPlaygroundState => ({
@@ -85,6 +86,7 @@ const createDefaultState = (): IPlaygroundState => ({
   running: false,
   maxSteps: 10,
   shouldScrollToDock: false,
+  toolModifications: {}
 });
 
 // Define the state that will be persisted to storage
@@ -115,6 +117,11 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
   origToolMap: {},
   currentTabId: '',
   showToolSidebar: false,
+
+  getTabs: () => {
+    const { tabs } = get();
+    return tabs;
+  },
 
   getCurrentTab: () => {
     const { tabs, currentTabId } = get();
@@ -151,6 +158,15 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     }));
     
     return tabId;
+  },
+
+  updateTab: (tabId: string, updatedTab: PlaygroundTab) => {
+    set(state => ({
+      tabs: {
+        ...state.tabs,
+        [tabId]: updatedTab
+      }
+    }));
   },
 
   duplicateTab: (tabId) => {
@@ -269,8 +285,6 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
       ...state,
       messages: [...state.messages, { ...message, id: message.id || uuidv4() }]
     }), true, `Added message: ${message.role}`); // Pass true for addToHistory with description
-
-    // runAgent(get);
   },
 
   updateMessage: (messageIndex, message) => {
@@ -342,16 +356,6 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     return nextHistoryEntry.description;
   },
   
-  canUndo: () => {
-    const currentTab = get().getCurrentTab();
-    return !!currentTab && currentTab.historyIndex > 0;
-  },
-  
-  canRedo: () => {
-    const currentTab = get().getCurrentTab();
-    return !!currentTab && currentTab.historyIndex < currentTab.history.length - 1;
-  },
-  
   // Specific state updates - these now update the current state directly instead of forking
   updateModel: (model) => {
     get().updateCurrentState(state => ({
@@ -416,6 +420,26 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     }));
   },
 
+  updateToolModification: (mcpId: string, toolName: string, modifiedSchema: any, modifiedName?: string) => {
+    get().updateCurrentState(state => {
+      const toolModifications = state.toolModifications || {};
+      
+      return {
+        ...state,
+        toolModifications: {
+          ...toolModifications,
+          [mcpId]: {
+            ...toolModifications[mcpId],
+            [toolName]: {
+              schema: modifiedSchema,
+              name: modifiedName
+            }
+          }
+        }
+      };
+    });
+  },
+  
   deleteMessage: (messageIndex) => {
     get().updateCurrentState(state => {
       const deletedMessage = state.messages[messageIndex];
@@ -440,7 +464,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     }), true, `Rerun from message ${messageIndex + 1}`);
     
     // Run the agent with the updated state
-    runAgent(get());
+    runAgent();
   },
 
   stopAgent: () => {

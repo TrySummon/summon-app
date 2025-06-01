@@ -4,7 +4,7 @@ import { OpenAPIV3 } from 'openapi-types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Markdown } from '../Markdown';
-import { SchemaDialog } from './SchemaDialog';
+import { SchemaDialog } from '../tool-schema/SchemaDialog';
 
 interface ParameterItemProps {
   name: string;
@@ -83,8 +83,7 @@ export const ParameterItem: React.FC<ParameterItemProps> = ({ name, schema, desc
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           schema={schema}
-          title={`${name} Schema`}
-          openapiSpec={openapiSpec}
+          name={name}
         />
       )}
     </div>

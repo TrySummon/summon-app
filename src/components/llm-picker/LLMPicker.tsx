@@ -158,11 +158,15 @@ export default function LLMPicker({
                               
                               // Get temperature range for the selected model
                               let temperatureRange: [number, number] = [0, 1];
+                              let maxTokensLimit = 4096; // Default fallback
                               if (providerConfig) {
                                 if (m in providerConfig.models) {
                                   temperatureRange = providerConfig.models[m].temperatureRange;
+                                  maxTokensLimit = providerConfig.models[m].max_tokens;
                                 } else {
                                   temperatureRange = providerConfig.defaultTemperatureRange;
+                                  // For custom models, use a reasonable default
+                                  maxTokensLimit = 4096;
                                 }
                               }
                               
@@ -174,13 +178,20 @@ export default function LLMPicker({
                                 adjustedTemperature = temperatureRange[1];
                               }
                               
+                              // Adjust maxTokens to fit within the model's limit if needed
+                              let adjustedMaxTokens = config.settings.maxTokens;
+                              if (adjustedMaxTokens && adjustedMaxTokens > maxTokensLimit) {
+                                adjustedMaxTokens = maxTokensLimit;
+                              }
+                              
                               onChange({
                                 ...config,
                                 credentialId: providerDetails.credentialId,
                                 model: m,
                                 settings: {
                                   ...config.settings,
-                                  temperature: adjustedTemperature
+                                  temperature: adjustedTemperature,
+                                  maxTokens: adjustedMaxTokens
                                 }
                               });
                             }}
@@ -205,11 +216,15 @@ export default function LLMPicker({
                               
                               // Get temperature range for the selected model
                               let temperatureRange: [number, number] = [0, 1];
+                              let maxTokensLimit = 4096; // Default fallback
                               if (providerConfig) {
                                 if (m in providerConfig.models) {
                                   temperatureRange = providerConfig.models[m].temperatureRange;
+                                  maxTokensLimit = providerConfig.models[m].max_tokens;
                                 } else {
                                   temperatureRange = providerConfig.defaultTemperatureRange;
+                                  // For custom models, use a reasonable default
+                                  maxTokensLimit = 4096;
                                 }
                               }
                               
@@ -221,13 +236,20 @@ export default function LLMPicker({
                                 adjustedTemperature = temperatureRange[1];
                               }
                               
+                              // Adjust maxTokens to fit within the model's limit if needed
+                              let adjustedMaxTokens = config.settings.maxTokens;
+                              if (adjustedMaxTokens && adjustedMaxTokens > maxTokensLimit) {
+                                adjustedMaxTokens = maxTokensLimit;
+                              }
+                              
                               onChange({
                                 ...config,
                                 credentialId: providerDetails.credentialId,
                                 model: m,
                                 settings: {
                                   ...config.settings,
-                                  temperature: adjustedTemperature
+                                  temperature: adjustedTemperature,
+                                  maxTokens: adjustedMaxTokens
                                 }
                               });
                             }}

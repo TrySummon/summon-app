@@ -18,7 +18,8 @@ import {
   SidebarContent,
 } from "@/components/ui/sidebar";
 import SidebarTrigger from './SidebarTrigger';
-import { ToolParameterSchema } from '@/components/mcp-explorer/ToolParameterSchema';
+import { ToolParameterSchema } from '@/components/tool-schema';
+import useToolMap from '@/hooks/useToolMap';
 
 interface ToolParameter {
   description?: string;
@@ -35,14 +36,103 @@ interface Tool {
 }
 
 export default function ToolSidebar() {
-  const {
-    origToolMap,
-    getCurrentState,
-    updateEnabledTools,
-  } = usePlaygroundStore();
+  const { aiToolMap, origToolMap } = useToolMap();
+
+  const enabledTools = usePlaygroundStore(state => state.getCurrentState().enabledTools || {});
+  const toolModifications = usePlaygroundStore(state => state.getCurrentState().toolModifications || {});
+  const updateAiToolMap = usePlaygroundStore(state => state.updateAiToolMap);
+  const updateOrigToolMap = usePlaygroundStore(state => state.updateOrigToolMap);
+  const getTabs = usePlaygroundStore(state => state.getTabs);
+  const updateTab = usePlaygroundStore(state => state.updateTab);
+  const updateEnabledTools = usePlaygroundStore(state => state.updateEnabledTools);
+  const updateToolModification = usePlaygroundStore(state => state.updateToolModification);
+
   
-  const currentState = getCurrentState();
-  const enabledTools = currentState.enabledTools || {};
+  // Save aiToolMap to the store when it changes
+  useEffect(() => {
+      updateAiToolMap(aiToolMap);
+  }, [aiToolMap, updateAiToolMap]);
+
+  // Save origToolMap to the store when it changes, enable all tools for tabs with undefined enabledTools,
+  // and remove tools that are no longer available
+  useEffect(() => {
+    // First, update the store with the new origToolMap
+    updateOrigToolMap(origToolMap);
+    
+    // If we have tools available, check each tab
+    if (Object.keys(origToolMap).length > 0) {
+      const tabs = getTabs();
+      // For each tab, process its enabledTools
+      Object.entries(tabs).forEach(([tabId, tab]) => {
+        // Case 1: enabledTools is undefined - enable all tools
+        if (tab.state.enabledTools === undefined) {
+          // Create a map of all available tools
+          const allTools: Record<string, string[]> = {};
+          
+          // For each MCP, add all its tools to the enabledTools object
+          Object.entries(origToolMap).forEach(([mcpId, { tools }]) => {
+            allTools[mcpId] = tools.map(tool => tool.name);
+          });
+          
+          updateTab(tabId, {
+            ...tab,
+            state: {
+              ...tab.state,
+              enabledTools: allTools
+            }
+          });
+
+        } 
+        // Case 2: enabledTools is defined - check for tools that are no longer available
+        else if (tab.state.enabledTools) {
+          let needsUpdate = false;
+          const updatedEnabledTools: Record<string, string[]> = {};
+          
+          // For each MCP in the tab's enabledTools
+          Object.entries(tab.state.enabledTools).forEach(([mcpId, enabledToolIds]) => {
+            // Check if this MCP still exists in origToolMap
+            if (origToolMap[mcpId]) {
+              // Get the available tool IDs for this MCP
+              const availableToolIds = origToolMap[mcpId].tools.map(tool => tool.name);
+              
+              // Filter out tools that are no longer available
+              const validToolIds = enabledToolIds.filter(toolId => 
+                availableToolIds.includes(toolId)
+              );
+              
+              // If some tools were removed, mark for update
+              if (validToolIds.length !== enabledToolIds.length) {
+                needsUpdate = true;
+              }
+              
+              // Only add this MCP if it has valid tools
+              if (validToolIds.length > 0) {
+                updatedEnabledTools[mcpId] = validToolIds;
+              } else {
+                needsUpdate = true; // MCP had tools but now has none valid
+              }
+            } else {
+              // MCP no longer exists, mark for update
+              needsUpdate = true;
+            }
+          });
+          
+          // If we need to update the tab's enabledTools
+          if (needsUpdate) {
+            updateTab(tabId, {
+              ...tab,
+              state: {
+                ...tab.state,
+                enabledTools: updatedEnabledTools
+              }
+            });
+          }
+        }
+      });
+    }
+  }, [origToolMap, updateOrigToolMap, getTabs, updateTab ]);
+
+  
   const toolCount = Object.values(enabledTools).reduce((acc, tools) => acc + tools.length, 0);
   
   // State for expanded MCP sections - all expanded by default
@@ -126,6 +216,23 @@ export default function ToolSidebar() {
     return currentToolsForMcp.includes(toolId);
   };
   
+  // Handle tool schema modifications
+  const handleToolChange = (mcpId: string, toolName: string, modifiedSchema: any, modifiedName?: string) => {
+    updateToolModification(mcpId, toolName, modifiedSchema, modifiedName);
+  };
+  
+  // Get modified schema for a tool
+  const getModifiedSchema = (mcpId: string, toolName: string, originalSchema: any) => {
+    const modification = toolModifications[mcpId]?.[toolName];
+    return modification?.schema || originalSchema;
+  };
+  
+  // Get modified name for a tool
+  const getModifiedName = (mcpId: string, toolName: string, originalName: string) => {
+    const modification = toolModifications[mcpId]?.[toolName];
+    return modification?.name || originalName;
+  };
+  
   if (!origToolMap || Object.keys(origToolMap).length === 0) {
     return null;
   }
@@ -143,7 +250,7 @@ export default function ToolSidebar() {
           <Badge className='select-none' variant="outline">{toolCount}</Badge>
       </div>
       </SidebarHeader>
-      <SidebarContent className='overflow-y-auto overflow-x-hidden gap-0 py-1'>
+      <SidebarContent className='overflow-y-auto overflow-x-hidden gap-0'>
           {mcps.map(([mcpId, { name, tools }]) => (
             <div key={mcpId}>
               <div 
@@ -201,10 +308,17 @@ export default function ToolSidebar() {
                             title={tool.name}
                             className="font-normal text-xs cursor-pointer"
                           >
-                            {tool.name}
+                            {getModifiedName(mcpId, tool.name, tool.name)}
                           </Label>
                         </div>
-                        <ToolParameterSchema editable schema={tool.inputSchema} name={tool.name} className='opacity-0 group-hover/tool:opacity-100 -mt-1' />
+                        <ToolParameterSchema 
+                          editable 
+                          schema={tool.inputSchema}
+                          modifiedSchema={getModifiedSchema(mcpId, tool.name, tool.inputSchema)} 
+                          name={getModifiedName(mcpId, tool.name, tool.name)}
+                          className='opacity-0 group-hover/tool:opacity-100 -mt-1'
+                          onChange={(modifiedSchema, modifiedName) => handleToolChange(mcpId, tool.name, modifiedSchema, modifiedName)}
+                        />
                       </div>
                       {tool.description && (
                         <HoverCard openDelay={100} closeDelay={100}>
@@ -215,7 +329,7 @@ export default function ToolSidebar() {
                           </HoverCardTrigger>
                           <HoverCardContent side="left" sideOffset={28} align="center" className="w-80 p-4">
                             <div className="space-y-2">
-                              <h4 className="text-sm font-semibold">{tool.name}</h4>
+                              <h4 className="text-sm font-semibold">{getModifiedName(mcpId, tool.name, tool.name)}</h4>
                               <p className="text-xs">{tool.description}</p>
                             </div>
                           </HoverCardContent>
@@ -229,7 +343,6 @@ export default function ToolSidebar() {
             </div>
           ))}
       </SidebarContent>
-
     </Sidebar>
   );
 }

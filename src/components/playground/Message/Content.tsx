@@ -1,7 +1,5 @@
-import React from "react";
-import { Trash2 } from 'lucide-react';
+import React, { useCallback, useRef, useEffect } from "react";
 import ImageEditor from "@/components/ImageEditor";
-import { Button } from "@/components/ui/button";
 import { Attachment, UIMessage } from "ai";
 import MessageEditor from "./Editor";
 import { ToolCall } from "./ToolCall";
@@ -20,6 +18,24 @@ export function MessageContent({
   maxHeight
 }: Props) {
   const placeholder = autoFocus ? 'Type your message here. Shift+Enter for new line.' : 'Empty';
+  
+  const messageRef = useRef<UIMessage>(message);
+  
+  useEffect(() => {
+    messageRef.current = message;
+  }, [message]);
+
+  const onPasteImage = useCallback(
+    (url: string, contentType: string) => {
+      const toAdd: Attachment = { url, contentType };
+      // Use the ref to get the latest message value
+      onChange?.({
+        ...messageRef.current,
+        experimental_attachments: [...(messageRef.current.experimental_attachments || []), toAdd]
+      });
+    },
+    [onChange]
+  );
 
     return (
       <div className="flex flex-col gap-2">
@@ -32,17 +48,11 @@ export function MessageContent({
                   maxHeight={maxHeight}
                   readOnly={!onChange}
                   value={c.text}
-                  onPasteImage={(url, contentType) => {
-                    const toAdd: Attachment = { url, contentType };
-                    onChange?.({
-                      ...message,
-                      experimental_attachments: [...(message.experimental_attachments || []), toAdd]
-                    });
-                  }}
+                  onPasteImage={onPasteImage}
                   onChange={(v) =>
                     onChange?.({
-                      ...message,
-                      parts: message.parts.map((c, changedIndex) => {
+                      ...messageRef.current,
+                      parts: messageRef.current.parts.map((c, changedIndex) => {
                         if (i !== changedIndex) {
                           return c;
                         } else {
@@ -53,22 +63,6 @@ export function MessageContent({
                   }
                   placeholder={placeholder}
                 />
-                {i !== 0 ? (
-                  <Button
-                    onClick={() =>
-                      onChange?.({
-                        ...message,
-                        parts: message.parts.filter((_, deletedIndex) => i !== deletedIndex),
-                        experimental_attachments: message.experimental_attachments?.filter((_, deletedIndex) => i !== deletedIndex)
-                      })
-                    }
-                    className="-mt-2 -mr-2 text-muted-foreground"
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                ) : null}
               </div>
             );
           }

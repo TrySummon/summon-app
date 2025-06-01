@@ -1,10 +1,50 @@
 import { CoreSystemMessage, streamText, ToolSet } from 'ai';
 import { createLLMProvider } from "@/helpers/llm";
-import type { PlaygroundStore } from './store';
+import { usePlaygroundStore, type PlaygroundStore } from './store';
 import { v4 as uuidv4 } from 'uuid';
 import { UIMessage } from 'ai';
 
-export async function runAgent(store: PlaygroundStore) {
+// Helper function to remap modified arguments back to original argument names
+function remapArgsToOriginal(args: Record<string, any>, originalParams: any, modifiedParams: any): Record<string, any> {
+    // If no modifications to the schema, return args as-is
+    if (!originalParams?.properties || !modifiedParams?.properties) {
+        return args;
+    }
+    
+    const remappedArgs: Record<string, any> = {};
+    
+    // Simple approach: try to find matching properties by position/order first, then by name
+    const originalPropNames = Object.keys(originalParams.properties);
+    const modifiedPropNames = Object.keys(modifiedParams.properties);
+    
+    // Create mapping based on order (most reliable for renamed properties)
+    const propertyMapping: Record<string, string> = {};
+    
+    modifiedPropNames.forEach((modifiedPropName, index) => {
+        // First try to find exact name match
+        if (originalPropNames.includes(modifiedPropName)) {
+            propertyMapping[modifiedPropName] = modifiedPropName;
+        } 
+        // Otherwise, map by position if available
+        else if (index < originalPropNames.length) {
+            propertyMapping[modifiedPropName] = originalPropNames[index];
+        }
+        // Fallback: use the modified name as-is
+        else {
+            propertyMapping[modifiedPropName] = modifiedPropName;
+        }
+    });
+    
+    // Remap the arguments using the property mapping
+    Object.keys(args).forEach(argKey => {
+        const originalKey = propertyMapping[argKey] || argKey;
+        remappedArgs[originalKey] = args[argKey];
+    });
+    
+    return remappedArgs;
+}
+
+export async function runAgent() {
     // Track start time for latency calculation
     const startTime = Date.now();
     // Track token usage if available from API response
@@ -12,6 +52,8 @@ export async function runAgent(store: PlaygroundStore) {
         inputTokens: 0,
         outputTokens: 0
     };
+
+    const store = usePlaygroundStore.getState();
     
     try {
         const {aiToolMap, updateCurrentState, updateMessage, getCurrentState, updateShouldScrollToDock} = store;
@@ -36,9 +78,10 @@ export async function runAgent(store: PlaygroundStore) {
             tokenUsage: undefined
         }));
 
-        // Get the current state to access enabledTools
+        // Get the current state to access enabledTools and toolModifications
         const currentState = getCurrentState();
         const enabledTools = currentState.enabledTools || {};
+        const toolModifications = currentState.toolModifications || {};
         
         // Create a filtered toolset based on selected tools
         const toolSet: ToolSet = {}
@@ -52,7 +95,30 @@ export async function runAgent(store: PlaygroundStore) {
             Object.entries(tools).forEach(([toolName, tool]) => {
                 // Check if this tool is enabled for this MCP
                 if (enabledToolIds.includes(toolName)) {
-                    toolSet[toolName] = tool;
+                    // Check if there are modifications for this tool
+                    const modification = toolModifications[mcpId]?.[toolName];
+                    
+                    if (modification) {
+                        // Apply modifications to the tool but keep the original name
+                        // Override the execute function to handle name remapping if needed
+                        const modifiedTool = {
+                            ...tool,
+                            parameters: modification.schema,
+                            execute: (args: Record<string, any>) => {
+                                // Remap modified args back to original args
+                                const remappedArgs = remapArgsToOriginal(args, tool.parameters, modification.schema);
+                                // Always call with the original tool name for API compatibility
+                                return window.mcpApi.callMcpTool(mcpId, toolName, remappedArgs);
+                            }
+                        };
+                        
+                        // Use modified name if provided, otherwise use original name
+                        const finalToolName = modification.name || toolName;
+                        toolSet[finalToolName] = modifiedTool;
+                    } else {
+                        // Use original tool without modifications
+                        toolSet[toolName] = tool;
+                    }
                 }
             });
         });
@@ -149,12 +215,6 @@ export async function runAgent(store: PlaygroundStore) {
             // Calculate latency (ongoing)
             const currentLatency = Date.now() - startTime;
             
-            // Update latency in state
-            updateCurrentState((state) => ({
-                ...state,
-                latency: currentLatency
-            }), false);
-            
             // Create the assistant message on first token if it doesn't exist yet
             if (!assistantMessageCreated) {
                 const initialAssistantMessage: UIMessage = {
@@ -167,6 +227,7 @@ export async function runAgent(store: PlaygroundStore) {
                 
                 updateCurrentState((state) => ({
                     ...state,
+                    latency: currentLatency,
                     messages: [
                         ...state.messages, 
                         initialAssistantMessage
@@ -187,7 +248,12 @@ export async function runAgent(store: PlaygroundStore) {
                         createdAt: new Date()
                     };
                     
-                    updateMessage(messageIndex, updatedAssistantMessage);
+                        updateMessage(messageIndex, updatedAssistantMessage)
+                        // Update latency in state
+                        updateCurrentState((state) => ({
+                            ...state,
+                            latency: currentLatency
+                        }), false);
                 }
             }
         }

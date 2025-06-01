@@ -2,8 +2,8 @@ import React from "react";
 import { Tool } from "@modelcontextprotocol/sdk/types";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { ToolParameterSchema } from "./ToolParameterSchema";
 import { extractToolParameters } from "./utils";
+import { ToolParameterSchema } from "@/components/tool-schema";
 
 interface ToolsListProps {
   tools: Tool[];

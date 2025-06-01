@@ -9,48 +9,20 @@ import { LLMPicker } from '@/components/llm-picker';
 import SidebarTrigger from './SidebarTrigger';
 
 export default function TabHeader() {
-    const {
-      duplicateTab,
-      updateCurrentState,
-      undo,
-      redo,
-      canUndo,
-      canRedo,
-      getCurrentState,
-      currentTabId
-    } = usePlaygroundStore();
-    
-    // Track undo/redo state
-    const [canUndoState, setCanUndoState] = useState(canUndo());
-    const [canRedoState, setCanRedoState] = useState(canRedo());
+    const currentTabId = usePlaygroundStore(state => state.currentTabId);
+    const historyIndex = usePlaygroundStore(state => state.tabs[currentTabId]?.historyIndex);
+    const history = usePlaygroundStore(state => state.tabs[currentTabId]?.history);
+    const currentState = usePlaygroundStore(state => state.tabs[currentTabId]?.state);
+    const duplicateTab = usePlaygroundStore(state => state.duplicateTab);
+    const updateCurrentState = usePlaygroundStore(state => state.updateCurrentState);
+    const undo = usePlaygroundStore(state => state.undo);
+    const redo = usePlaygroundStore(state => state.redo);
+
+    const canUndo = historyIndex > 0;
+    const canRedo = historyIndex < history.length - 1;
     
     // Use state to track the current playground state
-    const [currentState, setCurrentState] = useState(getCurrentState());
     const isRunning = currentState.running;
-    
-    // Update state when store changes
-    useEffect(() => {
-      // Create a subscription to the store
-      const unsubscribe = usePlaygroundStore.subscribe((state) => {
-        // Check if undo/redo state has changed
-        const canUndoCurrent = canUndo();
-        const canRedoCurrent = canRedo();
-        
-        if (canUndoCurrent !== canUndoState) {
-          setCanUndoState(canUndoCurrent);
-        }
-        
-        if (canRedoCurrent !== canRedoState) {
-          setCanRedoState(canRedoCurrent);
-        }
-        
-        // Update current state to reflect latest changes
-        setCurrentState(getCurrentState());
-      });
-      
-      // Cleanup subscription
-      return unsubscribe;
-    }, [canUndoState, canRedoState]);
 
     const clearMessages = () => {
         // Use the new clearCurrentTab method to properly clear messages and history
@@ -84,7 +56,7 @@ export default function TabHeader() {
             
             // Check for Undo: Cmd+Z (Mac) or Ctrl+Z (Windows/Linux)
             if (e.metaKey && e.key === 'z' && !e.shiftKey) {
-                if (canUndoState && !isRunning) {
+                if (canUndo && !isRunning) {
                     e.preventDefault();
                     handleUndo();
                 }
@@ -92,7 +64,7 @@ export default function TabHeader() {
             
             // Check for Redo: Cmd+Shift+Z (Mac) or Ctrl+Shift+Z (Windows/Linux)
             if (e.metaKey && e.key === 'z' && e.shiftKey) {
-                if (canRedoState && !isRunning) {
+                if (canRedo && !isRunning) {
                     e.preventDefault();
                     handleRedo();
                 }
@@ -101,7 +73,7 @@ export default function TabHeader() {
         
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [canUndoState, canRedoState, isRunning]);
+    }, [canUndo, canRedo, isRunning]);
 
     return <div className='flex justify-between items-center gap-2 px-3'>
       <div className='flex gap-2'>
@@ -144,7 +116,7 @@ export default function TabHeader() {
             variant="ghost"
             size="icon"
             aria-label="Undo"
-            disabled={!canUndoState || isRunning}
+            disabled={!canUndo || isRunning}
           >
             <Undo className='h-4 w-4' />
           </Button>
@@ -164,7 +136,7 @@ export default function TabHeader() {
             variant="ghost"
             size="icon"
             aria-label="Redo"
-            disabled={!canRedoState || isRunning}
+            disabled={!canRedo || isRunning}
           >
             <Redo className='h-4 w-4' />
           </Button>
@@ -181,7 +153,7 @@ export default function TabHeader() {
         <TooltipTrigger asChild>
           <Button 
             onClick={() => confirm(`Are you sure you want to reset the tab?`) && clearMessages()}
-            disabled={isRunning || !currentState.messages.length}
+            disabled={isRunning}
             variant="ghost"
             size="icon"
             aria-label="Reset tab"

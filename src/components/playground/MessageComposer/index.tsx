@@ -8,10 +8,13 @@ import { ArrowUp, Square } from 'lucide-react';
 import { MessageContent } from '../Message/Content';
 import ImageDialog from '@/components/ImageDialog';
 
-export default function MessageComposer({ running }: { running: boolean }) {
+export default function MessageComposer() {
   const ref = useRef<HTMLDivElement>(null);
-  const playgroundStore = usePlaygroundStore();
-  
+
+  const running = usePlaygroundStore(state => state.getCurrentState().running);
+  const addMessage = usePlaygroundStore(state => state.addMessage);
+  const stopAgent = usePlaygroundStore(state => state.stopAgent);
+
   const [composer, setComposer] = useState<UIMessage>({
     id: uuidv4(),
     role: 'user',
@@ -40,7 +43,7 @@ export default function MessageComposer({ running }: { running: boolean }) {
       };
       
       // Add the message to the current state using the zustand store
-      playgroundStore.addMessage(trimmedComposer);
+      addMessage(trimmedComposer);
       // Reset the composer
       setComposer((prev) => ({
         id: uuidv4(),
@@ -48,9 +51,9 @@ export default function MessageComposer({ running }: { running: boolean }) {
         content: '',
         parts: [{ type: 'text', text: '' }]
       }));
-      runAgent(playgroundStore);
+      runAgent();
     },
-    [disabled, composer, playgroundStore]
+    [disabled, composer]
   );
 
   // Keyboard shortcut handler
@@ -86,7 +89,7 @@ export default function MessageComposer({ running }: { running: boolean }) {
   const submitButton = useMemo(() => {
     if (running) {
       return (
-        <Button className='rounded-full' size="icon" onClick={playgroundStore.stopAgent}>
+        <Button className='rounded-full' size="icon" onClick={stopAgent}>
             <Square className="fill-current h-4 w-4" />
         </Button>
       );
@@ -97,7 +100,7 @@ export default function MessageComposer({ running }: { running: boolean }) {
         <ArrowUp className='h-4 w-4' />
       </Button>
     );
-  }, [handleAddMessage, disabled, running,  playgroundStore.stopAgent]);
+  }, [handleAddMessage, disabled, running, stopAgent]);
 
   return (
     <div className='flex flex-col w-full max-w-4xl mx-auto px-4'>

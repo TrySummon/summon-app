@@ -69,7 +69,6 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
 
               itemSchema = schema.items as OpenAPIV3.SchemaObject;
               
-              
               properties.push({
                 name: 'Array items',
                 schema: {

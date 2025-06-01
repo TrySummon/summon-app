@@ -82,6 +82,8 @@ export interface IPlaygroundState {
     systemPrompt?: string;
     messages: UIMessage[];
     enabledTools?: Record<string, string[]>;
+    // Tool modifications: mcpId -> toolName -> modified schema and name
+    toolModifications?: Record<string, Record<string, { schema: any; name?: string }>>;
     running: boolean;
     maxSteps: number;
     shouldScrollToDock?: boolean;
