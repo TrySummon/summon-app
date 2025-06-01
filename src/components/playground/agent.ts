@@ -78,10 +78,10 @@ export async function runAgent() {
             tokenUsage: undefined
         }));
 
-        // Get the current state to access enabledTools and toolModifications
+        // Get the current state to access enabledTools and modifiedToolMap
         const currentState = getCurrentState();
         const enabledTools = currentState.enabledTools || {};
-        const toolModifications = currentState.toolModifications || {};
+        const modifiedToolMap = currentState.modifiedToolMap || {};
         
         // Create a filtered toolset based on selected tools
         const toolSet: ToolSet = {}
@@ -96,7 +96,7 @@ export async function runAgent() {
                 // Check if this tool is enabled for this MCP
                 if (enabledToolIds.includes(toolName)) {
                     // Check if there are modifications for this tool
-                    const modification = toolModifications[mcpId]?.[toolName];
+                    const modification = modifiedToolMap[mcpId]?.[toolName];
                     
                     if (modification) {
                         // Apply modifications to the tool but keep the original name

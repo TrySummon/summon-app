@@ -3,7 +3,7 @@ import { Tool } from "@modelcontextprotocol/sdk/types";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { extractToolParameters } from "./utils";
-import { ToolParameterSchema } from "@/components/tool-schema";
+import { JsonSchema } from "../json-schema";
 
 interface ToolsListProps {
   tools: Tool[];
@@ -52,7 +52,7 @@ export const ToolsList: React.FC<ToolsListProps> = ({ tools }) => {
                             )}
                             {param.schema && (param.type === 'object' || (param.properties && Object.keys(param.properties).length > 0)) && (
                               <div className="ml-auto">
-                                <ToolParameterSchema schema={param.schema} name={param.name} />
+                                <JsonSchema schema={param.schema} name={param.name} />
                               </div>
                             )}
                           </div>

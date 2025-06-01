@@ -1,7 +1,7 @@
 import React from 'react';
 import MessageComposer from '../MessageComposer';
 import TabHeader from './Header';
-import ToolSidebar from './ToolSidebar';
+import ToolSidebar from '../ToolSidebar';
 import {
   SidebarInset,
   SidebarProvider,

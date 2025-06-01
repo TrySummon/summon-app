@@ -12,7 +12,7 @@ type ToolMapEntry = {
 export default function useToolMap() {
   const mcps = useMcps();
   const externalMcps = useExternalMcps();
-  const [origToolMap, setOrigToolMap] = useState<Record<string, ToolMapEntry>>({});
+  const [mcpToolMap, setMcpToolMap] = useState<Record<string, ToolMapEntry>>({});
   const [aiToolMap, setAiToolMap] = useState<Record<string, Record<string, Tool>>>({});
 
   useEffect(() => {
@@ -20,14 +20,14 @@ export default function useToolMap() {
       try {
         const response = await window.mcpApi.getMcpTools(mcpId);
         if (response.success && response.data) {
-          setOrigToolMap((prevToolMap) => {
+          setMcpToolMap((prevToolMap) => {
             return {
               ...prevToolMap,
               [mcpId]: { name, tools: response.data as McpTool[] }
             };
           });
         } else {
-          setOrigToolMap((prevToolMap) => {
+          setMcpToolMap((prevToolMap) => {
             return {
               ...prevToolMap,
               [mcpId]: { name, tools: [] }
@@ -49,7 +49,7 @@ export default function useToolMap() {
   }, [mcps, externalMcps]);
 
   useEffect(() => {
-    const mcpTools = Object.entries(origToolMap);
+    const mcpTools = Object.entries(mcpToolMap);
     const aiTools: Record<string, Record<string, Tool>> = {};
 
     mcpTools.forEach(([mcpId, {tools}]) => {
@@ -64,10 +64,10 @@ export default function useToolMap() {
     })
 
     setAiToolMap(aiTools);
-  }, [origToolMap]);
+  }, [mcpToolMap]);
 
   return {
-    origToolMap,
+    mcpToolMap,
     aiToolMap,
     };
  }

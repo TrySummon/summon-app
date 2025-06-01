@@ -25,7 +25,7 @@ const inDevelopment = process.env.NODE_ENV === "development";
 function createWindow() {
   const preload = path.join(__dirname, "preload.js");
   const mainWindow = new BrowserWindow({
-    width: 1024,
+    width: 1200,
     height: 768,
     minWidth: 768,
     webPreferences: {
@@ -71,7 +71,13 @@ app.whenReady()
 .then(ensureMcpJsonFile)
 .then(watchMcpJsonFile)
 .then(startAllMcpServers)
-.then(connectAllExternalMcps);
+.then(async () => {
+  const results = await connectAllExternalMcps();
+  const mainWindow = BrowserWindow.getAllWindows()[0];
+  if (mainWindow) {
+    mainWindow.webContents.send(EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL, results);
+  }
+});
 
 app.whenReady().then(() => {
   const apiDataDir = getApiDataDir();

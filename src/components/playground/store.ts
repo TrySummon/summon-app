@@ -1,21 +1,21 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { Tool, UIMessage } from 'ai';
-import { IPlaygroundState } from './state';
+import { IPlaygroundTabState, ModifiedTool } from './tabState';
 import { persist, createJSONStorage, PersistOptions } from 'zustand/middleware';
 import { runAgent } from './agent';
 import { Tool as McpTool } from '@modelcontextprotocol/sdk/types';
 
 
 interface HistoryEntry {
-  state: IPlaygroundState;
+  state: IPlaygroundTabState;
   description: string;
 }
 
 interface PlaygroundTab {
   id: string;
   name: string;
-  state: IPlaygroundState;
+  state: IPlaygroundTabState;
   history: HistoryEntry[];
   historyIndex: number;
 }
@@ -26,7 +26,7 @@ export interface PlaygroundStore {
   // All available tools in ai-sdk format
   aiToolMap: Record<string, Record<string, Tool>>;
   // All available tools in mcp-sdk format
-  origToolMap: Record<string, {name: string, tools: McpTool[]}>;
+  mcpToolMap: Record<string, {name: string, tools: McpTool[]}>;
   // Current active tab ID
   currentTabId: string;
   // Tool sidebar visibility
@@ -34,19 +34,19 @@ export interface PlaygroundStore {
   
   // Getters
   getCurrentTab: () => PlaygroundTab | undefined;
-  getCurrentState: () => IPlaygroundState;
+  getCurrentState: () => IPlaygroundTabState;
   
   // Tab management
   getTabs: () => Record<string, PlaygroundTab>;
   updateTab: (tabId: string, updatedTab: PlaygroundTab) => void;
-  createTab: (initialState?: Partial<IPlaygroundState>, name?: string) => string; // returns new tab ID
+  createTab: (initialState?: Partial<IPlaygroundTabState>, name?: string) => string; // returns new tab ID
   duplicateTab: (tabId: string) => string; // returns new tab ID
   renameTab: (tabId: string, name: string) => void;
   closeTab: (tabId: string) => void;
   setCurrentTab: (tabId: string) => void;
   
   // State management
-  updateCurrentState: (updater: (state: IPlaygroundState) => IPlaygroundState, addToHistory?: boolean, actionDescription?: string) => void;
+  updateCurrentState: (updater: (state: IPlaygroundTabState) => IPlaygroundTabState, addToHistory?: boolean, actionDescription?: string) => void;
   addMessage: (message: UIMessage) => void;
   updateMessage: (messageIndex: number, message: UIMessage) => void;
   deleteMessage: (messageIndex: number) => void;
@@ -59,12 +59,12 @@ export interface PlaygroundStore {
   // Specific state updates
   updateModel: (model: string) => void;
   updateProviderCredential: (credentialId: string | undefined) => void;
-  updateSettings: (settings: Partial<IPlaygroundState['settings']>) => void;
+  updateSettings: (settings: Partial<IPlaygroundTabState['settings']>) => void;
   updateSystemPrompt: (systemPrompt: string) => void;
   updateEnabledTools: (toolProvider: string, toolIds: string[]) => void;
-  updateToolModification: (mcpId: string, toolName: string, modifiedSchema: any, modifiedName?: string) => void;
+  modifyTool: (mcpId: string, toolName: string, modifiedTool: ModifiedTool) => void;
   updateAiToolMap: (aiToolMap: Record<string, Record<string, Tool>>) => void;
-  updateOrigToolMap: (origToolMap: Record<string, {name: string, tools: McpTool[]}>) => void;
+  updateMcpToolMap: (mcpToolMap: Record<string, {name: string, tools: McpTool[]}>) => void;
   updateShouldScrollToDock: (shouldScrollToDock: boolean) => void;
   setShowToolSidebar: (show: boolean) => void;
   
@@ -73,7 +73,7 @@ export interface PlaygroundStore {
   redo: () => string | null;
 }
 
-const createDefaultState = (): IPlaygroundState => ({
+const createDefaultState = (): IPlaygroundTabState => ({
   id: uuidv4(),
   credentialId: undefined,
   model: undefined,
@@ -82,11 +82,11 @@ const createDefaultState = (): IPlaygroundState => ({
     maxTokens: 4096
   },
   messages: [],
-  enabledTools: undefined,
+  enabledTools: {},
   running: false,
   maxSteps: 10,
   shouldScrollToDock: false,
-  toolModifications: {}
+  modifiedToolMap: {}
 });
 
 // Define the state that will be persisted to storage
@@ -114,7 +114,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     (set, get) => ({
   tabs: {},
   aiToolMap: {},
-  origToolMap: {},
+  mcpToolMap: {},
   currentTabId: '',
   showToolSidebar: false,
 
@@ -174,7 +174,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     if (!tabToDuplicate) return tabId; // Return original if not found
     
     // Create a partial state with the properties we want to duplicate
-    const partialState: Partial<IPlaygroundState> = {
+    const partialState: Partial<IPlaygroundTabState> = {
       systemPrompt: tabToDuplicate.state.systemPrompt,
       messages: [...tabToDuplicate.state.messages],
       settings: { ...tabToDuplicate.state.settings },
@@ -402,8 +402,8 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     set({ aiToolMap });
   },
 
-  updateOrigToolMap: (origToolMap) => {
-    set({ origToolMap });
+  updateMcpToolMap: (mcpToolMap) => {
+    set({ mcpToolMap });
   },
   
   updateShouldScrollToDock: (shouldScrollToDock) => {
@@ -420,20 +420,17 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
     }));
   },
 
-  updateToolModification: (mcpId: string, toolName: string, modifiedSchema: any, modifiedName?: string) => {
+  modifyTool: (mcpId: string, toolName: string, modifiedTool: ModifiedTool) => {
     get().updateCurrentState(state => {
-      const toolModifications = state.toolModifications || {};
+      const modifiedToolMap = state.modifiedToolMap || {};
       
       return {
         ...state,
-        toolModifications: {
-          ...toolModifications,
+        modifiedToolMap: {
+          ...modifiedToolMap,
           [mcpId]: {
-            ...toolModifications[mcpId],
-            [toolName]: {
-              schema: modifiedSchema,
-              name: modifiedName
-            }
+            ...modifiedToolMap[mcpId],
+            [toolName]: modifiedTool
           }
         }
       };

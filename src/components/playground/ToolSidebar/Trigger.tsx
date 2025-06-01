@@ -9,7 +9,7 @@ interface SidebarTriggerProps extends React.ComponentProps<typeof Button> {
     showOnlyOnDesktop?: boolean;
 }
 
-export default function SidebarTrigger({
+export default function ToolSidebarTrigger({
     className,
     onClick,
     showOnlyOnOpen,

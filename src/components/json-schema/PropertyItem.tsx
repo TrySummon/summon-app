@@ -2,7 +2,6 @@ import React from 'react';
 import { OpenAPIV3 } from 'openapi-types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
 
 interface PropertyItemProps {
   propName: string;
@@ -60,7 +59,7 @@ export const PropertyItem: React.FC<PropertyItemProps> = ({
             className="h-6 px-2 text-xs ml-2 flex-shrink-0"
             onClick={() => onNavigate(propSchema, propName)}
           >
-            <ChevronRight className="h-3 w-3" />
+           View Schema
           </Button>
         )}
       </div>

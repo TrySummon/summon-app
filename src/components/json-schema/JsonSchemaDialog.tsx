@@ -12,9 +12,16 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronLeft } from 'lucide-react';
 import { PropertyItem } from './PropertyItem';
 import { PrimitiveType } from './PrimitiveType';
-import { ReadOnlySchemaDialogProps, SchemaHistoryItem } from '../types';
+import { SchemaHistoryItem } from './types';
 
-export const ReadOnlySchemaDialog: React.FC<ReadOnlySchemaDialogProps> = ({
+interface JsonSchemaDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  schema: OpenAPIV3.SchemaObject;
+  name: string;
+}
+
+export const JsonSchemaDialog: React.FC<JsonSchemaDialogProps> = ({
   open,
   onOpenChange,
   name,

@@ -6,8 +6,6 @@ interface EndpointPathDisplayProps {
   path: string;
 }
 
-
-
 export const EndpointPathDisplay: React.FC<EndpointPathDisplayProps> = ({ method, path }) => {
   return (
     <div className="p-1 border border-border rounded-lg bg-card flex items-center space-x-3">

@@ -32,7 +32,7 @@ import { MaxLengthSelector } from "./MaxLength";
 import { PresenceSelector } from "./PresencePenalty";
 import { TemperatureSelector } from "./Temperature";
 import { cn } from "@/utils/tailwind";
-import { LLMSettings } from "../playground/state";
+import { LLMSettings } from "../playground/tabState";
 import { useNavigate } from "@tanstack/react-router";
 import ProviderLogo from "../ai-providers/Logo";
 

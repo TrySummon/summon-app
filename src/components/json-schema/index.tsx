@@ -1,21 +1,18 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { SchemaDialog } from "./SchemaDialog";
 import { cn } from "@/utils/tailwind";
-import { Pencil } from "lucide-react";
-import { ToolParameterSchemaProps } from "./types";
+import { JsonSchemaDialog } from "./JsonSchemaDialog";
 
-/**
- * ToolParameterSchema component that provides a button to view or edit a schema.
- * It conditionally renders either an edit button or a view schema button based on the editable prop.
- */
-export const ToolParameterSchema: React.FC<ToolParameterSchemaProps> = ({ 
+interface JsonSchemaProps {
+  className?: string;
+  schema: any;
+  name: string;
+}
+
+export const JsonSchema: React.FC<JsonSchemaProps> = ({ 
   schema, 
-  modifiedSchema,
   name, 
   className, 
-  editable,
-  onChange 
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   
@@ -37,26 +34,9 @@ export const ToolParameterSchema: React.FC<ToolParameterSchemaProps> = ({
   const effectiveSchema = isObject && propertiesCount === 1 
     ? schema.properties[Object.keys(schema.properties)[0]] 
     : schema;
-    
-  const effectiveModifiedSchema = modifiedSchema 
-    ? (isObject && propertiesCount === 1 
-      ? modifiedSchema.properties[Object.keys(modifiedSchema.properties)[0]] 
-      : modifiedSchema) 
-    : undefined;
   
   return (
     <>
-      {editable ? (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className={cn("h-6 w-6 p-0", className)} 
-          onClick={() => setDialogOpen(true)}
-          title="Edit schema"
-        >
-          <Pencil className="h-3 w-3" />
-        </Button>
-      ) : (
         <Button 
           variant="ghost" 
           size="sm" 
@@ -66,16 +46,12 @@ export const ToolParameterSchema: React.FC<ToolParameterSchemaProps> = ({
         >
          View Schema
         </Button>
-      )}
       
-      <SchemaDialog
+      <JsonSchemaDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         schema={effectiveSchema}
-        modifiedSchema={effectiveModifiedSchema}
         name={name}
-        editable={editable}
-        onChange={onChange}
       />
     </>
   );

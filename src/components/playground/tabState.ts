@@ -1,4 +1,5 @@
 import { UIMessage } from "ai";
+import { type JSONSchema7} from "json-schema";
 
 export type LLMSettings = {
     /**
@@ -74,16 +75,22 @@ export type LLMSettings = {
     headers?: Record<string, string | undefined>;
 };
 
-export interface IPlaygroundState {
+export interface ModifiedTool {
+  schema: JSONSchema7;
+  name?: string;
+  description?: string;
+}
+
+export interface IPlaygroundTabState {
     id: string;
     credentialId?: string;
     model?: string;
     settings: LLMSettings;
     systemPrompt?: string;
     messages: UIMessage[];
-    enabledTools?: Record<string, string[]>;
+    enabledTools: Record<string, string[]>;
     // Tool modifications: mcpId -> toolName -> modified schema and name
-    toolModifications?: Record<string, Record<string, { schema: any; name?: string }>>;
+    modifiedToolMap: Record<string, Record<string, ModifiedTool>>;
     running: boolean;
     maxSteps: number;
     shouldScrollToDock?: boolean;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Brush, Undo, Redo, Plus } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { usePlaygroundStore } from '../store';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/Kbd';
 import { toast } from 'sonner';
 import { LLMPicker } from '@/components/llm-picker';
-import SidebarTrigger from './SidebarTrigger';
+import SidebarTrigger from '../ToolSidebar/Trigger';
 
 export default function TabHeader() {
     const currentTabId = usePlaygroundStore(state => state.currentTabId);
