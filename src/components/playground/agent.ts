@@ -1,46 +1,88 @@
-import { CoreSystemMessage, streamText, ToolSet } from 'ai';
+import { CoreSystemMessage, jsonSchema, streamText, ToolSet } from 'ai';
 import { createLLMProvider } from "@/helpers/llm";
 import { usePlaygroundStore, type PlaygroundStore } from './store';
 import { v4 as uuidv4 } from 'uuid';
 import { UIMessage } from 'ai';
+import type { JSONSchema7 } from 'json-schema';
 
-// Helper function to remap modified arguments back to original argument names
-function remapArgsToOriginal(args: Record<string, any>, originalParams: any, modifiedParams: any): Record<string, any> {
-    // If no modifications to the schema, return args as-is
-    if (!originalParams?.properties || !modifiedParams?.properties) {
-        return args;
+/**
+ * Remaps modified tool arguments back to their original names for API compatibility.
+ * Handles both tool name changes and deep property name changes using x-original-name metadata.
+ */
+function remapArgsToOriginal(
+    modifiedArgs: Record<string, any>,
+    originalSchema: JSONSchema7,
+    modifiedSchema: JSONSchema7
+): Record<string, any> {
+    if (!modifiedArgs || typeof modifiedArgs !== 'object') {
+        return modifiedArgs;
     }
-    
+
     const remappedArgs: Record<string, any> = {};
-    
-    // Simple approach: try to find matching properties by position/order first, then by name
-    const originalPropNames = Object.keys(originalParams.properties);
-    const modifiedPropNames = Object.keys(modifiedParams.properties);
-    
-    // Create mapping based on order (most reliable for renamed properties)
-    const propertyMapping: Record<string, string> = {};
-    
-    modifiedPropNames.forEach((modifiedPropName, index) => {
-        // First try to find exact name match
-        if (originalPropNames.includes(modifiedPropName)) {
-            propertyMapping[modifiedPropName] = modifiedPropName;
-        } 
-        // Otherwise, map by position if available
-        else if (index < originalPropNames.length) {
-            propertyMapping[modifiedPropName] = originalPropNames[index];
+
+    // Get properties from both schemas
+    const originalProps = originalSchema.properties || {};
+    const modifiedProps = modifiedSchema.properties || {};
+
+    // Process each argument in the modified args
+    for (const [modifiedPropName, value] of Object.entries(modifiedArgs)) {
+        const modifiedPropSchema = modifiedProps[modifiedPropName] as JSONSchema7 & { 'x-original-name'?: string };
+        
+        if (!modifiedPropSchema) {
+            // Property doesn't exist in modified schema, skip it
+            continue;
         }
-        // Fallback: use the modified name as-is
-        else {
-            propertyMapping[modifiedPropName] = modifiedPropName;
+
+        // Get the original property name (check for x-original-name metadata)
+        const originalPropName = modifiedPropSchema['x-original-name'] || modifiedPropName;
+        const originalPropSchema = originalProps[originalPropName] as JSONSchema7;
+
+        if (!originalPropSchema) {
+            // Original property doesn't exist, skip it
+            continue;
         }
-    });
-    
-    // Remap the arguments using the property mapping
-    Object.keys(args).forEach(argKey => {
-        const originalKey = propertyMapping[argKey] || argKey;
-        remappedArgs[originalKey] = args[argKey];
-    });
-    
+
+        // Handle nested objects recursively
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            if (modifiedPropSchema.type === 'object' && originalPropSchema.type === 'object') {
+                // Recursively remap nested object properties
+                remappedArgs[originalPropName] = remapArgsToOriginal(
+                    value,
+                    originalPropSchema,
+                    modifiedPropSchema
+                );
+            } else {
+                // Not an object type, use value as-is
+                remappedArgs[originalPropName] = value;
+            }
+        } else if (Array.isArray(value)) {
+            // Handle arrays - check if array items are objects that need remapping
+            if (modifiedPropSchema.type === 'array' && originalPropSchema.type === 'array') {
+                const modifiedItemSchema = modifiedPropSchema.items as JSONSchema7;
+                const originalItemSchema = originalPropSchema.items as JSONSchema7;
+                
+                if (modifiedItemSchema && originalItemSchema && 
+                    modifiedItemSchema.type === 'object' && originalItemSchema.type === 'object') {
+                    // Recursively remap each object in the array
+                    remappedArgs[originalPropName] = value.map((item: any) => {
+                        if (item && typeof item === 'object') {
+                            return remapArgsToOriginal(item, originalItemSchema, modifiedItemSchema);
+                        }
+                        return item;
+                    });
+                } else {
+                    // Array of primitives or non-object items, use as-is
+                    remappedArgs[originalPropName] = value;
+                }
+            } else {
+                remappedArgs[originalPropName] = value;
+            }
+        } else {
+            // Primitive value, use as-is with original property name
+            remappedArgs[originalPropName] = value;
+        }
+    }
+
     return remappedArgs;
 }
 
@@ -103,10 +145,10 @@ export async function runAgent() {
                         // Override the execute function to handle name remapping if needed
                         const modifiedTool = {
                             ...tool,
-                            parameters: modification.schema,
+                            parameters: jsonSchema<any>(modification.schema),
                             execute: (args: Record<string, any>) => {
                                 // Remap modified args back to original args
-                                const remappedArgs = remapArgsToOriginal(args, tool.parameters, modification.schema);
+                                const remappedArgs = remapArgsToOriginal(args, tool.parameters.jsonSchema, modification.schema);
                                 // Always call with the original tool name for API compatibility
                                 return window.mcpApi.callMcpTool(mcpId, toolName, remappedArgs);
                             }

@@ -21,6 +21,9 @@ export default function ToolSidebar() {
     areAllToolsSelected,
     isToolSelected,
     getModifiedName,
+    getModifiedTool,
+    modifyTool,
+    revertTool,
     mcpToolMap,
   } = useToolSidebar();
   
@@ -53,6 +56,9 @@ export default function ToolSidebar() {
             onToggleTool={(toolId) => handleToggleTool(mcpId, toolId)}
             isToolSelected={(toolId) => isToolSelected(mcpId, toolId)}
             getModifiedName={getModifiedName}
+            getModifiedTool={getModifiedTool}
+            onToolModify={modifyTool}
+            onToolRevert={revertTool}
           />
         )})}      
       </SidebarContent>

@@ -1,0 +1,191 @@
+import React, { useMemo, useState } from 'react';
+import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+import { Badge } from '@/components/ui/badge';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/utils/tailwind';
+import { Textarea } from '@/components/ui/textarea';
+import { ChevronRight, Pencil, RotateCcw } from 'lucide-react';
+import { getOriginalProperty } from './utils';
+
+interface SchemaEditorProps {
+  schemaPath: string[];
+  properties: Record<string, JSONSchema7Definition>;
+  required: string[];
+  onNavigateToProperty: (propertyName: string) => void;
+  onNavigateToPathIndex: (index: number) => void;
+  onUpdateProperty: (pathPrefix: string[], propertyName: string, updates: { description?: string; newName?: string; disabled?: boolean }) => void;
+  onRevertProperty: (pathPrefix: string[], propertyName: string) => void;
+  originalRootSchema: JSONSchema7;
+  currentPathToParentProperties: string[]; // Path to the object whose properties are being listed
+}
+
+export const SchemaEditor: React.FC<SchemaEditorProps> = ({
+  schemaPath,
+  properties,
+  // required, // This `required` is from modified schema, use original for disable logic
+  onNavigateToProperty,
+  onNavigateToPathIndex,
+  onUpdateProperty,
+  onRevertProperty,
+  originalRootSchema,
+  currentPathToParentProperties,
+}) => {
+  const [editingPropertyDesc, setEditingPropertyDesc] = useState<string | null>(null);
+  const [currentDescValue, setCurrentDescValue] = useState('');
+  const [editingPropertyName, setEditingPropertyName] = useState<string | null>(null);
+  const [currentNameValue, setCurrentNameValue] = useState('');
+
+  const handleStartEditDesc = (propName: string, desc: string) => {
+    setEditingPropertyDesc(propName);
+    setCurrentDescValue(desc);
+  };
+
+  const handleSaveEditDesc = () => {
+    if (editingPropertyDesc) {
+      onUpdateProperty(currentPathToParentProperties, editingPropertyDesc, { description: currentDescValue });
+    }
+    setEditingPropertyDesc(null);
+  };
+  
+  const handleStartEditName = (propName: string) => {
+    setEditingPropertyName(propName);
+    setCurrentNameValue(propName);
+  };
+
+  const handleSaveEditName = () => {
+    if (editingPropertyName && currentNameValue && currentNameValue !== editingPropertyName) {
+      onUpdateProperty(currentPathToParentProperties, editingPropertyName, { newName: currentNameValue });
+    }
+    setEditingPropertyName(null);
+  };
+
+  const sortedProperties = useMemo(() => {
+    return Object.entries(properties).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [properties]);
+
+  return (
+    <div className="h-full flex flex-col space-y-4 p-1">
+      {schemaPath.length > 1 && (
+        <Breadcrumb>
+          <BreadcrumbList className="border-none">
+            {schemaPath.map((pathItemName, index) => (
+              <React.Fragment key={index}>
+                {index > 0 && <BreadcrumbSeparator />}
+                {index === schemaPath.length - 1 ? (
+                  <BreadcrumbPage className="font-medium h-auto px-0">{pathItemName}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbItem>
+                    <BreadcrumbLink onClick={() => onNavigateToPathIndex(index)} className="cursor-pointer hover:text-foreground">
+                      {pathItemName}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                )}
+              </React.Fragment>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
+      )}
+
+      <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+        {sortedProperties.map(([propertyName, propSchemaUntyped]) => {
+          if (typeof propSchemaUntyped === 'boolean') return null; // Should not happen with valid schemas
+          const propSchema = propSchemaUntyped as JSONSchema7 & { 'x-original-name'?: string; 'x-ui-disabled'?: boolean };
+          
+          const { schema: originalPropDef, name: originalName, wasRequired: isOriginallyRequired } = getOriginalProperty(
+            originalRootSchema,
+            currentPathToParentProperties,
+            propertyName,
+            propSchema
+          );
+
+          const isNameModified = !!propSchema['x-original-name'] && propSchema['x-original-name'] !== propertyName;
+          const isNewProperty = !originalPropDef;
+          const isDescriptionModified = !isNewProperty && originalPropDef && (propSchema.description || '') !== (originalPropDef.description || '');
+          const isDisabledUi = !!propSchema['x-ui-disabled'];
+          const isDisabledStatusChanged = !isNewProperty && originalPropDef && isDisabledUi !== !!(originalPropDef as any)?.['x-ui-disabled'];
+
+          const isModified = isNameModified || isNewProperty || isDescriptionModified || isDisabledStatusChanged;
+          
+          const hasNestedProperties = propSchema.type === 'object' && propSchema.properties;
+          const isEditingThisDesc = editingPropertyDesc === propertyName;
+          const isEditingThisName = editingPropertyName === propertyName;
+
+          return (
+            <div key={propertyName} className={cn("border rounded-lg p-3 space-y-2 hover:bg-muted/50 transition-colors", isDisabledUi && "opacity-60 bg-gray-50 dark:bg-gray-900/30")}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {isEditingThisName ? (
+                     <Input
+                      value={currentNameValue}
+                      onChange={(e) => setCurrentNameValue(e.target.value)}
+                      onBlur={handleSaveEditName}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEditName(); if (e.key === 'Escape') setEditingPropertyName(null); }}
+                      className="text-sm font-mono font-semibold w-40 h-7" autoFocus disabled={isDisabledUi}
+                    />
+                  ) : (
+                    <div className="group/propname flex items-center gap-1">
+                      <code className={cn("text-sm font-mono font-semibold", (isNameModified || isNewProperty) && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-1 rounded")}>
+                        {propertyName}
+                      </code>
+                      {!isDisabledUi && <Button variant="ghost" size="sm" onClick={() => handleStartEditName(propertyName)} className="h-5 w-5 p-0 opacity-0 group-hover/propname:opacity-100 transition-opacity"> <Pencil className="h-3 w-3" /> </Button>}
+                    </div>
+                  )}
+                  {propSchema.type && <Badge variant="outline" className="font-mono text-xs bg-muted text-muted-foreground">{propSchema.type}</Badge>}
+                  {isOriginallyRequired && <Badge variant="outline" className="font-mono text-xs border-red-500/50 bg-red-500/10 text-red-500">required</Badge>}
+                  {isDisabledUi && <Badge variant="outline" className="font-mono text-xs border-orange-500/50 bg-orange-500/10 text-orange-500">disabled</Badge>}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {isModified && !isDisabledUi && (
+                     <Button variant="ghost" size="sm" onClick={() => onRevertProperty(currentPathToParentProperties, propertyName)} className="h-6 w-6 p-0" title="Revert property changes"> <RotateCcw className="h-3 w-3" /> </Button>
+                  )}
+                  {!isOriginallyRequired && (
+                    <Button variant="outline" size="sm" onClick={() => onUpdateProperty(currentPathToParentProperties, propertyName, { disabled: !isDisabledUi })} className="h-7 text-xs px-2" title={isDisabledUi ? "Enable property" : "Disable property"}>
+                      {isDisabledUi ? "Enable" : "Disable"}
+                    </Button>
+                  )}
+                  {hasNestedProperties && (
+                    <Button variant="outline" size="sm" onClick={() => onNavigateToProperty(propertyName)} className="h-7 text-xs px-2">
+                      Explore <ChevronRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                {isEditingThisDesc ? (
+                  <Textarea
+                    value={currentDescValue}
+                    onChange={(e) => setCurrentDescValue(e.target.value)}
+                    onBlur={handleSaveEditDesc}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEditDesc(); } if (e.key === 'Escape') setEditingPropertyDesc(null); }}
+                    placeholder="Property description..." className="min-h-[50px] resize-none text-sm" autoFocus disabled={isDisabledUi}
+                  />
+                ) : (
+                  <div className="group/propdesc flex items-start gap-1">
+                    <p className={cn("text-sm text-muted-foreground min-h-[20px] flex-1", isDescriptionModified && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded")}>
+                      {propSchema.description || <em>No description</em>}
+                    </p>
+                    {!isDisabledUi && <Button variant="ghost" size="sm" onClick={() => handleStartEditDesc(propertyName, propSchema.description || '')} className="h-6 w-6 p-0 opacity-0 group-hover/propdesc:opacity-100 transition-opacity"> <Pencil className="h-3 w-3" /> </Button>}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {Object.keys(properties).length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">No properties in this schema level.</div>
+        )}
+      </div>
+    </div>
+  );
+};

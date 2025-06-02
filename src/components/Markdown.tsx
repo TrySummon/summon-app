@@ -41,7 +41,7 @@ const Markdown = ({
   }, []);
 
   return (
-    <div className={cn('prose lg:prose-xl', className)}>
+    <div className={cn('prose', className)}>
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
         components={{
@@ -119,7 +119,7 @@ const Markdown = ({
             return (
               <h1
                 {...omit(props, ['node'])}
-                className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl mt-8 first:mt-0"
+                className="scroll-m-20 text-4xl font-extrabold tracking-tight mt-8 first:mt-0"
               />
             );
           },

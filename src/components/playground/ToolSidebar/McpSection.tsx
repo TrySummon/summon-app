@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/utils/tailwind';
 import ToolItem from './ToolItem';
 import type { Tool } from '@modelcontextprotocol/sdk/types';
+import type { ModifiedTool } from '../tabState';
 
 interface McpSectionProps {
   mcpId: string;
@@ -19,6 +20,9 @@ interface McpSectionProps {
   onToggleTool: (toolId: string) => void;
   isToolSelected: (toolId: string) => boolean;
   getModifiedName: (mcpId: string, toolName: string, originalName: string) => string;
+  getModifiedTool: (mcpId: string, toolName: string) => ModifiedTool | undefined;
+  onToolModify: (mcpId: string, toolName: string, modifiedTool: ModifiedTool) => void;
+  onToolRevert: (mcpId: string, toolName: string) => void;
 }
 
 export default function McpSection({
@@ -32,7 +36,10 @@ export default function McpSection({
   onToggleAllTools,
   onToggleTool,
   isToolSelected,
-  getModifiedName
+  getModifiedName,
+  getModifiedTool,
+  onToolModify,
+  onToolRevert
 }: McpSectionProps) {
   return (
     <div key={mcpId}>
@@ -82,6 +89,9 @@ export default function McpSection({
               isSelected={isToolSelected(tool.name)}
               onToggle={() => onToggleTool(tool.name)}
               getModifiedName={getModifiedName}
+              getModifiedTool={getModifiedTool}
+              onToolModify={onToolModify}
+              onToolRevert={onToolRevert}
             />
           ))}
         </div>

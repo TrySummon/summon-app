@@ -80,7 +80,7 @@ export default function ApiPage() {
       </div>
       <div className="flex flex-col overflow-y-auto flex-1">
         {activeTab === "overview" && (
-          <div className="container">
+          <div className="max-w-4xl mx-auto">
             {/* Server Information Section */}
             <ServerInformation servers={api.api.servers || []} />
             

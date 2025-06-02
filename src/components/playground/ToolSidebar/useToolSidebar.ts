@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { usePlaygroundStore } from '../store';
 import useToolMap from '@/hooks/useToolMap';
 import type { Tool } from '@modelcontextprotocol/sdk/types';
+import type { ModifiedTool } from '../tabState';
 
 export function useToolSidebar() {
   const { aiToolMap, mcpToolMap } = useToolMap();
@@ -13,7 +14,9 @@ export function useToolSidebar() {
   const getTabs = usePlaygroundStore(state => state.getTabs);
   const updateTab = usePlaygroundStore(state => state.updateTab);
   const updateEnabledTools = usePlaygroundStore(state => state.updateEnabledTools);
-  
+  const modifyTool = usePlaygroundStore(state => state.modifyTool);
+  const revertTool = usePlaygroundStore(state => state.revertTool);
+
   // State for expanded MCP sections - all expanded by default
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
@@ -192,6 +195,11 @@ export function useToolSidebar() {
     return modification?.name || originalName;
   };
 
+  // Get modified tool
+  const getModifiedTool = (mcpId: string, toolName: string): ModifiedTool | undefined => {
+    return modifiedToolMap[mcpId]?.[toolName];
+  };
+
   // Calculate total tool count
   const toolCount = Object.values(enabledTools).reduce((acc, tools) => acc + tools.length, 0);
 
@@ -213,6 +221,9 @@ export function useToolSidebar() {
     isToolSelected,
     getModifiedSchema,
     getModifiedName,
+    getModifiedTool,
+    revertTool,
+    modifyTool,
     mcpToolMap,
   };
 }

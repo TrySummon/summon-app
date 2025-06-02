@@ -63,6 +63,7 @@ export interface PlaygroundStore {
   updateSystemPrompt: (systemPrompt: string) => void;
   updateEnabledTools: (toolProvider: string, toolIds: string[]) => void;
   modifyTool: (mcpId: string, toolName: string, modifiedTool: ModifiedTool) => void;
+  revertTool: (mcpId: string, toolName: string) => void;
   updateAiToolMap: (aiToolMap: Record<string, Record<string, Tool>>) => void;
   updateMcpToolMap: (mcpToolMap: Record<string, {name: string, tools: McpTool[]}>) => void;
   updateShouldScrollToDock: (shouldScrollToDock: boolean) => void;
@@ -436,6 +437,28 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
       };
     });
   },
+
+  revertTool: (mcpId: string, toolName: string) => {
+    get().updateCurrentState(state => {
+      const modifiedToolMap = { ...state.modifiedToolMap };
+      
+      if (modifiedToolMap[mcpId]) {
+        const mcpTools = { ...modifiedToolMap[mcpId] };
+        delete mcpTools[toolName];
+        
+        if (Object.keys(mcpTools).length === 0) {
+          delete modifiedToolMap[mcpId];
+        } else {
+          modifiedToolMap[mcpId] = mcpTools;
+        }
+      }
+      
+      return {
+        ...state,
+        modifiedToolMap
+      };
+    });
+  },
   
   deleteMessage: (messageIndex) => {
     get().updateCurrentState(state => {
@@ -490,6 +513,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
       ...currentTab.state,
       id: uuidv4(),
       messages: [],
+      modifiedToolMap: {},
       tokenUsage: undefined,
       latency: undefined,
     };
