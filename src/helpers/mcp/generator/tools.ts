@@ -22,6 +22,10 @@ export async function generateMcpTools(apiGroups: Record<string, McpApiGroup>) {
             const dereferencedEndpoints = apiGroup.endpoints.map(endpoint => {
               const path = apiSpec.paths[endpoint.path];
               const operation = path?.[endpoint.method as OpenAPIV3.HttpMethods] as OpenAPIV3.OperationObject;
+              operation.parameters = operation.parameters || [];
+              if (path?.parameters) {
+                operation.parameters.push(...path.parameters);
+              }
 
               return {
                 ...endpoint,

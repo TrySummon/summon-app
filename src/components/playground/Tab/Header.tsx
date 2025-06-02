@@ -15,6 +15,7 @@ export default function TabHeader() {
     const currentState = usePlaygroundStore(state => state.tabs[currentTabId]?.state);
     const duplicateTab = usePlaygroundStore(state => state.duplicateTab);
     const updateCurrentState = usePlaygroundStore(state => state.updateCurrentState);
+    const clearCurrentTab = usePlaygroundStore(state => state.clearCurrentTab);
     const undo = usePlaygroundStore(state => state.undo);
     const redo = usePlaygroundStore(state => state.redo);
 
@@ -23,11 +24,6 @@ export default function TabHeader() {
     
     // Use state to track the current playground state
     const isRunning = currentState.running;
-
-    const clearMessages = () => {
-        // Use the new clearCurrentTab method to properly clear messages and history
-        usePlaygroundStore.getState().clearCurrentTab();
-    };
     
     const handleUndo = () => {
         const description = undo();
@@ -152,17 +148,17 @@ export default function TabHeader() {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button 
-            onClick={() => confirm(`Are you sure you want to reset the tab?`) && clearMessages()}
+            onClick={() => confirm(`Are you sure you want to clear the tab messages and tool modifications?`) && clearCurrentTab()}
             disabled={isRunning}
             variant="ghost"
             size="icon"
-            aria-label="Reset tab"
+            aria-label="Clear tab messages and tool modifications"
           >
             <Brush className='h-4 w-4' />
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Reset tab</p>
+          <p>Clear tab messages and tool modifications</p>
         </TooltipContent>
       </Tooltip>
       <Tooltip>

@@ -15,16 +15,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/tailwind";
 import { useNavigate } from "@tanstack/react-router";
+import { LIST_API_QUERY_KEY } from "@/hooks/useApis";
 
 
 
 interface ImportApiDialogProps {
   children: React.ReactNode;
+  preventNavigation?: boolean;
   onImport?: (file: File) => void;
 }
 
 export function ImportApiDialog({ 
   children, 
+  preventNavigation = false,
   onImport = () => {}
 }: ImportApiDialogProps) {
   const navigate = useNavigate();
@@ -73,12 +76,12 @@ export function ImportApiDialog({
             
             if (result.success) {
               // Invalidate the APIs query to refresh the list
-              queryClient.invalidateQueries({ queryKey: ['apis'] });
+              queryClient.invalidateQueries({ queryKey: [LIST_API_QUERY_KEY] });
               setFile(null);
               setOpen(false);
               
               // Navigate to the API page if we have an API ID
-              if (result.apiId) {
+              if (!preventNavigation && result.apiId) {
                 // Use a small timeout to allow the query invalidation to complete
                 setTimeout(() => {
                   navigate({ to: "/api/$apiId", params: { apiId: result.apiId } });

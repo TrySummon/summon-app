@@ -4,9 +4,11 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, Upload } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { OpenAPIV3 } from "openapi-types";
+import { ImportApiDialog } from "@/components/ImportApiDialog";
 
 interface ApiPickerDialogProps {
   open: boolean;
@@ -29,10 +31,19 @@ export function ApiPickerDialog({ open, onOpenChange, apis, onApiSelect }: ApiPi
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {apis.length === 0 ? (
                 <div className="col-span-2 text-center p-8 border rounded-lg bg-muted/20">
+                  <div className="mb-4 rounded-full bg-primary/10 p-3 w-fit mx-auto">
+                    <Upload className="h-6 w-6 text-primary" />
+                  </div>
                   <p className="text-lg mb-2">No APIs Available</p>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground mb-6">
                     You can only build an MCP out of uploaded APIs. Please upload an API first.
                   </p>
+                  <ImportApiDialog preventNavigation>
+                    <Button className="gap-2">
+                      <Upload className="h-4 w-4" />
+                      Import Your First API
+                    </Button>
+                  </ImportApiDialog>
                 </div>
               ) : (
                 apis.map((api) => (

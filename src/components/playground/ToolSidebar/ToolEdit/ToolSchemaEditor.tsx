@@ -13,7 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/utils/tailwind';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronRight, Pencil, RotateCcw } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ChevronRight, RotateCcw } from 'lucide-react';
 import { getOriginalProperty } from './utils';
 
 interface SchemaEditorProps {
@@ -128,15 +129,34 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                       value={currentNameValue}
                       onChange={(e) => setCurrentNameValue(e.target.value)}
                       onBlur={handleSaveEditName}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEditName(); if (e.key === 'Escape') setEditingPropertyName(null); }}
+                      onKeyDown={(e) => { 
+                        if (e.key === 'Enter') handleSaveEditName(); 
+                        if (e.key === 'Escape') {
+                          e.stopPropagation();
+                          setCurrentNameValue(propertyName); // Revert to original
+                          setEditingPropertyName(null);
+                        }
+                      }}
                       className="text-sm font-mono font-semibold w-40 h-7" autoFocus disabled={isDisabledUi}
                     />
                   ) : (
                     <div className="group/propname flex items-center gap-1">
-                      <code className={cn("text-sm font-mono font-semibold", (isNameModified || isNewProperty) && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-1 rounded")}>
-                        {propertyName}
-                      </code>
-                      {!isDisabledUi && <Button variant="ghost" size="sm" onClick={() => handleStartEditName(propertyName)} className="h-5 w-5 p-0 opacity-0 group-hover/propname:opacity-100 transition-opacity"> <Pencil className="h-3 w-3" /> </Button>}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <code 
+                            className={cn(
+                              "text-sm font-mono font-semibold cursor-pointer hover:bg-muted/50 px-1 py-0.5 rounded transition-colors",
+                              (isNameModified || isNewProperty) && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200"
+                            )}
+                            onClick={!isDisabledUi ? () => handleStartEditName(propertyName) : undefined}
+                          >
+                            {propertyName}
+                          </code>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit property name</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   )}
                   {propSchema.type && <Badge variant="outline" className="font-mono text-xs bg-muted text-muted-foreground">{propSchema.type}</Badge>}
@@ -167,15 +187,37 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                     value={currentDescValue}
                     onChange={(e) => setCurrentDescValue(e.target.value)}
                     onBlur={handleSaveEditDesc}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEditDesc(); } if (e.key === 'Escape') setEditingPropertyDesc(null); }}
+                    onKeyDown={(e) => { 
+                      if (e.key === 'Enter' && !e.shiftKey) { 
+                        e.preventDefault(); 
+                        handleSaveEditDesc(); 
+                      } 
+                      if (e.key === 'Escape') {
+                        e.stopPropagation();
+                        setCurrentDescValue(propSchema.description || ''); // Revert to original
+                        setEditingPropertyDesc(null);
+                      }
+                    }}
                     placeholder="Property description..." className="min-h-[50px] resize-none text-sm" autoFocus disabled={isDisabledUi}
                   />
                 ) : (
                   <div className="group/propdesc flex items-start gap-1">
-                    <p className={cn("text-sm text-muted-foreground min-h-[20px] flex-1", isDescriptionModified && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded")}>
-                      {propSchema.description || <em>No description</em>}
-                    </p>
-                    {!isDisabledUi && <Button variant="ghost" size="sm" onClick={() => handleStartEditDesc(propertyName, propSchema.description || '')} className="h-6 w-6 p-0 opacity-0 group-hover/propdesc:opacity-100 transition-opacity"> <Pencil className="h-3 w-3" /> </Button>}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p 
+                          className={cn(
+                            "text-sm text-muted-foreground min-h-[20px] flex-1 cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors",
+                            isDescriptionModified && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200"
+                          )}
+                          onClick={!isDisabledUi ? () => handleStartEditDesc(propertyName, propSchema.description || '') : undefined}
+                        >
+                          {propSchema.description || <em>No description</em>}
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Edit property description</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 )}
               </div>

@@ -25,7 +25,8 @@ export async function mockApi(apiId: string): Promise<MockApiResult> {
     apiApp.use(express.json());
 
     const apiBackend = new OpenAPIBackend({
-        definition: api.originalFilePath, 
+        definition: api.originalFilePath,
+        validate: false,
         strict: false,
     });
 

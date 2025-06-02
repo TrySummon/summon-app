@@ -172,13 +172,6 @@ export default function BuildMcpPage() {
           <div className="flex items-center justify-center w-full">
             <p>Loading APIs...</p>
           </div>
-        ) : apis.length === 0 ? (
-          <div className="text-center p-8 border rounded-lg bg-muted/20 w-full">
-            <p className="text-lg mb-2">No APIs Available</p>
-            <p className="text-muted-foreground">
-              You can only build an MCP out of uploaded APIs. Please upload an API first.
-            </p>
-          </div>
         ) : (
           <div className="w-full space-y-8">
             {/* Button to pick endpoints */}

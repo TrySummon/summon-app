@@ -2,7 +2,6 @@ import { app } from 'electron';
 import path from 'path';
 import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
-import { OpenAPIV3 } from "openapi-types";
 
 // Define endpoint data structure
 export interface McpEndpoint {

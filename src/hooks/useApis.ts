@@ -55,8 +55,6 @@ export function useApis() {
 }
 
 export function useApi(apiId: string) {
-  const queryClient = useQueryClient();
-
   // Query to fetch all APIs
   const { 
     data, 

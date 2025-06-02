@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-import { Pencil, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import type { Tool } from '@modelcontextprotocol/sdk/types';
 import type { JSONSchema7 } from 'json-schema';
 import { ToolSchemaDiff } from './ToolSchemaDiff';
@@ -224,7 +225,9 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[70vw] h-5/6 sm:max-w-none overflow-hidden flex flex-col">
+      <DialogContent onEscapeKeyDown={(e) => {
+        e.preventDefault()
+      }} className="w-[70vw] h-5/6 sm:max-w-none overflow-hidden flex flex-col">
         <DialogHeader className="space-y-3">
           {/* Tool Name and Description Editing UI (similar to original, adapted for currentName/currentDescription) */}
           <DialogTitle className="flex items-center justify-between">
@@ -242,18 +245,33 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                       setEditingName(false)
                       handleSave()
                     }
+                    if (e.key === 'Escape') {
+                      e.stopPropagation()
+                      setCurrentName(modifiedTool?.name || tool.name) // Revert to original
+                      setEditingName(false)
+                    }
                   }}
                   className="text-lg font-semibold"
                   autoFocus
                 />
               ) : (
                 <div className="group/name flex items-center gap-2">
-                  <h2 className={cn(
-                    currentName !== tool.name && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded"
-                  )}>
-                    {currentName}
-                  </h2>
-                  <Button variant="ghost" size="sm" onClick={() => setEditingName(true)} className="h-6 w-6 p-0 opacity-0 group-hover/name:opacity-100 transition-opacity"> <Pencil className="h-3 w-3" /> </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <h2 
+                        className={cn(
+                          "cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors",
+                          currentName !== tool.name && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200"
+                        )}
+                        onClick={() => setEditingName(true)}
+                      >
+                        {currentName}
+                      </h2>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Edit tool name</p>
+                    </TooltipContent>
+                  </Tooltip>
                   {currentName !== tool.name && (
                     <Button variant="ghost" size="sm" onClick={() => setCurrentName(tool.name)} className="h-6 w-6 p-0 opacity-0 group-hover/name:opacity-100 transition-opacity"> <RotateCcw className="h-3 w-3" /> </Button>
                   )}
@@ -275,6 +293,12 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                     setEditingDescription(false)
                     handleSave()
                   }
+                  if (e.key === 'Escape') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setCurrentDescription(modifiedTool?.description || tool.description || '') // Revert to original
+                    setEditingDescription(false)
+                  }
                 }}
                 placeholder="Tool description..."
                 className="min-h-[60px] resize-none"
@@ -282,13 +306,22 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
               />
             ) : (
               <div className="group/desc flex items-start">
-                <p className={cn(
-                  "text-sm text-muted-foreground min-h-[20px] flex-1",
-                  currentDescription !== (tool.description || '') && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded"
-                )}>
-                  {currentDescription || <em>No description</em>}
-                </p>
-                <Button variant="ghost" size="sm" onClick={() => setEditingDescription(true)} className="h-6 w-6 p-0 opacity-0 group-hover/desc:opacity-100 transition-opacity ml-2"> <Pencil className="h-3 w-3" /> </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p 
+                      className={cn(
+                        "text-sm text-muted-foreground min-h-[20px] flex-1 cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors",
+                        currentDescription !== (tool.description || '') && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200"
+                      )}
+                      onClick={() => setEditingDescription(true)}
+                    >
+                      {currentDescription || <em>No description</em>}
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit tool description</p>
+                  </TooltipContent>
+                </Tooltip>
                 {currentDescription !== (tool.description || '') && (
                   <Button variant="ghost" size="sm" onClick={() => setCurrentDescription(tool.description || '')} className="h-6 w-6 p-0 opacity-0 group-hover/desc:opacity-100 transition-opacity"> <RotateCcw className="h-3 w-3" /> </Button>
                 )}
