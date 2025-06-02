@@ -14,3 +14,5 @@ export const RESTART_MCP_SERVER_CHANNEL = 'restart-mcp-server';
 export const GET_MCP_TOOLS_CHANNEL = 'get-mcp-tools';
 export const CALL_MCP_TOOL_CHANNEL = 'call-mcp-tool';
 export const OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL = 'open-user-data-mcp-json-file';
+export const DOWNLOAD_MCP_ZIP_CHANNEL = 'download-mcp-zip';
+export const SHOW_FILE_IN_FOLDER_CHANNEL = 'show-file-in-folder';

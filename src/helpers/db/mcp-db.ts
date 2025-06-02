@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import path from 'path';
 import fs from 'fs/promises';
-import { v4 as uuidv4 } from 'uuid';
+import { generateMcpId } from './id-generator';
 
 // Define endpoint data structure
 export interface McpEndpoint {
@@ -80,7 +80,7 @@ const createMcp = async (mcpData: Omit<McpData, 'id' | 'createdAt' | 'updatedAt'
   await ensureMcpDataDir();
   
   // Generate a unique ID for the MCP
-  const mcpId = uuidv4();
+  const mcpId = generateMcpId(mcpData.name);
   
   // Create the MCP data file with timestamps
   const now = new Date().toISOString();

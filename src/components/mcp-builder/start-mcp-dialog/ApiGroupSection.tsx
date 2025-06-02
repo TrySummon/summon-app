@@ -61,9 +61,29 @@ export function ApiGroupSection({
           name: apiKeyDetails.name 
         });
       } else {
+        // Default to noAuth, but user can optionally configure authentication
         form.setValue(`apiAuth.${apiId}.auth`, { type: "noAuth" });
       }
     }
+  };
+
+  // Helper function to initialize API key auth with defaults when user selects it
+  const initializeApiKeyAuth = () => {
+    const { apiKeyDetails } = getAuthTypeFromSecuritySchemes(securitySchemes);
+    form.setValue(`apiAuth.${api.apiId}.auth`, { 
+      type: "apiKey",
+      key: "", 
+      in: apiKeyDetails?.in || "header", 
+      name: apiKeyDetails?.name || "X-API-Key" 
+    });
+  };
+
+  // Helper function to initialize bearer token auth
+  const initializeBearerTokenAuth = () => {
+    form.setValue(`apiAuth.${api.apiId}.auth`, { 
+      type: "bearerToken", 
+      token: "" 
+    });
   };
 
   return (
@@ -93,6 +113,8 @@ export function ApiGroupSection({
                   form={form} 
                   apiId={api.apiId} 
                   schemes={securitySchemes} 
+                  initializeApiKeyAuth={initializeApiKeyAuth}
+                  initializeBearerTokenAuth={initializeBearerTokenAuth}
                 />
                 
                 <TestConnectionButton 

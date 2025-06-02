@@ -12,7 +12,9 @@ import {
   RESTART_MCP_SERVER_CHANNEL,
   GET_MCP_TOOLS_CHANNEL,
   CALL_MCP_TOOL_CHANNEL,
-  OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL
+  OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL,
+  DOWNLOAD_MCP_ZIP_CHANNEL,
+  SHOW_FILE_IN_FOLDER_CHANNEL
 } from './mcp-channels';
 import { McpData } from '@/helpers/db/mcp-db';
 
@@ -56,6 +58,12 @@ export function exposeMcpContext() {
       ipcRenderer.invoke(CALL_MCP_TOOL_CHANNEL, {mcpId, name, args}),
       
     openUserDataMcpJsonFile: () => 
-      ipcRenderer.invoke(OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL)
+      ipcRenderer.invoke(OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL),
+
+    downloadMcpZip: (mcpId: string) => 
+      ipcRenderer.invoke(DOWNLOAD_MCP_ZIP_CHANNEL, mcpId),
+
+    showFileInFolder: (path: string) => 
+      ipcRenderer.invoke(SHOW_FILE_IN_FOLDER_CHANNEL, path)
   });
 }

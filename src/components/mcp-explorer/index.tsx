@@ -63,6 +63,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
         serverName={mcpName}
         transport={transport?.type}
         refreshStatus={refreshStatus}
+        mcpId={mcpId}
       />
       
       {status === "running" && <ToolsList tools={mcpTools} />}

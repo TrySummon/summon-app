@@ -13,3 +13,5 @@ export const stopMcpServer = window.mcpApi.stopMcpServer;
 export const restartMcpServer = window.mcpApi.restartMcpServer;
 export const getMcpTools = window.mcpApi.getMcpTools;
 export const callMcpTool = window.mcpApi.callMcpTool;
+export const downloadMcpZip = window.mcpApi.downloadMcpZip;
+export const showFileInFolder = window.mcpApi.showFileInFolder;

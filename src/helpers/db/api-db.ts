@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import path from 'path';
 import fs from 'fs/promises';
-import { v4 as uuidv4 } from 'uuid';
+import { generateApiId } from './id-generator';
 import { OpenAPIV3 } from 'openapi-types';
 import fsSync from 'fs';
 
@@ -52,8 +52,17 @@ const apiExists = async (apiId: string): Promise<boolean> => {
 const createApi = async (buffer: Buffer): Promise<string> => {
   await ensureApiDataDir();
   
+  // Parse the API spec to extract the name
+  let apiName: string | undefined;
+  try {
+    const apiSpec = JSON.parse(buffer.toString()) as OpenAPIV3.Document;
+    apiName = apiSpec.info?.title;
+  } catch (error) {
+    console.warn('Failed to parse API spec for name extraction:', error);
+  }
+  
   // Generate a unique ID for the API
-  const apiId = uuidv4();
+  const apiId = generateApiId(apiName);
   // Save the original file
   const originalFilePath = getApiOriginalFilePath(apiId);
   await fs.writeFile(originalFilePath, buffer);

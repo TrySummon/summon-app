@@ -3,6 +3,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription } from "@/
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { OpenAPIV3 } from "openapi-types";
@@ -62,19 +63,23 @@ export function getAuthTypeFromSecuritySchemes(securitySchemes: Record<string, S
 
 // Get allowed auth methods from security schemes
 export function getAllowedAuthMethods(schemes: Record<string, SecuritySchemeType> | undefined) {
-  if (!schemes) return [];
+  // Always allow no auth
+  const allowedMethods = ["noAuth"];
   
-  const allowedMethods = [];
-  
-  const hasBearerToken = Object.values(schemes).some(s => 
-    !isReferenceObject(s) && isHttpSecurityScheme(s) && s.scheme === "bearer"
-  );
-  if (hasBearerToken) allowedMethods.push("bearerToken");
-  
-  const hasApiKey = Object.values(schemes).some(s => 
-    !isReferenceObject(s) && isApiKeySecurityScheme(s)
-  );
-  if (hasApiKey) allowedMethods.push("apiKey");
+  if (schemes) {
+    const hasBearerToken = Object.values(schemes).some(s => 
+      !isReferenceObject(s) && isHttpSecurityScheme(s) && s.scheme === "bearer"
+    );
+    if (hasBearerToken) allowedMethods.push("bearerToken");
+    
+    const hasApiKey = Object.values(schemes).some(s => 
+      !isReferenceObject(s) && isApiKeySecurityScheme(s)
+    );
+    if (hasApiKey) allowedMethods.push("apiKey");
+  } else {
+    // When no security schemes are defined, allow optional auth configuration
+    allowedMethods.push("bearerToken", "apiKey");
+  }
   
   return allowedMethods;
 }
@@ -141,6 +146,9 @@ interface ApiKeyFormProps {
 }
 
 export function ApiKeyForm({ form, apiId }: ApiKeyFormProps) {
+  const authData = form.watch(`apiAuth.${apiId}.auth`);
+  const showLocationFields = !authData?.name || !authData?.in; // Show fields if not pre-configured
+  
   return (
     <div className="space-y-3">
       <FormField
@@ -155,6 +163,55 @@ export function ApiKeyForm({ form, apiId }: ApiKeyFormProps) {
           </FormItem>
         )}
       />
+      
+      {showLocationFields && (
+        <>
+          <FormField
+            control={form.control}
+            name={`apiAuth.${apiId}.auth.name`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Key Name</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="e.g., X-API-Key, api_key" 
+                    {...field} 
+                    className="h-8"
+                    defaultValue={field.value || "X-API-Key"}
+                  />
+                </FormControl>
+                <FormDescription className="text-xs">
+                  The name of the API key parameter
+                </FormDescription>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name={`apiAuth.${apiId}.auth.in`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Location</FormLabel>
+                <FormControl>
+                  <Select value={field.value || "header"} onValueChange={field.onChange}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="header">Header</SelectItem>
+                      <SelectItem value="query">Query Parameter</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription className="text-xs">
+                  Where to include the API key in requests
+                </FormDescription>
+              </FormItem>
+            )}
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -176,9 +233,11 @@ interface AuthFormProps {
   form: UseFormReturn<any>;
   apiId: string;
   schemes: Record<string, SecuritySchemeType> | undefined;
+  initializeApiKeyAuth?: () => void;
+  initializeBearerTokenAuth?: () => void;
 }
 
-export function AuthForm({ form, apiId, schemes }: AuthFormProps) {
+export function AuthForm({ form, apiId, schemes, initializeApiKeyAuth, initializeBearerTokenAuth }: AuthFormProps) {
   const allowedAuthMethods = getAllowedAuthMethods(schemes);
   const hasMultipleSchemes = allowedAuthMethods.length > 1;
   
@@ -203,10 +262,25 @@ export function AuthForm({ form, apiId, schemes }: AuthFormProps) {
             <Tabs 
               value={authTypeField.value} 
               defaultValue={allowedAuthMethods[0] || "noAuth"}
-              onValueChange={authTypeField.onChange}
+              onValueChange={(value) => {
+                authTypeField.onChange(value);
+                // Initialize auth fields when user manually selects auth type
+                if (value === "apiKey" && initializeApiKeyAuth) {
+                  initializeApiKeyAuth();
+                } else if (value === "bearerToken" && initializeBearerTokenAuth) {
+                  initializeBearerTokenAuth();
+                } else if (value === "noAuth") {
+                  form.setValue(`apiAuth.${apiId}.auth`, { type: "noAuth" });
+                }
+              }}
               className="w-full"
             >
               <TabsList className="grid w-fit h-8 grid-flow-col gap-1">
+                {allowedAuthMethods.includes("noAuth") && (
+                  <TabsTrigger value="noAuth" className="p-1 text-xs">
+                    No Authentication
+                  </TabsTrigger>
+                )}
                 {allowedAuthMethods.includes("bearerToken") && (
                   <TabsTrigger value="bearerToken" className="p-1 text-xs">
                     Bearer Token
@@ -218,6 +292,12 @@ export function AuthForm({ form, apiId, schemes }: AuthFormProps) {
                   </TabsTrigger>
                 )}
               </TabsList>
+              
+              <TabsContent value="noAuth">
+                <NoAuthWarning 
+                  message="No authentication configured (optional)"
+                />
+              </TabsContent>
               
               <TabsContent value="bearerToken">
                 <BearerTokenForm form={form} apiId={apiId} />
@@ -231,8 +311,11 @@ export function AuthForm({ form, apiId, schemes }: AuthFormProps) {
             <div>
               {authTypeField.value === "bearerToken" && <BearerTokenForm form={form} apiId={apiId} />}
               {authTypeField.value === "apiKey" && <ApiKeyForm form={form} apiId={apiId} />}
-              {authTypeField.value === "noAuth" && <NoAuthWarning />}
-              {!allowedAuthMethods.length && <NoAuthWarning message="No authentication methods available for this API" />}
+              {authTypeField.value === "noAuth" && (
+                <NoAuthWarning 
+                  message="No authentication configured (optional)"
+                />
+              )}
             </div>
           )}
         </FormItem>

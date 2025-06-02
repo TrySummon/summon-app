@@ -23,8 +23,8 @@ export default function HomePage() {
           {icon}
         </div>
         <div>
-          <h4 className="font-medium text-md">{title}</h4>
-          <p className="text-sm text-muted-foreground max-w-md">
+          <h4 className="font-medium text-sm">{title}</h4>
+          <p className="text-xs text-muted-foreground max-w-md">
             {description}
           </p>
         </div>
@@ -42,10 +42,10 @@ export default function HomePage() {
             <div className="inline-block mb-3">
               <Logo />
             </div>
-            <h2 className="text-3xl font-semibold mb-3 tracking-tight">
+            <h2 className="text-2xl font-semibold mb-3 tracking-tight">
               Welcome to AgentPort!
             </h2>
-            <p className="text-muted-foreground mb-6 max-w-xl mx-auto md:mx-0">
+            <p className="text-muted-foreground mb-6 max-w-xl mx-auto md:mx-0 text-sm">
               Your integrated environment for designing, building, and testing Model Context Protocol (MCP) servers and AI agents. Let's get you started.
             </p>
             <Button 
@@ -67,7 +67,7 @@ export default function HomePage() {
 
         {/* Get Started Section */}
         <div className="w-full max-w-4xl mx-auto">
-          <h3 className="text-xl font-semibold mb-4 px-1">Get Started</h3>
+          <h3 className="text-lg font-semibold mb-4 px-1">Get Started</h3>
           <div className="space-y-0 border rounded-lg">
             <GetStartedItem
               icon={<Upload className="h-5 w-5" />}

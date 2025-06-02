@@ -44,12 +44,12 @@ export default function McpSection({
   return (
     <div key={mcpId}>
       <div 
-        className={`flex items-center justify-between p-2 cursor-pointer sticky z-10 top-0 bg-sidebar text-muted-foreground`}
+        className={`flex items-center justify-between p-2 cursor-pointer sticky z-10 top-0 text-foreground bg-accent`}
         onClick={onToggleSection}
       >
         <div className="flex items-center gap-2 select-none">
           {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          <span className="font-medium text-sm">{name}</span>
+          <span className="font-semibold text-sm">{name}</span>
         </div>
         <Badge 
           variant="outline" 
@@ -74,7 +74,7 @@ export default function McpSection({
                 onCheckedChange={onToggleAllTools}
               />
               <Label
-                className="font-medium text-xs cursor-pointer"
+                className="font-medium text-sm cursor-pointer text-foreground"
               >
                 Select All
               </Label>

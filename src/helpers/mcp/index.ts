@@ -2,6 +2,8 @@ import fs from "fs/promises";
 import path from "path";
 import { spawn, exec } from "child_process";
 import { promisify } from "util";
+import archiver from "archiver";
+import { app } from "electron";
 
 import {
   generateEnvExample,
@@ -308,11 +310,11 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
       // Set security-related environment variables
       if (apiGroup.auth) {
         const auth = apiGroup.auth;
-        
+                
         if (auth.type === 'apiKey' && auth.key) {
           const keyEnvVar = apiKeyEnvVarName(apiGroup.name);
           env[keyEnvVar] = auth.key;
-        } else if (auth.type === 'bearer' && auth.token) {
+        } else if (auth.type === 'bearerToken' && auth.token) {
           const tokenEnvVar = bearerTokenEnvVarName(apiGroup.name);
           env[tokenEnvVar] = auth.token;
         }
@@ -532,4 +534,102 @@ export async function restartMcpServer(mcpId: string): Promise<McpServerState> {
   
   // Start the server again
   return startMcpServer(mcpId);
+}
+
+/**
+ * Creates a zip file of the MCP implementation folder and saves it to the downloads directory
+ * 
+ * @param mcpId The ID of the MCP to download
+ * @returns Promise with success status and file path or error message
+ */
+export async function downloadMcpZip(mcpId: string): Promise<{ success: boolean; filePath?: string; message?: string }> {
+  try {
+    const mcpData = await mcpDb.getMcpById(mcpId);
+    if (!mcpData) {
+      return { success: false, message: "MCP not found" };
+    }
+
+    const implPath = getMcpImplPath(mcpId);
+    
+    // Check if the implementation folder exists
+    try {
+      await fs.access(implPath);
+    } catch {
+      return { success: false, message: "MCP implementation folder not found" };
+    }
+
+    // Create downloads directory if it doesn't exist
+    const downloadsDir = path.join(app.getPath('userData'), 'downloads');
+    try {
+      await fs.access(downloadsDir);
+    } catch {
+      await fs.mkdir(downloadsDir, { recursive: true });
+    }
+
+    // Create zip file with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const zipFileName = `${mcpData.name}-${timestamp}.zip`;
+    const zipFilePath = path.join(downloadsDir, zipFileName);
+
+    return new Promise((resolve) => {
+      const output = require('fs').createWriteStream(zipFilePath);
+      const archive = archiver('zip', {
+        zlib: { level: 9 } // Maximum compression
+      });
+
+      output.on('close', () => {
+        resolve({
+          success: true,
+          filePath: zipFilePath,
+          message: `MCP implementation zipped successfully (${archive.pointer()} bytes)`
+        });
+      });
+
+      archive.on('error', (err: Error) => {
+        resolve({
+          success: false,
+          message: `Error creating zip: ${err.message}`
+        });
+      });
+
+      archive.pipe(output);
+
+      // Add files to archive, excluding node_modules and other unnecessary files
+      archive.glob('**/*', {
+        cwd: implPath,
+        ignore: [
+          'node_modules/**',
+          '.git/**',
+          '.DS_Store',
+          '*.log',
+          '.env',
+          '.env.*',
+          'dist/**',
+          'build/**',
+          '.cache/**',
+          'coverage/**',
+          '.nyc_output/**',
+          '*.tgz',
+          '*.tar.gz'
+        ]
+      });
+
+      archive.finalize();
+    });
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Unknown error occurred"
+    };
+  }
+}
+
+/**
+ * Opens the folder containing the specified file and highlights it
+ * 
+ * @param filePath The path to the file to show
+ */
+export function showFileInFolder(filePath: string): void {
+  const { shell } = require('electron');
+  shell.showItemInFolder(filePath);
 }

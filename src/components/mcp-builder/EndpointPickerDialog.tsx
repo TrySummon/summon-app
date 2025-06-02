@@ -5,7 +5,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, BadgeCheck, Folder } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ChevronLeft, BadgeCheck, Folder, Search, X } from "lucide-react";
 import { cn } from "@/utils/tailwind";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MethodBadge } from "@/components/MethodBadge";
@@ -33,6 +34,7 @@ export function EndpointPickerDialog({
 }: EndpointPickerDialogProps) {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>(initialSelectedEndpoints);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   
   // Reset selected endpoints when API changes
   React.useEffect(() => {
@@ -70,10 +72,8 @@ export function EndpointPickerDialog({
         const operation = pathItem[method];
         if (!operation) return;
 
-        result[folderName].push({
-          path,
-          method,
-        });
+        const endpoint = { path, method };
+        result[folderName].push(endpoint);
       });
     });
 
@@ -84,7 +84,7 @@ export function EndpointPickerDialog({
 
     return { 
       folders: folderList.sort(), 
-      endpointsByFolder: result 
+      endpointsByFolder: result
     };
   }, [api, selectedFolder]);
   
@@ -108,6 +108,19 @@ export function EndpointPickerDialog({
     return result;
   }, [endpointsByFolder, selectedEndpoints]);
 
+  // Filter endpoints in the selected folder based on search query
+  const filteredEndpoints = useMemo(() => {
+    if (!selectedFolder || !endpointsByFolder[selectedFolder]) return [];
+    
+    const folderEndpoints = endpointsByFolder[selectedFolder];
+    
+    if (!searchQuery.trim()) return folderEndpoints;
+    
+    return folderEndpoints.filter(endpoint => 
+      endpoint.path.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [selectedFolder, endpointsByFolder, searchQuery]);
+
   const selectFolder = (folderName: string) => {
     setSelectedFolder(folderName);
   };
@@ -120,30 +133,36 @@ export function EndpointPickerDialog({
     );
   };
   
-  // Toggle all endpoints in the current folder
+  // Toggle all endpoints in the current folder (filtered by search)
   const toggleAllEndpoints = (checked: boolean) => {
-    if (!selectedFolder || !endpointsByFolder[selectedFolder]) return;
+    if (filteredEndpoints.length === 0) return;
     
-    const folderEndpoints = endpointsByFolder[selectedFolder];
-    const folderEndpointIds = folderEndpoints.map(endpoint => 
+    const endpointIds = filteredEndpoints.map(endpoint => 
       `${endpoint.method}-${endpoint.path}`
     );
     
     if (checked) {
-      // Add all folder endpoints that aren't already selected
+      // Add all filtered endpoints that aren't already selected
       setSelectedEndpoints(prev => {
-        const newEndpoints = folderEndpointIds.filter(id => !prev.includes(id));
+        const newEndpoints = endpointIds.filter(id => !prev.includes(id));
         return [...prev, ...newEndpoints];
       });
     } else {
-      // Remove all folder endpoints
+      // Remove all filtered endpoints
       setSelectedEndpoints(prev => 
-        prev.filter(id => !folderEndpointIds.includes(id))
+        prev.filter(id => !endpointIds.includes(id))
       );
     }
   };
 
+  const clearSearch = () => {
+    setSearchQuery("");
+  };
 
+  const allFilteredEndpointsSelected = filteredEndpoints.length > 0 && 
+    filteredEndpoints.every(endpoint => 
+      selectedEndpoints.includes(`${endpoint.method}-${endpoint.path}`)
+    );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -177,6 +196,29 @@ export function EndpointPickerDialog({
                 )}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="p-2 border-b bg-muted/5 flex-shrink-0">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Search endpoints by path in selected folder"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 pr-12 h-12 text-lg border-0 bg-background shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                onClick={clearSearch}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -216,29 +258,27 @@ export function EndpointPickerDialog({
             )}
           </div>
 
-          {/* Right column - Endpoint list for selected folder */}
+          {/* Right column - Endpoint list */}
           <div className="w-3/4 overflow-y-auto">
-            {selectedFolder && endpointsByFolder[selectedFolder] ? (
+            {filteredEndpoints.length > 0 ? (
               <div>
                 <div className="px-4 py-3 border-b bg-muted/5 flex items-center">
                   <div className="flex items-center gap-3">
                     <Checkbox 
-                      checked={selectedFolder && endpointsByFolder[selectedFolder] ? 
-                        endpointsByFolder[selectedFolder].every(endpoint => 
-                          selectedEndpoints.includes(`${endpoint.method}-${endpoint.path}`)
-                        ) : false
-                      }
+                      checked={allFilteredEndpointsSelected}
                       onCheckedChange={toggleAllEndpoints}
                     />
                     <div>
-                      <h3 className="font-medium">{selectedFolder === 'root' ? 'Root' : selectedFolder.charAt(0).toUpperCase() + selectedFolder.slice(1)} Endpoints</h3>
+                      <h3 className="font-medium">
+                        {selectedFolder === 'root' ? 'Root' : (selectedFolder ? selectedFolder.charAt(0).toUpperCase() + selectedFolder.slice(1) : '')} Endpoints
+                      </h3>
                       <p className="text-xs text-muted-foreground">
                         Select endpoints to include in your MCP server
                       </p>
                     </div>
                   </div>
                 </div>
-                {endpointsByFolder[selectedFolder].map((endpoint) => {
+                {filteredEndpoints.map((endpoint) => {
                   const endpointId = `${endpoint.method}-${endpoint.path}`;
                   const isSelected = selectedEndpoints.includes(endpointId);
                   
@@ -258,7 +298,22 @@ export function EndpointPickerDialog({
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <MethodBadge method={endpoint.method} size="md" />
-                            <span className="font-mono text-sm">{endpoint.path}</span>
+                            <span className="font-mono text-sm">
+                              {searchQuery.trim() ? (
+                                // Highlight search term in results
+                                endpoint.path.split(new RegExp(`(${searchQuery})`, 'gi')).map((part, index) => 
+                                  part.toLowerCase() === searchQuery.toLowerCase() ? (
+                                    <span key={index} className="bg-yellow-200 dark:bg-yellow-900/50 px-0.5 rounded">
+                                      {part}
+                                    </span>
+                                  ) : (
+                                    <span key={index}>{part}</span>
+                                  )
+                                )
+                              ) : (
+                                endpoint.path
+                              )}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -267,8 +322,10 @@ export function EndpointPickerDialog({
                 })}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Select a folder to view endpoints
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                <Search className="h-8 w-8 mb-2 opacity-50" />
+                <p>No endpoints found in "{selectedFolder}"</p>
+                <p className="text-sm mt-1">Try a different folder or search term</p>
               </div>
             )}
           </div>

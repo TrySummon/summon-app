@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, Download } from "lucide-react";
 import CopyButton from "@/components/CopyButton";
+import { downloadMcpZip, showFileInFolder } from "@/helpers/ipc/mcp/mcp-client";
 
 interface ServerStatusSectionProps {
   status: "running" | "starting" | "error" | "stopped";
@@ -12,6 +13,7 @@ interface ServerStatusSectionProps {
   serverName: string;
   transport?: string;
   refreshStatus: () => void;
+  mcpId: string;
 }
 
 export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
@@ -21,7 +23,36 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
   serverName,
   transport,
   refreshStatus,
+  mcpId,
 }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    setDownloadError(null);
+    
+    try {
+      const result = await downloadMcpZip(mcpId);
+      
+      if (result.success && result.data?.success) {
+        // Show success message - you could add a toast notification here
+        console.log('Download successful:', result.data.message);
+        
+        // Open folder and highlight the downloaded file
+        if (result.data.filePath) {
+          await showFileInFolder(result.data.filePath);
+        }
+      } else {
+        setDownloadError(result.data?.message || result.message || 'Download failed');
+      }
+    } catch (error) {
+      setDownloadError(error instanceof Error ? error.message : 'Download failed');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (status === "running") {
     return (
       <div className="space-y-6">
@@ -45,11 +76,29 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
             </div>
           </div>
         ) : null}
+
+        {downloadError && (
+          <Alert variant="destructive" className="border-red-500">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Download Error</AlertTitle>
+            <AlertDescription>{downloadError}</AlertDescription>
+          </Alert>
+        )}
         
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-end mt-4 gap-2">
           <Button onClick={refreshStatus} variant="outline" size="sm" className="gap-1">
-            <RefreshCw className="h-3.5 w-3.5" />
+            <RefreshCw className="h-3 w-3" />
             Refresh Status
+          </Button>
+          <Button 
+            onClick={handleDownload} 
+            variant="outline" 
+            size="sm" 
+            className="gap-1"
+            disabled={isDownloading}
+          >
+            <Download className="h-3 w-3" />
+            {isDownloading ? 'Downloading...' : 'Download MCP'}
           </Button>
         </div>
       </div>
@@ -69,7 +118,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
         </Alert>
         <div className="flex justify-end mt-4">
         <Button onClick={refreshStatus} variant="outline" size="sm" className="gap-1">
-        <RefreshCw className="h-3.5 w-3.5" />
+        <RefreshCw className="h-3 w-3" />
             Refresh Status
           </Button>
         </div>
@@ -90,7 +139,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
         </Alert>
         <div className="flex justify-end mt-4">
           <Button onClick={refreshStatus} variant="outline" className="gap-1">
-            <RefreshCw className="h-3.5 w-3.5" />
+            <RefreshCw className="h- w-" />
             Refresh Status
           </Button>
         </div>
@@ -111,7 +160,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
       </Alert>
       <div className="flex justify-end mt-4">
         <Button onClick={refreshStatus} variant="outline" size="sm" className="gap-1">
-          <RefreshCw className="h-3.5 w-3.5" />
+          <RefreshCw className="h-3 w-3" />
           Refresh Status
         </Button>
       </div>

@@ -75,7 +75,7 @@ export default function ToolItem({
                 <Label 
                   title={tool.name}
                   className={cn(
-                    "font-normal text-xs cursor-pointer",
+                    "font-normal text-sm cursor-pointer text-foreground",
                     hasModifications && "text-yellow-800 dark:text-yellow-200"
                   )}
                 >
@@ -102,7 +102,7 @@ export default function ToolItem({
           {displayDescription && (
             <HoverCard openDelay={100} closeDelay={100}>
               <HoverCardTrigger asChild>
-                <p className="text-xs text-muted-foreground ml-6 mt-1 line-clamp-2">
+                <p className="text-xs text-muted-foreground/80 ml-6 mt-1 line-clamp-2 leading-relaxed">
                   {displayDescription}
                 </p>
               </HoverCardTrigger>

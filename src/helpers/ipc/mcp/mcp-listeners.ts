@@ -13,7 +13,9 @@ import {
   RESTART_MCP_SERVER_CHANNEL,
   GET_MCP_TOOLS_CHANNEL,
   CALL_MCP_TOOL_CHANNEL,
-  OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL
+  OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL,
+  DOWNLOAD_MCP_ZIP_CHANNEL,
+  SHOW_FILE_IN_FOLDER_CHANNEL
 } from "./mcp-channels";
 import { callMcpTool, getMcpTools } from "./mcp-tools";
 import { mcpDb, McpData } from "@/helpers/db/mcp-db";
@@ -25,8 +27,9 @@ import {
   restartMcpServer,
   getMcpServerStatus,
   getAllMcpServerStatuses,
+  downloadMcpZip,
+  showFileInFolder,
 } from "@/helpers/mcp";
-
 
 export function registerMcpListeners() {
   // Create a new MCP configuration
@@ -358,13 +361,46 @@ export function registerMcpListeners() {
       const mcpJsonPath = path.join(userDataPath, 'mcp.json');
       
       // Open the file with the default editor
-      await shell.openPath(mcpJsonPath);
+      await showFileInFolder(mcpJsonPath);
       
       return {
         success: true
       };
     } catch (error) {
       console.error('Error opening mcp.json file:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      };
+    }
+  });
+
+  // Download MCP zip
+  ipcMain.handle(DOWNLOAD_MCP_ZIP_CHANNEL, async (_, mcpId: string) => {
+    try {
+      const result = await downloadMcpZip(mcpId);
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error) {
+      console.error(`Error downloading MCP zip:`, error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      };
+    }
+  });
+
+  // Show file in folder
+  ipcMain.handle(SHOW_FILE_IN_FOLDER_CHANNEL, async (_, filePath: string) => {
+    try {
+      await showFileInFolder(filePath);
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error(`Error showing file in folder:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : "Unknown error occurred"

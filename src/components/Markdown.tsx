@@ -119,7 +119,7 @@ const Markdown = ({
             return (
               <h1
                 {...omit(props, ['node'])}
-                className="scroll-m-20 text-4xl font-extrabold tracking-tight mt-8 first:mt-0"
+                className="scroll-m-20 text-2xl font-extrabold tracking-tight mt-8 first:mt-0"
               />
             );
           },
@@ -127,7 +127,7 @@ const Markdown = ({
             return (
               <h2
                 {...omit(props, ['node'])}
-                className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight mt-8 first:mt-0"
+                className="scroll-m-20 border-b pb-2 text-xl font-semibold tracking-tight mt-8 first:mt-0"
               />
             );
           },
@@ -135,7 +135,7 @@ const Markdown = ({
             return (
               <h3
                 {...omit(props, ['node'])}
-                className="scroll-m-20 text-2xl font-semibold tracking-tight mt-6 first:mt-0"
+                className="scroll-m-20 text-lg font-semibold tracking-tight mt-6 first:mt-0"
               />
             );
           },
@@ -143,7 +143,7 @@ const Markdown = ({
             return (
               <h4
                 {...omit(props, ['node'])}
-                className="scroll-m-20 text-xl font-semibold tracking-tight mt-6 first:mt-0"
+                className="scroll-m-20 text-base font-semibold tracking-tight mt-6 first:mt-0"
               />
             );
           },
@@ -151,7 +151,7 @@ const Markdown = ({
             return (
               <div
                 {...omit(props, ['node'])}
-                className="leading-7 [&:not(:first-child)]:mt-4 whitespace-pre-wrap break-words"
+                className="leading-7 [&:not(:first-child)]:mt-4 whitespace-pre-wrap break-words text-sm"
                 role="article"
               />
             );
