@@ -12,12 +12,14 @@ import { keymap } from "@codemirror/view";
 import { Extension } from "@codemirror/state";
 import CodeMirrorEditor from "@/components/CodeEditor";
 import { usePlaygroundStore } from "../store";
+import { usePostHog } from "@/hooks/usePostHog";
 
 interface SystemPromptProps {
   className?: string;
 }
 
 const SystemPrompt: React.FC<SystemPromptProps> = ({ className }) => {
+  const { captureEvent } = usePostHog();
   const editorRef = useRef<EditorView | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const systemPrompt = usePlaygroundStore(
@@ -135,7 +137,12 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({ className }) => {
               : "translate-y-[-100%] opacity-0"
           }
           editorRef={editorRef}
-          onChange={updateSystemPrompt}
+          onChange={(v) => {
+            updateSystemPrompt(v);
+            captureEvent("playground_system_prompt_change", {
+              length: v.length,
+            });
+          }}
           readOnly={isRunning}
           language="markdown"
           additionalExtensions={[keyboardShortcuts]}

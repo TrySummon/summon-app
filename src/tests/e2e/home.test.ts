@@ -35,17 +35,9 @@ test.beforeAll(async () => {
   });
 });
 
-test("renders the first page", async () => {
+test("renders the home page", async () => {
   const page: Page = await electronApp.firstWindow();
   const title = await page.waitForSelector("h1");
   const text = await title.textContent();
-  expect(text).toBe("electron-shadcn");
-});
-
-test("renders page name", async () => {
-  const page: Page = await electronApp.firstWindow();
-  await page.waitForSelector("h1");
-  const pageName = await page.getByTestId("pageTitle");
-  const text = await pageName.textContent();
-  expect(text).toBe("Home Page");
+  expect(text).toBe("Welcome to AgentPort!");
 });

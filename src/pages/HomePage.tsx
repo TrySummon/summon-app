@@ -42,9 +42,9 @@ export default function HomePage() {
             <div className="mb-3 inline-block">
               <Logo />
             </div>
-            <h2 className="mb-3 text-2xl font-semibold tracking-tight">
+            <h1 className="mb-3 text-2xl font-semibold tracking-tight">
               Welcome to AgentPort!
-            </h2>
+            </h1>
             <p className="text-muted-foreground mx-auto mb-6 max-w-xl text-sm md:mx-0">
               Your integrated environment for designing, building, and testing
               Model Context Protocol (MCP) servers and AI agents. Let's get you
