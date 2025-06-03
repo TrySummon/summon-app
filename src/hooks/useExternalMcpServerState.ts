@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
 import { McpServerState } from "@/helpers/mcp/state";
+import { getMcpServerStatus } from "@/helpers/ipc/mcp/mcp-client";
+import {
+  connectExternalMcpServer,
+  stopExternalMcpServer,
+} from "@/helpers/ipc/external-mcp/external-mcp-client";
 
 interface UseExternalMcpServerStateResult {
   state: McpServerState | null;
@@ -29,7 +34,7 @@ export function useExternalMcpServerState(
   const fetchStatus = async () => {
     try {
       // We can use the same API as regular MCPs since they share the same state structure
-      const response = await window.mcpApi.getMcpServerStatus(mcpId);
+      const response = await getMcpServerStatus(mcpId);
       if (response.success) {
         setState(response.data ? response.data : null);
       } else {
@@ -58,8 +63,7 @@ export function useExternalMcpServerState(
   const connectServer = async () => {
     setIsLoading(true);
     try {
-      const response =
-        await window.externalMcpApi.connectExternalMcpServer(mcpId);
+      const response = await connectExternalMcpServer(mcpId);
       if (response.success) {
         setState(response.data || null);
       } else {
@@ -76,7 +80,7 @@ export function useExternalMcpServerState(
   const disconnectServer = async () => {
     setIsLoading(true);
     try {
-      const response = await window.externalMcpApi.stopExternalMcpServer(mcpId);
+      const response = await stopExternalMcpServer(mcpId);
       if (response.success) {
         setState(response.data || null);
       } else {

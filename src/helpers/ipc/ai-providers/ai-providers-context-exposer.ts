@@ -8,17 +8,20 @@ import {
 
 export function exposeAIProvidersContext() {
   contextBridge.exposeInMainWorld("aiProviders", {
-    getCredentials: () =>
-      ipcRenderer.invoke(AI_PROVIDERS_GET_CREDENTIALS_CHANNEL),
+    getCredentials: () => {
+      return ipcRenderer.invoke(AI_PROVIDERS_GET_CREDENTIALS_CHANNEL);
+    },
 
-    saveCredential: (id: string, providerData: AIProviderCredential) =>
-      ipcRenderer.invoke(
+    saveCredential: (id: string, providerData: AIProviderCredential) => {
+      return ipcRenderer.invoke(
         AI_PROVIDERS_SAVE_CREDENTIAL_CHANNEL,
         id,
         providerData,
-      ),
+      );
+    },
 
-    deleteCredential: (id: string) =>
-      ipcRenderer.invoke(AI_PROVIDERS_DELETE_CREDENTIAL_CHANNEL, id),
+    deleteCredential: (id: string) => {
+      return ipcRenderer.invoke(AI_PROVIDERS_DELETE_CREDENTIAL_CHANNEL, id);
+    },
   });
 }

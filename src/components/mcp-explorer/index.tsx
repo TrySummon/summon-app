@@ -3,6 +3,7 @@ import { Tool } from "@modelcontextprotocol/sdk/types";
 import { ServerStatusSection } from "./ServerStatusSection";
 import { ToolsList } from "./ToolsList";
 import { McpServerStatus, McpTransport } from "@/helpers/mcp/state";
+import { getMcpTools } from "@/helpers/ipc/mcp/mcp-client";
 
 interface McpExplorerProps {
   mcpId: string;
@@ -30,7 +31,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
     const fetchMcpTools = async () => {
       if (status === "running") {
         try {
-          const response = await window.mcpApi.getMcpTools(mcpId);
+          const response = await getMcpTools(mcpId);
           if (response.success && response.data) {
             setMcpTools(response.data);
           }

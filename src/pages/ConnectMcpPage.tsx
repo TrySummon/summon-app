@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { FileJson, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TabbedCodeSnippet, CodeTab } from "@/components/TabbedCodeSnippet";
+import { openUserDataMcpJsonFile } from "@/helpers/ipc/mcp/mcp-client";
 
 const codeSnippets: CodeTab[] = [
   {
@@ -63,7 +64,7 @@ const codeSnippets: CodeTab[] = [
 
 export default function ConnectMcpPage() {
   const handleOpenUserDataFolder = async () => {
-    await window.mcpApi.openUserDataMcpJsonFile();
+    await openUserDataMcpJsonFile();
   };
 
   return (

@@ -20,6 +20,7 @@ import {
 import { useSearch } from "@tanstack/react-router";
 import { McpData, McpEndpoint } from "@/helpers/db/mcp-db";
 import { OpenAPIV3 } from "openapi-types";
+import { getMcp } from "@/helpers/ipc/mcp/mcp-client";
 
 export default function BuildMcpPage() {
   const { apis, isLoading } = useApis();
@@ -71,7 +72,7 @@ export default function BuildMcpPage() {
   const loadMcpData = async (mcpId: string) => {
     setIsLoadingMcp(true);
     try {
-      const result = await window.mcpApi.getMcp(mcpId);
+      const result = await getMcp(mcpId);
       if (result.success && result.mcp) {
         setEditMcpData(result.mcp);
 

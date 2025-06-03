@@ -1,11 +1,38 @@
-// API operations
-export const listApis = window.openapi.db.listApis;
-export const getApi = window.openapi.db.getApi;
-export const updateApi = window.openapi.db.updateApi;
-export const deleteApi = window.openapi.db.deleteApi;
+import { captureEvent } from "@/helpers/posthog";
+import { OpenAPIV3 } from "openapi-types";
+
+// API operations with PostHog instrumentation
+export const importApi = async (file: File) => {
+  const result = await window.openapi.import(file);
+  captureEvent("openapi_import", {
+    file_size: file.size,
+    success: result.success,
+  });
+
+  return result;
+};
+
+export const listApis = async () => {
+  return window.openapi.db.listApis();
+};
+
+export const getApi = async (id: string) => {
+  return window.openapi.db.getApi(id);
+};
+
+export const updateApi = async (id: string, api: OpenAPIV3.Document) => {
+  return window.openapi.db.updateApi(id, api);
+};
+
+export const deleteApi = async (id: string) => {
+  captureEvent("openapi_delete");
+  return window.openapi.db.deleteApi(id);
+};
 
 // Custom API operation for renaming an API
 export const renameApi = async (apiId: string, newName: string) => {
+  captureEvent("openapi_rename");
+
   try {
     // First get the API to update
     const getResult = await getApi(apiId);

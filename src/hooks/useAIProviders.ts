@@ -3,6 +3,11 @@ import {
   PersistedAIProviderCredential,
   AIProviderCredential,
 } from "@/components/ai-providers/types";
+import {
+  getCredentials,
+  saveCredential as _saveCredential,
+  deleteCredential as _deleteCredential,
+} from "@/helpers/ipc/ai-providers/ai-providers-client";
 
 // Query key for AI providers
 export const AI_PROVIDERS_QUERY_KEY = "aiProviders";
@@ -20,7 +25,7 @@ export function useAIProviders() {
   } = useQuery<PersistedAIProviderCredential[]>({
     queryKey: [AI_PROVIDERS_QUERY_KEY],
     queryFn: async () => {
-      const result = await window.aiProviders.getCredentials();
+      const result = await getCredentials();
       return result;
     },
   });
@@ -34,7 +39,7 @@ export function useAIProviders() {
       id: string;
       providerData: AIProviderCredential;
     }) => {
-      return await window.aiProviders.saveCredential(id, providerData);
+      return await _saveCredential(id, providerData);
     },
     onSuccess: () => {
       // Invalidate the query to refetch providers
@@ -45,7 +50,7 @@ export function useAIProviders() {
   // Delete a provider credential
   const deleteCredential = useMutation({
     mutationFn: async (id: string) => {
-      return await window.aiProviders.deleteCredential(id);
+      return await _deleteCredential(id);
     },
     onSuccess: () => {
       // Invalidate the query to refetch providers

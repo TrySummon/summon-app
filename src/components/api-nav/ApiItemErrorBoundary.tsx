@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { deleteApi } from "@/helpers/ipc/openapi/openapi-client";
 
 interface ApiItemErrorBoundaryProps {
   children: ReactNode;
@@ -42,7 +43,7 @@ export class ApiItemErrorBoundary extends Component<
         "Are you sure you want to delete this API?",
       );
       if (confirmed) {
-        const result = await window.openapi.db.deleteApi(this.props.apiId);
+        const result = await deleteApi(this.props.apiId);
         if (result.success) {
           // Reload the page or update the UI as needed
           window.location.reload();

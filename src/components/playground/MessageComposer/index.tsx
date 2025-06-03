@@ -13,6 +13,7 @@ import { runAgent } from "../agent";
 import { ArrowUp, Square } from "lucide-react";
 import { MessageContent } from "../Message/Content";
 import ImageDialog from "@/components/ImageDialog";
+import { usePostHog } from "@/hooks/usePostHog";
 
 export default function MessageComposer() {
   const ref = useRef<HTMLDivElement>(null);
@@ -22,6 +23,8 @@ export default function MessageComposer() {
   );
   const addMessage = usePlaygroundStore((state) => state.addMessage);
   const stopAgent = usePlaygroundStore((state) => state.stopAgent);
+
+  const { captureEvent } = usePostHog();
 
   const [composer, setComposer] = useState<UIMessage>({
     id: uuidv4(),
@@ -51,6 +54,20 @@ export default function MessageComposer() {
       }),
     };
 
+    // Capture message composition event
+    const messageLength = trimmedComposer.parts
+      .filter((part) => part.type === "text")
+      .reduce((total, part) => total + part.text.length, 0);
+
+    const hasAttachments =
+      (trimmedComposer.experimental_attachments?.length || 0) > 0;
+
+    captureEvent("playground_message_sent", {
+      messageLength,
+      hasAttachments,
+      attachmentCount: trimmedComposer.experimental_attachments?.length || 0,
+    });
+
     // Add the message to the current state using the zustand store
     addMessage(trimmedComposer);
     // Reset the composer
@@ -61,7 +78,7 @@ export default function MessageComposer() {
       parts: [{ type: "text", text: "" }],
     }));
     runAgent();
-  }, [disabled, composer]);
+  }, [disabled, composer, captureEvent, addMessage]);
 
   // Keyboard shortcut handler
   useEffect(() => {
@@ -93,13 +110,20 @@ export default function MessageComposer() {
         ],
       });
     },
-    [composer, setComposer],
+    [composer, setComposer, captureEvent],
   );
 
   const submitButton = useMemo(() => {
     if (running) {
       return (
-        <Button className="rounded-full" size="icon" onClick={stopAgent}>
+        <Button
+          className="rounded-full"
+          size="icon"
+          onClick={() => {
+            stopAgent();
+            captureEvent("playground_ai_agent_stop");
+          }}
+        >
           <Square className="h-4 w-4 fill-current" />
         </Button>
       );
@@ -115,7 +139,7 @@ export default function MessageComposer() {
         <ArrowUp className="h-4 w-4" />
       </Button>
     );
-  }, [handleAddMessage, disabled, running, stopAgent]);
+  }, [handleAddMessage, disabled, running, stopAgent, captureEvent]);
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col px-4">

@@ -3,6 +3,16 @@ import { McpServerState } from "@/helpers/mcp/state";
 import { useQueryClient } from "@tanstack/react-query";
 import { MCP_QUERY_KEY } from "./useMcps";
 import { EXTERNAL_MCPS_QUERY_KEY } from "./useExternalMcps";
+import {
+  getMcpServerStatus,
+  restartMcpServer,
+  startMcpServer,
+  stopMcpServer,
+} from "@/helpers/ipc/mcp/mcp-client";
+import {
+  connectExternalMcpServer,
+  stopExternalMcpServer,
+} from "@/helpers/ipc/external-mcp/external-mcp-client";
 
 interface useMcpServerStateResult {
   state: McpServerState | null;
@@ -35,7 +45,7 @@ export function useMcpServerState(
   // Function to fetch the current status
   const fetchStatus = async () => {
     try {
-      const response = await window.mcpApi.getMcpServerStatus(mcpId);
+      const response = await getMcpServerStatus(mcpId);
       if (response.success) {
         setState(response.data ? response.data : null);
         if (response.data?.error) {
@@ -68,8 +78,8 @@ export function useMcpServerState(
     setIsLoading(true);
     try {
       const promise = isExternal
-        ? window.externalMcpApi.connectExternalMcpServer(mcpId, true)
-        : window.mcpApi.startMcpServer(mcpId);
+        ? connectExternalMcpServer(mcpId, true)
+        : startMcpServer(mcpId);
       const response = await promise;
       if (response.success) {
         setState(response.data || null);
@@ -94,9 +104,7 @@ export function useMcpServerState(
   const stopServer = async () => {
     setIsLoading(true);
     try {
-      const fn = isExternal
-        ? window.externalMcpApi.stopExternalMcpServer
-        : window.mcpApi.stopMcpServer;
+      const fn = isExternal ? stopExternalMcpServer : stopMcpServer;
       const response = await fn(mcpId);
       if (response.success) {
         setState(response.data || null);
@@ -121,7 +129,7 @@ export function useMcpServerState(
   const restartServer = async () => {
     setIsLoading(true);
     try {
-      const response = await window.mcpApi.restartMcpServer(mcpId);
+      const response = await restartMcpServer(mcpId);
       if (response.success) {
         setState(response.data || null);
       } else {

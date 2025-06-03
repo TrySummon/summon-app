@@ -1,6 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { McpData } from "@/helpers/db/mcp-db";
 import { McpSubmitData } from "@/components/mcp-builder/start-mcp-dialog";
+import {
+  createMcp,
+  deleteMcp,
+  listMcps,
+  updateMcp,
+} from "@/helpers/ipc/mcp/mcp-client";
 
 // Query key for MCPs
 export const MCP_QUERY_KEY = "mcps";
@@ -18,7 +24,7 @@ export function useMcps() {
   } = useQuery({
     queryKey: [MCP_QUERY_KEY],
     queryFn: async () => {
-      const result = await window.mcpApi.listMcps();
+      const result = await listMcps();
       if (!result.success) {
         throw new Error(result.message || "Failed to fetch MCPs");
       }
@@ -28,7 +34,7 @@ export function useMcps() {
 
   const createMcpMutation = useMutation({
     mutationFn: async ({ mcpData }: { mcpData: McpSubmitData }) => {
-      const result = await window.mcpApi.createMcp(mcpData);
+      const result = await createMcp(mcpData);
       if (!result.success) {
         throw new Error(result.message || "Failed to create MCP");
       }
@@ -49,7 +55,7 @@ export function useMcps() {
       mcpId: string;
       mcpData: McpSubmitData;
     }) => {
-      const result = await window.mcpApi.updateMcp(mcpId, mcpData);
+      const result = await updateMcp(mcpId, mcpData);
       if (!result.success) {
         throw new Error(result.message || "Failed to update MCP");
       }
@@ -64,7 +70,7 @@ export function useMcps() {
   // Delete an MCP
   const deleteMcpMutation = useMutation({
     mutationFn: async (mcpId: string) => {
-      const result = await window.mcpApi.deleteMcp(mcpId);
+      const result = await deleteMcp(mcpId);
       if (!result.success) {
         throw new Error(result.message || "Failed to delete MCP");
       }

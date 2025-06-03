@@ -4,6 +4,7 @@ import { jsonSchema, Tool, tool } from "ai";
 import { useExternalMcps } from "./useExternalMcps";
 import type { JSONSchema7 } from "json-schema";
 import { Tool as McpTool } from "@modelcontextprotocol/sdk/types.js";
+import { callMcpTool, getMcpTools } from "@/helpers/ipc/mcp/mcp-client";
 
 type ToolMapEntry = {
   name: string;
@@ -23,7 +24,7 @@ export default function useToolMap() {
   useEffect(() => {
     const fetchMcpTools = async (mcpId: string, name: string) => {
       try {
-        const response = await window.mcpApi.getMcpTools(mcpId);
+        const response = await getMcpTools(mcpId);
         if (response.success && response.data) {
           setMcpToolMap((prevToolMap) => {
             return {
@@ -64,11 +65,7 @@ export default function useToolMap() {
           description: mcpTool.description,
           parameters: jsonSchema(mcpTool.inputSchema as JSONSchema7),
           execute: (args) =>
-            window.mcpApi.callMcpTool(
-              mcpId,
-              mcpTool.name,
-              args as Record<string, unknown>,
-            ),
+            callMcpTool(mcpId, mcpTool.name, args as Record<string, unknown>),
         });
       });
     });

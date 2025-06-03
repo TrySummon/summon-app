@@ -1,6 +1,7 @@
 import React from "react";
 import BaseLayout from "@/layouts/BaseLayout";
 import { Outlet, createRootRoute } from "@tanstack/react-router";
+import { PostHogRouter } from "@/components/PostHogRouter";
 
 export const RootRoute = createRootRoute({
   component: Root,
@@ -9,6 +10,7 @@ export const RootRoute = createRootRoute({
 function Root() {
   return (
     <BaseLayout>
+      <PostHogRouter />
       <Outlet />
     </BaseLayout>
   );

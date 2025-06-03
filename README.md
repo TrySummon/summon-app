@@ -1,156 +1,158 @@
-# electron-shadcn
+<p align="center">
+  <img src="https://raw.githubusercontent.com/willydouhard/toolman/main/src/assets/logo.svg" alt="AgentPort Logo" width="120"/>
+</p>
 
-Electron in all its glory. Everything you will need to develop your beautiful desktop application.
+<h1 align="center">AgentPort</h1>
 
-![Demo GIF](https://github.com/LuanRoger/electron-shadcn/blob/main/images/demo.gif)
+<p align="center">
+  <strong>Your All-in-One Desktop App for Designing, Building, and Testing Model Context Protocol (MCP) Servers & AI Agents.</strong>
+</p>
 
-## Libs and tools
+<p align="center">
+  <a href="https://github.com/willydouhard/agent-port/releases"><img src="https://img.shields.io/github/v/release/willydouhard/agent-port?style=for-the-badge&logo=github&color=brightgreen" alt="Latest Release"></a>
+  <a href="https://github.com/willydouhard/agent-port/blob/main/LICENSE"><img src="https://img.shields.io/github/license/willydouhard/agent-port?style=for-the-badge&color=blue" alt="License"></a>
+  <a href="https://github.com/willydouhard/agent-port/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/willydouhard/agent-port/build.yml?branch=main&style=for-the-badge&logo=githubactions" alt="Build Status"></a>
+  <a href="https://github.com/willydouhard/agent-port/stargazers"><img src="https://img.shields.io/github/stars/willydouhard/agent-port?style=for-the-badge&logo=github&color=gold" alt="GitHub Stars"></a>
+</p>
 
-To develop a Electron app, you probably will need some UI, test, formatter, style or other kind of library or framework, so let me install and configure some of them to you.
+---
 
-### Core 🏍️
+AgentPort streamlines the development workflow for AI agents using the Model Context Protocol (MCP). It empowers developers to:
 
-- [Electron 35](https://www.electronjs.org)
-- [Vite 6](https://vitejs.dev)
-- [SWC](https://swc.rs)
+* **Generate MCP servers** from one or more OpenAPI specifications.
+* **Run and manage** these generated servers locally.
+* **Connect to external MCP servers**.
+* **Test and iterate** on tools within an interactive AI Playground, with the ability to **edit tool definitions on the fly**.
 
-### DX 🛠️
+## ✨ Key Features
 
-- [TypeScript 5.8](https://www.typescriptlang.org)
-- [Prettier](https://prettier.io)
-- [ESLint 9](https://eslint.org)
-- [Zod](https://zod.dev)
-- [React Query (TanStack)](https://react-query.tanstack.com)
+*   🚀 **OpenAPI to MCP Server Generation:**
+    *   Import existing OpenAPI (v3) specifications.
+    *   Visually select endpoints to include in your MCP server.
+    *   Generate a complete, runnable Node.js MCP server project with a single click.
+*   🧩 **Multi-API Composition:**
+    *   Combine endpoints from multiple OpenAPI specifications into a single, cohesive MCP server.
+    *   Easily manage authentication and server URLs for each integrated API.
+*   💻 **Local MCP Server Management:**
+    *   Start, stop, and restart your generated MCP servers directly from the AgentPort GUI.
+    *   View server status, logs (soon!), and available tools.
+*   🔗 **External MCP Integration:**
+    *   Connect to any existing MCP server (local or remote) by configuring its URL or CLI command in `mcp.json`.
+    *   Bring external tools into your AgentPort Playground.
+*   🧪 **Interactive AI Playground:**
+    *   Test your MCP tools in a chat-like interface with various AI models (OpenAI, Anthropic, Mistral, Azure OpenAI, etc.).
+    *   Enable/disable specific tools from any connected MCP server for fine-grained testing.
+*   ✏️ **Dynamic Tool Editing (Playground):**
+    *   Modify tool names, descriptions, and even input schemas directly within the Playground.
+    *   Test changes immediately without regenerating or restarting your MCP server.
+    *   View a diff of your modifications against the original tool definition.
+*   🔐 **Secure Credential Management:**
+    *   Safely store API keys and tokens for AI providers and MCP-integrated APIs using system keychain services.
 
-### UI 🎨
+## 📺 Showcase
 
-- [React 19](https://reactjs.org)
-- [Tailwind 4](https://tailwindcss.com)
-- [Shadcn UI](https://ui.shadcn.com)
-- [Geist](https://vercel.com/font) as default font
-- [i18next](https://www.i18next.com)
-- [TanStack Router](https://tanstack.com/router)
-- [Lucide](https://lucide.dev)
+*(It would be great to add a GIF or a couple of screenshots here showing the main workflows, e.g., API import -> MCP build -> Playground testing)*
 
-### Test 🧪
+<p align="center">
+  <em>(Imagine a GIF showcasing AgentPort in action here!)</em>
+</p>
 
-- [Vitest](https://vitest.dev)
-- [Playwright](https://playwright.dev)
-- [React Testing Library](https://testing-library.com/docs/react-testing-library/intro)
+## 🚀 Getting Started
 
-### Packing and distribution 📦
+### 1. Download
+Grab the latest release for your operating system from the [**GitHub Releases**](https://github.com/willydouhard/agent-port/releases) page.
 
-- [Electron Forge](https://www.electronforge.io)
+### 2. Install
+Follow the standard installation procedure for your OS:
+*   **Windows:** Run the `.exe` installer.
+*   **macOS:** Open the `.dmg` file and drag `AgentPort.app` to your Applications folder.
+*   **Linux:** Use the `.AppImage` or `.deb` package.
 
-### CI/CD 🚀
+### 3. Launch AgentPort
+Open the application and you're ready to go!
 
-- Pre-configured [GitHub Actions workflow](https://github.com/LuanRoger/electron-shadcn/blob/main/.github/workflows/playwright.yml), for test with Playwright
+## 🛠️ Usage Workflow
 
-### Project preferences 🎯
+1.  **Import Your APIs:**
+    *   Navigate to the "APIs" section in the sidebar.
+    *   Click the "+" button or the "Upload OpenAPI spec" button.
+    *   Select your OpenAPI v3 `json` or `yaml` file.
+    *   Your API will appear in the list, allowing you to explore its endpoints.
 
-- Use Context isolation
-- [React Compiler](https://react.dev/learn/react-compiler) is enabled by default.
-- `titleBarStyle`: hidden (Using custom title bar)
-- Geist as default font
-- Some default styles was applied, check the [`styles`](https://github.com/LuanRoger/electron-shadcn/tree/main/src/styles) directory
-- React DevTools are installed by default
+2.  **Build an MCP Server (Optional - for local generation):**
+    *   Navigate to "My MCPs" > "Create MCP" or the "Build an MCP Server" option on the Home page.
+    *   Click "Pick Endpoints" and select an imported API.
+    *   Choose the specific endpoints you want to include in your MCP server.
+    *   Click "Update" and then "Create & Start Server".
+    *   Configure the server name and authentication details for each API group.
+    *   AgentPort will generate the server code and start it locally.
 
-> If you don't know some of these libraries or tools, I recommend you to check their documentation to understand how they work and how to use them.
+3.  **Connect to an External MCP Server (Optional):**
+    *   Navigate to "External MCPs" > "Connect MCP" or the "Connect to an External MCP" option on the Home page.
+    *   Click "Open mcp.json". This file is located in your user data directory.
+    *   Add your external MCP server configurations to this file (see examples provided in the app). AgentPort will automatically detect changes and connect.
 
-> [!WARNING]
-> Prefer to use the [`canary` release of `shadcn/ui`](https://ui.shadcn.com/docs/tailwind-v4) to avoid compatibility issues with React 19 and Tailwind v4.
+4.  **Configure AI Providers (for Playground):**
+    *   Go to "Settings" (⚙️ icon in the sidebar).
+    *   Under "AI Providers", configure credentials for services like OpenAI, Anthropic, etc. These are stored securely in your system's keychain.
 
-```bash
-npx shadcn@canary add button
-```
+5.  **Test in the Playground:**
+    *   Navigate to the "Playground" (💻 icon).
+    *   Select an AI model from the dropdown.
+    *   Open the "Enabled Tools" sidebar (➡️ icon or click the "Tools" button).
+    *   Enable the tools you want the AI to use from your local or external MCPs.
+    *   Start chatting! You can edit tool definitions (name, description, schema) on the fly by clicking the pencil icon next to a tool in the sidebar.
 
-## Directory structure
+## 💻 For Developers (Building from Source)
 
-```plaintext
-.
-└── ./src/
-    ├── ./src/assets/
-    │   └── ./src/assets/fonts/
-    ├── ./src/components/
-    │   ├── ./src/components/template
-    │   └── ./src/components/ui/
-    ├── ./src/helpers/
-    │   └── ./src/helpers/ipc/
-    ├── ./src/layout/
-    ├── ./src/lib/
-    ├── ./src/pages/
-    ├── ./src/style/
-    └── ./src/tests/
-```
+If you want to contribute or run AgentPort from source:
 
-- `src/`: Main directory
-  - `assets/`: Store assets like images, fonts, etc.
-  - `components/`: Store UI components
-    - `template/`: Store the all not important components used by the template. It doesn't include the `WindowRegion` or the theme toggler, if you want to start an empty project, you can safely delete this directory.
-    - `ui/`: Store Shadcn UI components (this is the default direcotry used by Shadcn UI)
-  - `helpers/`: Store IPC related functions to be called in the renderer process
-    - `ipc/`: Directory to store IPC context and listener functions
-      - Some implementations are already done, like `theme` and `window` for the custom title bar
-  - `layout/`: Directory to store layout components
-  - `lib/`: Store libraries and other utilities
-  - `pages/`: Store app's pages
-  - `style/`: Store global styles
-  - `tests/`: Store tests (from Vitest and Playwright)
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/willydouhard/agent-port.git
+    cd agent-port
+    ```
 
-## NPM script
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-To run any of those scripts:
+3.  **Run the development server:**
+    ```bash
+    npm start
+    ```
 
-```bash
-npm run <script>
-```
+4.  **Build the application:**
+    ```bash
+    npm run make # For your current platform
+    ```
+    (See `package.json` for other build scripts.)
 
-- `start`: Start the app in development mode
-- `package`: Package your application into a platform-specific executable bundle and put the result in a folder.
-- `make`: Generate platform-specific distributables (e.g. .exe, .dmg, etc) of your application for distribution.
-- `publish`: Electron Forge's way of taking the artifacts generated by the `make` command and sending them to a service somewhere for you to distribute or use as updates.
-- `lint`: Run ESLint to lint the code
-- `format`: Run Prettier to check the code (it doesn't change the code)
-- `format:write`: Run Prettier to format the code
-- `test`: Run the default unit-test script (Vitest)
-- `test:watch`: Run the default unit-test script in watch mode (Vitest)
-- `test:unit`: Run the Vitest tests
-- `test:e2e`: Run the Playwright tests
-- `test:all`: Run all tests (Vitest and Playwright)
+## 🏗️ Technology Stack
 
-> The test scripts involving Playwright require the app be builded before running the tests. So, before run the tests, run the `package`, `make` or `publish` script.
+*   **Electron:** For cross-platform desktop application framework.
+*   **Tailwind & shadcn:** For the user interface.
+*   **TanStack Router & Query:** For routing and data fetching/caching.
+*   **Zustand:** For global state management.
+*   **Model Context Protocol SDK:** For MCP client/server interactions.
+*   **AI SDK (Vercel AI SDK):** For LLM interactions in the Playground.
 
-## How to use
+## 🗺️ Roadmap
 
-1. Clone this repository
+We have exciting plans for AgentPort! Our detailed roadmap, including upcoming features and long-term vision, can be found at:
+[**Link to Your Roadmap (e.g., a GitHub Project, Notion page, or website)**](https://your-roadmap-link.com)
 
-```bash
-git clone https://github.com/LuanRoger/electron-shadcn.git
-```
+## ❤️ Contributing
 
-Or use it as a template on GitHub
+Contributions are welcome! Whether it's bug reports, feature requests, or code contributions, please feel free to:
 
-2. Install dependencies
+1.  Check our [Contribution Guidelines](CONTRIBUTING.md) (you'll need to create this file).
+2.  Open an issue on the [GitHub Issues page](https://github.com/willydouhard/agent-port/issues).
+3.  Fork the repository and submit a pull request.
 
-```bash
-npm install
-```
+---
 
-3. Run the app
-
-```bash
-npm run start
-```
-
-## Used by
-
-- [yaste](https://github.com/LuanRoger/yaste) - yaste (Yet another super ₛᵢₘₚₗₑ text editor) is a text editor, that can be used as an alternative to the native text editor of your SO, maybe.
-- [eletric-drizzle](https://github.com/LuanRoger/electric-drizzle) - shadcn-ui and Drizzle ORM with Electron.
-- [Wordle Game](https://github.com/masonyekta/wordle-game) - A Wordle game which features interactive gameplay, cross-platform compatibility, and integration with a custom Wordle API for word validation and letter correctness.
-- [Mehr 🌟](https://github.com/xmannii/MehrLocalChat) - A modern, elegant local AI chatbot application using Electron, React, shadcn/ui, and Ollama.
-
-> Does you've used this template in your project? Add it here and open a PR.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/LuanRoger/electron-shadcn/blob/main/LICENSE) file for details.
+<p align="center">
+  Made with ❤️ by the AgentPort Team
+</p>

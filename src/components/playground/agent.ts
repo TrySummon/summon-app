@@ -1,9 +1,19 @@
-import { CoreSystemMessage, jsonSchema, streamText, ToolSet } from "ai";
+import {
+  CoreSystemMessage,
+  jsonSchema,
+  streamText,
+  ToolSet,
+  tool as makeTool,
+} from "ai";
 import { createLLMProvider } from "@/helpers/llm";
 import { usePlaygroundStore, type PlaygroundStore } from "./store";
 import { v4 as uuidv4 } from "uuid";
 import { UIMessage } from "ai";
 import type { JSONSchema7 } from "json-schema";
+import { captureEvent } from "@/helpers/posthog";
+import { recurseCountKeys } from "@/helpers/object";
+import { getCredentials } from "@/helpers/ipc/ai-providers/ai-providers-client";
+import { callMcpTool } from "@/helpers/ipc/mcp/mcp-client";
 
 /**
  * Remaps modified tool arguments back to their original names for API compatibility.
@@ -125,6 +135,20 @@ export async function runAgent() {
     const { messages, systemPrompt, model, settings, maxSteps } =
       getCurrentState();
 
+    // Track AI agent start
+    captureEvent("playground_ai_agent_start", {
+      model: model,
+      conversation_length: messages.length,
+      max_steps: maxSteps,
+      mcp_count: Object.keys(aiToolMap).length,
+      tool_count: Object.values(aiToolMap).reduce(
+        (acc, tools) => acc + Object.keys(tools).length,
+        0,
+      ),
+      temperature: settings.temperature,
+      max_tokens: settings.maxTokens,
+    });
+
     // Create a new AbortController for this run
     const abortController = new AbortController();
     updateCurrentState((state) => ({
@@ -167,26 +191,35 @@ export async function runAgent() {
           if (modification) {
             // Apply modifications to the tool but keep the original name
             // Override the execute function to handle name remapping if needed
-            const modifiedTool = {
-              ...tool,
+            const modifiedTool = makeTool({
+              description: modification.description || tool.description,
               parameters: jsonSchema(modification.schema),
-              execute: (args: Record<string, unknown>) => {
+              execute: (args) => {
                 // Remap modified args back to original args
                 const remappedArgs = remapArgsToOriginal(
-                  args,
+                  args as Record<string, unknown>,
                   tool.parameters.jsonSchema,
                   modification.schema,
                 );
+
+                // Track tool call event
+                captureEvent("playground_ai_agent_tool_remap_args", {
+                  argsCount: Object.keys(args as Record<string, unknown>)
+                    .length,
+                  argsKeyCount: recurseCountKeys(
+                    args as Record<string, unknown>,
+                  ),
+                });
+
                 // Always call with the original tool name for API compatibility
-                return window.mcpApi.callMcpTool(mcpId, toolName, remappedArgs);
+                return callMcpTool(mcpId, toolName, remappedArgs);
               },
-            };
+            });
 
             // Use modified name if provided, otherwise use original name
             const finalToolName = modification.name || toolName;
             toolSet[finalToolName] = modifiedTool;
           } else {
-            // Use original tool without modifications
             toolSet[toolName] = tool;
           }
         }
@@ -206,7 +239,7 @@ export async function runAgent() {
         }
       : undefined;
 
-    const credentials = await window.aiProviders.getCredentials();
+    const credentials = await getCredentials();
     const credential = credentials.find(
       (c) => c.id === currentState.credentialId,
     );
@@ -367,6 +400,14 @@ export async function runAgent() {
         tokenUsage: tokenUsageData,
       };
     }, false);
+
+    const currentState = store.getCurrentState();
+    const { messages } = currentState;
+
+    // Track AI agent completion
+    captureEvent("playground_ai_agent_completed", {
+      conversation_length: messages.length,
+    });
   }
 }
 
@@ -378,6 +419,8 @@ export async function runAgent() {
 function handleAgentError(error: unknown, store: PlaygroundStore) {
   console.error(error);
   // Add an error message to the chat
+  const currentState = store.getCurrentState();
+  const { messages } = currentState;
   const errorMessage: UIMessage = {
     id: uuidv4(),
     role: "assistant",
@@ -394,6 +437,11 @@ function handleAgentError(error: unknown, store: PlaygroundStore) {
   store.updateCurrentState((state) => ({
     ...state,
     running: false,
-    messages: [...state.messages, errorMessage],
+    messages: [...messages, errorMessage],
   }));
+
+  // Track AI agent error
+  captureEvent("playground_ai_agent_error", {
+    conversation_length: messages.length,
+  });
 }

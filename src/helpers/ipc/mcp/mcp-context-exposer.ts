@@ -20,49 +20,76 @@ import { McpData } from "@/helpers/db/mcp-db";
 
 export function exposeMcpContext() {
   contextBridge.exposeInMainWorld("mcpApi", {
-    createMcp: (mcpData: Omit<McpData, "id" | "createdAt" | "updatedAt">) =>
-      ipcRenderer.invoke(CREATE_MCP_CHANNEL, mcpData),
+    createMcp: (mcpData: Omit<McpData, "id" | "createdAt" | "updatedAt">) => {
+      return ipcRenderer.invoke(CREATE_MCP_CHANNEL, mcpData);
+    },
 
-    listMcps: () => ipcRenderer.invoke(LIST_MCPS_CHANNEL),
+    listMcps: () => {
+      return ipcRenderer.invoke(LIST_MCPS_CHANNEL);
+    },
 
-    getMcp: (id: string) => ipcRenderer.invoke(GET_MCP_CHANNEL, id),
+    getMcp: (id: string) => {
+      return ipcRenderer.invoke(GET_MCP_CHANNEL, id);
+    },
 
     updateMcp: (
       id: string,
       data: Partial<Omit<McpData, "id" | "createdAt" | "updatedAt">>,
-    ) => ipcRenderer.invoke(UPDATE_MCP_CHANNEL, { id, data }),
+    ) => {
+      return ipcRenderer.invoke(UPDATE_MCP_CHANNEL, { id, data });
+    },
 
-    deleteMcp: (id: string) => ipcRenderer.invoke(DELETE_MCP_CHANNEL, id),
+    deleteMcp: (id: string) => {
+      return ipcRenderer.invoke(DELETE_MCP_CHANNEL, id);
+    },
 
     // MCP server operations
-    getMcpServerStatus: (mcpId: string) =>
-      ipcRenderer.invoke(GET_MCP_SERVER_STATUS_CHANNEL, mcpId),
+    getMcpServerStatus: (mcpId: string) => {
+      return ipcRenderer.invoke(GET_MCP_SERVER_STATUS_CHANNEL, mcpId);
+    },
 
-    getAllMcpServerStatuses: () =>
-      ipcRenderer.invoke(GET_ALL_MCP_SERVER_STATUSES_CHANNEL),
+    getAllMcpServerStatuses: () => {
+      return ipcRenderer.invoke(GET_ALL_MCP_SERVER_STATUSES_CHANNEL);
+    },
 
-    startMcpServer: (mcpId: string) =>
-      ipcRenderer.invoke(START_MCP_SERVER_CHANNEL, mcpId),
+    startMcpServer: (mcpId: string) => {
+      return ipcRenderer.invoke(START_MCP_SERVER_CHANNEL, mcpId);
+    },
 
-    stopMcpServer: (mcpId: string) =>
-      ipcRenderer.invoke(STOP_MCP_SERVER_CHANNEL, mcpId),
+    stopMcpServer: (mcpId: string) => {
+      return ipcRenderer.invoke(STOP_MCP_SERVER_CHANNEL, mcpId);
+    },
 
-    restartMcpServer: (mcpId: string) =>
-      ipcRenderer.invoke(RESTART_MCP_SERVER_CHANNEL, mcpId),
+    restartMcpServer: (mcpId: string) => {
+      return ipcRenderer.invoke(RESTART_MCP_SERVER_CHANNEL, mcpId);
+    },
 
-    getMcpTools: (mcpId: string) =>
-      ipcRenderer.invoke(GET_MCP_TOOLS_CHANNEL, mcpId),
+    getMcpTools: (mcpId: string) => {
+      return ipcRenderer.invoke(GET_MCP_TOOLS_CHANNEL, mcpId);
+    },
 
-    callMcpTool: (mcpId: string, name: string, args: Record<string, unknown>) =>
-      ipcRenderer.invoke(CALL_MCP_TOOL_CHANNEL, { mcpId, name, args }),
+    callMcpTool: async (
+      mcpId: string,
+      name: string,
+      args: Record<string, unknown>,
+    ) => {
+      return ipcRenderer.invoke(CALL_MCP_TOOL_CHANNEL, {
+        mcpId,
+        name,
+        args,
+      });
+    },
 
-    openUserDataMcpJsonFile: () =>
-      ipcRenderer.invoke(OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL),
+    openUserDataMcpJsonFile: () => {
+      return ipcRenderer.invoke(OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL);
+    },
 
-    downloadMcpZip: (mcpId: string) =>
-      ipcRenderer.invoke(DOWNLOAD_MCP_ZIP_CHANNEL, mcpId),
+    downloadMcpZip: (mcpId: string) => {
+      return ipcRenderer.invoke(DOWNLOAD_MCP_ZIP_CHANNEL, mcpId);
+    },
 
-    showFileInFolder: (path: string) =>
-      ipcRenderer.invoke(SHOW_FILE_IN_FOLDER_CHANNEL, path),
+    showFileInFolder: (path: string) => {
+      return ipcRenderer.invoke(SHOW_FILE_IN_FOLDER_CHANNEL, path);
+    },
   });
 }

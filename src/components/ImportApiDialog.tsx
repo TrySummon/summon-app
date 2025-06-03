@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/tailwind";
 import { useNavigate } from "@tanstack/react-router";
 import { LIST_API_QUERY_KEY } from "@/hooks/useApis";
+import { importApi } from "@/helpers/ipc/openapi/openapi-client";
 
 interface ImportApiDialogProps {
   children: React.ReactNode;
@@ -60,7 +61,7 @@ export function ImportApiDialog({
     if (file) {
       setIsLoading(true);
 
-      toast.promise(window.openapi.import(file), {
+      toast.promise(importApi(file), {
         loading: "Importing API...",
         success: (result) => {
           setIsLoading(false);

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Edit2, Plus } from "lucide-react";
 import { usePlaygroundStore } from "./store";
+import { usePostHog } from "@/hooks/usePostHog";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,8 @@ export default function TabNavigation() {
     duplicateTab,
   } = usePlaygroundStore();
 
+  const { captureEvent } = usePostHog();
+
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +44,7 @@ export default function TabNavigation() {
   const saveTabName = () => {
     if (editingTabId && editingName.trim()) {
       renameTab(editingTabId, editingName.trim());
+      captureEvent("playground_tab_renamed");
     }
     setEditingTabId(null);
   };
@@ -68,7 +72,29 @@ export default function TabNavigation() {
       return;
     }
 
+    captureEvent("playground_tab_closed", {
+      messageCount: tabs[tabId]?.state.messages.length,
+      mcpCount: Object.keys(tabs[tabId]?.state.enabledTools).length,
+      toolCount: Object.values(tabs[tabId]?.state.enabledTools).reduce(
+        (acc, tools) => acc + Object.keys(tools).length,
+        0,
+      ),
+    });
+
     closeTab(tabId);
+  };
+
+  // Handle tab duplication
+  const handleDuplicateTab = (tabId: string) => {
+    duplicateTab(tabId);
+    captureEvent("playground_tab_duplicated", {
+      messageCount: tabs[tabId]?.state.messages.length,
+      mcpCount: Object.keys(tabs[tabId]?.state.enabledTools).length,
+      toolCount: Object.values(tabs[tabId]?.state.enabledTools).reduce(
+        (acc, tools) => acc + Object.keys(tools).length,
+        0,
+      ),
+    });
   };
 
   return (
@@ -128,7 +154,7 @@ export default function TabNavigation() {
                 <Edit2 className="mr-2 h-3 w-3" />
                 Rename tab
               </ContextMenuItem>
-              <ContextMenuItem onClick={() => duplicateTab(tabId)}>
+              <ContextMenuItem onClick={() => handleDuplicateTab(tabId)}>
                 <Plus className="mr-2 h-3 w-3" />
                 Duplicate tab
               </ContextMenuItem>

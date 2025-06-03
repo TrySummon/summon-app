@@ -8,11 +8,17 @@ import { McpServerState } from "@/helpers/mcp/state";
 
 export function exposeExternalMcpContext() {
   contextBridge.exposeInMainWorld("externalMcpApi", {
-    connectExternalMcpServer: (mcpId: string, force?: boolean) =>
-      ipcRenderer.invoke(CONNECT_EXTERNAL_MCP_SERVER_CHANNEL, mcpId, force),
+    connectExternalMcpServer: (mcpId: string, force?: boolean) => {
+      return ipcRenderer.invoke(
+        CONNECT_EXTERNAL_MCP_SERVER_CHANNEL,
+        mcpId,
+        force,
+      );
+    },
 
-    stopExternalMcpServer: (mcpId: string) =>
-      ipcRenderer.invoke(STOP_EXTERNAL_MCP_SERVER_CHANNEL, mcpId),
+    stopExternalMcpServer: (mcpId: string) => {
+      return ipcRenderer.invoke(STOP_EXTERNAL_MCP_SERVER_CHANNEL, mcpId);
+    },
 
     onExternalMcpServersUpdated: (
       callback: (mcpServers: Record<string, McpServerState>) => void,

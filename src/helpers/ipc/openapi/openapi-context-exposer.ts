@@ -34,14 +34,20 @@ export function exposeOpenApiContext() {
 
       db: {
         // API CRUD operations
-        listApis: () => ipcRenderer.invoke(LIST_APIS_CHANNEL),
-        getApi: (id: string) => ipcRenderer.invoke(GET_API_CHANNEL, id),
+        listApis: () => {
+          return ipcRenderer.invoke(LIST_APIS_CHANNEL);
+        },
+        getApi: (id: string) => {
+          return ipcRenderer.invoke(GET_API_CHANNEL, id);
+        },
         updateApi: (id: string, api: OpenAPIV3.Document) => {
           // Convert the API object to a buffer
           const buffer = Buffer.from(JSON.stringify(api));
           return ipcRenderer.invoke(UPDATE_API_CHANNEL, { id, buffer });
         },
-        deleteApi: (id: string) => ipcRenderer.invoke(DELETE_API_CHANNEL, id),
+        deleteApi: (id: string) => {
+          return ipcRenderer.invoke(DELETE_API_CHANNEL, id);
+        },
       },
     });
   } catch (error) {
