@@ -2,7 +2,6 @@ import React, { KeyboardEvent, useState } from "react";
 
 import { XIcon } from "lucide-react";
 
-
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/utils/tailwind";
@@ -54,11 +53,11 @@ const ChipInput = ({
               className={cn("flex items-center", tagClassName)}
             >
               <span>{tag}</span>
-              <span 
+              <span
                 onClick={() => {
                   onValueChange?.(tags.filter((_, i) => i !== index));
                 }}
-                className="ml-1 cursor-pointer inline-flex items-center justify-center"
+                className="ml-1 inline-flex cursor-pointer items-center justify-center"
               >
                 <XIcon className="h-3 w-3" />
               </span>
@@ -77,7 +76,7 @@ const ChipInput = ({
           className={cn(
             props.className,
             "flex-1",
-            inputValue ? "border-dashed border-slate-400" : ""
+            inputValue ? "border-dashed border-slate-400" : "",
           )}
         />
       </div>

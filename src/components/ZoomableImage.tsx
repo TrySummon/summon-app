@@ -1,11 +1,11 @@
 import React from "react";
 
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { cn } from '@/utils/tailwind';
-import { DetailedHTMLProps, ImgHTMLAttributes } from 'react';
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { cn } from "@/utils/tailwind";
+import { DetailedHTMLProps, ImgHTMLAttributes } from "react";
 
 export const ZoomableImage = ({
-  alt = '',
+  alt = "",
   className,
   src,
   ...other
@@ -18,7 +18,7 @@ export const ZoomableImage = ({
       <DialogTrigger asChild>
         <img
           alt={alt}
-          className={cn('cursor-zoom-in', className)}
+          className={cn("cursor-zoom-in", className)}
           src={src}
           {...other}
         />

@@ -1,9 +1,9 @@
 import React from "react";
-import { 
-  Breadcrumb, 
-  BreadcrumbLink, 
-  BreadcrumbList, 
-  BreadcrumbPage, 
+import {
+  Breadcrumb,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ const codeSnippets: CodeTab[] = [
       }
     }
   }
-}`
+}`,
   },
   {
     label: "SSE Server",
@@ -41,7 +41,7 @@ const codeSnippets: CodeTab[] = [
       }
     }
   }
-}`
+}`,
   },
   {
     label: "HTTP Server",
@@ -57,8 +57,8 @@ const codeSnippets: CodeTab[] = [
       }
     }
   }
-}`
-  }
+}`,
+  },
 ];
 
 export default function ConnectMcpPage() {
@@ -67,44 +67,44 @@ export default function ConnectMcpPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       <Breadcrumb>
         <BreadcrumbList>
-            <BreadcrumbLink asChild>
-              <Link to="/connect-mcp">
-                <BreadcrumbPage>
-                 Connect MCPs
-                </BreadcrumbPage>
-              </Link>
-            </BreadcrumbLink>
+          <BreadcrumbLink asChild>
+            <Link to="/connect-mcp">
+              <BreadcrumbPage>Connect MCPs</BreadcrumbPage>
+            </Link>
+          </BreadcrumbLink>
         </BreadcrumbList>
       </Breadcrumb>
- 
-      <div className="flex overflow-y-auto flex-1">
-      <div className="flex flex-col items-center p-10 mx-auto w-full max-w-4xl space-y-8">
-          
-                <div className="text-3xl font-bold mb-2">Connect External MCP Servers</div>
-              <p className="text-muted-foreground mb-8">
-         Add more tools to your AI playground.
-        </p>
-            
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>How to connect MCP servers</AlertTitle>
-                <AlertDescription>
-                  To connect MCP servers, you need to edit the <code>mcp.json</code> file in your user data directory.
-                  This file contains the configuration for all your MCP servers.
-                </AlertDescription>
-              </Alert>
 
-              <Button className="w-full" onClick={handleOpenUserDataFolder}>
-                <FileJson className="h-4 w-4 mr-2" />
-                Open mcp.json
-              </Button>
+      <div className="flex flex-1 overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-4xl flex-col items-center space-y-8 p-10">
+          <div className="mb-2 text-3xl font-bold">
+            Connect External MCP Servers
+          </div>
+          <p className="text-muted-foreground mb-8">
+            Add more tools to your AI playground.
+          </p>
 
-              <TabbedCodeSnippet tabs={codeSnippets} defaultValue="nodejs" />
-            </div>
-            </div>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>How to connect MCP servers</AlertTitle>
+            <AlertDescription>
+              To connect MCP servers, you need to edit the <code>mcp.json</code>{" "}
+              file in your user data directory. This file contains the
+              configuration for all your MCP servers.
+            </AlertDescription>
+          </Alert>
+
+          <Button className="w-full" onClick={handleOpenUserDataFolder}>
+            <FileJson className="mr-2 h-4 w-4" />
+            Open mcp.json
+          </Button>
+
+          <TabbedCodeSnippet tabs={codeSnippets} defaultValue="nodejs" />
+        </div>
       </div>
+    </div>
   );
 }

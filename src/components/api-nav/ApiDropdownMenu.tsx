@@ -6,7 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 interface ApiDropdownMenuProps {
@@ -24,7 +24,7 @@ export function ApiDropdownMenu({
   onRename,
   onDelete,
   editableNameRef,
-  renameInitiatedRef
+  renameInitiatedRef,
 }: ApiDropdownMenuProps) {
   return (
     <DropdownMenu>
@@ -41,35 +41,36 @@ export function ApiDropdownMenu({
         onCloseAutoFocus={(event) => {
           if (renameInitiatedRef.current) {
             event.preventDefault();
-            if(editableNameRef.current){
+            if (editableNameRef.current) {
               // Set cursor at the end
               const el = editableNameRef.current;
               const selection = window.getSelection();
-              if (selection) { 
+              if (selection) {
                 const range = document.createRange();
                 range.selectNodeContents(el);
-                range.collapse(false); 
+                range.collapse(false);
                 selection.removeAllRanges();
                 selection.addRange(range);
               }
             }
+            // eslint-disable-next-line react-compiler/react-compiler
             renameInitiatedRef.current = false; // Reset the flag
           }
         }}
       >
-        <DropdownMenuItem 
-          className="text-xs" 
+        <DropdownMenuItem
+          className="text-xs"
           onSelect={() => onRename(apiId, apiTitle)}
         >
-          <Pencil className="mr-2 !size-3 text-muted-foreground" />
+          <Pencil className="text-muted-foreground mr-2 !size-3" />
           <span>Rename API</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          className="text-xs" 
+        <DropdownMenuItem
+          className="text-xs"
           onSelect={() => onDelete(apiId, apiTitle)}
         >
-          <Trash2 className="mr-2 !size-3 text-muted-foreground" />
+          <Trash2 className="text-muted-foreground mr-2 !size-3" />
           <span>Delete API</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -10,7 +10,10 @@ import {
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
-import { AIProviderType, AI_PROVIDERS_CONFIG } from "@/components/ai-providers/types";
+import {
+  AIProviderType,
+  AI_PROVIDERS_CONFIG,
+} from "@/components/ai-providers/types";
 
 type TemperatureSelectorProps = {
   max?: number;
@@ -33,16 +36,16 @@ export const TemperatureSelector: React.FC<TemperatureSelectorProps> = ({
     if (!provider || !model) {
       return [min, max];
     }
-    
+
     const providerConfig = AI_PROVIDERS_CONFIG[provider as AIProviderType];
     if (!providerConfig) {
       return [min, max];
     }
-    
+
     if (model in providerConfig.models) {
       return providerConfig.models[model].temperatureRange;
     }
-    
+
     return providerConfig.defaultTemperatureRange;
   }, [max, min, model, provider]);
 
@@ -53,7 +56,7 @@ export const TemperatureSelector: React.FC<TemperatureSelectorProps> = ({
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="temperature">Temperature</Label>
-              <span className="w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm text-muted-foreground hover:border-border">
+              <span className="text-muted-foreground hover:border-border w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
                 {value}
               </span>
             </div>

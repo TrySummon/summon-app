@@ -1,41 +1,52 @@
-import React, { useState } from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/utils/tailwind';
+import React, { useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/utils/tailwind";
 import {
   HoverCard,
   HoverCardContent,
-  HoverCardTrigger
-} from '@/components/ui/hover-card';
-import { Pencil } from 'lucide-react';
-import type { Tool } from '@modelcontextprotocol/sdk/types';
-import type { ModifiedTool } from '../tabState';
-import { ToolEditDialog } from './ToolEdit';
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { Pencil } from "lucide-react";
+import type { Tool } from "@modelcontextprotocol/sdk/types";
+import type { ModifiedTool } from "../tabState";
+import { ToolEditDialog } from "./ToolEdit";
 
 interface ToolItemProps {
   tool: Tool;
   mcpId: string;
   isSelected: boolean;
   onToggle: () => void;
-  getModifiedName: (mcpId: string, toolName: string, originalName: string) => string;
-  getModifiedTool: (mcpId: string, toolName: string) => ModifiedTool | undefined;
-  onToolModify: (mcpId: string, toolName: string, modifiedTool: ModifiedTool) => void;
+  getModifiedName: (
+    mcpId: string,
+    toolName: string,
+    originalName: string,
+  ) => string;
+  getModifiedTool: (
+    mcpId: string,
+    toolName: string,
+  ) => ModifiedTool | undefined;
+  onToolModify: (
+    mcpId: string,
+    toolName: string,
+    modifiedTool: ModifiedTool,
+  ) => void;
   onToolRevert: (mcpId: string, toolName: string) => void;
 }
 
-export default function ToolItem({ 
-  tool, 
-  mcpId, 
-  isSelected, 
+export default function ToolItem({
+  tool,
+  mcpId,
+  isSelected,
   onToggle,
   getModifiedName,
   getModifiedTool,
   onToolModify,
-  onToolRevert
+  onToolRevert,
 }: ToolItemProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  
+
   const modifiedTool = getModifiedTool(mcpId, tool.name);
   const hasModifications = !!modifiedTool;
   const displayName = getModifiedName(mcpId, tool.name, tool.name);
@@ -51,32 +62,29 @@ export default function ToolItem({
 
   return (
     <>
-      <div 
+      <div
         key={mcpId + tool.name}
         className={cn(
-          `group/tool border-b relative`,
-          hasModifications && "bg-blue-100 dark:bg-blue-900/30"
+          `group/tool relative border-b`,
+          hasModifications && "bg-blue-100 dark:bg-blue-900/30",
         )}
       >
         <div className="p-2 py-4">
           <div className="flex items-start justify-between">
-            <div 
-              className="flex items-center gap-2 cursor-pointer flex-1"
+            <div
+              className="flex flex-1 cursor-pointer items-center gap-2"
               onClick={(e) => {
                 e.stopPropagation();
                 onToggle();
               }}
             >
-              <Checkbox 
-                checked={isSelected}
-                onCheckedChange={onToggle}
-              />
-              <div className="flex items-center gap-2 flex-1">
-                <Label 
+              <Checkbox checked={isSelected} onCheckedChange={onToggle} />
+              <div className="flex flex-1 items-center gap-2">
+                <Label
                   title={tool.name}
                   className={cn(
-                    "font-normal text-sm cursor-pointer text-foreground",
-                    hasModifications && "text-blue-800 dark:text-blue-200"
+                    "text-foreground cursor-pointer text-sm font-normal",
+                    hasModifications && "text-blue-800 dark:text-blue-200",
                   )}
                 >
                   {displayName}
@@ -91,8 +99,9 @@ export default function ToolItem({
                 setEditDialogOpen(true);
               }}
               className={cn(
-                "h-6 w-6 -mt-1 p-0 opacity-0 group-hover/tool:opacity-100 transition-opacity",
-                hasModifications && "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                "-mt-1 h-6 w-6 p-0 opacity-0 transition-opacity group-hover/tool:opacity-100",
+                hasModifications &&
+                  "bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:hover:bg-blue-900/50",
               )}
               title="Edit tool"
             >
@@ -102,11 +111,16 @@ export default function ToolItem({
           {displayDescription && (
             <HoverCard openDelay={100} closeDelay={100}>
               <HoverCardTrigger asChild>
-                <p className="text-xs text-muted-foreground/80 ml-6 mt-1 line-clamp-2 leading-relaxed">
+                <p className="text-muted-foreground/80 mt-1 ml-6 line-clamp-2 text-xs leading-relaxed">
                   {displayDescription}
                 </p>
               </HoverCardTrigger>
-              <HoverCardContent side="left" sideOffset={28} align="center" className="w-80 p-4">
+              <HoverCardContent
+                side="left"
+                sideOffset={28}
+                align="center"
+                className="w-80 p-4"
+              >
                 <div className="space-y-2">
                   <h4 className="text-sm font-semibold">{displayName}</h4>
                   <p className="text-xs">{displayDescription}</p>

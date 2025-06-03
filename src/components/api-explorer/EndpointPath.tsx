@@ -1,16 +1,19 @@
-import React from 'react';
-import { MethodBadge } from '@/components/MethodBadge';
+import React from "react";
+import { MethodBadge } from "@/components/MethodBadge";
 
 interface EndpointPathDisplayProps {
   method: string;
   path: string;
 }
 
-export const EndpointPathDisplay: React.FC<EndpointPathDisplayProps> = ({ method, path }) => {
+export const EndpointPathDisplay: React.FC<EndpointPathDisplayProps> = ({
+  method,
+  path,
+}) => {
   return (
-    <div className="p-1 border border-border rounded-lg bg-card flex items-center space-x-3">
+    <div className="border-border bg-card flex items-center space-x-3 rounded-lg border p-1">
       <MethodBadge method={method} size="lg" />
-      <span className="font-mono text-xs text-foreground">{path}</span>
+      <span className="text-foreground font-mono text-xs">{path}</span>
     </div>
   );
 };

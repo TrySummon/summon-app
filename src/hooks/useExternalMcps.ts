@@ -1,9 +1,9 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { McpServerState } from '@/helpers/mcp/state';
-import { useEffect } from 'react';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { McpServerState } from "@/helpers/mcp/state";
+import { useEffect } from "react";
 
 // Query key for External MCPs
-export const EXTERNAL_MCPS_QUERY_KEY = 'externalMcps';
+export const EXTERNAL_MCPS_QUERY_KEY = "externalMcps";
 
 export function useExternalMcps() {
   const queryClient = useQueryClient();
@@ -13,34 +13,36 @@ export function useExternalMcps() {
     data: externalMcps = {},
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery({
     queryKey: [EXTERNAL_MCPS_QUERY_KEY],
     queryFn: async () => {
       const response = await window.mcpApi.getAllMcpServerStatuses();
       if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch external MCPs');
+        throw new Error(response.message || "Failed to fetch external MCPs");
       }
-      
+
       const externalMcps: Record<string, McpServerState> = {};
       Object.values(response.data || {}).forEach((mcp) => {
         if (mcp.isExternal) {
           externalMcps[mcp.mcpId] = mcp;
         }
       });
-      
+
       return externalMcps;
-    }
+    },
   });
 
-  useEffect(() => {  
+  useEffect(() => {
     // Add IPC listener using the contextBridge API
     // This uses the exposed IPC event listener from external-mcp-context-exposer.ts
-    const unsubscribe = window.externalMcpApi.onExternalMcpServersUpdated((updatedMcps) => {
-      // Update the query cache with the new data
-      queryClient.setQueryData([EXTERNAL_MCPS_QUERY_KEY], updatedMcps);
-    });
-    
+    const unsubscribe = window.externalMcpApi.onExternalMcpServersUpdated(
+      (updatedMcps) => {
+        // Update the query cache with the new data
+        queryClient.setQueryData([EXTERNAL_MCPS_QUERY_KEY], updatedMcps);
+      },
+    );
+
     // Clean up on unmount
     return () => {
       if (unsubscribe) {
@@ -53,6 +55,6 @@ export function useExternalMcps() {
     externalMcps,
     isLoading,
     error,
-    refetch
+    refetch,
   };
 }

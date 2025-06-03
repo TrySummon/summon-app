@@ -21,7 +21,7 @@ export function getEnvVarName(
     | "OAUTH_CLIENT_SECRET"
     | "OAUTH_TOKEN"
     | "OAUTH_SCOPES"
-    | "OPENID_TOKEN"
+    | "OPENID_TOKEN",
 ): string {
   const sanitizedName = schemeName.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase();
   return `${type}_${sanitizedName}`;
@@ -35,7 +35,7 @@ export function getEnvVarName(
  */
 export function generateApiKeySecurityCode(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  scheme: OpenAPIV3.ApiKeySecurityScheme
+  scheme: OpenAPIV3.ApiKeySecurityScheme,
 ): string {
   const schemeName = "schemeName"; // Placeholder, will be replaced in template
   return `
@@ -376,7 +376,7 @@ async function executeApiTool(
  * @returns Documentation for security schemes
  */
 export function getSecuritySchemesDocs(
-  securitySchemes?: OpenAPIV3.ComponentsObject["securitySchemes"]
+  securitySchemes?: OpenAPIV3.ComponentsObject["securitySchemes"],
 ): string {
   if (!securitySchemes)
     return "No security schemes defined in the OpenAPI spec.";
@@ -432,7 +432,7 @@ export function getSecuritySchemesDocs(
         ) {
           docs += `  Available scopes:\n`;
           for (const [scope, description] of Object.entries(
-            scheme.flows.clientCredentials.scopes
+            scheme.flows.clientCredentials.scopes,
           )) {
             docs += `  - \`${scope}\`: ${description}\n`;
           }

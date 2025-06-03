@@ -5,16 +5,12 @@ import path from "path";
 export default defineConfig({
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-    }
+      "@": path.resolve(__dirname, "./src"),
+    },
   },
   build: {
     rollupOptions: {
-      external: [
-        'openapi-backend',
-        '@apidevtools/swagger-parser',
-        'keytar',
-      ]
-    }
+      external: ["openapi-backend", "@apidevtools/swagger-parser", "keytar"],
+    },
   },
 });

@@ -1,22 +1,25 @@
 import React, { useMemo } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from "@/components/ui/sidebar";
+import { SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { McpDropdownMenu } from "@/components/mcp-nav/McpDropdownMenu";
-import { toast } from "sonner";
 import { McpData } from "@/helpers/db/mcp-db";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/utils/tailwind";
 import { useMcpServerState } from "@/hooks/useMcpServerState";
+import { useMcps } from "@/hooks/useMcps";
+import { toast } from "sonner";
 
 interface McpItemProps {
   mcpItem: McpData;
-  deleteMcp: (mcpId: string, options: any) => void;
 }
 
-export function McpItem({
-  mcpItem,
-  deleteMcp,
-}: McpItemProps) {
+export function McpItem({ mcpItem }: McpItemProps) {
+  const { deleteMcp } = useMcps();
   // Check if this MCP is currently selected/active using URL pattern matching
   const location = useLocation();
   const isActive = useMemo(() => {
@@ -33,20 +36,27 @@ export function McpItem({
           toast.success(`MCP "${mcpName}" deleted successfully`);
         },
         onError: (error: unknown) => {
-          toast.error(`Failed to delete MCP: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
+          toast.error(
+            `Failed to delete MCP: ${error instanceof Error ? error.message : "Unknown error"}`,
+          );
+        },
       });
     }
   };
 
   // Use the hook to get server status
-  const { state, isLoading: statusLoading, startServer, stopServer, restartServer } = 
-    useMcpServerState(mcpItem.id);
-  
+  const {
+    state,
+    isLoading: statusLoading,
+    startServer,
+    stopServer,
+    restartServer,
+  } = useMcpServerState(mcpItem.id);
+
   // Determine status indicator color
   const getStatusColor = () => {
     if (statusLoading) return "bg-gray-300";
-    
+
     switch (state?.status) {
       case "running":
         return "bg-green-500";
@@ -59,11 +69,11 @@ export function McpItem({
         return "bg-gray-500";
     }
   };
-  
+
   // Get status text for tooltip
   const getStatusText = () => {
     if (statusLoading) return "Checking status...";
-    
+
     switch (state?.status) {
       case "running":
         return "MCP server is running";
@@ -81,31 +91,30 @@ export function McpItem({
   return (
     <SidebarMenuItem>
       <Link to="/mcp/$mcpId" params={{ mcpId: mcpItem.id }}>
-        <SidebarMenuButton
-          className="flex-1 text-xs"
-          isActive={isActive}
-        >
+        <SidebarMenuButton className="flex-1 text-xs" isActive={isActive}>
           <div className="flex items-center">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className={cn(
-                    "w-2 h-2 rounded-full mr-2",
-                    getStatusColor()
-                  )} />
+                  <div
+                    className={cn(
+                      "mr-2 h-2 w-2 rounded-full",
+                      getStatusColor(),
+                    )}
+                  />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{getStatusText()}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <span className="cursor-pointer hover:text-primary transition-colors">
+            <span className="hover:text-primary cursor-pointer transition-colors">
               {mcpItem.name}
             </span>
           </div>
         </SidebarMenuButton>
       </Link>
-      
+
       <McpDropdownMenu
         mcpId={mcpItem.id}
         mcpName={mcpItem.name}

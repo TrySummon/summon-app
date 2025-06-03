@@ -7,7 +7,10 @@ import {
 } from "@/components/ui/hover-card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { AIProviderType, AI_PROVIDERS_CONFIG } from "@/components/ai-providers/types";
+import {
+  AIProviderType,
+  AI_PROVIDERS_CONFIG,
+} from "@/components/ai-providers/types";
 
 const MAX_MAX_LENGTH = 32768;
 
@@ -26,10 +29,10 @@ export const MaxLengthSelector: React.FC<MaxLengthSelectorProps> = ({
 }) => {
   const modelData = useMemo(() => {
     if (!provider || !model) return null;
-    
+
     const providerConfig = AI_PROVIDERS_CONFIG[provider as AIProviderType];
     if (!providerConfig) return null;
-    
+
     return providerConfig.models[model];
   }, [provider, model]);
 
@@ -39,7 +42,6 @@ export const MaxLengthSelector: React.FC<MaxLengthSelectorProps> = ({
     if (maxValue != null && value > maxValue) {
       onChange(maxValue);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxValue, value]);
 
   return (
@@ -49,7 +51,7 @@ export const MaxLengthSelector: React.FC<MaxLengthSelectorProps> = ({
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="maxlength">Maximum Length</Label>
-              <span className="w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm text-muted-foreground hover:border-border">
+              <span className="text-muted-foreground hover:border-border w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
                 {value}
               </span>
             </div>

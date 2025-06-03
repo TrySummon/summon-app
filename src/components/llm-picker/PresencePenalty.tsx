@@ -24,7 +24,7 @@ export const PresenceSelector: React.FC<PresenceSelectorProps> = ({
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="presence-penalty">Presence Penalty</Label>
-              <span className="w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm text-muted-foreground hover:border-border">
+              <span className="text-muted-foreground hover:border-border w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm">
                 {value}
               </span>
             </div>

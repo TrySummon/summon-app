@@ -16,7 +16,7 @@ import { generateOperationId, kebabCase } from "../generator/utils";
  */
 function generateInputSchemaAndDetails(
   operation: OpenAPIV3.OperationObject,
-  options?: { ignoreOptional?: boolean }
+  options?: { ignoreOptional?: boolean },
 ): {
   inputSchema: JSONSchema7 | boolean;
   parameters: OpenAPIV3.ParameterObject[];
@@ -27,7 +27,7 @@ function generateInputSchemaAndDetails(
 
   // Process parameters
   const allParameters: OpenAPIV3.ParameterObject[] = Array.isArray(
-    operation.parameters
+    operation.parameters,
   )
     ? operation.parameters.map((p) => p as OpenAPIV3.ParameterObject)
     : [];
@@ -37,7 +37,7 @@ function generateInputSchemaAndDetails(
     if (options?.ignoreOptional && !param.required) return;
 
     const paramSchema = mapOpenApiSchemaToJsonSchema(
-      param.schema as OpenAPIV3.SchemaObject
+      param.schema as OpenAPIV3.SchemaObject,
     );
     if (typeof paramSchema === "object") {
       paramSchema.description = param.description || paramSchema.description;
@@ -60,7 +60,7 @@ function generateInputSchemaAndDetails(
     if (jsonContent?.schema) {
       requestBodyContentType = "application/json";
       const bodySchema = mapOpenApiSchemaToJsonSchema(
-        jsonContent.schema as OpenAPIV3.SchemaObject
+        jsonContent.schema as OpenAPIV3.SchemaObject,
       );
 
       if (typeof bodySchema === "object") {
@@ -104,7 +104,7 @@ function generateInputSchemaAndDetails(
  * @returns JSON Schema representation
  */
 function mapOpenApiSchemaToJsonSchema(
-  schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject
+  schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject,
 ): JSONSchema7 | boolean {
   // Handle reference objects
   if ("$ref" in schema) {
@@ -116,19 +116,21 @@ function mapOpenApiSchemaToJsonSchema(
   if (typeof schema === "boolean") return schema;
 
   // Create a copy of the schema to modify
-  const jsonSchema: JSONSchema7 = { ...schema } as any;
+  const cleanSchema = { ...schema };
+
+  // Remove OpenAPI-specific properties that aren't in JSON Schema
+  delete cleanSchema.nullable;
+  delete cleanSchema.example;
+  delete cleanSchema.xml;
+  delete cleanSchema.externalDocs;
+  delete cleanSchema.deprecated;
+  delete cleanSchema.readOnly;
+  delete cleanSchema.writeOnly;
+
+  const jsonSchema = cleanSchema as JSONSchema7;
 
   // Convert integer type to number (JSON Schema compatible)
   if (schema.type === "integer") jsonSchema.type = "number";
-
-  // Remove OpenAPI-specific properties that aren't in JSON Schema
-  delete (jsonSchema as any).nullable;
-  delete (jsonSchema as any).example;
-  delete (jsonSchema as any).xml;
-  delete (jsonSchema as any).externalDocs;
-  delete (jsonSchema as any).deprecated;
-  delete (jsonSchema as any).readOnly;
-  delete (jsonSchema as any).writeOnly;
 
   // Handle nullable properties by adding null to the type
   if (schema.nullable) {
@@ -148,7 +150,7 @@ function mapOpenApiSchemaToJsonSchema(
     for (const [key, propSchema] of Object.entries(jsonSchema.properties)) {
       if (typeof propSchema === "object" && propSchema !== null) {
         mappedProps[key] = mapOpenApiSchemaToJsonSchema(
-          propSchema as unknown as OpenAPIV3.SchemaObject
+          propSchema as unknown as OpenAPIV3.SchemaObject,
         );
       } else if (typeof propSchema === "boolean") {
         mappedProps[key] = propSchema;
@@ -165,7 +167,7 @@ function mapOpenApiSchemaToJsonSchema(
     jsonSchema.items !== null
   ) {
     jsonSchema.items = mapOpenApiSchemaToJsonSchema(
-      jsonSchema.items as OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject
+      jsonSchema.items as OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject,
     );
   }
 
@@ -185,49 +187,51 @@ interface DereferencedMcpEndpoint extends McpEndpoint {
  */
 export function convertEndpointsToTools(
   endpoints: DereferencedMcpEndpoint[],
-  options?: { ignoreDeprecated?: boolean; ignoreOptional?: boolean }
+  options?: { ignoreDeprecated?: boolean; ignoreOptional?: boolean },
 ) {
   const tools: Omit<McpToolDefinition, "securityScheme">[] = [];
   const usedNames = new Set<string>();
-  
+
   for (const endpoint of endpoints) {
     if (!endpoint.operation) continue;
     const operation = endpoint.operation;
     if (options?.ignoreDeprecated && operation.deprecated) continue;
-    
+
     // Generate a unique name for the tool
-    let baseName = operation.operationId || generateOperationId(endpoint.method, endpoint.path);
+    let baseName =
+      operation.operationId ||
+      generateOperationId(endpoint.method, endpoint.path);
     if (!baseName) continue;
-    
+
     // Sanitize the name to be MCP-compatible (only a-z, 0-9, _, -)
     baseName = baseName
       .replace(/\./g, "_")
       .replace(/[^a-z0-9_-]/gi, "_")
       .toLowerCase();
-    
+
     let finalToolName = baseName;
     let counter = 1;
     while (usedNames.has(finalToolName)) {
       finalToolName = `${baseName}_${counter++}`;
     }
     usedNames.add(finalToolName);
-    
+
     // Get or create a description
     const description =
       operation.description ||
       operation.summary ||
       `Executes ${endpoint.method.toUpperCase()} ${endpoint.path}`;
-    
+
     // Generate input schema and extract parameters
     const { inputSchema, parameters, requestBodyContentType } =
       generateInputSchemaAndDetails(operation, options);
-    
+
     // Extract parameter details for execution
     const executionParameters = parameters.map((p) => ({
       name: p.name,
       in: p.in,
     }));
-    
+
     // Create the tool definition
     tools.push({
       name: finalToolName,
@@ -239,11 +243,9 @@ export function convertEndpointsToTools(
       parameters,
       executionParameters,
       requestBodyContentType,
-      operationId: baseName
+      operationId: baseName,
     });
   }
-  
+
   return tools;
 }
-
-

@@ -2,23 +2,32 @@
  * Generator for .env file and .env.example file
  */
 import { McpApiGroup } from "@/helpers/db/mcp-db";
-import { apiKeyEnvVarName, baseUrlEnvVarName, bearerTokenEnvVarName } from "./utils";
-
+import {
+  apiKeyEnvVarName,
+  baseUrlEnvVarName,
+  bearerTokenEnvVarName,
+} from "./utils";
 
 export function generateEnvExample(
-  apiGroups: Record<string, McpApiGroup>
+  apiGroups: Record<string, McpApiGroup>,
 ): string {
-  const baseUrls = Object.values(apiGroups).map((apiGroup) => `${baseUrlEnvVarName(apiGroup.name)}=${apiGroup.serverUrl}`).join("\n");
-  const keys = Object.values(apiGroups).map((apiGroup) => {
-    switch (apiGroup.auth.type) {
-      case "apiKey":
-        return `${apiKeyEnvVarName(apiGroup.name)}=`;
-      case "bearerToken":
-        return `${bearerTokenEnvVarName(apiGroup.name)}=`;
-      default:
-        return "";
-    }
-  }).join("\n");
+  const baseUrls = Object.values(apiGroups)
+    .map(
+      (apiGroup) => `${baseUrlEnvVarName(apiGroup.name)}=${apiGroup.serverUrl}`,
+    )
+    .join("\n");
+  const keys = Object.values(apiGroups)
+    .map((apiGroup) => {
+      switch (apiGroup.auth.type) {
+        case "apiKey":
+          return `${apiKeyEnvVarName(apiGroup.name)}=`;
+        case "bearerToken":
+          return `${bearerTokenEnvVarName(apiGroup.name)}=`;
+        default:
+          return "";
+      }
+    })
+    .join("\n");
   let content = `# MCP Server Environment Variables
 # Copy this file to .env and fill in the values
 

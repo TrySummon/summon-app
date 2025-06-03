@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useWatch } from 'react-hook-form';
-import { z } from 'zod';
-import { DialogDescription } from '@radix-ui/react-dialog';
-import { AIProviderCredential, AIProviderType, AI_PROVIDERS_CONFIG } from './types';
-import { Button } from '@/components/ui/button';
-import ProviderLogo from './Logo';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, useWatch } from "react-hook-form";
+import { z } from "zod";
+import { DialogDescription } from "@radix-ui/react-dialog";
+import {
+  AIProviderCredential,
+  AIProviderType,
+  AI_PROVIDERS_CONFIG,
+} from "./types";
+import { Button } from "@/components/ui/button";
+import ProviderLogo from "./Logo";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -21,10 +25,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import ChipInput from '../ChipInput';
-import { TestProviderButton } from './TestButton';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import ChipInput from "../ChipInput";
+import { TestProviderButton } from "./TestButton";
 
 export const credentialFormSchema = z
   .object({
@@ -46,7 +50,10 @@ export const credentialFormSchema = z
         }
         return value;
       }),
-    displayName: z.string().min(1, "Custom provider name is required.").optional(),
+    displayName: z
+      .string()
+      .min(1, "Custom provider name is required.")
+      .optional(),
   })
   .superRefine(function refineAzureOpenAI(data, ctx) {
     if (data.provider !== AIProviderType.AzureOpenAI) {
@@ -106,8 +113,8 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
 
   const resolver = useMemo(() => {
     return zodResolver(
-      credentialFormSchema
-        .superRefine(function refineCustomProvider(data, ctx) {
+      credentialFormSchema.superRefine(
+        function refineCustomProvider(data, ctx) {
           if (providerType === AIProviderType.Custom) {
             if (!data.displayName) {
               ctx.addIssue({
@@ -132,7 +139,8 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
               });
             }
           }
-        })
+        },
+      ),
     );
   }, [providerType]);
 
@@ -143,25 +151,25 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
       provider: providerType,
       ...defaultValues,
     },
-    mode: 'onChange', // Validate on change to update isValid state
+    mode: "onChange", // Validate on change to update isValid state
   });
 
   // Watch the provider type to update validation when it changes
-  const currentType = form.watch('provider') as AIProviderType;
-  
+  const currentType = form.watch("provider") as AIProviderType;
+
   // Watch all form values for the test button
   const formValues = useWatch({
     control: form.control,
-    defaultValue: form.getValues()
+    defaultValue: form.getValues(),
   });
 
   // Reset form fields when provider type changes
   useEffect(() => {
     if (currentType !== providerType) {
       // Reset fields except for the type
-      form.reset({ 
+      form.reset({
         provider: providerType,
-        ...defaultValues 
+        ...defaultValues,
       });
     }
   }, [currentType, defaultValues, form, providerType]);
@@ -174,20 +182,23 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
         if (onSave) {
           onSave(values);
         }
-        
+
         // Close the dialog
         setLocalOpen(false);
         if (onOpenChange) {
           onOpenChange(false);
         }
       } catch (error) {
-        console.error('Error saving credential:', error);
-        form.setError('form', { 
-          message: error instanceof Error ? error.message : 'Failed to save credential' 
+        console.error("Error saving credential:", error);
+        form.setError("form", {
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to save credential",
         });
       }
     },
-    [form, onOpenChange, onSave]
+    [form, onOpenChange, onSave],
   );
 
   // Render form fields based on provider configuration
@@ -196,26 +207,26 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
       <FormField
         key={field.key}
         control={form.control}
-        name={field.key as any}
+        name={field.key}
         render={({ field: formField }) => (
           <FormItem className="w-full">
             <FormLabel>{field.label}</FormLabel>
             <FormControl>
-              {field.type === 'list' ? (
+              {field.type === "list" ? (
                 <ChipInput
-                  tags={formField.value as string[] || []}
+                  tags={(formField.value as string[]) || []}
                   onValueChange={(value) => {
                     formField.onChange(value);
                   }}
-                  placeholder={field.placeholder || ''}
+                  placeholder={field.placeholder || ""}
                 />
               ) : (
                 <Input
                   {...formField}
                   autoComplete={field.autoComplete}
-                  placeholder={field.placeholder || ''}
+                  placeholder={field.placeholder || ""}
                   type={field.type}
-                  value={formField.value || ''}
+                  value={formField.value || ""}
                 />
               )}
             </FormControl>
@@ -249,9 +260,9 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="capitalize">
             <div className="flex items-center gap-2 font-medium">
-              <ProviderLogo 
-                svgString={providerConfig.logo} 
-                width={28} 
+              <ProviderLogo
+                svgString={providerConfig.logo}
+                width={28}
                 className="mr-1"
               />
               {dialogTitle}
@@ -259,7 +270,7 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
           </DialogTitle>
           {providerType === AIProviderType.AzureOpenAI && (
             <DialogDescription>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 Check your Azure OpenAI documentation to map fields correctly.
               </div>
             </DialogDescription>
@@ -271,7 +282,6 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
             className="flex w-full flex-col items-center gap-3"
             id="credentialForm"
             onSubmit={form.handleSubmit(onSubmit)}
-            
           >
             {providerType === AIProviderType.Custom && (
               <FormField
@@ -286,7 +296,7 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
                         autoComplete="off"
                         placeholder="My Custom Provider"
                         type="text"
-                        value={field.value || ''}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -298,14 +308,16 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
 
             {/* Display form-level errors */}
             {form.formState.errors.form && (
-              <div className="text-sm font-medium text-destructive">
+              <div className="text-destructive text-sm font-medium">
                 {form.formState.errors.form.message}
               </div>
             )}
 
             {/* Display test status */}
             {testStatus.message && (
-              <div className={`text-sm font-medium ${testStatus.success ? 'text-green-600' : 'text-destructive'}`}>
+              <div
+                className={`text-sm font-medium ${testStatus.success ? "text-green-600" : "text-destructive"}`}
+              >
                 {testStatus.message}
               </div>
             )}
@@ -313,7 +325,10 @@ export const CredentialDialog: React.FC<CredentialDialogProps> = ({
         </Form>
 
         <DialogFooter>
-          <TestProviderButton disabled={!form.formState.isValid} credential={formValues as AIProviderCredential} />
+          <TestProviderButton
+            disabled={!form.formState.isValid}
+            credential={formValues as AIProviderCredential}
+          />
           <Button
             className="ml-auto"
             type="submit"

@@ -1,4 +1,4 @@
-import * as net from 'net';
+import * as net from "net";
 
 // Cache to store recently returned ports with their timestamps
 const recentlyUsedPorts = new Map<number, number>();
@@ -12,7 +12,10 @@ const PORT_CACHE_DURATION = 60 * 1000;
  * @param maxPort - Maximum port to try (default: 65535)
  * @returns Promise that resolves to a free port number
  */
-export async function findFreePort(startPort: number = 3000, maxPort: number = 65535): Promise<number> {
+export async function findFreePort(
+  startPort: number = 3000,
+  maxPort: number = 65535,
+): Promise<number> {
   // Clean up expired entries from the cache
   const now = Date.now();
   for (const [port, timestamp] of recentlyUsedPorts.entries()) {
@@ -45,26 +48,26 @@ function isPortFree(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     // First, try to create a server on the port
     const server = net.createServer();
-    
-    server.once('error', (err: NodeJS.ErrnoException) => {
+
+    server.once("error", (err: NodeJS.ErrnoException) => {
       // If we get EADDRINUSE, the port is definitely in use
-      if (err.code === 'EADDRINUSE') {
+      if (err.code === "EADDRINUSE") {
         resolve(false);
       } else {
         // For other errors, try the client connection test
-        checkClientConnection(port).then(inUse => resolve(!inUse));
+        checkClientConnection(port).then((inUse) => resolve(!inUse));
       }
     });
-    
-    server.once('listening', () => {
+
+    server.once("listening", () => {
       // Even if we can bind to it, double-check with a client connection
       // as some services might only bind to specific interfaces
       server.close(() => {
-        checkClientConnection(port).then(inUse => resolve(!inUse));
+        checkClientConnection(port).then((inUse) => resolve(!inUse));
       });
     });
-    
-    server.listen(port, '0.0.0.0');
+
+    server.listen(port, "0.0.0.0");
   });
 }
 
@@ -80,19 +83,19 @@ function checkClientConnection(port: number): Promise<boolean> {
       client.destroy();
       resolve(false); // Connection timed out, port is likely not in use
     }, 300);
-    
-    client.once('connect', () => {
+
+    client.once("connect", () => {
       clearTimeout(timeout);
       client.destroy();
       resolve(true); // Connection successful, port is in use
     });
-    
-    client.once('error', () => {
+
+    client.once("error", () => {
       clearTimeout(timeout);
       client.destroy();
       resolve(false); // Connection failed, port is likely not in use
     });
-    
-    client.connect(port, '127.0.0.1');
+
+    client.connect(port, "127.0.0.1");
   });
 }

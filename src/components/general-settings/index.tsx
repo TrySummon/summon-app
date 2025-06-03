@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { 
+import React, { useEffect, useState } from "react";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ThemeMode } from '@/types/theme-mode';
-import { getCurrentTheme, setTheme } from '@/helpers/theme_helpers';
-import { Moon, Sun, Monitor } from 'lucide-react';
+import { ThemeMode } from "@/types/theme-mode";
+import { getCurrentTheme, setTheme } from "@/helpers/theme_helpers";
+import { Moon, Sun, Monitor } from "lucide-react";
 
 export const GeneralSettings: React.FC = () => {
-  const [currentTheme, setCurrentTheme] = useState<ThemeMode>('system');
+  const [currentTheme, setCurrentTheme] = useState<ThemeMode>("system");
 
   useEffect(() => {
     const loadTheme = async () => {
@@ -19,7 +19,7 @@ export const GeneralSettings: React.FC = () => {
       if (local) {
         setCurrentTheme(local);
       } else {
-        setCurrentTheme('system');
+        setCurrentTheme("system");
       }
     };
 
@@ -33,25 +33,25 @@ export const GeneralSettings: React.FC = () => {
 
   const getThemeIcon = (theme: ThemeMode) => {
     switch (theme) {
-      case 'dark':
-        return <Moon className="h-4 w-4 mr-2" />;
-      case 'light':
-        return <Sun className="h-4 w-4 mr-2" />;
-      case 'system':
-        return <Monitor className="h-4 w-4 mr-2" />;
+      case "dark":
+        return <Moon className="mr-2 h-4 w-4" />;
+      case "light":
+        return <Sun className="mr-2 h-4 w-4" />;
+      case "system":
+        return <Monitor className="mr-2 h-4 w-4" />;
     }
   };
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">General Settings</h2>
       </div>
-      
-      <p className="text-sm text-muted-foreground mb-4">
+
+      <p className="text-muted-foreground mb-4 text-sm">
         Configure general application settings.
       </p>
-      
+
       <div className="grid gap-4">
         <div className="flex flex-col space-y-1.5">
           <label htmlFor="theme-select" className="text-sm font-medium">
@@ -64,25 +64,25 @@ export const GeneralSettings: React.FC = () => {
             <SelectContent>
               <SelectItem value="light">
                 <div className="flex items-center">
-                  {getThemeIcon('light')}
+                  {getThemeIcon("light")}
                   Light
                 </div>
               </SelectItem>
               <SelectItem value="dark">
                 <div className="flex items-center">
-                  {getThemeIcon('dark')}
+                  {getThemeIcon("dark")}
                   Dark
                 </div>
               </SelectItem>
               <SelectItem value="system">
                 <div className="flex items-center">
-                  {getThemeIcon('system')}
+                  {getThemeIcon("system")}
                   System
                 </div>
               </SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Choose your preferred theme for the application.
           </p>
         </div>

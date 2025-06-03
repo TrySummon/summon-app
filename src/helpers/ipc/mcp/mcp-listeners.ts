@@ -1,4 +1,4 @@
-import { ipcMain, shell, app } from "electron";
+import { ipcMain, app } from "electron";
 import path from "path";
 import {
   CREATE_MCP_CHANNEL,
@@ -15,25 +15,27 @@ import {
   CALL_MCP_TOOL_CHANNEL,
   OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL,
   DOWNLOAD_MCP_ZIP_CHANNEL,
-  SHOW_FILE_IN_FOLDER_CHANNEL
+  SHOW_FILE_IN_FOLDER_CHANNEL,
 } from "./mcp-channels";
 import { callMcpTool, getMcpTools } from "./mcp-tools";
-import { mcpDb, McpData } from "@/helpers/db/mcp-db";
-import { 
-  deleteMcpImpl, 
-  generateMcpImpl, 
-  startMcpServer, 
-  stopMcpServer, 
+import { mcpDb } from "@/helpers/db/mcp-db";
+import {
+  deleteMcpImpl,
+  generateMcpImpl,
+  startMcpServer,
+  stopMcpServer,
   restartMcpServer,
   getMcpServerStatus,
   getAllMcpServerStatuses,
   downloadMcpZip,
   showFileInFolder,
 } from "@/helpers/mcp";
+import { McpSubmitData } from "@/components/mcp-builder/start-mcp-dialog";
+import { McpServerState } from "@/helpers/mcp/state";
 
 export function registerMcpListeners() {
   // Create a new MCP configuration
-  ipcMain.handle(CREATE_MCP_CHANNEL, async (_, mcpData: Omit<McpData, 'id' | 'createdAt' | 'updatedAt'>) => {
+  ipcMain.handle(CREATE_MCP_CHANNEL, async (_, mcpData: McpSubmitData) => {
     try {
       const mcpId = await mcpDb.createMcp(mcpData);
       await generateMcpImpl(mcpId);
@@ -41,13 +43,14 @@ export function registerMcpListeners() {
       return {
         success: true,
         message: "MCP configuration created successfully",
-        mcpId
+        mcpId,
       };
     } catch (error) {
       console.error("Error creating MCP configuration:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
@@ -58,13 +61,14 @@ export function registerMcpListeners() {
       const mcps = await mcpDb.listMcps();
       return {
         success: true,
-        mcps
+        mcps,
       };
     } catch (error) {
       console.error("Error listing MCPs:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
@@ -73,55 +77,66 @@ export function registerMcpListeners() {
   ipcMain.handle(GET_MCP_CHANNEL, async (_, id: string) => {
     try {
       const mcpData = await mcpDb.getMcpById(id);
-      
+
       if (!mcpData) {
         return {
           success: false,
-          message: `MCP with ID ${id} not found`
+          message: `MCP with ID ${id} not found`,
         };
       }
-      
+
       return {
         success: true,
-        mcp: mcpData
+        mcp: mcpData,
       };
     } catch (error) {
       console.error(`Error getting MCP with ID ${id}:`, error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
 
   // Update an MCP
-  ipcMain.handle(UPDATE_MCP_CHANNEL, async (_, request: { id: string; data: Partial<Omit<McpData, 'id' | 'createdAt' | 'updatedAt'>> }) => {
-    try {
-      const { id, data } = request;
-      const success = await mcpDb.updateMcp(id, data as any);
-      await stopMcpServer(id);
-      await deleteMcpImpl(id);
-      await generateMcpImpl(id);
-      startMcpServer(id);
-      if (!success) {
+  ipcMain.handle(
+    UPDATE_MCP_CHANNEL,
+    async (
+      _,
+      request: {
+        id: string;
+        data: McpSubmitData;
+      },
+    ) => {
+      try {
+        const { id, data } = request;
+        const success = await mcpDb.updateMcp(id, data);
+        await stopMcpServer(id);
+        await deleteMcpImpl(id);
+        await generateMcpImpl(id);
+        startMcpServer(id);
+        if (!success) {
+          return {
+            success: false,
+            message: `MCP with ID ${id} not found`,
+          };
+        }
+
+        return {
+          success: true,
+          message: "MCP updated successfully",
+        };
+      } catch (error) {
+        console.error("Error updating MCP:", error);
         return {
           success: false,
-          message: `MCP with ID ${id} not found`
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
         };
       }
-      
-      return {
-        success: true,
-        message: "MCP updated successfully"
-      };
-    } catch (error) {
-      console.error("Error updating MCP:", error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
-      };
-    }
-  });
+    },
+  );
 
   // Delete an MCP
   ipcMain.handle(DELETE_MCP_CHANNEL, async (_, id: string) => {
@@ -132,19 +147,20 @@ export function registerMcpListeners() {
       if (!success) {
         return {
           success: false,
-          message: `MCP with ID ${id} not found`
+          message: `MCP with ID ${id} not found`,
         };
       }
-      
+
       return {
         success: true,
-        message: "MCP deleted successfully"
+        message: "MCP deleted successfully",
       };
     } catch (error) {
       console.error(`Error deleting MCP with ID ${id}:`, error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
@@ -153,32 +169,29 @@ export function registerMcpListeners() {
   ipcMain.handle(GET_MCP_SERVER_STATUS_CHANNEL, async (_, mcpId: string) => {
     try {
       const status = getMcpServerStatus(mcpId);
-      
+
       // Create a serializable version of the status object
       // by removing the non-serializable serverProcess property
-      const serializableStatus = status ? {
-        ...status,
-        client: undefined,
-        serverProcess: undefined, // Remove the non-serializable process
-        // Convert any other non-serializable properties if needed
-        mockProcesses: Object.keys(status.mockProcesses || {}).reduce((acc, key) => {
-          acc[key] = {
-            ...status.mockProcesses[key],
-            process: undefined // Remove the non-serializable process
-          };
-          return acc;
-        }, {} as Record<string, any>)
-      } : null;
-      
+      const serializableStatus = status
+        ? {
+            ...status,
+            client: undefined,
+            serverProcess: undefined, // Remove the non-serializable process
+            // Convert any other non-serializable properties if needed
+            mockProcesses: undefined,
+          }
+        : null;
+
       return {
         success: true,
-        data: serializableStatus
+        data: serializableStatus,
       };
     } catch (error) {
       console.error(`Error getting MCP server status for ${mcpId}:`, error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
@@ -187,36 +200,30 @@ export function registerMcpListeners() {
   ipcMain.handle(GET_ALL_MCP_SERVER_STATUSES_CHANNEL, async () => {
     try {
       const statuses = getAllMcpServerStatuses();
-      
+
       // Create serializable versions of all status objects
-      const serializableStatuses: Record<string, any> = {};
-      
-      Object.keys(statuses).forEach(mcpId => {
+      const serializableStatuses: Record<string, McpServerState> = {};
+
+      Object.keys(statuses).forEach((mcpId) => {
         const status = statuses[mcpId];
         serializableStatuses[mcpId] = {
           ...status,
           client: undefined,
           serverProcess: undefined, // Remove the non-serializable process
-          // Convert any other non-serializable properties if needed
-          mockProcesses: Object.keys(status.mockProcesses || {}).reduce((acc, key) => {
-            acc[key] = {
-              ...status.mockProcesses[key],
-              process: undefined // Remove the non-serializable process
-            };
-            return acc;
-          }, {} as Record<string, any>)
+          mockProcesses: {},
         };
       });
-      
+
       return {
         success: true,
-        data: serializableStatuses
+        data: serializableStatuses,
       };
     } catch (error) {
       console.error("Error getting all MCP server statuses:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
@@ -225,31 +232,25 @@ export function registerMcpListeners() {
   ipcMain.handle(START_MCP_SERVER_CHANNEL, async (_, mcpId: string) => {
     try {
       const serverState = await startMcpServer(mcpId);
-      
+
       // Create a serializable version of the server state
       const serializableState = {
         ...serverState,
         client: undefined,
         serverProcess: undefined, // Remove the non-serializable process
-        // Convert any other non-serializable properties if needed
-        mockProcesses: Object.keys(serverState.mockProcesses || {}).reduce((acc, key) => {
-          acc[key] = {
-            ...serverState.mockProcesses[key],
-            process: undefined // Remove the non-serializable process
-          };
-          return acc;
-        }, {} as Record<string, any>)
+        mockProcesses: {},
       };
-      
+
       return {
         success: true,
-        data: serializableState
+        data: serializableState,
       };
     } catch (error) {
       console.error(`Error starting MCP server ${mcpId}:`, error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
@@ -258,31 +259,27 @@ export function registerMcpListeners() {
   ipcMain.handle(STOP_MCP_SERVER_CHANNEL, async (_, mcpId: string) => {
     try {
       const serverState = await stopMcpServer(mcpId);
-      
+
       // Create a serializable version of the server state
-      const serializableState = serverState ? {
-        ...serverState,
-        client: undefined,
-        serverProcess: undefined, // Remove the non-serializable process
-        // Convert any other non-serializable properties if needed
-        mockProcesses: Object.keys(serverState.mockProcesses || {}).reduce((acc, key) => {
-          acc[key] = {
-            ...serverState.mockProcesses[key],
-            process: undefined // Remove the non-serializable process
-          };
-          return acc;
-        }, {} as Record<string, any>)
-      } : null;
-      
+      const serializableState = serverState
+        ? {
+            ...serverState,
+            client: undefined,
+            serverProcess: undefined, // Remove the non-serializable process
+            mockProcesses: undefined,
+          }
+        : null;
+
       return {
         success: true,
-        data: serializableState
+        data: serializableState,
       };
     } catch (error) {
       console.error(`Error stopping MCP server ${mcpId}:`, error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
@@ -291,31 +288,26 @@ export function registerMcpListeners() {
   ipcMain.handle(RESTART_MCP_SERVER_CHANNEL, async (_, mcpId: string) => {
     try {
       const serverState = await restartMcpServer(mcpId);
-      
+
       // Create a serializable version of the server state
       const serializableState = {
         ...serverState,
         client: undefined,
         serverProcess: undefined, // Remove the non-serializable process
         // Convert any other non-serializable properties if needed
-        mockProcesses: Object.keys(serverState.mockProcesses || {}).reduce((acc, key) => {
-          acc[key] = {
-            ...serverState.mockProcesses[key],
-            process: undefined // Remove the non-serializable process
-          };
-          return acc;
-        }, {} as Record<string, any>)
+        mockProcesses: {},
       };
-      
+
       return {
         success: true,
-        data: serializableState
+        data: serializableState,
       };
     } catch (error) {
       console.error(`Error restarting MCP server ${mcpId}:`, error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
@@ -326,51 +318,64 @@ export function registerMcpListeners() {
       const tools = await getMcpTools(mcpId);
       return {
         success: true,
-        data: tools
+        data: tools,
       };
     } catch (error) {
       console.error(`Error getting MCP tools:`, error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
 
   // Call an MCP tool
-  ipcMain.handle(CALL_MCP_TOOL_CHANNEL, async (_, {mcpId, name, args}: {mcpId: string, name: string, args: Record<string, any>}) => {
-    try {
-      const result = await callMcpTool(mcpId, name, args);
-      return {
-        success: true,
-        data: result
-      };
-    } catch (error) {
-      console.error(`Error calling MCP tool:`, error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
-      };
-    }
-  });
-  
+  ipcMain.handle(
+    CALL_MCP_TOOL_CHANNEL,
+    async (
+      _,
+      {
+        mcpId,
+        name,
+        args,
+      }: { mcpId: string; name: string; args: Record<string, unknown> },
+    ) => {
+      try {
+        const result = await callMcpTool(mcpId, name, args);
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        console.error(`Error calling MCP tool:`, error);
+        return {
+          success: false,
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        };
+      }
+    },
+  );
+
   // Open the mcp.json file in the user data directory
   ipcMain.handle(OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL, async () => {
     try {
-      const userDataPath = app.getPath('userData');
-      const mcpJsonPath = path.join(userDataPath, 'mcp.json');
-      
+      const userDataPath = app.getPath("userData");
+      const mcpJsonPath = path.join(userDataPath, "mcp.json");
+
       // Open the file with the default editor
       await showFileInFolder(mcpJsonPath);
-      
+
       return {
-        success: true
+        success: true,
       };
     } catch (error) {
-      console.error('Error opening mcp.json file:', error);
+      console.error("Error opening mcp.json file:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
@@ -381,13 +386,14 @@ export function registerMcpListeners() {
       const result = await downloadMcpZip(mcpId);
       return {
         success: true,
-        data: result
+        data: result,
       };
     } catch (error) {
       console.error(`Error downloading MCP zip:`, error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });
@@ -397,13 +403,14 @@ export function registerMcpListeners() {
     try {
       await showFileInFolder(filePath);
       return {
-        success: true
+        success: true,
       };
     } catch (error) {
       console.error(`Error showing file in folder:`, error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error occurred"
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   });

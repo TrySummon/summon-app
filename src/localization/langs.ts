@@ -5,5 +5,5 @@ export default [
     key: "en",
     nativeName: "English",
     prefix: "🇺🇸",
-  }
+  },
 ] satisfies Language[];

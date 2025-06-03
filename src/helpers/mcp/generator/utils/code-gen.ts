@@ -143,11 +143,15 @@ export function parseToolArgs(args: string[]) {
           const toolsParts = tool.split('.');
           const toolName = toolsParts[0];
           const toolPermission = toolsParts.length > 1 ? toolsParts[1] : 'all';
-          ${tags.length ? `if (!tags.includes(toolName.trim())) {
+          ${
+            tags.length
+              ? `if (!tags.includes(toolName.trim())) {
             throw new Error(
               \`Invalid tool scope: \${tool}. Accepted tool scopes are: \${tags.join(", ")}\`
             );
-          }` : ''}
+          }`
+              : ""
+          }
           if (!['all', 'create', 'read', 'update', 'delete'].includes(toolPermission.trim())) {
             throw new Error(
               \`Invalid tool action: \${toolPermission}. Accepted actions are: all, create, read, update, delete\`

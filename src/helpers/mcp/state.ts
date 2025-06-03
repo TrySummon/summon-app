@@ -6,15 +6,19 @@ import { ChildProcess } from "child_process";
 import { MockApiResult } from "../mock";
 
 // Define the status types for MCP servers
-export type McpServerStatus = 'starting' | 'running' | 'error' | 'stopped';
+export type McpServerStatus = "starting" | "running" | "error" | "stopped";
 
 /**
  * Configuration options for MCP tools
  */
-export type McpTransport = 
-  | { type: 'stdio'; params: StdioServerParameters }
-  | { type: 'http'; url: string; options?: StreamableHTTPClientTransportOptions }
-  | { type: 'sse'; url: string; options?: SSEClientTransportOptions };
+export type McpTransport =
+  | { type: "stdio"; params: StdioServerParameters }
+  | {
+      type: "http";
+      url: string;
+      options?: StreamableHTTPClientTransportOptions;
+    }
+  | { type: "sse"; url: string; options?: SSEClientTransportOptions };
 
 // Define the structure for tracking MCP server state
 export interface McpServerState {
@@ -24,8 +28,8 @@ export interface McpServerState {
   isExternal?: boolean;
   serverProcess?: ChildProcess;
   mockProcesses: Record<string, MockApiResult>;
-  transport?: McpTransport
-  client?: Client
+  transport?: McpTransport;
+  client?: Client;
   startedAt: Date;
   stoppedAt?: Date;
 }

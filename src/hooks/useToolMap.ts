@@ -3,6 +3,7 @@ import { useMcps } from "./useMcps";
 import { useEffect, useState } from "react";
 import { jsonSchema, Tool, tool } from "ai";
 import { useExternalMcps } from "./useExternalMcps";
+import type { JSONSchema7 } from "json-schema";
 
 type ToolMapEntry = {
   name: string;
@@ -12,8 +13,12 @@ type ToolMapEntry = {
 export default function useToolMap() {
   const mcps = useMcps();
   const externalMcps = useExternalMcps();
-  const [mcpToolMap, setMcpToolMap] = useState<Record<string, ToolMapEntry>>({});
-  const [aiToolMap, setAiToolMap] = useState<Record<string, Record<string, Tool>>>({});
+  const [mcpToolMap, setMcpToolMap] = useState<Record<string, ToolMapEntry>>(
+    {},
+  );
+  const [aiToolMap, setAiToolMap] = useState<
+    Record<string, Record<string, Tool>>
+  >({});
 
   useEffect(() => {
     const fetchMcpTools = async (mcpId: string, name: string) => {
@@ -23,14 +28,14 @@ export default function useToolMap() {
           setMcpToolMap((prevToolMap) => {
             return {
               ...prevToolMap,
-              [mcpId]: { name, tools: response.data as McpTool[] }
+              [mcpId]: { name, tools: response.data as McpTool[] },
             };
           });
         } else {
           setMcpToolMap((prevToolMap) => {
             return {
               ...prevToolMap,
-              [mcpId]: { name, tools: [] }
+              [mcpId]: { name, tools: [] },
             };
           });
         }
@@ -39,11 +44,11 @@ export default function useToolMap() {
       }
     };
 
-    Object.keys(externalMcps.externalMcps).forEach(mcpId => {
+    Object.keys(externalMcps.externalMcps).forEach((mcpId) => {
       fetchMcpTools(mcpId, mcpId);
     });
 
-    mcps.mcps.forEach(mcp => {
+    mcps.mcps.forEach((mcp) => {
       fetchMcpTools(mcp.id, mcp.name);
     });
   }, [mcps, externalMcps]);
@@ -52,16 +57,17 @@ export default function useToolMap() {
     const mcpTools = Object.entries(mcpToolMap);
     const aiTools: Record<string, Record<string, Tool>> = {};
 
-    mcpTools.forEach(([mcpId, {tools}]) => {
-      aiTools[mcpId] = {}
-      tools.forEach(mcpTool => {
+    mcpTools.forEach(([mcpId, { tools }]) => {
+      aiTools[mcpId] = {};
+      tools.forEach((mcpTool) => {
         aiTools[mcpId][mcpTool.name] = tool({
           description: mcpTool.description,
-          parameters: jsonSchema<any>(mcpTool.inputSchema as any),
-          execute: (args: Record<string, any>) => window.mcpApi.callMcpTool(mcpId, mcpTool.name, args)
-        })
-      })
-    })
+          parameters: jsonSchema(mcpTool.inputSchema as JSONSchema7),
+          execute: (args) =>
+            window.mcpApi.callMcpTool(mcpId, mcpTool.name, args),
+        });
+      });
+    });
 
     setAiToolMap(aiTools);
   }, [mcpToolMap]);
@@ -69,7 +75,5 @@ export default function useToolMap() {
   return {
     mcpToolMap,
     aiToolMap,
-    };
- }
- 
- 
+  };
+}

@@ -1,8 +1,8 @@
 import React from "react";
-import { cn } from '@/utils/tailwind';
-import { Slot } from '@radix-ui/react-slot';
-import { Command, CornerDownLeft } from 'lucide-react';
-import { ForwardedRef, forwardRef } from 'react';
+import { cn } from "@/utils/tailwind";
+import { Slot } from "@radix-ui/react-slot";
+import { Command, CornerDownLeft } from "lucide-react";
+import { ForwardedRef, forwardRef } from "react";
 import { usePlatform } from "@/hooks/usePlatform";
 
 export type KbdProps = React.HTMLAttributes<HTMLElement> & {
@@ -12,35 +12,39 @@ export type KbdProps = React.HTMLAttributes<HTMLElement> & {
 const Kbd = forwardRef(
   (
     { asChild, children, className, ...kbdProps }: KbdProps,
-    forwardedRef: ForwardedRef<HTMLElement>
+    forwardedRef: ForwardedRef<HTMLElement>,
   ) => {
     const { isMac } = usePlatform();
-    const Comp = asChild ? Slot : 'kbd';
+    const Comp = asChild ? Slot : "kbd";
 
     const formatChildren = (child: React.ReactNode): React.ReactNode => {
-      if (typeof child === 'string') {
+      if (typeof child === "string") {
         let lowerChild = child.toLowerCase();
-        if (lowerChild === 'enter') {
-          return <CornerDownLeft className="!size-2.5 mt-[1px]" />;
+        if (lowerChild === "enter") {
+          return <CornerDownLeft className="mt-[1px] !size-2.5" />;
         }
-        if (lowerChild === 'cmd+enter' || lowerChild === 'ctrl+enter') {
-          const cmdKey = isMac ? <Command className="!size-2.5 mt-[1px]" /> : 'Ctrl';
+        if (lowerChild === "cmd+enter" || lowerChild === "ctrl+enter") {
+          const cmdKey = isMac ? (
+            <Command className="mt-[1px] !size-2.5" />
+          ) : (
+            "Ctrl"
+          );
           return (
             <>
               {cmdKey}
-              <CornerDownLeft className="!size-2.5 mt-[1px] ml-0.5" />
+              <CornerDownLeft className="mt-[1px] ml-0.5 !size-2.5" />
             </>
           );
         }
         // Handle shift replacement
-        if (lowerChild.includes('shift')) {
-          lowerChild = lowerChild.replace(/shift/i, '⇧');
+        if (lowerChild.includes("shift")) {
+          lowerChild = lowerChild.replace(/shift/i, "⇧");
         }
-        if (lowerChild.includes('cmd')) {
+        if (lowerChild.includes("cmd")) {
           if (isMac) {
-            lowerChild = lowerChild.replace(/cmd/i, '⌘');
+            lowerChild = lowerChild.replace(/cmd/i, "⌘");
           } else {
-            lowerChild = lowerChild.replace(/cmd/i, 'Ctrl');
+            lowerChild = lowerChild.replace(/cmd/i, "Ctrl");
           }
         }
         return lowerChild;
@@ -56,16 +60,16 @@ const Kbd = forwardRef(
       <Comp
         {...kbdProps}
         className={cn(
-          'inline-flex select-none items-center justify-center whitespace-nowrap rounded-[4px] bg-muted px-1 font-mono text-xs tracking-tight text-muted-foreground text-sm',
-          className
+          "bg-muted text-muted-foreground inline-flex items-center justify-center rounded-[4px] px-1 font-mono text-sm text-xs tracking-tight whitespace-nowrap select-none",
+          className,
         )}
         ref={forwardedRef}
       >
         {formattedChildren}
       </Comp>
     );
-  }
+  },
 );
-Kbd.displayName = 'Kbd';
+Kbd.displayName = "Kbd";
 
 export { Kbd };

@@ -1,28 +1,37 @@
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { cn } from '@/utils/tailwind';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+} from "react";
+import { cn } from "@/utils/tailwind";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { EditorView } from "codemirror";
 import { keymap } from "@codemirror/view";
 import { Extension } from "@codemirror/state";
-import CodeMirrorEditor from '@/components/CodeEditor';
-import { usePlaygroundStore } from '../store';
+import CodeMirrorEditor from "@/components/CodeEditor";
+import { usePlaygroundStore } from "../store";
 
 interface SystemPromptProps {
   className?: string;
 }
 
-const SystemPrompt: React.FC<SystemPromptProps> = ({
-  className,
-}) => {
+const SystemPrompt: React.FC<SystemPromptProps> = ({ className }) => {
   const editorRef = useRef<EditorView | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const systemPrompt = usePlaygroundStore(state => state.getCurrentState().systemPrompt || '');
-  const isRunning = usePlaygroundStore(state => state.getCurrentState().running);
-  const updateSystemPrompt = usePlaygroundStore(state => state.updateSystemPrompt);
-
+  const systemPrompt = usePlaygroundStore(
+    (state) => state.getCurrentState().systemPrompt || "",
+  );
+  const isRunning = usePlaygroundStore(
+    (state) => state.getCurrentState().running,
+  );
+  const updateSystemPrompt = usePlaygroundStore(
+    (state) => state.updateSystemPrompt,
+  );
 
   // Update editor content when text changes
-   useEffect(() => {
+  useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
 
@@ -47,7 +56,7 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({
           const doc = editorRef.current.state.doc;
           const endPos = doc.length;
           editorRef.current.dispatch({
-            selection: { anchor: endPos, head: endPos }
+            selection: { anchor: endPos, head: endPos },
           });
           editorRef.current.focus();
         }
@@ -61,75 +70,83 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({
       {
         key: "Enter",
         run: () => {
-            setIsExpanded(false);
-            return true;
-        }
+          setIsExpanded(false);
+          return true;
+        },
       },
       {
         key: "Escape",
         run: () => {
-            setIsExpanded(false);
-            return true;
-        }
-      }
+          setIsExpanded(false);
+          return true;
+        },
+      },
     ]);
   }, []);
 
-  const hasMultipleLines = systemPrompt.includes('\n');
+  const hasMultipleLines = systemPrompt.includes("\n");
 
   const showEditor = isExpanded || !!systemPrompt.trim();
 
   return (
-    <div 
+    <div
       className={cn(
-        "relative rounded-md transition-all duration-200 flex flex-col",
-        isExpanded ? "bg-card/80 shadow-sm p-3 flex-grow" : "bg-transparent pt-0 cursor-pointer",
-        className
+        "relative flex flex-col rounded-md transition-all duration-200",
+        isExpanded
+          ? "bg-card/80 flex-grow p-3 shadow-sm"
+          : "cursor-pointer bg-transparent pt-0",
+        className,
       )}
       onClick={!isExpanded ? toggleExpand : undefined}
     >
-      <div 
-        className="flex items-center justify-between cursor-pointer py-1"
-        onClick={e => {
+      <div
+        className="flex cursor-pointer items-center justify-between py-1"
+        onClick={(e) => {
           e.stopPropagation();
           toggleExpand();
         }}
       >
-        <div className="text-xs font-medium text-muted-foreground/70">System prompt</div>
-        <div className="flex items-center gap-2 text-muted-foreground/70 hover:text-muted-foreground">
+        <div className="text-muted-foreground/70 text-xs font-medium">
+          System prompt
+        </div>
+        <div className="text-muted-foreground/70 hover:text-muted-foreground flex items-center gap-2">
           {!isExpanded && hasMultipleLines && (
             <div className="text-xs">
-              {systemPrompt.split('\n').length} lines
+              {systemPrompt.split("\n").length} lines
             </div>
           )}
           {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </div>
       </div>
 
-      <div 
+      <div
         className={cn(
-          "relative transition-all duration-200 overflow-hidden",
-          isExpanded ? "mt-2" : showEditor ? "h-[24px]" : "h-0"
+          "relative overflow-hidden transition-all duration-200",
+          isExpanded ? "mt-2" : showEditor ? "h-[24px]" : "h-0",
         )}
-        onClick={e => isExpanded ? undefined : (e.stopPropagation(), toggleExpand())}
+        onClick={(e) =>
+          isExpanded ? undefined : (e.stopPropagation(), toggleExpand())
+        }
       >
         <CodeMirrorEditor
-        className={showEditor ? "translate-y-0 opacity-100" : "translate-y-[-100%] opacity-0"}
+          className={
+            showEditor
+              ? "translate-y-0 opacity-100"
+              : "translate-y-[-100%] opacity-0"
+          }
           editorRef={editorRef}
           onChange={updateSystemPrompt}
           readOnly={isRunning}
-          language='markdown'
+          language="markdown"
           additionalExtensions={[keyboardShortcuts]}
         />
         {!isExpanded && (
-          <div 
-            className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none"
+          <div
+            className="from-background pointer-events-none absolute right-0 bottom-0 left-0 h-8 bg-gradient-to-t to-transparent"
             aria-hidden="true"
           />
         )}
       </div>
-
-
     </div>
   );
 };

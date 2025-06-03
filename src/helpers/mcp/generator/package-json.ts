@@ -9,11 +9,12 @@
 export function generatePackageJson(
   serverName: string,
   serverVersion: string,
-  transportType: string = "stdio"
+  transportType: string = "stdio",
 ): string {
   const includeWebDeps =
     transportType === "web" || transportType === "streamable-http";
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const packageData: any = {
     name: serverName,
     version: serverVersion,

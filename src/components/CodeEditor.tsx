@@ -1,5 +1,5 @@
 "use client";
-import * as React from "react"
+import * as React from "react";
 import { RefObject, useEffect, useRef } from "react";
 
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
@@ -61,7 +61,7 @@ interface Props {
   onPaste?: (event: ClipboardEvent) => void;
 }
 
- function CodeMirrorEditor({
+function CodeMirrorEditor({
   className,
   editorRef,
   defaultValue,
@@ -81,11 +81,10 @@ interface Props {
 }: Props) {
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const internalEditorRef = useRef<EditorView | null>(null);
-  
+
   const isDarkTheme = React.useMemo(() => {
     return document.documentElement.classList.contains("dark");
   }, []);
-
 
   // Use provided ref or internal ref
   const actualEditorRef = editorRef || internalEditorRef;
@@ -101,9 +100,9 @@ interface Props {
 
   useEffect(() => {
     if (!editorContainerRef.current) return;
-    
+
     if (onPaste && editorContainerRef.current) {
-      editorContainerRef.current.addEventListener('paste', onPaste);
+      editorContainerRef.current.addEventListener("paste", onPaste);
     }
 
     const editorTheme = EditorView.theme({
@@ -170,6 +169,7 @@ interface Props {
       parent: editorContainerRef.current,
     });
 
+    // eslint-disable-next-line react-compiler/react-compiler
     actualEditorRef.current = view;
 
     onMount?.(view);
@@ -181,7 +181,7 @@ interface Props {
     return () => {
       // Clean up paste event listener
       if (onPaste && editorContainerRef.current) {
-        editorContainerRef.current.removeEventListener('paste', onPaste);
+        editorContainerRef.current.removeEventListener("paste", onPaste);
       }
       view.destroy();
       actualEditorRef.current = null;
@@ -192,10 +192,18 @@ interface Props {
     <div
       ref={editorContainerRef}
       data-testid={testId}
-      className={cn("w-full overflow-y-auto min-h-[24px]", className)}
+      className={cn("min-h-[24px] w-full overflow-y-auto", className)}
       style={{
-        height: height ? (typeof height === "string" ? height : `${height}px`) : undefined,
-        maxHeight: maxHeight ? (typeof maxHeight === "string" ? maxHeight : `${maxHeight}px`) : undefined,
+        height: height
+          ? typeof height === "string"
+            ? height
+            : `${height}px`
+          : undefined,
+        maxHeight: maxHeight
+          ? typeof maxHeight === "string"
+            ? maxHeight
+            : `${maxHeight}px`
+          : undefined,
       }}
     />
   );

@@ -2,104 +2,145 @@ import React, { useMemo } from "react";
 import { SidebarMenuSub, SidebarMenuSubItem } from "@/components/ui/sidebar";
 import { EndpointNav } from "@/components/EndpointNav";
 import { ApiEndpointGroup } from "./ApiEndpointGroup";
+import { OpenAPIV3 } from "openapi-types";
 
 interface ApiEndpointListProps {
   apiId: string;
-  paths: Record<string, any>;
+  paths: OpenAPIV3.PathsObject;
   isOpen: boolean;
 }
 
-export function ApiEndpointList({ apiId, paths, isOpen }: ApiEndpointListProps) {
+export function ApiEndpointList({
+  apiId,
+  paths,
+  isOpen,
+}: ApiEndpointListProps) {
   if (!isOpen || !paths) return null;
 
   // Group endpoints by their first path segment
   const { rootEndpoints, groupedPaths } = useMemo(() => {
-    const rootEndpoints: Array<{path: string; method: string; operation: any}> = [];
-    const groupedPaths: Record<string, { count: number; paths: Record<string, any> }> = {};
-    
+    const rootEndpoints: Array<{
+      path: string;
+      method: string;
+      operation: OpenAPIV3.OperationObject & {
+        "x-path": string;
+        "x-method": string;
+      };
+    }> = [];
+    const groupedPaths: Record<
+      string,
+      { count: number; paths: Record<string, OpenAPIV3.PathItemObject> }
+    > = {};
+
     // First pass: count endpoints per segment and collect paths
     Object.entries(paths).forEach(([path, pathItem]) => {
       if (!pathItem) return;
-      
+
       // Split the path by '/' and get the first segment
-      const segments = path.split('/').filter(Boolean);
-      
+      const segments = path.split("/").filter(Boolean);
+
       if (segments.length > 0) {
         const firstSegment = segments[0];
-        
+
         // Initialize or update the group
         if (!groupedPaths[firstSegment]) {
           groupedPaths[firstSegment] = { count: 0, paths: {} };
         }
-        
+
         // Count methods in this path
-        const methods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as const;
+        const methods = [
+          "get",
+          "post",
+          "put",
+          "delete",
+          "patch",
+          "options",
+          "head",
+        ] as const;
         let methodCount = 0;
-        
-        methods.forEach(method => {
+
+        methods.forEach((method) => {
           if (pathItem[method]) {
             methodCount++;
             groupedPaths[firstSegment].count++;
           }
         });
-        
+
         // Add path to the group's paths
         if (methodCount > 0) {
           groupedPaths[firstSegment].paths[path] = pathItem;
         }
       } else {
         // Root paths with no segments
-        const methods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as const;
-        methods.forEach(method => {
+        const methods = [
+          "get",
+          "post",
+          "put",
+          "delete",
+          "patch",
+          "options",
+          "head",
+        ] as const;
+        methods.forEach((method) => {
           const operation = pathItem[method];
           if (!operation) return;
-          
+
           rootEndpoints.push({
             path,
             method,
             operation: {
               ...operation,
-              'x-path': path,
-              'x-method': method
-            }
+              "x-path": path,
+              "x-method": method,
+            },
           });
         });
       }
     });
-    
+
     // Second pass: move single-endpoint groups to root endpoints
-    Object.entries(groupedPaths).forEach(([segment, { count, paths: segmentPaths }]) => {
-      if (count <= 1) {
-        // This group has only one endpoint, move it to root endpoints
-        Object.entries(segmentPaths).forEach(([path, pathItem]) => {
-          const methods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as const;
-          methods.forEach(method => {
-            const operation = pathItem[method];
-            if (!operation) return;
-            
-            rootEndpoints.push({
-              path,
-              method,
-              operation: {
-                ...operation,
-                'x-path': path,
-                'x-method': method
-              }
+    Object.entries(groupedPaths).forEach(
+      ([segment, { count, paths: segmentPaths }]) => {
+        if (count <= 1) {
+          // This group has only one endpoint, move it to root endpoints
+          Object.entries(segmentPaths).forEach(([path, pathItem]) => {
+            const methods = [
+              "get",
+              "post",
+              "put",
+              "delete",
+              "patch",
+              "options",
+              "head",
+            ] as const;
+            methods.forEach((method) => {
+              const operation = pathItem[method];
+              if (!operation) return;
+
+              rootEndpoints.push({
+                path,
+                method,
+                operation: {
+                  ...operation,
+                  "x-path": path,
+                  "x-method": method,
+                },
+              });
             });
           });
-        });
-        
-        // Remove this segment from groupedPaths
-        delete groupedPaths[segment];
-      }
-    });
-    
+
+          // Remove this segment from groupedPaths
+          delete groupedPaths[segment];
+        }
+      },
+    );
+
     // Convert to the format expected by the component
     const finalGroupedPaths: Record<string, boolean> = {};
-    Object.keys(groupedPaths).forEach(segment => {
+    Object.keys(groupedPaths).forEach((segment) => {
       finalGroupedPaths[segment] = true;
     });
-    
+
     return { rootEndpoints, groupedPaths: finalGroupedPaths };
   }, [paths]);
 
@@ -115,9 +156,9 @@ export function ApiEndpointList({ apiId, paths, isOpen }: ApiEndpointListProps) 
               def={operation}
             />
           ))}
-          
+
           {/* Render grouped endpoints */}
-          {Object.keys(groupedPaths).map(segment => (
+          {Object.keys(groupedPaths).map((segment) => (
             <ApiEndpointGroup
               key={`group-${segment}`}
               apiId={apiId}
@@ -126,10 +167,10 @@ export function ApiEndpointList({ apiId, paths, isOpen }: ApiEndpointListProps) 
               pathPrefix={`/${segment}/`}
             />
           ))}
-          
+
           {Object.keys(paths).length === 0 && (
             <SidebarMenuSubItem>
-              <div className="px-4 py-2 text-xs text-muted-foreground">
+              <div className="text-muted-foreground px-4 py-2 text-xs">
                 No endpoints available
               </div>
             </SidebarMenuSubItem>

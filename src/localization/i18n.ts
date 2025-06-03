@@ -10,6 +10,6 @@ i18n.use(initReactI18next).init({
         titleHomePage: "Home Page",
         titleSecondPage: "Second Page",
       },
-    }
+    },
   },
 });

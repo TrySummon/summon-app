@@ -1,5 +1,4 @@
-import { OpenAPIV3 } from 'openapi-types';
-
+import { OpenAPIV3 } from "openapi-types";
 
 // History item for schema navigation
 export interface SchemaHistoryItem {

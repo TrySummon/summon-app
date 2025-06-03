@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { McpServerState } from '@/helpers/mcp/state';
-import { useQueryClient } from '@tanstack/react-query';
-import { MCP_QUERY_KEY } from './useMcps';
-import { EXTERNAL_MCPS_QUERY_KEY } from './useExternalMcps';
+import { useState, useEffect } from "react";
+import { McpServerState } from "@/helpers/mcp/state";
+import { useQueryClient } from "@tanstack/react-query";
+import { MCP_QUERY_KEY } from "./useMcps";
+import { EXTERNAL_MCPS_QUERY_KEY } from "./useExternalMcps";
 
 interface useMcpServerStateResult {
   state: McpServerState | null;
@@ -16,7 +16,7 @@ interface useMcpServerStateResult {
 
 /**
  * Hook for polling and managing MCP server status
- * 
+ *
  * @param mcpId The ID of the MCP server to monitor
  * @param pollingInterval Polling interval in milliseconds (default: 5000)
  * @returns Status information and control functions
@@ -24,12 +24,12 @@ interface useMcpServerStateResult {
 export function useMcpServerState(
   mcpId: string,
   isExternal?: boolean,
-  pollingInterval = 2000
+  pollingInterval = 2000,
 ): useMcpServerStateResult {
   const [state, setState] = useState<McpServerState | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  
+
   const queryClient = useQueryClient();
 
   // Function to fetch the current status
@@ -38,14 +38,14 @@ export function useMcpServerState(
       const response = await window.mcpApi.getMcpServerStatus(mcpId);
       if (response.success) {
         setState(response.data ? response.data : null);
-        if(response.data?.error) {
+        if (response.data?.error) {
           setError(new Error(response.data.error));
         }
       } else {
-        setError(new Error(response.message || 'Failed to get server status'));
+        setError(new Error(response.message || "Failed to get server status"));
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      setError(err instanceof Error ? err : new Error("Unknown error"));
     } finally {
       setIsLoading(false);
     }
@@ -67,20 +67,24 @@ export function useMcpServerState(
   const startServer = async () => {
     setIsLoading(true);
     try {
-      const promise = isExternal ? window.externalMcpApi.connectExternalMcpServer(mcpId, true) : window.mcpApi.startMcpServer(mcpId);
+      const promise = isExternal
+        ? window.externalMcpApi.connectExternalMcpServer(mcpId, true)
+        : window.mcpApi.startMcpServer(mcpId);
       const response = await promise;
       if (response.success) {
         setState(response.data || null);
-        if(isExternal) {
-          queryClient.invalidateQueries({ queryKey: [EXTERNAL_MCPS_QUERY_KEY] });
+        if (isExternal) {
+          queryClient.invalidateQueries({
+            queryKey: [EXTERNAL_MCPS_QUERY_KEY],
+          });
         } else {
           queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
         }
       } else {
-        setError(new Error(response.message || 'Failed to start server'));
+        setError(new Error(response.message || "Failed to start server"));
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      setError(err instanceof Error ? err : new Error("Unknown error"));
     } finally {
       setIsLoading(false);
     }
@@ -90,20 +94,24 @@ export function useMcpServerState(
   const stopServer = async () => {
     setIsLoading(true);
     try {
-      const fn = isExternal ? window.externalMcpApi.stopExternalMcpServer : window.mcpApi.stopMcpServer;
+      const fn = isExternal
+        ? window.externalMcpApi.stopExternalMcpServer
+        : window.mcpApi.stopMcpServer;
       const response = await fn(mcpId);
       if (response.success) {
         setState(response.data || null);
-        if(isExternal) {
-          queryClient.invalidateQueries({ queryKey: [EXTERNAL_MCPS_QUERY_KEY] });
+        if (isExternal) {
+          queryClient.invalidateQueries({
+            queryKey: [EXTERNAL_MCPS_QUERY_KEY],
+          });
         } else {
           queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
         }
       } else {
-        setError(new Error(response.message || 'Failed to stop server'));
+        setError(new Error(response.message || "Failed to stop server"));
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      setError(err instanceof Error ? err : new Error("Unknown error"));
     } finally {
       setIsLoading(false);
     }
@@ -117,10 +125,10 @@ export function useMcpServerState(
       if (response.success) {
         setState(response.data || null);
       } else {
-        setError(new Error(response.message || 'Failed to restart server'));
+        setError(new Error(response.message || "Failed to restart server"));
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      setError(err instanceof Error ? err : new Error("Unknown error"));
     } finally {
       setIsLoading(false);
     }
@@ -139,6 +147,6 @@ export function useMcpServerState(
     startServer,
     stopServer,
     restartServer,
-    refreshStatus
+    refreshStatus,
   };
 }

@@ -6,17 +6,20 @@ import "./localization/i18n";
 import { updateAppLanguage } from "./helpers/language_helpers";
 import { router } from "./routes/router";
 import { RouterProvider } from "@tanstack/react-router";
-import {
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { McpToolDefinition } from "./helpers/mcp/types";
 import { OpenAPIV3 } from "openapi-types";
-import { ThemeMode } from "./types/theme-mode";
 import { McpData } from "./helpers/db/mcp-db";
 import { Tool } from "@modelcontextprotocol/sdk/types";
 import { McpServerState } from "./helpers/mcp/state";
-import { AIProviderCredential, PersistedAIProviderCredential } from "./components/ai-providers/types";
+import {
+  AIProviderCredential,
+  PersistedAIProviderCredential,
+} from "./components/ai-providers/types";
+import {
+  McpAuth,
+  McpSubmitData,
+} from "./components/mcp-builder/start-mcp-dialog";
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -29,31 +32,39 @@ export default function App() {
   return <RouterProvider router={router} />;
 }
 
-const queryClient = new QueryClient()
-
+const queryClient = new QueryClient();
 
 // Define the interface for the electron API
 declare global {
   interface Window {
-    require: (module: string) => any;
-    themeMode: {
-      current: () => Promise<ThemeMode>;
-      dark: () => Promise<void>;
-      light: () => Promise<void>;
-    };
+    require: (module: string) => unknown;
     openapi: {
       db: {
-        listApis: () => Promise<{ 
-          success: boolean; 
-          apis?: { id: string; api: OpenAPIV3.Document; createdAt: string; updatedAt: string }[];
+        listApis: () => Promise<{
+          success: boolean;
+          apis?: {
+            id: string;
+            api: OpenAPIV3.Document;
+            createdAt: string;
+            updatedAt: string;
+          }[];
           message?: string;
         }>;
         getApi: (id: string) => Promise<{
           success: boolean;
-          api?: { id: string; api: OpenAPIV3.Document; tools: McpToolDefinition[]; createdAt: string; updatedAt: string };
+          api?: {
+            id: string;
+            api: OpenAPIV3.Document;
+            tools: McpToolDefinition[];
+            createdAt: string;
+            updatedAt: string;
+          };
           message?: string;
         }>;
-        updateApi: (id: string, api: OpenAPIV3.Document) => Promise<{
+        updateApi: (
+          id: string,
+          api: OpenAPIV3.Document,
+        ) => Promise<{
           success: boolean;
           message: string;
         }>;
@@ -62,40 +73,111 @@ declare global {
           message: string;
         }>;
       };
-      import: (file: File) => Promise<any>;
-    }
+      import: (file: File) => Promise<{
+        success: boolean;
+        message: string;
+        apiId?: string;
+      }>;
+    };
     auth: {
-      testCredentials: (baseUrl: string, authType: string, authData: any) => Promise<{ status: number, success: boolean, message?: string }>;
-    },
+      testCredentials: (
+        baseUrl: string,
+        authData: McpAuth,
+      ) => Promise<{ status: number; success: boolean; message?: string }>;
+    };
     aiProviders: {
       getCredentials: () => Promise<PersistedAIProviderCredential[]>;
-      saveCredential: (id: string, providerData: AIProviderCredential) => Promise<{ success: boolean }>;
+      saveCredential: (
+        id: string,
+        providerData: AIProviderCredential,
+      ) => Promise<{ success: boolean }>;
       deleteCredential: (id: string) => Promise<{ success: boolean }>;
-    },
+    };
     mcpApi: {
-      createMcp: (mcpData: any) => Promise<{ success: boolean; mcpId?: string; message?: string }>;
-      listMcps: () => Promise<{ success: boolean; mcps?: McpData[]; message?: string }>;
-      getMcp: (id: string) => Promise<{ success: boolean; mcp?: McpData; message?: string }>;
-      updateMcp: (id: string, data: any) => Promise<{ success: boolean; message?: string }>;
-      deleteMcp: (id: string) => Promise<{ success: boolean; message?: string }>;
+      createMcp: (
+        mcpData: McpSubmitData,
+      ) => Promise<{ success: boolean; mcpId?: string; message?: string }>;
+      listMcps: () => Promise<{
+        success: boolean;
+        mcps?: McpData[];
+        message?: string;
+      }>;
+      getMcp: (
+        id: string,
+      ) => Promise<{ success: boolean; mcp?: McpData; message?: string }>;
+      updateMcp: (
+        id: string,
+        data: McpSubmitData,
+      ) => Promise<{ success: boolean; message?: string }>;
+      deleteMcp: (
+        id: string,
+      ) => Promise<{ success: boolean; message?: string }>;
 
       // MCP server operations
-      getMcpServerStatus: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
-      getAllMcpServerStatuses: () => Promise<{ success: boolean; data?: Record<string, McpServerState>; message?: string }>;
-      startMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
-      stopMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
-      restartMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
-      getMcpTools: (mcpId: string) => Promise<{ success: boolean; data?: Tool[]; message?: string }>;
-      callMcpTool: (mcpId: string, name: string, args: Record<string, any>) => Promise<{ success: boolean; data?: any; message?: string }>;
-      openUserDataMcpJsonFile: () => Promise<{ success: boolean; message?: string }>;
-      downloadMcpZip: (mcpId: string) => Promise<{ success: boolean; data?: { success: boolean; filePath?: string; message?: string }; message?: string }>;
-      showFileInFolder: (path: string) => Promise<{ success: boolean; message?: string }>;
-    }
+      getMcpServerStatus: (mcpId: string) => Promise<{
+        success: boolean;
+        data?: McpServerState;
+        message?: string;
+      }>;
+      getAllMcpServerStatuses: () => Promise<{
+        success: boolean;
+        data?: Record<string, McpServerState>;
+        message?: string;
+      }>;
+      startMcpServer: (mcpId: string) => Promise<{
+        success: boolean;
+        data?: McpServerState;
+        message?: string;
+      }>;
+      stopMcpServer: (mcpId: string) => Promise<{
+        success: boolean;
+        data?: McpServerState;
+        message?: string;
+      }>;
+      restartMcpServer: (mcpId: string) => Promise<{
+        success: boolean;
+        data?: McpServerState;
+        message?: string;
+      }>;
+      getMcpTools: (
+        mcpId: string,
+      ) => Promise<{ success: boolean; data?: Tool[]; message?: string }>;
+      callMcpTool: (
+        mcpId: string,
+        name: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ success: boolean; data?: unknown; message?: string }>;
+      openUserDataMcpJsonFile: () => Promise<{
+        success: boolean;
+        message?: string;
+      }>;
+      downloadMcpZip: (mcpId: string) => Promise<{
+        success: boolean;
+        data?: { success: boolean; filePath?: string; message?: string };
+        message?: string;
+      }>;
+      showFileInFolder: (
+        path: string,
+      ) => Promise<{ success: boolean; message?: string }>;
+    };
     externalMcpApi: {
-      connectExternalMcpServer: (mcpId: string, force?: boolean) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
-      stopExternalMcpServer: (mcpId: string) => Promise<{ success: boolean; data?: McpServerState; message?: string }>;
-      onExternalMcpServersUpdated: (callback: (mcpServers: Record<string, McpServerState>) => void) => () => void;
-    }
+      connectExternalMcpServer: (
+        mcpId: string,
+        force?: boolean,
+      ) => Promise<{
+        success: boolean;
+        data?: McpServerState;
+        message?: string;
+      }>;
+      stopExternalMcpServer: (mcpId: string) => Promise<{
+        success: boolean;
+        data?: McpServerState;
+        message?: string;
+      }>;
+      onExternalMcpServersUpdated: (
+        callback: (mcpServers: Record<string, McpServerState>) => void,
+      ) => () => void;
+    };
   }
 }
 

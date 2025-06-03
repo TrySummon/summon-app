@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { generateText } from 'ai';
+import { generateText } from "ai";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,13 @@ export const TestProviderButton = ({
   disabled?: boolean;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState<'unknown' | 'success' | 'failed'>('unknown');
-  
+  const [isSuccess, setIsSuccess] = useState<"unknown" | "success" | "failed">(
+    "unknown",
+  );
+
   const config = AI_PROVIDERS_CONFIG[credential.provider];
   const model = config.defaultModel || credential.models?.[0];
-  
+
   if (!model) {
     return (
       <Button type="button" variant="secondary" disabled>
@@ -31,37 +33,38 @@ export const TestProviderButton = ({
   const testProvider = async () => {
     try {
       setIsLoading(true);
-      setIsSuccess('unknown');
-      
+      setIsSuccess("unknown");
+
       const llmProvider = createLLMProvider(credential);
       const llm = llmProvider(model);
-      
+
       // Simple test prompt to verify the provider works
       const response = await generateText({
-        model: llm, 
+        model: llm,
         messages: [
           {
             role: "user",
-            content: "Hello, this is a test message. Please respond with 'OK' if you receive this.",
+            content:
+              "Hello, this is a test message. Please respond with 'OK' if you receive this.",
           },
         ],
         maxTokens: 50,
       });
-      
+
       if (response) {
-        setIsSuccess('success');
+        setIsSuccess("success");
         toast.success(`Successfully connected to ${credential.provider}`);
       } else {
-        setIsSuccess('failed');
+        setIsSuccess("failed");
         toast.error(`Failed to connect to ${credential.provider}`);
       }
     } catch (error) {
-      console.error('Provider test failed:', error);
-      setIsSuccess('failed');
+      console.error("Provider test failed:", error);
+      setIsSuccess("failed");
       toast.error(
-        error instanceof Error 
-          ? `Test failed: ${error.message}` 
-          : `Failed to connect to ${credential.provider}`
+        error instanceof Error
+          ? `Test failed: ${error.message}`
+          : `Failed to connect to ${credential.provider}`,
       );
     } finally {
       setIsLoading(false);
@@ -84,7 +87,7 @@ export const TestProviderButton = ({
     <Button
       type="button"
       variant="secondary"
-      className={`${bgColor} ${txtColor} transition-colors duration-200 gap-2`}
+      className={`${bgColor} ${txtColor} gap-2 transition-colors duration-200`}
       onClick={testProvider}
       disabled={disabled || isLoading}
       aria-label="Test AI provider connection"

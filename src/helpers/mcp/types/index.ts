@@ -9,7 +9,6 @@ import type { OpenAPIV3 } from "openapi-types";
  */
 export type TransportType = "stdio" | "web" | "streamable-http";
 
-
 /**
  * MCP Tool Definition describes a tool extracted from an OpenAPI spec
  * for use in Model Context Protocol server
@@ -37,19 +36,21 @@ export interface McpToolDefinition {
   operationId: string;
   securityScheme: {
     baseUrlEnvVar: string;
-    schema?: {
-      type: "apiKey"
-      keyEnvVar: string;
-      in: "header" | "query";
-      name: string;
-    } | {
-      type: "bearerToken"
-      tokenEnvVar: string;
-    }
-  }
+    schema?:
+      | {
+          type: "apiKey";
+          keyEnvVar: string;
+          in: "header" | "query";
+          name: string;
+        }
+      | {
+          type: "bearerToken";
+          tokenEnvVar: string;
+        };
+  };
 }
 
 /**
  * Helper type for JSON objects
  */
-export type JsonObject = Record<string, any>;
+export type JsonObject = Record<string, unknown>;

@@ -89,4 +89,14 @@ export const ExternalMcpRoute = createRoute({
   component: ExternalMcpPage,
 });
 
-export const rootTree = RootRoute.addChildren([HomeRoute, ApiRoute, EndpointRoute, BuildMcpRoute, McpRoute, ExternalMcpRoute, PlaygroundRoute, SettingsRoute, ConnectMcpRoute]);
+export const rootTree = RootRoute.addChildren([
+  HomeRoute,
+  ApiRoute,
+  EndpointRoute,
+  BuildMcpRoute,
+  McpRoute,
+  ExternalMcpRoute,
+  PlaygroundRoute,
+  SettingsRoute,
+  ConnectMcpRoute,
+]);

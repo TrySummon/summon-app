@@ -1,8 +1,7 @@
-
 export function generateReadme(
   serverName: string,
   tags: string[],
-  transport: string
+  transport: string,
 ): string {
   const readmeContent = `
 # ${serverName}

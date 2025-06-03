@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import { cn } from "@/utils/tailwind";
 
 export default function ProviderLogo({
@@ -13,7 +13,10 @@ export default function ProviderLogo({
   const svgUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
   return (
     <img
-      className={cn("h-auto rounded dark:bg-white bg-transparent p-1", className)}
+      className={cn(
+        "h-auto rounded bg-transparent p-1 dark:bg-white",
+        className,
+      )}
       width={0}
       height={0}
       sizes="100vw"

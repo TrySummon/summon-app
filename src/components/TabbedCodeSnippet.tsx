@@ -19,19 +19,21 @@ interface TabbedCodeSnippetProps {
   maxHeight?: string;
 }
 
-export function TabbedCodeSnippet({ 
-  tabs, 
-  defaultValue, 
+export function TabbedCodeSnippet({
+  tabs,
+  defaultValue,
   className,
-  maxHeight 
+  maxHeight,
 }: TabbedCodeSnippetProps) {
-  const [activeTab, setActiveTab] = React.useState<string>(defaultValue || tabs[0]?.value);
-  
-  const activeTabData = tabs.find(tab => tab.value === activeTab) || tabs[0];
-  
+  const [activeTab, setActiveTab] = React.useState<string>(
+    defaultValue || tabs[0]?.value,
+  );
+
+  const activeTabData = tabs.find((tab) => tab.value === activeTab) || tabs[0];
+
   return (
-    <Card className={cn("relative w-full py-0 gap-2 bg-accent/10", className)}>
-      <CardHeader className="flex flex-row items-center justify-between py-1 px-4">
+    <Card className={cn("bg-accent/10 relative w-full gap-2 py-0", className)}>
+      <CardHeader className="flex flex-row items-center justify-between px-4 py-1">
         <div className="flex items-center space-x-2">
           <div className="flex gap-4">
             {tabs.map((tab) => (
@@ -39,10 +41,10 @@ export function TabbedCodeSnippet({
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
                 className={cn(
-                  "text-xs hover:text-foreground transition-colors",
-                  activeTab === tab.value 
-                    ? "text-foreground border-b border-foreground" 
-                    : "text-muted-foreground"
+                  "hover:text-foreground text-xs transition-colors",
+                  activeTab === tab.value
+                    ? "text-foreground border-foreground border-b"
+                    : "text-muted-foreground",
                 )}
               >
                 {tab.label}
@@ -52,12 +54,12 @@ export function TabbedCodeSnippet({
         </div>
         <CopyButton content={activeTabData.code} />
       </CardHeader>
-      <CardContent className="py-0 px-4">
-        <CodeMirrorEditor 
-          maxHeight={maxHeight} 
-          defaultValue={activeTabData.code} 
-          language={activeTabData.language} 
-          readOnly 
+      <CardContent className="px-4 py-0">
+        <CodeMirrorEditor
+          maxHeight={maxHeight}
+          defaultValue={activeTabData.code}
+          language={activeTabData.language}
+          readOnly
         />
       </CardContent>
     </Card>

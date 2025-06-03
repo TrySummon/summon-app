@@ -1,12 +1,12 @@
-import React from 'react';
-import { ChevronRight, ChevronDown } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/utils/tailwind';
-import ToolItem from './ToolItem';
-import type { Tool } from '@modelcontextprotocol/sdk/types';
-import type { ModifiedTool } from '../tabState';
+import React from "react";
+import { ChevronRight, ChevronDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/utils/tailwind";
+import ToolItem from "./ToolItem";
+import type { Tool } from "@modelcontextprotocol/sdk/types";
+import type { ModifiedTool } from "../tabState";
 
 interface McpSectionProps {
   mcpId: string;
@@ -19,9 +19,20 @@ interface McpSectionProps {
   onToggleAllTools: () => void;
   onToggleTool: (toolId: string) => void;
   isToolSelected: (toolId: string) => boolean;
-  getModifiedName: (mcpId: string, toolName: string, originalName: string) => string;
-  getModifiedTool: (mcpId: string, toolName: string) => ModifiedTool | undefined;
-  onToolModify: (mcpId: string, toolName: string, modifiedTool: ModifiedTool) => void;
+  getModifiedName: (
+    mcpId: string,
+    toolName: string,
+    originalName: string,
+  ) => string;
+  getModifiedTool: (
+    mcpId: string,
+    toolName: string,
+  ) => ModifiedTool | undefined;
+  onToolModify: (
+    mcpId: string,
+    toolName: string,
+    modifiedTool: ModifiedTool,
+  ) => void;
   onToolRevert: (mcpId: string, toolName: string) => void;
 }
 
@@ -39,48 +50,53 @@ export default function McpSection({
   getModifiedName,
   getModifiedTool,
   onToolModify,
-  onToolRevert
+  onToolRevert,
 }: McpSectionProps) {
   return (
     <div key={mcpId}>
-      <div 
-        className={`flex items-center justify-between p-2 cursor-pointer sticky z-10 top-0 text-foreground bg-accent`}
+      <div
+        className={`text-foreground bg-accent sticky top-0 z-10 flex cursor-pointer items-center justify-between p-2`}
         onClick={onToggleSection}
       >
         <div className="flex items-center gap-2 select-none">
-          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          <span className="font-semibold text-sm">{name}</span>
+          {isExpanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+          <span className="text-sm font-semibold">{name}</span>
         </div>
-        <Badge 
-          variant="outline" 
-          className={cn("text-xs select-none", !selectedToolCount && "opacity-0")}
+        <Badge
+          variant="outline"
+          className={cn(
+            "text-xs select-none",
+            !selectedToolCount && "opacity-0",
+          )}
         >
           {selectedToolCount || 0}
         </Badge>
       </div>
-      
+
       {isExpanded && (
         <div className="">
-          <div 
-            className="flex items-center p-2 cursor-pointer"
+          <div
+            className="flex cursor-pointer items-center p-2"
             onClick={(e) => {
               e.stopPropagation();
               onToggleAllTools();
             }}
           >
-            <div className="flex items-center gap-2 w-full">
-              <Checkbox 
+            <div className="flex w-full items-center gap-2">
+              <Checkbox
                 checked={areAllToolsSelected}
                 onCheckedChange={onToggleAllTools}
               />
-              <Label
-                className="font-medium text-sm cursor-pointer text-foreground"
-              >
+              <Label className="text-foreground cursor-pointer text-sm font-medium">
                 Select All
               </Label>
             </div>
           </div>
-          
+
           {tools.map((tool) => (
             <ToolItem
               key={mcpId + tool.name}

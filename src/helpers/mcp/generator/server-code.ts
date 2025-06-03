@@ -6,18 +6,15 @@ import {
 } from "./utils/code-gen";
 import { generateExecuteApiToolFunction } from "./utils/security";
 
-
 export async function generateMcpServerCode(
   serverName: string,
   serverVersion: string,
   tags: string[],
-  transport = 'streamable-http',
+  transport = "streamable-http",
   port = 3000,
 ): Promise<string> {
   // Generate code for tool arguments parsing
-  const parseToolArgsFunctionCode = generateParseToolArgsFunction(
-    tags
-  );
+  const parseToolArgsFunctionCode = generateParseToolArgsFunction(tags);
   const loadToolsFunctionCode = generateLoadToolsFunction();
 
   // Generate code for API tool execution

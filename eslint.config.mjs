@@ -22,6 +22,7 @@ export default [
     },
     rules: {
       "react-compiler/react-compiler": "error",
+      "react/no-unescaped-entities": ["error", { forbid: [">", "}"] }],
     },
   },
   { languageOptions: { globals: globals.browser } },

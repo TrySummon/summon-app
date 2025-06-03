@@ -10,22 +10,25 @@ export const renameApi = async (apiId: string, newName: string) => {
     // First get the API to update
     const getResult = await getApi(apiId);
     if (!getResult.success || !getResult.api) {
-      return { success: false, message: getResult.message || 'API not found' };
+      return { success: false, message: getResult.message || "API not found" };
     }
-    
+
     // Save the updated API
     const updateResult = await updateApi(apiId, {
       ...getResult.api.api,
       info: {
         ...getResult.api.api.info,
-        title: newName
-      }
+        title: newName,
+      },
     });
     return updateResult;
   } catch (error) {
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Unknown error occurred while renaming API'
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unknown error occurred while renaming API",
     };
   }
 };

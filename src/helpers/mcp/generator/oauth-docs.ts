@@ -10,7 +10,7 @@ import { OpenAPIV3 } from "openapi-types";
  * @returns Markdown documentation about OAuth2 configuration
  */
 export function generateOAuth2Docs(
-  securitySchemes?: OpenAPIV3.ComponentsObject["securitySchemes"]
+  securitySchemes?: OpenAPIV3.ComponentsObject["securitySchemes"],
 ): string {
   if (!securitySchemes) {
     return "# OAuth2 Configuration\n\nNo OAuth2 security schemes defined in this API.";
@@ -77,7 +77,7 @@ This API uses OAuth2 for authentication. The MCP server can handle OAuth2 authen
         content += "\n**Available Scopes:**\n\n";
 
         for (const [scope, description] of Object.entries(
-          scheme.flows.clientCredentials.scopes
+          scheme.flows.clientCredentials.scopes,
         )) {
           content += `- \`${scope}\`: ${description}\n`;
         }
@@ -100,7 +100,7 @@ This API uses OAuth2 for authentication. The MCP server can handle OAuth2 authen
         content += "\n**Available Scopes:**\n\n";
 
         for (const [scope, description] of Object.entries(
-          scheme.flows.authorizationCode.scopes
+          scheme.flows.authorizationCode.scopes,
         )) {
           content += `- \`${scope}\`: ${description}\n`;
         }

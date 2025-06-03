@@ -1,17 +1,17 @@
-import CodeMirrorEditor from '../../CodeEditor';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from '@/utils/tailwind';
-import { EditorView } from 'codemirror';
+import CodeMirrorEditor from "../../CodeEditor";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@/utils/tailwind";
+import { EditorView } from "codemirror";
 
 interface Props {
-    className?: string;
-    placeholder?: string;
-    autoFocus?: boolean;
-    value?: string;
-    readOnly?: boolean;
-    maxHeight?: number;
-    onChange?: (value: string) => void;
-    onPasteImage?: (base64Url: string, contentType: string) => void;
+  className?: string;
+  placeholder?: string;
+  autoFocus?: boolean;
+  value?: string;
+  readOnly?: boolean;
+  maxHeight?: number;
+  onChange?: (value: string) => void;
+  onPasteImage?: (base64Url: string, contentType: string) => void;
 }
 
 const MessageEditor = ({
@@ -33,7 +33,7 @@ const MessageEditor = ({
       const items = event.clipboardData?.items;
       if (items) {
         for (let i = 0; i < items.length; i++) {
-          if (items[i]?.type.indexOf('image') !== -1) {
+          if (items[i]?.type.indexOf("image") !== -1) {
             const file = items[i]?.getAsFile();
             if (file) {
               const reader = new FileReader();
@@ -47,7 +47,7 @@ const MessageEditor = ({
         }
       }
     },
-    [onPasteImage]
+    [onPasteImage],
   );
 
   const handleEditorChange = useCallback(
@@ -61,11 +61,11 @@ const MessageEditor = ({
         isProgrammaticChangeRef.current = false;
       }
     },
-    [onChange]
+    [onChange],
   );
 
-   // Update editor content when text changes
-   useEffect(() => {
+  // Update editor content when text changes
+  useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
 
@@ -82,7 +82,7 @@ const MessageEditor = ({
   }, [value, handlePaste]);
 
   const placeholderEl = isEditorEmpty ? (
-    <div className="pointer-events-none absolute left-[1px] top-[3px] z-10 text-[14px] text-muted-foreground">
+    <div className="text-muted-foreground pointer-events-none absolute top-[3px] left-[1px] z-10 text-[14px]">
       {placeholder || "Enter a message..."}
     </div>
   ) : null;
@@ -91,13 +91,14 @@ const MessageEditor = ({
     <div className={cn("relative w-full", className)}>
       {placeholderEl}
       <CodeMirrorEditor
-      autoFocus={autoFocus}
-      editorRef={editorRef}
-      readOnly={readOnly}
-      language='markdown'
-      onChange={handleEditorChange}
-      maxHeight={maxHeight}
-      onPaste={handlePaste} />
+        autoFocus={autoFocus}
+        editorRef={editorRef}
+        readOnly={readOnly}
+        language="markdown"
+        onChange={handleEditorChange}
+        maxHeight={maxHeight}
+        onPaste={handlePaste}
+      />
     </div>
   );
 };

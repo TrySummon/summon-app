@@ -2,7 +2,13 @@
 
 import React from "react";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AIProviderType } from "@/components/ai-providers/types";
 
 type ProviderSelectorProps = {
@@ -19,7 +25,10 @@ export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
   return (
     <div className="provider-select flex flex-col gap-2">
       {!compact && <Label>Provider</Label>}
-      <Select value={value} onValueChange={(val) => onChange(val as AIProviderType)}>
+      <Select
+        value={value}
+        onValueChange={(val) => onChange(val as AIProviderType)}
+      >
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Select provider" />
         </SelectTrigger>

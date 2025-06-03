@@ -18,8 +18,6 @@ interface ElectronWindow {
   close: () => Promise<void>;
 }
 
-import type { API, McpToolDefinition } from '@/helpers/mcp/types';
-
 declare interface Window {
   themeMode: ThemeModeContext;
   electronWindow: ElectronWindow;

@@ -1,15 +1,15 @@
-import * as React from "react"
-import { Check, Copy } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import * as React from "react";
+import { Check, Copy } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger
-} from '@/components/ui/tooltip';
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/utils/tailwind";
 
 interface Props {
@@ -23,7 +23,7 @@ const CopyButton = ({ content, className }: Props) => {
   const copyToClipboard = async () => {
     try {
       const textToCopy =
-        typeof content === 'object'
+        typeof content === "object"
           ? JSON.stringify(content, null, 2)
           : String(content);
 
@@ -35,7 +35,7 @@ const CopyButton = ({ content, className }: Props) => {
         setCopied(false);
       }, 2000);
     } catch (err) {
-      toast.error('Failed to copy: ' + String(err));
+      toast.error("Failed to copy: " + String(err));
     }
   };
 
@@ -57,11 +57,7 @@ const CopyButton = ({ content, className }: Props) => {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>
-            {copied
-              ? 'Copied to clipboard'
-              : 'Copy'}
-          </p>
+          <p>{copied ? "Copied to clipboard" : "Copy"}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

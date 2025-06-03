@@ -34,14 +34,14 @@ export function joinUrl(baseUrl: string, path: string): string {
  */
 export function buildUrlWithQuery(
   baseUrl: string,
-  queryParams: Record<string, any>
+  queryParams: Record<string, unknown>,
 ): string {
   if (!Object.keys(queryParams).length) return baseUrl;
 
   const url = new URL(
     baseUrl.startsWith("http")
       ? baseUrl
-      : `http://localhost${baseUrl.startsWith("/") ? "" : "/"}${baseUrl}`
+      : `http://localhost${baseUrl.startsWith("/") ? "" : "/"}${baseUrl}`,
   );
 
   for (const [key, value] of Object.entries(queryParams)) {

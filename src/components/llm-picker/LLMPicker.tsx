@@ -25,7 +25,10 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { AI_PROVIDERS_CONFIG, AIProviderType, PersistedAIProviderCredential } from "@/components/ai-providers/types";
+import {
+  AI_PROVIDERS_CONFIG,
+  AIProviderType,
+} from "@/components/ai-providers/types";
 import { useAIProviders } from "@/hooks/useAIProviders";
 
 import { MaxLengthSelector } from "./MaxLength";
@@ -39,17 +42,14 @@ import ProviderLogo from "../ai-providers/Logo";
 export interface IModelConfiguration {
   credentialId?: string;
   model?: string;
-  settings: LLMSettings
+  settings: LLMSettings;
 }
 
 interface Props {
   className?: string;
   config: IModelConfiguration;
   hideSettings?: boolean;
-  onChange: (
-    nextConfig: IModelConfiguration,
-    shouldModify?: boolean
-  ) => void;
+  onChange: (nextConfig: IModelConfiguration, shouldModify?: boolean) => void;
 }
 
 export default function LLMPicker({
@@ -64,16 +64,16 @@ export default function LLMPicker({
   const { credentialId, model } = config;
   const credential = useMemo(() => {
     if (!credentialId || !credentials) return undefined;
-    return credentials.find(c => c.id === credentialId);
+    return credentials.find((c) => c.id === credentialId);
   }, [credentialId, credentials]);
   const provider = credential?.provider;
 
   // Validate that the credential ID exists in available credentials
   useEffect(() => {
     if (!credentialId || !credentials?.length) return;
-    
+
     // Check if the credential exists in the available credentials
-    const credentialExists = credentials.find(c => c.id === credentialId);
+    const credentialExists = credentials.find((c) => c.id === credentialId);
     if (!credentialExists) {
       // If credential doesn't exist, reset it
       onChange({ ...config, credentialId: undefined });
@@ -99,12 +99,14 @@ export default function LLMPicker({
         customModels: string[];
       }
     > = {};
-    
+
     credentials.forEach((c) => {
       const providerConfig = AI_PROVIDERS_CONFIG[c.provider];
       const customModels = c.models || [];
-      const knownModels = providerConfig ? Object.keys(providerConfig.models) : [];
-      
+      const knownModels = providerConfig
+        ? Object.keys(providerConfig.models)
+        : [];
+
       _modelsByProvider[c.provider] = {
         logo: providerConfig?.logo || "",
         credentialId: c.id,
@@ -132,7 +134,7 @@ export default function LLMPicker({
         {entries.map(([providerName, providerDetails]) => {
           const hasDefaultModels = providerDetails.defaultModels.length > 0;
           const hasCustomModels = providerDetails.customModels.length > 0;
-          
+
           return (
             <DropdownMenuGroup key={providerName}>
               <DropdownMenuSub>
@@ -144,7 +146,7 @@ export default function LLMPicker({
                   {providerName}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
-                <DropdownMenuSubContent className="w-56 max-h-[60vh] overflow-y-auto">
+                  <DropdownMenuSubContent className="max-h-[60vh] w-56 overflow-y-auto">
                     {/* Default Models Section */}
                     {hasDefaultModels && (
                       <>
@@ -154,36 +156,48 @@ export default function LLMPicker({
                             key={m}
                             onClick={() => {
                               // Get the provider configuration
-                              const providerConfig = AI_PROVIDERS_CONFIG[providerName as AIProviderType];
-                              
+                              const providerConfig =
+                                AI_PROVIDERS_CONFIG[
+                                  providerName as AIProviderType
+                                ];
+
                               // Get temperature range for the selected model
                               let temperatureRange: [number, number] = [0, 1];
                               let maxTokensLimit = 4096; // Default fallback
                               if (providerConfig) {
                                 if (m in providerConfig.models) {
-                                  temperatureRange = providerConfig.models[m].temperatureRange;
-                                  maxTokensLimit = providerConfig.models[m].max_tokens;
+                                  temperatureRange =
+                                    providerConfig.models[m].temperatureRange;
+                                  maxTokensLimit =
+                                    providerConfig.models[m].max_tokens;
                                 } else {
-                                  temperatureRange = providerConfig.defaultTemperatureRange;
+                                  temperatureRange =
+                                    providerConfig.defaultTemperatureRange;
                                   // For custom models, use a reasonable default
                                   maxTokensLimit = 4096;
                                 }
                               }
-                              
+
                               // Adjust temperature to fit within the valid range if needed
-                              let adjustedTemperature = config.settings.temperature ?? 0;
+                              let adjustedTemperature =
+                                config.settings.temperature ?? 0;
                               if (adjustedTemperature < temperatureRange[0]) {
                                 adjustedTemperature = temperatureRange[0];
-                              } else if (adjustedTemperature > temperatureRange[1]) {
+                              } else if (
+                                adjustedTemperature > temperatureRange[1]
+                              ) {
                                 adjustedTemperature = temperatureRange[1];
                               }
-                              
+
                               // Adjust maxTokens to fit within the model's limit if needed
                               let adjustedMaxTokens = config.settings.maxTokens;
-                              if (adjustedMaxTokens && adjustedMaxTokens > maxTokensLimit) {
+                              if (
+                                adjustedMaxTokens &&
+                                adjustedMaxTokens > maxTokensLimit
+                              ) {
                                 adjustedMaxTokens = maxTokensLimit;
                               }
-                              
+
                               onChange({
                                 ...config,
                                 credentialId: providerDetails.credentialId,
@@ -191,8 +205,8 @@ export default function LLMPicker({
                                 settings: {
                                   ...config.settings,
                                   temperature: adjustedTemperature,
-                                  maxTokens: adjustedMaxTokens
-                                }
+                                  maxTokens: adjustedMaxTokens,
+                                },
                               });
                             }}
                           >
@@ -201,47 +215,59 @@ export default function LLMPicker({
                         ))}
                       </>
                     )}
-                    
+
                     {/* Custom Models Section */}
                     {hasCustomModels && (
                       <>
-                      {hasDefaultModels && <DropdownMenuSeparator />}
+                        {hasDefaultModels && <DropdownMenuSeparator />}
                         {providerDetails.customModels.map((m) => (
                           <DropdownMenuItem
                             id={`model-${m}`}
                             key={m}
                             onClick={() => {
                               // Get the provider configuration
-                              const providerConfig = AI_PROVIDERS_CONFIG[providerName as AIProviderType];
-                              
+                              const providerConfig =
+                                AI_PROVIDERS_CONFIG[
+                                  providerName as AIProviderType
+                                ];
+
                               // Get temperature range for the selected model
                               let temperatureRange: [number, number] = [0, 1];
                               let maxTokensLimit = 4096; // Default fallback
                               if (providerConfig) {
                                 if (m in providerConfig.models) {
-                                  temperatureRange = providerConfig.models[m].temperatureRange;
-                                  maxTokensLimit = providerConfig.models[m].max_tokens;
+                                  temperatureRange =
+                                    providerConfig.models[m].temperatureRange;
+                                  maxTokensLimit =
+                                    providerConfig.models[m].max_tokens;
                                 } else {
-                                  temperatureRange = providerConfig.defaultTemperatureRange;
+                                  temperatureRange =
+                                    providerConfig.defaultTemperatureRange;
                                   // For custom models, use a reasonable default
                                   maxTokensLimit = 4096;
                                 }
                               }
-                              
+
                               // Adjust temperature to fit within the valid range if needed
-                              let adjustedTemperature = config.settings.temperature ?? 0;
+                              let adjustedTemperature =
+                                config.settings.temperature ?? 0;
                               if (adjustedTemperature < temperatureRange[0]) {
                                 adjustedTemperature = temperatureRange[0];
-                              } else if (adjustedTemperature > temperatureRange[1]) {
+                              } else if (
+                                adjustedTemperature > temperatureRange[1]
+                              ) {
                                 adjustedTemperature = temperatureRange[1];
                               }
-                              
+
                               // Adjust maxTokens to fit within the model's limit if needed
                               let adjustedMaxTokens = config.settings.maxTokens;
-                              if (adjustedMaxTokens && adjustedMaxTokens > maxTokensLimit) {
+                              if (
+                                adjustedMaxTokens &&
+                                adjustedMaxTokens > maxTokensLimit
+                              ) {
                                 adjustedMaxTokens = maxTokensLimit;
                               }
-                              
+
                               onChange({
                                 ...config,
                                 credentialId: providerDetails.credentialId,
@@ -249,8 +275,8 @@ export default function LLMPicker({
                                 settings: {
                                   ...config.settings,
                                   temperature: adjustedTemperature,
-                                  maxTokens: adjustedMaxTokens
-                                }
+                                  maxTokens: adjustedMaxTokens,
+                                },
                               });
                             }}
                           >
@@ -268,11 +294,6 @@ export default function LLMPicker({
       </DropdownMenuRadioGroup>
     );
   }, [modelsByProvider, provider, model, config, onChange]);
-
-  const currentModelData = useMemo(() => {
-    if (!currentProvider || !model) return null;
-    return currentProvider.models[model];
-  }, [currentProvider, model]);
 
   return (
     <div className={cn("flex", className)}>
@@ -296,7 +317,7 @@ export default function LLMPicker({
               ) : (
                 <span className="text-muted-foreground">Select a model...</span>
               )}
-              <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
+              <ChevronsUpDown className="text-muted-foreground h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[200px]">
@@ -321,7 +342,7 @@ export default function LLMPicker({
                   className="h-5 w-5"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate({to: "/settings"});
+                    navigate({ to: "/settings" });
                   }}
                   title="Add provider"
                 >
@@ -337,8 +358,8 @@ export default function LLMPicker({
         {!hideSettings && model && (
           <Popover>
             <PopoverTrigger asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 className="rounded-l-none px-2"
               >
@@ -348,30 +369,46 @@ export default function LLMPicker({
             <PopoverContent className="w-80">
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <h4 className="font-medium leading-none">Model settings</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <h4 className="leading-none font-medium">Model settings</h4>
+                  <p className="text-muted-foreground text-sm">
                     Configure the model parameters
                   </p>
                 </div>
                 <div className="grid gap-2">
                   <TemperatureSelector
                     value={config.settings.temperature ?? 0}
-                    onChange={(temperature) => onChange({ ...config, settings: { ...config.settings, temperature } })}
-                    model={model || ''}
-                    provider={provider || ''}
+                    onChange={(temperature) =>
+                      onChange({
+                        ...config,
+                        settings: { ...config.settings, temperature },
+                      })
+                    }
+                    model={model || ""}
+                    provider={provider || ""}
                   />
                   <Separator />
                   <MaxLengthSelector
                     model={model}
                     provider={provider || ""}
                     value={config.settings.maxTokens}
-                    onChange={(max_tokens) => onChange({ ...config, settings: { ...config.settings, maxTokens: max_tokens } })}
+                    onChange={(max_tokens) =>
+                      onChange({
+                        ...config,
+                        settings: { ...config.settings, maxTokens: max_tokens },
+                      })
+                    }
                   />
                   <Separator />
                   <PresenceSelector
                     value={config.settings.presencePenalty ?? 0}
                     onChange={(presence_penalty) =>
-                      onChange({ ...config, settings: { ...config.settings, presencePenalty: presence_penalty } })
+                      onChange({
+                        ...config,
+                        settings: {
+                          ...config.settings,
+                          presencePenalty: presence_penalty,
+                        },
+                      })
                     }
                   />
                 </div>

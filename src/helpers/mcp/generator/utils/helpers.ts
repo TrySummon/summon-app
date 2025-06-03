@@ -6,8 +6,8 @@
  * @returns JSON string or default value
  */
 export function safeJsonStringify(
-  obj: any,
-  defaultValue: string = "{}"
+  obj: Record<string, unknown>,
+  defaultValue: string = "{}",
 ): string {
   try {
     return JSON.stringify(obj);
@@ -36,7 +36,7 @@ export function sanitizeForTemplate(str: string): string {
 export function toCamelCase(str: string): string {
   return str
     .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) =>
-      index === 0 ? word.toLowerCase() : word.toUpperCase()
+      index === 0 ? word.toLowerCase() : word.toUpperCase(),
     )
     .replace(/\s+/g, "")
     .replace(/[^a-zA-Z0-9]/g, "");

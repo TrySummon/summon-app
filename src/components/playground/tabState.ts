@@ -1,12 +1,12 @@
 import { UIMessage } from "ai";
-import { type JSONSchema7} from "json-schema";
+import { type JSONSchema7 } from "json-schema";
 
 export type LLMSettings = {
-    /**
+  /**
   Maximum number of tokens to generate.
      */
-    maxTokens?: number;
-    /**
+  maxTokens?: number;
+  /**
   Temperature setting. This is a number between 0 (almost no randomness) and
   1 (very random).
   
@@ -14,8 +14,8 @@ export type LLMSettings = {
   
   @default 0
      */
-    temperature?: number;
-    /**
+  temperature?: number;
+  /**
   Nucleus sampling. This is a number between 0 and 1.
   
   E.g. 0.1 would mean that only tokens with the top 10% probability mass
@@ -23,56 +23,56 @@ export type LLMSettings = {
   
   It is recommended to set either `temperature` or `topP`, but not both.
      */
-    topP?: number;
-    /**
+  topP?: number;
+  /**
   Only sample from the top K options for each subsequent token.
   
   Used to remove "long tail" low probability responses.
   Recommended for advanced use cases only. You usually only need to use temperature.
      */
-    topK?: number;
-    /**
+  topK?: number;
+  /**
   Presence penalty setting. It affects the likelihood of the model to
   repeat information that is already in the prompt.
   
   The presence penalty is a number between -1 (increase repetition)
   and 1 (maximum penalty, decrease repetition). 0 means no penalty.
      */
-    presencePenalty?: number;
-    /**
+  presencePenalty?: number;
+  /**
   Frequency penalty setting. It affects the likelihood of the model
   to repeatedly use the same words or phrases.
   
   The frequency penalty is a number between -1 (increase repetition)
   and 1 (maximum penalty, decrease repetition). 0 means no penalty.
      */
-    frequencyPenalty?: number;
-    /**
+  frequencyPenalty?: number;
+  /**
   Stop sequences.
   If set, the model will stop generating text when one of the stop sequences is generated.
   Providers may have limits on the number of stop sequences.
      */
-    stopSequences?: string[];
-    /**
+  stopSequences?: string[];
+  /**
   The seed (integer) to use for random sampling. If set and supported
   by the model, calls will generate deterministic results.
      */
-    seed?: number;
-    /**
+  seed?: number;
+  /**
   Maximum number of retries. Set to 0 to disable retries.
   
   @default 2
      */
-    maxRetries?: number;
-    /**
+  maxRetries?: number;
+  /**
   Abort signal.
      */
-    abortSignal?: AbortSignal;
-    /**
+  abortSignal?: AbortSignal;
+  /**
   Additional HTTP headers to be sent with the request.
   Only applicable for HTTP-based providers.
      */
-    headers?: Record<string, string | undefined>;
+  headers?: Record<string, string | undefined>;
 };
 
 export interface ModifiedTool {
@@ -82,24 +82,24 @@ export interface ModifiedTool {
 }
 
 export interface IPlaygroundTabState {
-    id: string;
-    credentialId?: string;
-    model?: string;
-    settings: LLMSettings;
-    systemPrompt?: string;
-    messages: UIMessage[];
-    enabledTools: Record<string, string[]>;
-    // Tool modifications: mcpId -> toolName -> modified schema and name
-    modifiedToolMap: Record<string, Record<string, ModifiedTool>>;
-    running: boolean;
-    maxSteps: number;
-    shouldScrollToDock?: boolean;
-    abortController?: AbortController;
-    // Token usage information
-    tokenUsage?: {
-        inputTokens: number;
-        outputTokens: number;
-    };
-    // Latency in milliseconds
-    latency?: number;
+  id: string;
+  credentialId?: string;
+  model?: string;
+  settings: LLMSettings;
+  systemPrompt?: string;
+  messages: UIMessage[];
+  enabledTools: Record<string, string[]>;
+  // Tool modifications: mcpId -> toolName -> modified schema and name
+  modifiedToolMap: Record<string, Record<string, ModifiedTool>>;
+  running: boolean;
+  maxSteps: number;
+  shouldScrollToDock?: boolean;
+  abortController?: AbortController;
+  // Token usage information
+  tokenUsage?: {
+    inputTokens: number;
+    outputTokens: number;
+  };
+  // Latency in milliseconds
+  latency?: number;
 }

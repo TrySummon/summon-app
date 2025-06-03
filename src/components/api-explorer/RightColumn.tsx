@@ -1,6 +1,6 @@
-import React from 'react';
-import { OpenAPIV3 } from 'openapi-types';
-import { ResponseExample } from './ResponseExample';
+import React from "react";
+import { OpenAPIV3 } from "openapi-types";
+import { ResponseExample } from "./ResponseExample";
 
 interface RightColumnProps {
   operation: OpenAPIV3.OperationObject;

@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,29 +7,29 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger
-} from '@/components/ui/tooltip';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { ImagePlusIcon } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { z } from 'zod';
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ImagePlusIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 import { cn } from "@/utils/tailwind";
 
 interface Props {
@@ -41,14 +41,14 @@ export default function ImageDialog({ onAddImage, className }: Props) {
   const [open, setOpen] = useState(false);
   const formSchema = z.object({
     url: z.string().url(),
-    mimeType: z.string()
+    mimeType: z.string(),
   });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      url: '',
-      mimeType: 'image/jpeg'
-    }
+      url: "",
+      mimeType: "image/jpeg",
+    },
   });
 
   const onDrop = useCallback(
@@ -65,16 +65,16 @@ export default function ImageDialog({ onAddImage, className }: Props) {
       } else {
         // Handle the error case where the file is too large or not an image
         toast.error(
-          'File is too large or not an image. Please select an image file under 10 MB.'
+          "File is too large or not an image. Please select an image file under 10 MB.",
         );
       }
     },
-    [onAddImage]
+    [onAddImage],
   );
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
-    accept: { 'image/*': [] }
+    accept: { "image/*": [] },
   });
 
   const handlePaste = useCallback(
@@ -83,7 +83,7 @@ export default function ImageDialog({ onAddImage, className }: Props) {
       const items = event.clipboardData?.items;
       if (items) {
         for (let i = 0; i < items.length; i++) {
-          if (items[i]?.type.indexOf('image') !== -1) {
+          if (items[i]?.type.indexOf("image") !== -1) {
             const file = items[i]?.getAsFile();
             if (file) {
               const reader = new FileReader();
@@ -98,16 +98,16 @@ export default function ImageDialog({ onAddImage, className }: Props) {
         }
       }
     },
-    [onAddImage, open]
+    [onAddImage, open],
   );
 
   useEffect(() => {
     // Add paste event listener
-    document.addEventListener('paste', handlePaste);
+    document.addEventListener("paste", handlePaste);
 
     return () => {
       // Remove paste event listener
-      document.removeEventListener('paste', handlePaste);
+      document.removeEventListener("paste", handlePaste);
     };
   }, [handlePaste]);
 
@@ -162,7 +162,7 @@ export default function ImageDialog({ onAddImage, className }: Props) {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
+              <span className="bg-background text-muted-foreground px-2">
                 Or add image URL
               </span>
             </div>
@@ -183,7 +183,7 @@ export default function ImageDialog({ onAddImage, className }: Props) {
                       <Input
                         placeholder="https://example.com/image.jpg"
                         {...field}
-                        {...form.register('url')}
+                        {...form.register("url")}
                       />
                     </FormControl>
                     <FormMessage />

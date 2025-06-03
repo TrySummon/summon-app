@@ -4,42 +4,34 @@ import { Link } from "@tanstack/react-router";
 import {
   Collapsible,
   CollapsibleContent,
-  CollapsibleTrigger
+  CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from "@/components/ui/sidebar";
+import {
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarMenuAction,
+} from "@/components/ui/sidebar";
 import { ApiDropdownMenu } from "./ApiDropdownMenu";
 import { ApiEndpointList } from "./ApiEndpointList";
 import { toast } from "sonner";
+import { useApis } from "@/hooks/useApis";
+import { OpenAPIV3 } from "openapi-types";
 
 interface ApiItemProps {
   apiItem: {
     id: string;
-    api: {
-      info: {
-        title: string;
-      };
-      paths: Record<string, any>;
-    };
+    api: OpenAPIV3.Document;
   };
   isOpen: boolean;
   isActive: boolean;
   onToggle: (apiId: string) => void;
-  deleteApi: (apiId: string, options: any) => void;
-  renameApi: (params: { apiId: string, newName: string }, options: any) => void;
 }
 
-export function ApiItem({
-  apiItem,
-  isOpen,
-  isActive,
-  onToggle,
-  deleteApi,
-  renameApi
-}: ApiItemProps) {
-  // Safely access API information with fallbacks
+export function ApiItem({ apiItem, isOpen, isActive, onToggle }: ApiItemProps) {
+  const { renameApi, deleteApi } = useApis();
   const [editingApiId, setEditingApiId] = useState<string | null>(null);
   const [tempApiName, setTempApiName] = useState<string>("");
-  
+
   const editableNameRef = useRef<HTMLSpanElement>(null);
   const renameInitiatedRef = useRef<boolean>(false);
 
@@ -57,7 +49,7 @@ export function ApiItem({
       }
     }
   }, [editingApiId, apiItem.id]);
-  
+
   // Handle delete API
   const handleDeleteApi = (apiId: string, apiName: string) => {
     if (confirm(`Are you sure you want to delete the API "${apiName}"?`)) {
@@ -66,8 +58,10 @@ export function ApiItem({
           toast.success(`API "${apiName}" deleted successfully`);
         },
         onError: (error: unknown) => {
-          toast.error(`Failed to delete API: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
+          toast.error(
+            `Failed to delete API: ${error instanceof Error ? error.message : "Unknown error"}`,
+          );
+        },
       });
     }
   };
@@ -85,20 +79,25 @@ export function ApiItem({
       setEditingApiId(null);
       return;
     }
-    
+
     if (editableNameRef.current) {
       const newName = editableNameRef.current.textContent?.trim();
       if (newName && newName !== tempApiName) {
-        renameApi({ apiId: editingApiId, newName }, {
-          onSuccess: () => {
-            toast.success(`API renamed to "${newName}" successfully`);
-            setEditingApiId(null);
+        renameApi(
+          { apiId: editingApiId, newName },
+          {
+            onSuccess: () => {
+              toast.success(`API renamed to "${newName}" successfully`);
+              setEditingApiId(null);
+            },
+            onError: (error: unknown) => {
+              toast.error(
+                `Failed to rename API: ${error instanceof Error ? error.message : "Unknown error"}`,
+              );
+              setEditingApiId(null);
+            },
           },
-          onError: (error: unknown) => {
-            toast.error(`Failed to rename API: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            setEditingApiId(null); 
-          }
-        });
+        );
       } else {
         setEditingApiId(null);
       }
@@ -109,53 +108,51 @@ export function ApiItem({
 
   // Handle keyboard events during rename
   const handleRenameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       finishRenameApi();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       e.preventDefault();
       setEditingApiId(null);
     }
   };
 
   return (
-      <Collapsible
-        key={apiItem.id}
-        open={isOpen}
-        onOpenChange={() => onToggle(apiItem.id)}
-        className="group/collapsible"
-      >
+    <Collapsible
+      key={apiItem.id}
+      open={isOpen}
+      onOpenChange={() => onToggle(apiItem.id)}
+      className="group/collapsible"
+    >
       <SidebarMenuItem>
-        <Link to="/api/$apiId" params={{apiId: apiItem.id}}>
+        <Link to="/api/$apiId" params={{ apiId: apiItem.id }}>
           <CollapsibleTrigger asChild>
-            <SidebarMenuButton
-              isActive={isActive}
-              className="flex-1 text-xs"
-            >
+            <SidebarMenuButton isActive={isActive} className="flex-1 text-xs">
               <div className="flex items-center pl-4">
-                <SidebarMenuAction onClick={(e) => {
-                  onToggle(apiItem.id)
-                  e.preventDefault()
-                }} className="left-0 flex items-center chevron">
-                  <ChevronRight className="h-3 w-3 ml-auto group-data-[state=open]/collapsible:hidden" />
-                  <ChevronDown className="h-3 w-3 ml-auto group-data-[state=closed]/collapsible:hidden" />
+                <SidebarMenuAction
+                  onClick={(e) => {
+                    onToggle(apiItem.id);
+                    e.preventDefault();
+                  }}
+                  className="chevron left-0 flex items-center"
+                >
+                  <ChevronRight className="ml-auto h-3 w-3 group-data-[state=open]/collapsible:hidden" />
+                  <ChevronDown className="ml-auto h-3 w-3 group-data-[state=closed]/collapsible:hidden" />
                 </SidebarMenuAction>
                 {editingApiId === apiItem.id ? (
-                  <span 
+                  <span
                     ref={editableNameRef}
                     contentEditable
                     suppressContentEditableWarning
                     onBlur={() => finishRenameApi()}
                     onKeyDown={handleRenameKeyDown}
-                    className="outline-none border-b border-dashed border-primary px-1"
+                    className="border-primary border-b border-dashed px-1 outline-none"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {apiItem.api.info.title}
                   </span>
                 ) : (
-                  <span 
-                    className="cursor-pointer hover:text-primary transition-colors"
-                  >
+                  <span className="hover:text-primary cursor-pointer transition-colors">
                     {apiItem.api.info.title}
                   </span>
                 )}
@@ -163,7 +160,7 @@ export function ApiItem({
             </SidebarMenuButton>
           </CollapsibleTrigger>
         </Link>
-        
+
         <ApiDropdownMenu
           apiId={apiItem.id}
           apiTitle={apiItem.api.info.title}
@@ -172,7 +169,7 @@ export function ApiItem({
           editableNameRef={editableNameRef}
           renameInitiatedRef={renameInitiatedRef}
         />
-        
+
         <CollapsibleContent>
           <ApiEndpointList
             apiId={apiItem.id}

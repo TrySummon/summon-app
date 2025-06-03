@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { McpServerState } from '@/helpers/mcp/state';
+import { useState, useEffect } from "react";
+import { McpServerState } from "@/helpers/mcp/state";
 
 interface UseExternalMcpServerStateResult {
   state: McpServerState | null;
@@ -12,14 +12,14 @@ interface UseExternalMcpServerStateResult {
 
 /**
  * Hook for polling and managing external MCP server status
- * 
+ *
  * @param mcpId The ID of the external MCP server to monitor
  * @param pollingInterval Polling interval in milliseconds (default: 2000)
  * @returns Status information and control functions
  */
 export function useExternalMcpServerState(
   mcpId: string,
-  pollingInterval = 2000
+  pollingInterval = 2000,
 ): UseExternalMcpServerStateResult {
   const [state, setState] = useState<McpServerState | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -33,10 +33,10 @@ export function useExternalMcpServerState(
       if (response.success) {
         setState(response.data ? response.data : null);
       } else {
-        setError(new Error(response.message || 'Failed to get server status'));
+        setError(new Error(response.message || "Failed to get server status"));
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      setError(err instanceof Error ? err : new Error("Unknown error"));
     } finally {
       setIsLoading(false);
     }
@@ -58,14 +58,15 @@ export function useExternalMcpServerState(
   const connectServer = async () => {
     setIsLoading(true);
     try {
-      const response = await window.externalMcpApi.connectExternalMcpServer(mcpId);
+      const response =
+        await window.externalMcpApi.connectExternalMcpServer(mcpId);
       if (response.success) {
         setState(response.data || null);
       } else {
-        setError(new Error(response.message || 'Failed to connect to server'));
+        setError(new Error(response.message || "Failed to connect to server"));
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      setError(err instanceof Error ? err : new Error("Unknown error"));
     } finally {
       setIsLoading(false);
     }
@@ -79,10 +80,12 @@ export function useExternalMcpServerState(
       if (response.success) {
         setState(response.data || null);
       } else {
-        setError(new Error(response.message || 'Failed to disconnect from server'));
+        setError(
+          new Error(response.message || "Failed to disconnect from server"),
+        );
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      setError(err instanceof Error ? err : new Error("Unknown error"));
     } finally {
       setIsLoading(false);
     }
@@ -100,6 +103,6 @@ export function useExternalMcpServerState(
     error,
     connectServer,
     disconnectServer,
-    refreshStatus
+    refreshStatus,
   };
 }

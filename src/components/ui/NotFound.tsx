@@ -1,16 +1,21 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
-import { 
-  Breadcrumb, 
-  BreadcrumbItem, 
-  BreadcrumbLink, 
-  BreadcrumbList, 
-  BreadcrumbPage, 
-  BreadcrumbSeparator 
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 
 interface NotFoundProps {
   title?: string;
@@ -29,9 +34,9 @@ export function NotFound({
   message = "The resource you're looking for doesn't exist or has been removed.",
   breadcrumbs = [
     { label: "Home", to: "/" },
-    { label: "Not Found", isActive: true }
+    { label: "Not Found", isActive: true },
   ],
-  className
+  className,
 }: NotFoundProps) {
   return (
     <div className={className}>
@@ -58,14 +63,14 @@ export function NotFound({
           ))}
         </BreadcrumbList>
       </Breadcrumb>
-      
+
       {/* Not Found Card */}
-      <Card className="mt-8 max-w-md mx-auto border-destructive/20">
+      <Card className="border-destructive/20 mx-auto mt-8 max-w-md">
         <CardHeader className="flex items-center justify-center pb-2">
-          <AlertCircle className="h-6 w-6 text-destructive" />
-          <h1 className="text-xl font-bold text-destructive">{title}</h1>
+          <AlertCircle className="text-destructive h-6 w-6" />
+          <h1 className="text-destructive text-xl font-bold">{title}</h1>
         </CardHeader>
-        <CardContent className="text-center text-muted-foreground">
+        <CardContent className="text-muted-foreground text-center">
           <p>{message}</p>
         </CardContent>
         <CardFooter className="flex justify-center pb-6">

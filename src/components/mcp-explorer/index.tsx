@@ -29,7 +29,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
   useEffect(() => {
     const fetchMcpTools = async () => {
       if (status === "running") {
-        try {          
+        try {
           const response = await window.mcpApi.getMcpTools(mcpId);
           if (response.success && response.data) {
             setMcpTools(response.data);
@@ -39,15 +39,15 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
         }
       }
     };
-    
+
     fetchMcpTools();
   }, [mcpId, status]);
 
   if (isLoading) {
     return (
-      <div className="bg-white p-6 rounded-md shadow-sm">
+      <div className="rounded-md bg-white p-6 shadow-sm">
         <div className="flex items-center justify-center">
-          <div className="animate-spin mr-2 h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+          <div className="border-primary mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
           <p>Checking server status...</p>
         </div>
       </div>
@@ -56,8 +56,8 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
 
   return (
     <div className="space-y-6">
-      <ServerStatusSection 
-        status={status || 'stopped'}
+      <ServerStatusSection
+        status={status || "stopped"}
         url={url || undefined}
         error={error}
         serverName={mcpName}
@@ -65,7 +65,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
         refreshStatus={refreshStatus}
         mcpId={mcpId}
       />
-      
+
       {status === "running" && <ToolsList tools={mcpTools} />}
     </div>
   );

@@ -1,12 +1,15 @@
-import {
-  AUTH_TEST_CREDENTIALS_CHANNEL,
-} from "./auth-channels";
+import { contextBridge, ipcRenderer } from "electron";
+import { AUTH_TEST_CREDENTIALS_CHANNEL } from "./auth-channels";
+import { McpAuth } from "@/components/mcp-builder/start-mcp-dialog";
 
 export function exposeAuthContext() {
-  const { contextBridge, ipcRenderer } = window.require("electron");
-  
   contextBridge.exposeInMainWorld("auth", {
-    testCredentials: (baseUrl: string, authType: string, authData: any) => 
-      ipcRenderer.invoke(AUTH_TEST_CREDENTIALS_CHANNEL, baseUrl, authType, authData),
+    testCredentials: (baseUrl: string, authType: string, authData: McpAuth) =>
+      ipcRenderer.invoke(
+        AUTH_TEST_CREDENTIALS_CHANNEL,
+        baseUrl,
+        authType,
+        authData,
+      ),
   });
 }

@@ -1,10 +1,17 @@
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
+import { McpForm } from ".";
 
 interface ServerNameFieldProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<McpForm>;
 }
 
 export function ServerNameField({ form }: ServerNameFieldProps) {
@@ -16,10 +23,10 @@ export function ServerNameField({ form }: ServerNameFieldProps) {
         <FormItem>
           <FormLabel className="text-sm font-medium">MCP Server Name</FormLabel>
           <FormControl>
-            <Input 
-              placeholder="My MCP Server" 
-              {...field} 
-              className="h-10 text-base" 
+            <Input
+              placeholder="My MCP Server"
+              {...field}
+              className="h-10 text-base"
             />
           </FormControl>
           <FormMessage />

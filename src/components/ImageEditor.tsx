@@ -1,7 +1,7 @@
 import React from "react";
-import { ZoomableImage } from './ZoomableImage';
-import { Button } from '@/components/ui/button';
-import { Trash } from 'lucide-react';
+import { ZoomableImage } from "./ZoomableImage";
+import { Button } from "@/components/ui/button";
+import { Trash } from "lucide-react";
 
 interface Props {
   url: string;
@@ -14,7 +14,7 @@ export default function ImageEditor({
   url,
   disabled,
   onDelete,
-  readOnly = false
+  readOnly = false,
 }: Props) {
   return (
     <div
@@ -26,7 +26,7 @@ export default function ImageEditor({
           onClick={onDelete}
           variant="outline"
           size="icon"
-          className="z-1 invisible absolute right-2 top-2 h-6 w-6 group-hover:visible"
+          className="invisible absolute top-2 right-2 z-1 h-6 w-6 group-hover:visible"
         >
           <Trash size={14} />
         </Button>

@@ -1,7 +1,12 @@
-import { app } from 'electron';
-import path from 'path';
-import fs from 'fs/promises';
-import { generateMcpId } from './id-generator';
+import { app } from "electron";
+import path from "path";
+import fs from "fs/promises";
+import keytar from "keytar";
+import {
+  McpAuth,
+  McpSubmitData,
+} from "@/components/mcp-builder/start-mcp-dialog";
+import { generateMcpId } from "./id-generator";
 
 // Define endpoint data structure
 export interface McpEndpoint {
@@ -13,14 +18,11 @@ export interface McpEndpoint {
 
 // Define the MCP data structure that will be stored in files
 export interface McpApiGroup {
-    name: string;
-    serverUrl?: string;
-    useMockData: boolean;
-    auth: {
-      type: string;
-      [key: string]: any;
-    };
-    endpoints?: McpEndpoint[];
+  name: string;
+  serverUrl?: string;
+  useMockData?: boolean;
+  auth: McpAuth;
+  endpoints?: McpEndpoint[];
 }
 
 export interface McpData {
@@ -30,19 +32,22 @@ export interface McpData {
   apiGroups: Record<string, McpApiGroup>;
   createdAt: string;
   updatedAt: string;
-  // Optional credentials property populated by getMcpById when includeCredentials is true
-  credentials?: Record<string, any>;
 }
+
+// Service name for keytar - must match the one in mcp-listeners.ts
+const SERVICE_NAME = "agentport-mcp-credentials";
+// Account name for keytar - must match the one in mcp-listeners.ts
+const ACCOUNT_NAME = "tar";
 
 // Define the directory where MCP data will be stored
 export const getMcpDataDir = () => {
-  const userDataPath = app.getPath('userData');
-  return path.join(userDataPath, 'mcp-data');
+  const userDataPath = app.getPath("userData");
+  return path.join(userDataPath, "mcp-data");
 };
 
 export const getMcpImplDir = () => {
-  const userDataPath = app.getPath('userData');
-  return path.join(userDataPath, 'mcp-impl');
+  const userDataPath = app.getPath("userData");
+  return path.join(userDataPath, "mcp-impl");
 };
 
 // Ensure the MCP data directory exists
@@ -51,7 +56,7 @@ const ensureMcpDataDir = async () => {
   try {
     await fs.mkdir(mcpDataDir, { recursive: true });
   } catch (error) {
-    console.error('Failed to create MCP data directory:', error);
+    console.error("Failed to create MCP data directory:", error);
     throw error;
   }
 };
@@ -76,51 +81,64 @@ const mcpExists = async (mcpId: string): Promise<boolean> => {
 };
 
 // Create a new MCP configuration with optional credentials
-const createMcp = async (mcpData: Omit<McpData, 'id' | 'createdAt' | 'updatedAt'>, credentials?: Record<string, any>): Promise<string> => {
+const createMcp = async (
+  mcpData: McpSubmitData,
+  credentials?: Record<string, McpAuth>,
+): Promise<string> => {
   await ensureMcpDataDir();
-  
+
   // Generate a unique ID for the MCP
   const mcpId = generateMcpId(mcpData.name);
-  
+
   // Create the MCP data file with timestamps
   const now = new Date().toISOString();
   const fullMcpData: McpData = {
     ...mcpData,
     id: mcpId,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
   };
-  
-  await fs.writeFile(getMcpFilePath(mcpId), JSON.stringify(fullMcpData, null, 2));
-  
+
+  await fs.writeFile(
+    getMcpFilePath(mcpId),
+    JSON.stringify(fullMcpData, null, 2),
+  );
+
   // If credentials are provided, store them
   if (credentials && Object.keys(credentials).length > 0) {
     try {
-      await keytar.setPassword(SERVICE_NAME, `${ACCOUNT_NAME}-${mcpId}`, JSON.stringify(credentials));
+      await keytar.setPassword(
+        SERVICE_NAME,
+        `${ACCOUNT_NAME}-${mcpId}`,
+        JSON.stringify(credentials),
+      );
     } catch (credError) {
-      console.error(`Error storing credentials for MCP with ID ${mcpId}:`, credError);
+      console.error(
+        `Error storing credentials for MCP with ID ${mcpId}:`,
+        credError,
+      );
       // Continue even if credential storage fails
     }
   }
-  
+
   return mcpId;
 };
 
 // List all MCPs
 const listMcps = async (): Promise<McpData[]> => {
   await ensureMcpDataDir();
-  
+
   try {
     const files = await fs.readdir(getMcpDataDir());
     // Filter only MCP data files
-    const mcpFiles = files.filter(file => file.endsWith('.json'));
-    
+    const mcpFiles = files.filter((file) => file.endsWith(".json"));
+
     const mcps: McpData[] = [];
-    
+
     for (const file of mcpFiles) {
       try {
         const filePath = path.join(getMcpDataDir(), file);
-        const fileContent = await fs.readFile(filePath, 'utf-8');
+        const fileContent = await fs.readFile(filePath, "utf-8");
         const mcpData = JSON.parse(fileContent) as McpData;
         mcps.push(mcpData);
       } catch (error) {
@@ -128,48 +146,40 @@ const listMcps = async (): Promise<McpData[]> => {
         // Continue with other files
       }
     }
-    
+
     return mcps;
   } catch (error) {
-    console.error('Error listing MCPs:', error);
+    console.error("Error listing MCPs:", error);
     return [];
   }
 };
 
-// Import keytar for credentials access
-import keytar from 'keytar';
-
-// Service name for keytar - must match the one in mcp-listeners.ts
-const SERVICE_NAME = "agentport-mcp-credentials";
-// Account name for keytar - must match the one in mcp-listeners.ts
-const ACCOUNT_NAME = "tar";
-
 // Get an MCP by ID
-const getMcpById = async (id: string, includeCredentials: boolean = false): Promise<McpData | null> => {
-  if (!await mcpExists(id)) {
+const getMcpById = async (
+  id: string,
+  includeCredentials: boolean = false,
+): Promise<McpData | null> => {
+  if (!(await mcpExists(id))) {
     return null;
   }
-  
+
   try {
-    const fileContent = await fs.readFile(getMcpFilePath(id), 'utf-8');
+    const fileContent = await fs.readFile(getMcpFilePath(id), "utf-8");
     const mcpData = JSON.parse(fileContent) as McpData;
-    
+
     // If requested, fetch and include credentials
     if (includeCredentials) {
       try {
-        const credentialsJson = await keytar.getPassword(SERVICE_NAME, `${ACCOUNT_NAME}-${id}`);
-        if (credentialsJson) {
-          const credentials = JSON.parse(credentialsJson);
-          
-          // Add credentials to the MCP data
-          mcpData.credentials = credentials;
-        }
+        // todo
       } catch (credError) {
-        console.error(`Error fetching credentials for MCP with ID ${id}:`, credError);
+        console.error(
+          `Error fetching credentials for MCP with ID ${id}:`,
+          credError,
+        );
         // Continue without credentials if there's an error
       }
     }
-    
+
     return mcpData;
   } catch (error) {
     console.error(`Error getting MCP with ID ${id}:`, error);
@@ -178,18 +188,21 @@ const getMcpById = async (id: string, includeCredentials: boolean = false): Prom
 };
 
 // Update an MCP - completely rewrites the file with new data
-const updateMcp = async (id: string, mcpData: Omit<McpData, 'id' | 'createdAt' | 'updatedAt'>): Promise<boolean> => {
-  if (!await mcpExists(id)) {
+const updateMcp = async (
+  id: string,
+  mcpData: McpSubmitData,
+): Promise<boolean> => {
+  if (!(await mcpExists(id))) {
     return false;
   }
-  
+
   try {
     // Get existing MCP data just for the id, createdAt fields
     const existingMcpData = await getMcpById(id);
     if (!existingMcpData) {
       return false;
     }
-    
+
     // Create a completely new MCP data object with the provided data
     // Only preserve the id and createdAt from the existing data
     const updatedMcpData: McpData = {
@@ -198,12 +211,15 @@ const updateMcp = async (id: string, mcpData: Omit<McpData, 'id' | 'createdAt' |
       updatedAt: new Date().toISOString(),
       name: mcpData.name,
       transport: mcpData.transport,
-      apiGroups: mcpData.apiGroups
+      apiGroups: mcpData.apiGroups,
     };
-    
+
     // Write the completely new data to the file
-    await fs.writeFile(getMcpFilePath(id), JSON.stringify(updatedMcpData, null, 2));
-    
+    await fs.writeFile(
+      getMcpFilePath(id),
+      JSON.stringify(updatedMcpData, null, 2),
+    );
+
     return true;
   } catch (error) {
     console.error(`Error updating MCP with ID ${id}:`, error);
@@ -213,10 +229,10 @@ const updateMcp = async (id: string, mcpData: Omit<McpData, 'id' | 'createdAt' |
 
 // Delete an MCP
 const deleteMcp = async (id: string): Promise<boolean> => {
-  if (!await mcpExists(id)) {
+  if (!(await mcpExists(id))) {
     return false;
   }
-  
+
   try {
     // Delete the MCP file
     await fs.unlink(getMcpFilePath(id));
@@ -234,5 +250,5 @@ export const mcpDb = {
   getMcpById,
   updateMcp,
   deleteMcp,
-  mcpExists
+  mcpExists,
 };

@@ -23,9 +23,17 @@ export interface SubNavProps {
   onValueChange?: (value: string) => void;
 }
 
-export function SubNav({ items, defaultValue, className, value, onValueChange }: SubNavProps) {
+export function SubNav({
+  items,
+  defaultValue,
+  className,
+  value,
+  onValueChange,
+}: SubNavProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(value || defaultValue || items[0]?.value || "");
+  const [activeTab, setActiveTab] = useState(
+    value || defaultValue || items[0]?.value || "",
+  );
   const [pathname, setPathname] = useState("");
 
   useEffect(() => {
@@ -34,7 +42,7 @@ export function SubNav({ items, defaultValue, className, value, onValueChange }:
       setActiveTab(value);
       return;
     }
-    
+
     // Set the initial pathname
     setPathname(window.location.pathname);
 
@@ -59,24 +67,24 @@ export function SubNav({ items, defaultValue, className, value, onValueChange }:
 
   return (
     <div className={cn("mb-4", className)}>
-        <NavigationMenu className="w-full">
-          <NavigationMenuList className="h-fit bg-transparent space-x-4 p-0 justify-start">
-            {items.map((item) => (
-              <NavigationMenuItem key={item.value}>
-                <div
-                  className={cn(
-                    "cursor-pointer h-full rounded-none border-0 border-b-2 border-transparent px-1 pb-1 text-sm",
-                    "text-muted-foreground hover:text-foreground transition-colors",
-                    activeTab === item.value && "border-primary text-foreground"
-                  )}
-                  onClick={() => handleNavigation(item.href, item.value)}
-                >
-                  {item.name}
-                </div>
-              </NavigationMenuItem>
-            ))}
-          </NavigationMenuList>
-        </NavigationMenu>
+      <NavigationMenu className="w-full">
+        <NavigationMenuList className="h-fit justify-start space-x-4 bg-transparent p-0">
+          {items.map((item) => (
+            <NavigationMenuItem key={item.value}>
+              <div
+                className={cn(
+                  "h-full cursor-pointer rounded-none border-0 border-b-2 border-transparent px-1 pb-1 text-sm",
+                  "text-muted-foreground hover:text-foreground transition-colors",
+                  activeTab === item.value && "border-primary text-foreground",
+                )}
+                onClick={() => handleNavigation(item.href, item.value)}
+              >
+                {item.name}
+              </div>
+            </NavigationMenuItem>
+          ))}
+        </NavigationMenuList>
+      </NavigationMenu>
     </div>
   );
 }
