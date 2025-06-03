@@ -64,7 +64,11 @@ export default function useToolMap() {
           description: mcpTool.description,
           parameters: jsonSchema(mcpTool.inputSchema as JSONSchema7),
           execute: (args) =>
-            window.mcpApi.callMcpTool(mcpId, mcpTool.name, args as Record<string, unknown>),
+            window.mcpApi.callMcpTool(
+              mcpId,
+              mcpTool.name,
+              args as Record<string, unknown>,
+            ),
         });
       });
     });

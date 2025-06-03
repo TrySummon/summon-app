@@ -6,6 +6,4 @@ export { PresenceSelector } from "./PresencePenalty";
 export { TemperatureSelector } from "./Temperature";
 export { ProviderSelector } from "./ProviderSelector";
 
-export type {
-  IModelConfiguration,
-} from "./LLMPicker";
+export type { IModelConfiguration } from "./LLMPicker";

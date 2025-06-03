@@ -50,17 +50,11 @@ export const LeftColumn: React.FC<LeftColumnProps> = ({
       )}
 
       {pathParams && pathParams.length > 0 && (
-        <ParametersSection
-          title="Path Parameters"
-          parameters={pathParams}
-        />
+        <ParametersSection title="Path Parameters" parameters={pathParams} />
       )}
 
       {queryParams && queryParams.length > 0 && (
-        <ParametersSection
-          title="Query Parameters"
-          parameters={queryParams}
-        />
+        <ParametersSection title="Query Parameters" parameters={queryParams} />
       )}
 
       {headerParams && headerParams.length > 0 && (

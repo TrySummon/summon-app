@@ -7,7 +7,6 @@ import {
 } from "./ai-providers-channels";
 
 export function exposeAIProvidersContext() {
-
   contextBridge.exposeInMainWorld("aiProviders", {
     getCredentials: () =>
       ipcRenderer.invoke(AI_PROVIDERS_GET_CREDENTIALS_CHANNEL),
