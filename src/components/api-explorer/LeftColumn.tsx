@@ -21,13 +21,13 @@ export const LeftColumn: React.FC<LeftColumnProps> = ({
 }) => {
   const pathParams = operation.parameters?.filter(
     (p) => "in" in p && p.in === "path",
-  ) as (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[] | undefined;
+  ) as OpenAPIV3.ParameterObject[] | undefined;
   const queryParams = operation.parameters?.filter(
     (p) => "in" in p && p.in === "query",
-  ) as (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[] | undefined;
+  ) as OpenAPIV3.ParameterObject[] | undefined;
   const headerParams = operation.parameters?.filter(
     (p) => "in" in p && p.in === "header",
-  ) as (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[] | undefined;
+  ) as OpenAPIV3.ParameterObject[] | undefined;
 
   return (
     <div className="flex w-full flex-col gap-6 xl:pr-8">
@@ -45,8 +45,7 @@ export const LeftColumn: React.FC<LeftColumnProps> = ({
       {operation.requestBody && (
         <ParametersSection
           title="Body Parameters"
-          requestBody={operation.requestBody}
-          openapiSpec={openapiSpec}
+          requestBody={operation.requestBody as OpenAPIV3.RequestBodyObject}
         />
       )}
 
@@ -54,7 +53,6 @@ export const LeftColumn: React.FC<LeftColumnProps> = ({
         <ParametersSection
           title="Path Parameters"
           parameters={pathParams}
-          openapiSpec={openapiSpec}
         />
       )}
 
@@ -62,7 +60,6 @@ export const LeftColumn: React.FC<LeftColumnProps> = ({
         <ParametersSection
           title="Query Parameters"
           parameters={queryParams}
-          openapiSpec={openapiSpec}
         />
       )}
 
@@ -70,7 +67,6 @@ export const LeftColumn: React.FC<LeftColumnProps> = ({
         <ParametersSection
           title="Header Parameters"
           parameters={headerParams}
-          openapiSpec={openapiSpec}
         />
       )}
 

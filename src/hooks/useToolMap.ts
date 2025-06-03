@@ -1,9 +1,9 @@
-import { Tool as McpTool } from "@modelcontextprotocol/sdk/types";
 import { useMcps } from "./useMcps";
 import { useEffect, useState } from "react";
 import { jsonSchema, Tool, tool } from "ai";
 import { useExternalMcps } from "./useExternalMcps";
 import type { JSONSchema7 } from "json-schema";
+import { Tool as McpTool } from "@modelcontextprotocol/sdk/types.js";
 
 type ToolMapEntry = {
   name: string;
@@ -64,7 +64,7 @@ export default function useToolMap() {
           description: mcpTool.description,
           parameters: jsonSchema(mcpTool.inputSchema as JSONSchema7),
           execute: (args) =>
-            window.mcpApi.callMcpTool(mcpId, mcpTool.name, args),
+            window.mcpApi.callMcpTool(mcpId, mcpTool.name, args as Record<string, unknown>),
         });
       });
     });

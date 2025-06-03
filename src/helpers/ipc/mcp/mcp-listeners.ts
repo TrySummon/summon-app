@@ -76,7 +76,7 @@ export function registerMcpListeners() {
   // Get a specific MCP by ID
   ipcMain.handle(GET_MCP_CHANNEL, async (_, id: string) => {
     try {
-      const mcpData = await mcpDb.getMcpById(id);
+      const mcpData = await mcpDb.getMcpById(id, true);
 
       if (!mcpData) {
         return {

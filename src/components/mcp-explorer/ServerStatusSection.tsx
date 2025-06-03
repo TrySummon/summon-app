@@ -68,7 +68,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
               Transport: {transport}
             </p>
           </div>
-          <Badge className="bg-green-100 text-green-800 transition-colors hover:bg-green-200">
+          <Badge className="border-green-500/20 bg-green-500/10 text-green-700 transition-colors hover:bg-green-500/20 dark:text-green-400">
             <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-green-500"></span>
             Running
           </Badge>
@@ -120,12 +120,12 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
     return (
       <div>
         <h2 className="mb-4 text-xl font-bold">MCP Server Status</h2>
-        <Alert className="border-yellow-500 bg-yellow-50">
-          <AlertCircle className="h-4 w-4 text-yellow-500" />
-          <AlertTitle className="text-yellow-700">
+        <Alert className="border-yellow-500/30 bg-yellow-500/10 dark:bg-yellow-500/5">
+          <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
+          <AlertTitle className="text-yellow-800 dark:text-yellow-300">
             Server is starting
           </AlertTitle>
-          <AlertDescription className="text-yellow-600">
+          <AlertDescription className="text-yellow-700 dark:text-yellow-400">
             Your MCP server is currently starting up. Please wait a moment...
           </AlertDescription>
         </Alert>
@@ -161,7 +161,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
         </Alert>
         <div className="mt-4 flex justify-end">
           <Button onClick={refreshStatus} variant="outline" className="gap-1">
-            <RefreshCw className="h- w-" />
+            <RefreshCw className="h-3 w-3" />
             Refresh Status
           </Button>
         </div>
@@ -173,10 +173,12 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
   return (
     <div>
       <h2 className="mb-4 text-xl font-bold">MCP Server Status</h2>
-      <Alert className="border-gray-400">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Server is not running</AlertTitle>
-        <AlertDescription>
+      <Alert className="border-muted bg-muted/30">
+        <AlertCircle className="text-muted-foreground h-4 w-4" />
+        <AlertTitle className="text-foreground">
+          Server is not running
+        </AlertTitle>
+        <AlertDescription className="text-muted-foreground">
           Your MCP server is currently stopped. Start the server to access it.
         </AlertDescription>
       </Alert>

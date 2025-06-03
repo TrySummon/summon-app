@@ -2,13 +2,13 @@
 
 import * as React from "react";
 
-import ChipInput from "@/components/atoms/ChipInput";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Label } from "@/components/ui/label";
+import ChipInput from "../ChipInput";
 
 type StopSelectorProps = {
   value: string[];

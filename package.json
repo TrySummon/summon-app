@@ -1,8 +1,8 @@
 {
-  "name": "electron-shadcn",
-  "productName": "electron-shadcn Template",
-  "version": "1.0.0",
-  "description": "Electron Forge with shadcn-ui (Vite + Typescript)",
+  "name": "AgentPort",
+  "productName": "AgentPort",
+  "version": "0.0.1-alpha",
+  "description": "Your integrated environment for designing, building, and testing Model Context Protocol (MCP) servers and AI agents.",
   "main": ".vite/build/main.js",
   "private": true,
   "scripts": {
@@ -91,7 +91,6 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.4",
     "@hookform/resolvers": "^5.0.1",
-    "@icons-pack/react-simple-icons": "^12.7.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-aspect-ratio": "^1.1.6",

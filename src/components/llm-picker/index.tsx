@@ -8,5 +8,4 @@ export { ProviderSelector } from "./ProviderSelector";
 
 export type {
   IModelConfiguration,
-  IModelConfigurationWithCredential,
 } from "./LLMPicker";

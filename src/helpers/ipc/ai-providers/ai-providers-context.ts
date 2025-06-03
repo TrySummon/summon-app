@@ -1,3 +1,4 @@
+import { contextBridge, ipcRenderer } from "electron";
 import { AIProviderCredential } from "@/components/ai-providers/types";
 import {
   AI_PROVIDERS_GET_CREDENTIALS_CHANNEL,
@@ -6,7 +7,6 @@ import {
 } from "./ai-providers-channels";
 
 export function exposeAIProvidersContext() {
-  const { contextBridge, ipcRenderer } = window.require("electron");
 
   contextBridge.exposeInMainWorld("aiProviders", {
     getCredentials: () =>

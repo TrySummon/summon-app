@@ -1,3 +1,4 @@
+import { contextBridge, ipcRenderer } from "electron";
 import {
   IMPORT_API_CHANNEL,
   LIST_APIS_CHANNEL,
@@ -9,8 +10,6 @@ import { OpenAPIV3 } from "openapi-types";
 
 export function exposeOpenApiContext() {
   try {
-    const { contextBridge, ipcRenderer } = window.require("electron");
-
     contextBridge.exposeInMainWorld("openapi", {
       import: (file: File) => {
         // Convert File to buffer for IPC transfer

@@ -30,7 +30,9 @@ export default function BuildMcpPage() {
   // State for edit mode
   const [isEditMode, setIsEditMode] = useState(false);
   const [editMcpId, setEditMcpId] = useState<string | null>(null);
-  const [editMcpData, setEditMcpData] = useState<McpData | null>(null);
+  const [editMcpData, setEditMcpData] = useState<McpData | undefined>(
+    undefined,
+  );
   const [isLoadingMcp, setIsLoadingMcp] = useState(false);
 
   // State for API picker dialog
@@ -60,7 +62,7 @@ export default function BuildMcpPage() {
       // Reset edit mode when edit parameter is removed
       setIsEditMode(false);
       setEditMcpId(null);
-      setEditMcpData(null);
+      setEditMcpData(undefined);
       setSelectedEndpoints([]);
     }
   }, [editParam]);
