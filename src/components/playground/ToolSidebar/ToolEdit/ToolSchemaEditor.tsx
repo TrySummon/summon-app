@@ -146,7 +146,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                           <code 
                             className={cn(
                               "text-sm font-mono font-semibold cursor-pointer hover:bg-muted/50 px-1 py-0.5 rounded transition-colors",
-                              (isNameModified || isNewProperty) && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200"
+                              (isNameModified || isNewProperty) && "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200"
                             )}
                             onClick={!isDisabledUi ? () => handleStartEditName(propertyName) : undefined}
                           >
@@ -207,7 +207,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                         <p 
                           className={cn(
                             "text-sm text-muted-foreground min-h-[20px] flex-1 cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors",
-                            isDescriptionModified && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200"
+                            isDescriptionModified && "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200"
                           )}
                           onClick={!isDisabledUi ? () => handleStartEditDesc(propertyName, propSchema.description || '') : undefined}
                         >

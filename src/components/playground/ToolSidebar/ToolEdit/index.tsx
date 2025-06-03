@@ -261,7 +261,7 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                       <h2 
                         className={cn(
                           "cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors",
-                          currentName !== tool.name && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200"
+                          currentName !== tool.name && "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200"
                         )}
                         onClick={() => setEditingName(true)}
                       >
@@ -311,7 +311,7 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                     <p 
                       className={cn(
                         "text-sm text-muted-foreground min-h-[20px] flex-1 cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors",
-                        currentDescription !== (tool.description || '') && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200"
+                        currentDescription !== (tool.description || '') && "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200"
                       )}
                       onClick={() => setEditingDescription(true)}
                     >

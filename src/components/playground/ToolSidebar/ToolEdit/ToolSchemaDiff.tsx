@@ -420,17 +420,17 @@ const PropertyDiff: React.FC<PropertyDiffProps> = ({ change }) => {
         };
       case 'name_changed':
         return {
-          border: 'border-purple-500/30',
-          bg: 'bg-purple-500/10 dark:bg-purple-500/5',
-          text: 'text-purple-700 dark:text-purple-400',
-          badge: 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600'
+          border: 'border-blue-500/30',
+          bg: 'bg-blue-500/10 dark:bg-blue-500/5',
+          text: 'text-blue-700 dark:text-blue-400',
+          badge: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
         };
       default:
         return {
-          border: 'border-yellow-500/30',
-          bg: 'bg-yellow-500/10 dark:bg-yellow-500/5',
-          text: 'text-yellow-700 dark:text-yellow-400',
-          badge: 'bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600'
+          border: 'border-blue-500/30',
+          bg: 'bg-blue-500/10 dark:bg-blue-500/5',
+          text: 'text-blue-700 dark:text-blue-400',
+          badge: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
         };
     }
   };
