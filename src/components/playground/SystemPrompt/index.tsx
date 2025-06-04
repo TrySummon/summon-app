@@ -42,7 +42,7 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({ className }) => {
         length: systemPrompt.length,
       });
     }
-  }, [isExpanded])
+  }, [isExpanded]);
 
   // Update editor content when text changes
   useEffect(() => {

@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import { Clock, Check, Wrench, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/utils/tailwind";
 import { ToolInvocation } from "ai";
 import {
@@ -29,7 +34,10 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
     setLoading(true);
     const toolInfo = findOriginalToolInfo(invocation.toolName);
     if (!toolInfo) {
-      console.error("Could not find original tool info for:", invocation.toolName);
+      console.error(
+        "Could not find original tool info for:",
+        invocation.toolName,
+      );
       addToolResult(invocation.toolCallId, {
         success: false,
         message: "Could not find original tool information",
@@ -39,7 +47,10 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
     }
 
     try {
-      const executeFunction = makeExecuteFunction(toolInfo.mcpId, toolInfo.originalToolName);
+      const executeFunction = makeExecuteFunction(
+        toolInfo.mcpId,
+        toolInfo.originalToolName,
+      );
       const result = await executeFunction(invocation.args);
       addToolResult(invocation.toolCallId, result);
     } catch (error) {
@@ -151,7 +162,7 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
               </TooltipTrigger>
               <TooltipContent>
                 <p>Tool: {invocation.toolName}</p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-muted-foreground mt-1 text-xs">
                   ID: {invocation.toolCallId}
                 </p>
               </TooltipContent>
@@ -173,7 +184,14 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
         </div>
 
         {/* Content */}
-        <Accordion type="single" defaultValue={invocation.state === "partial-call" ? "arguments" : undefined} collapsible className="w-full">
+        <Accordion
+          type="single"
+          defaultValue={
+            invocation.state === "partial-call" ? "arguments" : undefined
+          }
+          collapsible
+          className="w-full"
+        >
           {/* Arguments Section */}
           <AccordionItem value="arguments" className="border-none">
             <Tooltip>

@@ -6,7 +6,12 @@ import React, {
   useState,
 } from "react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { usePlaygroundStore } from "../store";
 import { Attachment, UIMessage } from "ai";
 import { v4 as uuidv4 } from "uuid";
@@ -25,7 +30,9 @@ export default function MessageComposer() {
   const autoExecuteTools = usePlaygroundStore(
     (state) => state.getCurrentState().autoExecuteTools ?? false,
   );
-  const updateCurrentState = usePlaygroundStore((state) => state.updateCurrentState);
+  const updateCurrentState = usePlaygroundStore(
+    (state) => state.updateCurrentState,
+  );
   const addMessage = usePlaygroundStore((state) => state.addMessage);
   const stopAgent = usePlaygroundStore((state) => state.stopAgent);
 
@@ -125,9 +132,9 @@ export default function MessageComposer() {
         autoExecuteTools: !state.autoExecuteTools,
       }),
       false, // Don't add to history
-      `${autoExecuteTools ? 'Disabled' : 'Enabled'} auto-execute tools`
+      `${autoExecuteTools ? "Disabled" : "Enabled"} auto-execute tools`,
     );
-    
+
     captureEvent("playground_auto_execute_toggled", {
       enabled: !autoExecuteTools,
     });
@@ -161,27 +168,30 @@ export default function MessageComposer() {
     );
   }, [handleAddMessage, disabled, running, stopAgent, captureEvent]);
 
-  const autoExecuteToggle = useMemo(() => (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant={autoExecuteTools ? "secondary" : "ghost"}
-            size="sm"
-            onClick={handleToggleAutoExecute}
-            disabled={running}
-            className="flex items-center gap-1.5"
-          >
-            <Zap className="h-3.5 w-3.5" />
-            Auto
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Auto-execute tools: {autoExecuteTools ? 'ON' : 'OFF'}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  ), [autoExecuteTools, handleToggleAutoExecute, running]);
+  const autoExecuteToggle = useMemo(
+    () => (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={autoExecuteTools ? "secondary" : "ghost"}
+              size="sm"
+              onClick={handleToggleAutoExecute}
+              disabled={running}
+              className="flex items-center gap-1.5"
+            >
+              <Zap className="h-3.5 w-3.5" />
+              Auto
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Auto-execute tools: {autoExecuteTools ? "ON" : "OFF"}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ),
+    [autoExecuteTools, handleToggleAutoExecute, running],
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col px-4">

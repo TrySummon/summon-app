@@ -22,7 +22,9 @@ export default function Messages() {
     messages.map((message, i) => (
       <div
         key={message.id + i}
-        className={cn("border hover:border-accent  border-transparent rounded-md px-4 pb-4")}
+        className={cn(
+          "hover:border-accent rounded-md border border-transparent px-4 pb-4",
+        )}
       >
         <Message message={message} index={i} />
       </div>

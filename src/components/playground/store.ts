@@ -77,9 +77,10 @@ export interface PlaygroundStore {
   ) => void;
   updateShouldScrollToDock: (shouldScrollToDock: boolean) => void;
   setShowToolSidebar: (show: boolean) => void;
-  addToolResult: (toolCallId: string, result: { success: boolean;
-    data?: unknown;
-    message?: string;}) => void;
+  addToolResult: (
+    toolCallId: string,
+    result: { success: boolean; data?: unknown; message?: string },
+  ) => void;
 
   // History management
   undo: () => string | null;
@@ -314,20 +315,24 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
 
       addToolResult: (toolCallId, result) => {
         const messages = get().getCurrentState().messages;
-        const messageIndex = messages.findIndex((message) => 
-          message.parts.some((part) => 
-            part.type === "tool-invocation" && 
-            part.toolInvocation.toolCallId === toolCallId
-          )
+        const messageIndex = messages.findIndex((message) =>
+          message.parts.some(
+            (part) =>
+              part.type === "tool-invocation" &&
+              part.toolInvocation.toolCallId === toolCallId,
+          ),
         );
-        
+
         if (messageIndex === -1) return;
 
         const message = messages[messageIndex];
         const updatedMessage = {
           ...message,
           parts: message.parts.map((part) => {
-            if (part.type === "tool-invocation" && part.toolInvocation.toolCallId === toolCallId) {
+            if (
+              part.type === "tool-invocation" &&
+              part.toolInvocation.toolCallId === toolCallId
+            ) {
               return {
                 ...part,
                 toolInvocation: {
@@ -350,10 +355,11 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
         // Check if any message still has a pending tool call (state === "partial-call")
         const updatedMessages = get().getCurrentState().messages;
         const hasPendingToolCalls = updatedMessages.some((msg) =>
-          msg.parts.some((part) =>
-            part.type === "tool-invocation" && 
-            part.toolInvocation.state === "partial-call"
-          )
+          msg.parts.some(
+            (part) =>
+              part.type === "tool-invocation" &&
+              part.toolInvocation.state === "partial-call",
+          ),
         );
 
         // If no pending tool calls remain, run the agent

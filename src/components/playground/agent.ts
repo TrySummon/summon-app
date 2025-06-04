@@ -116,38 +116,35 @@ export function makeExecuteFunction(mcpId: string, toolName: string) {
   return (args: unknown) => {
     const store = usePlaygroundStore.getState();
 
-      const mcp = store.mcpToolMap[mcpId];
-      const tool = mcp.tools.find((tool) => tool.name === toolName);
+    const mcp = store.mcpToolMap[mcpId];
+    const tool = mcp.tools.find((tool) => tool.name === toolName);
 
-      if (!tool) {
-        throw new Error(`Tool ${toolName} not found for MCP ${mcpId}`);
-      }
+    if (!tool) {
+      throw new Error(`Tool ${toolName} not found for MCP ${mcpId}`);
+    }
 
-      const currentState = store.getCurrentState();
+    const currentState = store.getCurrentState();
 
-      const modification = currentState.modifiedToolMap[mcpId]?.[toolName];
+    const modification = currentState.modifiedToolMap[mcpId]?.[toolName];
 
     if (modification) {
-    // Remap modified args back to original args
-    args = remapArgsToOriginal(
-      args as Record<string, unknown>,
-      tool.inputSchema as unknown as JSONSchema7,
-      modification.schema,
-    );
-
-    // Track tool call event
-    captureEvent("playground_ai_agent_tool_remap_args", {
-      argsCount: Object.keys(args as Record<string, unknown>)
-        .length,
-      argsKeyCount: recurseCountKeys(
+      // Remap modified args back to original args
+      args = remapArgsToOriginal(
         args as Record<string, unknown>,
-      ),
-    });
-  }
-    
+        tool.inputSchema as unknown as JSONSchema7,
+        modification.schema,
+      );
+
+      // Track tool call event
+      captureEvent("playground_ai_agent_tool_remap_args", {
+        argsCount: Object.keys(args as Record<string, unknown>).length,
+        argsKeyCount: recurseCountKeys(args as Record<string, unknown>),
+      });
+    }
+
     // Always call with the original tool name for API compatibility
     return callMcpTool(mcpId, tool.name, args as Record<string, unknown>);
-  }
+  };
 }
 
 export async function runAgent() {
@@ -227,14 +224,19 @@ export async function runAgent() {
           const modification = modifiedToolMap[mcpId]?.[mcpTool.name];
 
           const finalName = modification?.name || mcpTool.name;
-          const finalDescription = modification?.description || mcpTool.description;
-          const finalParameters = modification?.schema ? jsonSchema(modification.schema) : jsonSchema(mcpTool.inputSchema as unknown as JSONSchema7);
+          const finalDescription =
+            modification?.description || mcpTool.description;
+          const finalParameters = modification?.schema
+            ? jsonSchema(modification.schema)
+            : jsonSchema(mcpTool.inputSchema as unknown as JSONSchema7);
 
           const aiTool = makeTool({
             description: finalDescription,
             parameters: finalParameters,
             // @ts-expect-error AI SDK typing issue.
-            execute: autoExecuteTools ? makeExecuteFunction(mcpId, mcpTool.name) : undefined,
+            execute: autoExecuteTools
+              ? makeExecuteFunction(mcpId, mcpTool.name)
+              : undefined,
           });
 
           toolSet[finalName] = aiTool;
@@ -308,9 +310,9 @@ export async function runAgent() {
 
           const toolMessages: UIMessage[] = [];
           step.toolCalls.forEach((toolCall, i) => {
-            const result = step.toolResults[i] ? (
-              step.toolResults[i] as unknown as { result: unknown }
-            ).result : undefined;
+            const result = step.toolResults[i]
+              ? (step.toolResults[i] as unknown as { result: unknown }).result
+              : undefined;
 
             const toolMessage: UIMessage = {
               id: toolCall.toolCallId,
@@ -477,7 +479,9 @@ export function findOriginalToolInfo(modifiedToolName: string): {
 
   // First, check if this is a modified tool name
   for (const [mcpId, mcpModifications] of Object.entries(modifiedToolMap)) {
-    for (const [originalToolName, modification] of Object.entries(mcpModifications)) {
+    for (const [originalToolName, modification] of Object.entries(
+      mcpModifications,
+    )) {
       if (modification.name === modifiedToolName) {
         return { mcpId, originalToolName };
       }
