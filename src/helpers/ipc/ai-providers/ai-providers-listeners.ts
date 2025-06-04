@@ -1,5 +1,6 @@
-import { ipcMain } from "electron";
-import keytar from "keytar";
+import { ipcMain, safeStorage, app } from "electron";
+import path from "path";
+import fs from "fs/promises";
 import {
   AI_PROVIDERS_GET_CREDENTIALS_CHANNEL,
   AI_PROVIDERS_SAVE_CREDENTIAL_CHANNEL,
@@ -7,39 +8,78 @@ import {
 } from "./ai-providers-channels";
 import { AIProviderCredential } from "@/components/ai-providers/types";
 
-// Service name for keytar
-const SERVICE_NAME = "agentport-ai-providers";
+// Directory for storing encrypted credentials
+const getCredentialsDir = () => {
+  const userDataPath = app.getPath("userData");
+  return path.join(userDataPath, "ai-provider-credentials");
+};
+
+// Ensure the credentials directory exists
+const ensureCredentialsDir = async () => {
+  const credentialsDir = getCredentialsDir();
+  try {
+    await fs.access(credentialsDir);
+  } catch {
+    await fs.mkdir(credentialsDir, { recursive: true });
+  }
+};
+
+// Get the file path for storing encrypted credentials
+const getCredentialFilePath = (providerId: string) => {
+  return path.join(getCredentialsDir(), `${providerId}.enc`);
+};
 
 export function registerAIProvidersListeners() {
   // Get all credentials for AI providers
   ipcMain.handle(AI_PROVIDERS_GET_CREDENTIALS_CHANNEL, async () => {
     try {
-      // Get all accounts (provider names) from keytar
-      const accounts = await keytar.findCredentials(SERVICE_NAME);
+      if (!safeStorage.isEncryptionAvailable()) {
+        console.warn(
+          "Encryption not available, cannot retrieve AI provider credentials",
+        );
+        return [];
+      }
 
-      // Map accounts to provider objects
-      return accounts.map(({ account, password }) => {
-        try {
-          // Parse the stored JSON data
-          const providerData = JSON.parse(password);
+      const credentialsDir = getCredentialsDir();
 
-          return {
-            id: account,
-            ...providerData,
-          };
-        } catch (error) {
-          console.error(`Error parsing provider data for ${account}:`, error);
-          return {
-            id: account,
-            name: account,
-            configured: false,
-            error: "Invalid provider data format",
-          };
+      try {
+        const files = await fs.readdir(credentialsDir);
+        const credentials = [];
+
+        for (const file of files) {
+          if (file.endsWith(".enc")) {
+            const providerId = file.replace(".enc", "");
+            const filePath = path.join(credentialsDir, file);
+
+            try {
+              const encryptedData = await fs.readFile(filePath);
+              const decryptedData = safeStorage.decryptString(encryptedData);
+              const providerData = JSON.parse(decryptedData);
+
+              credentials.push({
+                id: providerId,
+                ...providerData,
+              });
+            } catch {
+              console.error(`Error parsing provider data for ${providerId}`);
+              credentials.push({
+                id: providerId,
+                name: providerId,
+                configured: false,
+                error: "Invalid provider data format",
+              });
+            }
+          }
         }
-      });
-    } catch (error: unknown) {
-      console.error("Error getting AI provider credentials:", error);
-      throw new Error(`Failed to get credentials: ${error}`);
+
+        return credentials;
+      } catch {
+        // Directory doesn't exist yet
+        return [];
+      }
+    } catch {
+      console.error("Error getting AI provider credentials");
+      throw new Error("Failed to get credentials");
     }
   });
 
@@ -48,16 +88,26 @@ export function registerAIProvidersListeners() {
     AI_PROVIDERS_SAVE_CREDENTIAL_CHANNEL,
     async (_, providerId: string, providerData: AIProviderCredential) => {
       try {
+        if (!safeStorage.isEncryptionAvailable()) {
+          console.warn(
+            "Encryption not available, credentials will not be stored",
+          );
+          return { success: false, error: "Encryption not available" };
+        }
+
         // Store the provider data as JSON
         const dataToStore = JSON.stringify(providerData);
 
-        // Save to keytar
-        await keytar.setPassword(SERVICE_NAME, providerId, dataToStore);
+        // Encrypt and save to file
+        await ensureCredentialsDir();
+        const encrypted = safeStorage.encryptString(dataToStore);
+        const filePath = getCredentialFilePath(providerId);
+        await fs.writeFile(filePath, encrypted);
 
         return { success: true };
-      } catch (error) {
-        console.error("Error saving AI provider credential:", error);
-        throw new Error(`Failed to save credential: ${error}`);
+      } catch {
+        console.error("Error saving AI provider credential");
+        throw new Error("Failed to save credential");
       }
     },
   );
@@ -67,13 +117,18 @@ export function registerAIProvidersListeners() {
     AI_PROVIDERS_DELETE_CREDENTIAL_CHANNEL,
     async (_, providerId: string) => {
       try {
-        // Delete from keytar
-        const result = await keytar.deletePassword(SERVICE_NAME, providerId);
+        const filePath = getCredentialFilePath(providerId);
 
-        return { success: result };
-      } catch (error) {
-        console.error("Error deleting AI provider credential:", error);
-        throw new Error(`Failed to delete credential: ${error}`);
+        try {
+          await fs.unlink(filePath);
+          return { success: true };
+        } catch {
+          // File doesn't exist, which is fine
+          return { success: true };
+        }
+      } catch {
+        console.error("Error deleting AI provider credential");
+        throw new Error("Failed to delete credential");
       }
     },
   );

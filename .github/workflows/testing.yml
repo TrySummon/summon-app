@@ -20,7 +20,7 @@ jobs:
 
   test-e2e:
     timeout-minutes: 10
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

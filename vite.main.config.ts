@@ -8,9 +8,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  build: {
-    rollupOptions: {
-      external: ["openapi-backend", "@apidevtools/swagger-parser", "keytar"],
-    },
-  },
 });

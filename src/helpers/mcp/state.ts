@@ -2,7 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioServerParameters } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransportOptions } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SSEClientTransportOptions } from "@modelcontextprotocol/sdk/client/sse.js";
-import { ChildProcess } from "child_process";
+import { UtilityProcess } from "electron";
 import { MockApiResult } from "../mock";
 
 // Define the status types for MCP servers
@@ -26,7 +26,7 @@ export interface McpServerState {
   status: McpServerStatus;
   error?: string;
   isExternal?: boolean;
-  serverProcess?: ChildProcess;
+  serverProcess?: UtilityProcess;
   mockProcesses: Record<string, MockApiResult>;
   transport?: McpTransport;
   client?: Client;

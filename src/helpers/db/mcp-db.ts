@@ -1,7 +1,6 @@
-import { app } from "electron";
+import { app, safeStorage } from "electron";
 import path from "path";
 import fs from "fs/promises";
-import keytar from "keytar";
 import {
   McpAuth,
   McpSubmitData,
@@ -34,9 +33,6 @@ export interface McpData {
   updatedAt: string;
 }
 
-// Service name for keytar - must match the one in mcp-listeners.ts
-const SERVICE_NAME = "agentport-mcp-credentials";
-
 // Define the directory where MCP data will be stored
 export const getMcpDataDir = () => {
   const userDataPath = app.getPath("userData");
@@ -46,6 +42,27 @@ export const getMcpDataDir = () => {
 export const getMcpImplDir = () => {
   const userDataPath = app.getPath("userData");
   return path.join(userDataPath, "mcp-impl");
+};
+
+// Directory for storing encrypted credentials
+const getCredentialsDir = () => {
+  const userDataPath = app.getPath("userData");
+  return path.join(userDataPath, "credentials");
+};
+
+// Ensure the credentials directory exists
+const ensureCredentialsDir = async () => {
+  const credentialsDir = getCredentialsDir();
+  try {
+    await fs.access(credentialsDir);
+  } catch {
+    await fs.mkdir(credentialsDir, { recursive: true });
+  }
+};
+
+// Get the file path for storing encrypted credentials
+const getCredentialFilePath = (key: string) => {
+  return path.join(getCredentialsDir(), `${key}.enc`);
 };
 
 // Ensure the MCP data directory exists
@@ -83,7 +100,7 @@ const getMcpCredentialKey = (mcpId: string, apiGroupName: string): string => {
   return `${mcpId}:${apiGroupName}`;
 };
 
-// Helper function to store credentials in keytar
+// Helper function to store credentials using safeStorage
 const storeCredentials = async (
   mcpId: string,
   apiGroupName: string,
@@ -92,61 +109,83 @@ const storeCredentials = async (
   // Only store credentials for auth types that have sensitive data
   if (auth.type === "bearerToken" && auth.token) {
     const key = getMcpCredentialKey(mcpId, apiGroupName);
-    await keytar.setPassword(
-      SERVICE_NAME,
-      key,
-      JSON.stringify({ type: "bearerToken", token: auth.token }),
-    );
+    const credentialData = JSON.stringify({
+      type: "bearerToken",
+      token: auth.token,
+    });
+
+    if (safeStorage.isEncryptionAvailable()) {
+      await ensureCredentialsDir();
+      const encrypted = safeStorage.encryptString(credentialData);
+      const filePath = getCredentialFilePath(key);
+      await fs.writeFile(filePath, encrypted);
+    } else {
+      console.warn("Encryption not available, credentials will not be stored");
+    }
   } else if (auth.type === "apiKey" && auth.key) {
     const key = getMcpCredentialKey(mcpId, apiGroupName);
-    await keytar.setPassword(
-      SERVICE_NAME,
-      key,
-      JSON.stringify({
-        type: "apiKey",
-        key: auth.key,
-        name: auth.name,
-        in: auth.in,
-      }),
-    );
+    const credentialData = JSON.stringify({
+      type: "apiKey",
+      key: auth.key,
+      name: auth.name,
+      in: auth.in,
+    });
+
+    if (safeStorage.isEncryptionAvailable()) {
+      await ensureCredentialsDir();
+      const encrypted = safeStorage.encryptString(credentialData);
+      const filePath = getCredentialFilePath(key);
+      await fs.writeFile(filePath, encrypted);
+    } else {
+      console.warn("Encryption not available, credentials will not be stored");
+    }
   }
 };
 
-// Helper function to retrieve credentials from keytar
+// Helper function to retrieve credentials from safeStorage
 const retrieveCredentials = async (
   mcpId: string,
   apiGroupName: string,
 ): Promise<McpAuth | null> => {
   try {
     const key = getMcpCredentialKey(mcpId, apiGroupName);
-    const credentialData = await keytar.getPassword(SERVICE_NAME, key);
+    const filePath = getCredentialFilePath(key);
 
-    if (credentialData) {
-      return JSON.parse(credentialData) as McpAuth;
+    if (!safeStorage.isEncryptionAvailable()) {
+      console.warn("Encryption not available, cannot retrieve credentials");
+      return null;
     }
-    return null;
-  } catch (error) {
-    console.error(
-      `Error retrieving credentials for ${mcpId}:${apiGroupName}:`,
-      error,
-    );
+
+    try {
+      const encryptedData = await fs.readFile(filePath);
+      const decryptedData = safeStorage.decryptString(encryptedData);
+      return JSON.parse(decryptedData) as McpAuth;
+    } catch {
+      // File doesn't exist or can't be read
+      return null;
+    }
+  } catch {
+    console.error(`Error retrieving credentials for ${mcpId}:${apiGroupName}:`);
     return null;
   }
 };
 
-// Helper function to delete credentials from keytar
+// Helper function to delete credentials from safeStorage
 const deleteCredentials = async (
   mcpId: string,
   apiGroupName: string,
 ): Promise<void> => {
   try {
     const key = getMcpCredentialKey(mcpId, apiGroupName);
-    await keytar.deletePassword(SERVICE_NAME, key);
-  } catch (error) {
-    console.error(
-      `Error deleting credentials for ${mcpId}:${apiGroupName}:`,
-      error,
-    );
+    const filePath = getCredentialFilePath(key);
+
+    try {
+      await fs.unlink(filePath);
+    } catch {
+      // File doesn't exist, which is fine
+    }
+  } catch {
+    console.error(`Error deleting credentials for ${mcpId}:${apiGroupName}:`);
   }
 };
 
@@ -176,7 +215,7 @@ const createMcp = async (mcpData: McpSubmitData): Promise<string> => {
   const sanitizedApiGroups: Record<string, McpApiGroup> = {};
 
   for (const [groupName, group] of Object.entries(mcpData.apiGroups)) {
-    // Store credentials in keytar
+    // Store credentials in safeStorage
     await storeCredentials(mcpId, groupName, group.auth);
 
     // Create sanitized version for file storage
@@ -222,15 +261,14 @@ const listMcps = async (): Promise<McpData[]> => {
         const mcpData = JSON.parse(fileContent) as McpData;
         // Never include credentials in list - they're already sanitized in storage
         mcps.push(mcpData);
-      } catch (error) {
-        console.error(`Error reading MCP file ${file}:`, error);
+      } catch {
         // Continue with other files
       }
     }
 
     return mcps;
-  } catch (error) {
-    console.error("Error listing MCPs:", error);
+  } catch {
+    console.error("Error listing MCPs:");
     return [];
   }
 };
@@ -254,7 +292,7 @@ const getMcpById = async (
         const apiGroupsWithCredentials: Record<string, McpApiGroup> = {};
 
         for (const [groupName, group] of Object.entries(mcpData.apiGroups)) {
-          // Try to retrieve credentials from keytar
+          // Try to retrieve credentials from safeStorage
           const credentials = await retrieveCredentials(id, groupName);
 
           if (credentials) {
@@ -273,18 +311,14 @@ const getMcpById = async (
           ...mcpData,
           apiGroups: apiGroupsWithCredentials,
         };
-      } catch (credError) {
-        console.error(
-          `Error fetching credentials for MCP with ID ${id}:`,
-          credError,
-        );
+      } catch {
         // Continue without credentials if there's an error
       }
     }
 
     return mcpData;
-  } catch (error) {
-    console.error(`Error getting MCP with ID ${id}:`, error);
+  } catch {
+    console.error(`Error getting MCP with ID ${id}:`);
     return null;
   }
 };
@@ -305,7 +339,7 @@ const updateMcp = async (
       return false;
     }
 
-    // Delete old credentials from keytar
+    // Delete old credentials from safeStorage
     for (const groupName of Object.keys(existingMcpData.apiGroups)) {
       await deleteCredentials(id, groupName);
     }
@@ -314,7 +348,7 @@ const updateMcp = async (
     const sanitizedApiGroups: Record<string, McpApiGroup> = {};
 
     for (const [groupName, group] of Object.entries(mcpData.apiGroups)) {
-      // Store credentials in keytar
+      // Store credentials in safeStorage
       await storeCredentials(id, groupName, group.auth);
 
       // Create sanitized version for file storage
@@ -342,8 +376,8 @@ const updateMcp = async (
     );
 
     return true;
-  } catch (error) {
-    console.error(`Error updating MCP with ID ${id}:`, error);
+  } catch {
+    console.error(`Error updating MCP with ID ${id}:`);
     return false;
   }
 };
@@ -358,7 +392,7 @@ const deleteMcp = async (id: string): Promise<boolean> => {
     // Get the MCP data to know which credentials to delete
     const mcpData = await getMcpById(id);
     if (mcpData) {
-      // Delete all credentials from keytar
+      // Delete all credentials from safeStorage
       for (const groupName of Object.keys(mcpData.apiGroups)) {
         await deleteCredentials(id, groupName);
       }
@@ -367,8 +401,8 @@ const deleteMcp = async (id: string): Promise<boolean> => {
     // Delete the MCP data file
     await fs.unlink(getMcpFilePath(id));
     return true;
-  } catch (error) {
-    console.error(`Error deleting MCP with ID ${id}:`, error);
+  } catch {
+    console.error(`Error deleting MCP with ID ${id}:`);
     return false;
   }
 };

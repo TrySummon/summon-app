@@ -87,6 +87,7 @@ app
   });
 
 app.whenReady().then(() => {
+  const appDataDir = app.getPath("userData");
   const apiDataDir = getApiDataDir();
   const mcpDataDir = getMcpDataDir();
   const mcpImplDir = getMcpImplDir();
@@ -101,6 +102,14 @@ app.whenReady().then(() => {
   if (helpMenu && helpMenu.submenu) {
     // Add a separator and our custom menu items to the Help submenu
     helpMenu.submenu.append(new MenuItem({ type: "separator" }));
+    helpMenu.submenu.append(
+      new MenuItem({
+        label: "Open App Data Folder",
+        click: () => {
+          shell.openPath(appDataDir);
+        },
+      }),
+    );
     helpMenu.submenu.append(
       new MenuItem({
         label: "Open Api Data Folder",
