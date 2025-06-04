@@ -102,4 +102,5 @@ export interface IPlaygroundTabState {
   };
   // Latency in milliseconds
   latency?: number;
+  autoExecuteTools?: boolean;
 }

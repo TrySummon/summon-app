@@ -36,9 +36,6 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
       const result = await downloadMcpZip(mcpId);
 
       if (result.success && result.data?.success) {
-        // Show success message - you could add a toast notification here
-        console.log("Download successful:", result.data.message);
-
         // Open folder and highlight the downloaded file
         if (result.data.filePath) {
           await showFileInFolder(result.data.filePath);

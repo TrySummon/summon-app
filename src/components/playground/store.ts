@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
-import { Tool, UIMessage } from "ai";
+import { UIMessage } from "ai";
 import { IPlaygroundTabState, ModifiedTool } from "./tabState";
 import { persist, createJSONStorage, PersistOptions } from "zustand/middleware";
 import { runAgent } from "./agent";
@@ -22,8 +22,6 @@ interface PlaygroundTab {
 export interface PlaygroundStore {
   // All tabs
   tabs: Record<string, PlaygroundTab>;
-  // All available tools in ai-sdk format
-  aiToolMap: Record<string, Record<string, Tool>>;
   // All available tools in mcp-sdk format
   mcpToolMap: Record<string, { name: string; tools: McpTool[] }>;
   // Current active tab ID
@@ -74,12 +72,14 @@ export interface PlaygroundStore {
     modifiedTool: ModifiedTool,
   ) => void;
   revertTool: (mcpId: string, toolName: string) => void;
-  updateAiToolMap: (aiToolMap: Record<string, Record<string, Tool>>) => void;
   updateMcpToolMap: (
     mcpToolMap: Record<string, { name: string; tools: McpTool[] }>,
   ) => void;
   updateShouldScrollToDock: (shouldScrollToDock: boolean) => void;
   setShowToolSidebar: (show: boolean) => void;
+  addToolResult: (toolCallId: string, result: { success: boolean;
+    data?: unknown;
+    message?: string;}) => void;
 
   // History management
   undo: () => string | null;
@@ -100,6 +100,7 @@ const createDefaultState = (): IPlaygroundTabState => ({
   maxSteps: 10,
   shouldScrollToDock: false,
   modifiedToolMap: {},
+  autoExecuteTools: false,
 });
 
 // Define the state that will be persisted to storage
@@ -124,7 +125,6 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
   persist(
     (set, get) => ({
       tabs: {},
-      aiToolMap: {},
       mcpToolMap: {},
       currentTabId: "",
       showToolSidebar: false,
@@ -241,8 +241,8 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
       },
 
       updateCurrentState: (
-        updater,
-        addToHistory = false,
+        updater: (state: IPlaygroundTabState) => IPlaygroundTabState,
+        addToHistory?: boolean,
         actionDescription?: string,
       ) => {
         const currentTab = get().getCurrentTab();
@@ -310,6 +310,56 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
           true,
           `Added message: ${message.role}`,
         ); // Pass true for addToHistory with description
+      },
+
+      addToolResult: (toolCallId, result) => {
+        const messages = get().getCurrentState().messages;
+        const messageIndex = messages.findIndex((message) => 
+          message.parts.some((part) => 
+            part.type === "tool-invocation" && 
+            part.toolInvocation.toolCallId === toolCallId
+          )
+        );
+        
+        if (messageIndex === -1) return;
+
+        const message = messages[messageIndex];
+        const updatedMessage = {
+          ...message,
+          parts: message.parts.map((part) => {
+            if (part.type === "tool-invocation" && part.toolInvocation.toolCallId === toolCallId) {
+              return {
+                ...part,
+                toolInvocation: {
+                  ...part.toolInvocation,
+                  state: "result" as const,
+                  result,
+                },
+              };
+            }
+            return part;
+          }),
+        };
+
+        get().updateCurrentState((state) => {
+          const newMessages = [...state.messages];
+          newMessages[messageIndex] = updatedMessage;
+          return { ...state, messages: newMessages };
+        });
+
+        // Check if any message still has a pending tool call (state === "partial-call")
+        const updatedMessages = get().getCurrentState().messages;
+        const hasPendingToolCalls = updatedMessages.some((msg) =>
+          msg.parts.some((part) =>
+            part.type === "tool-invocation" && 
+            part.toolInvocation.state === "partial-call"
+          )
+        );
+
+        // If no pending tool calls remain, run the agent
+        if (!hasPendingToolCalls) {
+          runAgent();
+        }
       },
 
       updateMessage: (messageIndex, message) => {
@@ -433,10 +483,6 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
             [toolProvider]: toolIds,
           },
         }));
-      },
-
-      updateAiToolMap: (aiToolMap) => {
-        set({ aiToolMap });
       },
 
       updateMcpToolMap: (mcpToolMap) => {

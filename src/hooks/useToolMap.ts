@@ -1,10 +1,8 @@
 import { useMcps } from "./useMcps";
 import { useEffect, useState } from "react";
-import { jsonSchema, Tool, tool } from "ai";
 import { useExternalMcps } from "./useExternalMcps";
-import type { JSONSchema7 } from "json-schema";
 import { Tool as McpTool } from "@modelcontextprotocol/sdk/types.js";
-import { callMcpTool, getMcpTools } from "@/helpers/ipc/mcp/mcp-client";
+import { getMcpTools } from "@/helpers/ipc/mcp/mcp-client";
 
 type ToolMapEntry = {
   name: string;
@@ -17,9 +15,6 @@ export default function useToolMap() {
   const [mcpToolMap, setMcpToolMap] = useState<Record<string, ToolMapEntry>>(
     {},
   );
-  const [aiToolMap, setAiToolMap] = useState<
-    Record<string, Record<string, Tool>>
-  >({});
 
   useEffect(() => {
     const fetchMcpTools = async (mcpId: string, name: string) => {
@@ -54,27 +49,7 @@ export default function useToolMap() {
     });
   }, [mcps, externalMcps]);
 
-  useEffect(() => {
-    const mcpTools = Object.entries(mcpToolMap);
-    const aiTools: Record<string, Record<string, Tool>> = {};
-
-    mcpTools.forEach(([mcpId, { tools }]) => {
-      aiTools[mcpId] = {};
-      tools.forEach((mcpTool) => {
-        aiTools[mcpId][mcpTool.name] = tool({
-          description: mcpTool.description,
-          parameters: jsonSchema(mcpTool.inputSchema as JSONSchema7),
-          execute: (args) =>
-            callMcpTool(mcpId, mcpTool.name, args as Record<string, unknown>),
-        });
-      });
-    });
-
-    setAiToolMap(aiTools);
-  }, [mcpToolMap]);
-
   return {
     mcpToolMap,
-    aiToolMap,
   };
 }

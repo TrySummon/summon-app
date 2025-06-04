@@ -32,6 +32,18 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({ className }) => {
     (state) => state.updateSystemPrompt,
   );
 
+  useEffect(() => {
+    if (isExpanded) {
+      captureEvent("playground_system_prompt_open", {
+        length: systemPrompt.length,
+      });
+    } else {
+      captureEvent("playground_system_prompt_close", {
+        length: systemPrompt.length,
+      });
+    }
+  }, [isExpanded])
+
   // Update editor content when text changes
   useEffect(() => {
     const editor = editorRef.current;
@@ -137,12 +149,7 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({ className }) => {
               : "translate-y-[-100%] opacity-0"
           }
           editorRef={editorRef}
-          onChange={(v) => {
-            updateSystemPrompt(v);
-            captureEvent("playground_system_prompt_change", {
-              length: v.length,
-            });
-          }}
+          onChange={updateSystemPrompt}
           readOnly={isRunning}
           language="markdown"
           additionalExtensions={[keyboardShortcuts]}

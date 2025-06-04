@@ -5,7 +5,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types";
 import type { ModifiedTool } from "../tabState";
 
 export function useToolSidebar() {
-  const { aiToolMap, mcpToolMap } = useToolMap();
+  const { mcpToolMap } = useToolMap();
 
   const enabledTools = usePlaygroundStore(
     (state) => state.getCurrentState().enabledTools,
@@ -13,7 +13,6 @@ export function useToolSidebar() {
   const modifiedToolMap = usePlaygroundStore(
     (state) => state.getCurrentState().modifiedToolMap,
   );
-  const updateAiToolMap = usePlaygroundStore((state) => state.updateAiToolMap);
   const updateMcpToolMap = usePlaygroundStore(
     (state) => state.updateMcpToolMap,
   );
@@ -29,11 +28,6 @@ export function useToolSidebar() {
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
   >({});
-
-  // Save aiToolMap to the store when it changes
-  useEffect(() => {
-    updateAiToolMap(aiToolMap);
-  }, [aiToolMap, updateAiToolMap]);
 
   // Save origToolMap to the store when it changes, enable all tools for tabs with undefined enabledTools,
   // and remove tools that are no longer available
