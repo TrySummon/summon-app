@@ -162,7 +162,6 @@ export async function runAgent() {
     const {
       mcpToolMap,
       updateCurrentState,
-      updateMessage,
       getCurrentState,
       updateShouldScrollToDock,
     } = store;
@@ -389,14 +388,10 @@ export async function runAgent() {
             createdAt: new Date(),
           };
 
-          updateMessage(messageIndex, updatedAssistantMessage);
-          // Update latency in state
-          updateCurrentState(
-            (state) => ({
-              ...state,
-              latency: currentLatency,
-            }),
-            false,
+          store.updateMessageWithLatency(
+            messageIndex,
+            updatedAssistantMessage,
+            currentLatency,
           );
         }
       }

@@ -53,6 +53,11 @@ export interface PlaygroundStore {
   ) => void;
   addMessage: (message: UIMessage) => void;
   updateMessage: (messageIndex: number, message: UIMessage) => void;
+  updateMessageWithLatency: (
+    messageIndex: number,
+    message: UIMessage,
+    latency: number,
+  ) => void;
   deleteMessage: (messageIndex: number) => void;
   rerunFromMessage: (messageIndex: number) => void;
   clearCurrentTab: () => void;
@@ -378,6 +383,22 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
           };
           return { ...state, messages: newMessages };
         }, false); // Pass false for addToHistory
+      },
+
+      updateMessageWithLatency: (messageIndex, message, latency) => {
+        // Update a message with latency, typically during streaming, without creating a new history entry
+        get().updateCurrentState((state) => {
+          const newMessages = [...state.messages];
+          newMessages[messageIndex] = {
+            ...message,
+            id: message.id || newMessages[messageIndex].id,
+          };
+          return {
+            ...state,
+            messages: newMessages,
+            latency,
+          };
+        });
       },
 
       // History management

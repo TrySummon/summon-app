@@ -93,38 +93,24 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
         );
       case "call":
         return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge
-                variant="outline"
-                className="border-blue-300 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
-              >
-                <Clock className="mr-1 h-3 w-3" />
-                Processing
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Tool is currently being executed</p>
-            </TooltipContent>
-          </Tooltip>
+          <Badge
+            variant="outline"
+            className="border-blue-300 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+          >
+            <Clock className="mr-1 h-3 w-3" />
+            Processing
+          </Badge>
         );
       case "result":
         if (invocation.result.success) {
           return (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  variant="outline"
-                  className="border-green-300 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                >
-                  <Check className="mr-1 h-3 w-3" />
-                  Completed
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Tool executed successfully</p>
-              </TooltipContent>
-            </Tooltip>
+            <Badge
+              variant="outline"
+              className="border-green-300 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+            >
+              <Check className="mr-1 h-3 w-3" />
+              Completed
+            </Badge>
           );
         } else {
           return (
@@ -154,31 +140,9 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
         {/* Header */}
         <div className="mb-2 flex items-center justify-between">
           <div className="flex w-full items-center justify-between">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="text-foreground flex items-center gap-2 text-sm font-medium">
-                  <Wrench className="h-3.5 w-3.5" /> {invocation.toolName}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Tool: {invocation.toolName}</p>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  ID: {invocation.toolCallId}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-            {invocation.step !== undefined && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant="secondary" className="text-xs">
-                    Step {invocation.step}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Execution step number in the agent's workflow</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+            <div className="text-foreground flex items-center gap-2 text-sm font-medium">
+              <Wrench className="h-3.5 w-3.5" /> {invocation.toolName}
+            </div>
             {renderStatusBadge()}
           </div>
         </div>
@@ -194,18 +158,12 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
         >
           {/* Arguments Section */}
           <AccordionItem value="arguments" className="border-none">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <AccordionTrigger className="py-2">
-                  <span className="text-muted-foreground text-sm font-medium">
-                    Arguments
-                  </span>
-                </AccordionTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Parameters passed to the tool</p>
-              </TooltipContent>
-            </Tooltip>
+            <AccordionTrigger className="py-2">
+              <span className="text-muted-foreground text-sm font-medium">
+                Arguments
+              </span>
+            </AccordionTrigger>
+
             <AccordionContent>
               <div className="overflow-hidden rounded-md">
                 <CodeSnippet language="json">
@@ -218,18 +176,12 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
           {/* Result Section - Only show for result state */}
           {invocation.state === "result" ? (
             <AccordionItem value="result" className="border-none">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AccordionTrigger className="py-2">
-                    <span className="text-muted-foreground text-sm font-medium">
-                      Result
-                    </span>
-                  </AccordionTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Output returned by the tool</p>
-                </TooltipContent>
-              </Tooltip>
+              <AccordionTrigger className="py-2">
+                <span className="text-muted-foreground text-sm font-medium">
+                  Result
+                </span>
+              </AccordionTrigger>
+
               <AccordionContent>
                 <div
                   className={cn(
