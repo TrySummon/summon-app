@@ -93,12 +93,13 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
   }, [tool, onRevert]);
 
   const handleSave = useCallback(() => {
+    if (!hasChanges) return;
     onSave({
       name: currentName,
       description: currentDescription,
       schema: currentSchema,
     });
-  }, [currentName, currentDescription, currentSchema, onSave]);
+  }, [currentName, currentDescription, currentSchema, hasChanges, onSave]);
 
   useEffect(() => {
     // If an external modifiedTool is provided and changes, reset internal state
@@ -372,8 +373,7 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                       onClick={() => setCurrentName(tool.name)}
                       className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover/name:opacity-100"
                     >
-                      {" "}
-                      <RotateCcw className="h-3 w-3" />{" "}
+                      <RotateCcw className="h-3 w-3" />
                     </Button>
                   )}
                 </div>

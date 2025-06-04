@@ -136,7 +136,7 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
 
   return (
     <TooltipProvider>
-      <div>
+      <div className="bg-card rounded-md p-2">
         {/* Header */}
         <div className="mb-2 flex items-center justify-between">
           <div className="flex w-full items-center justify-between">

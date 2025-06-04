@@ -1,5 +1,5 @@
 import React from "react";
-import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
 import { useToolSidebar } from "./useToolSidebar";
 import ToolSidebarHeader from "./SidebarHeader";
 import McpSection from "./McpSection";
@@ -65,6 +65,7 @@ export default function ToolSidebar() {
             );
           })}
       </SidebarContent>
+      <SidebarRail />
     </Sidebar>
   );
 }
