@@ -46,16 +46,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
     fetchMcpTools();
   }, [mcpId, status]);
 
-  if (isLoading) {
-    return (
-      <div className="rounded-md bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-center">
-          <div className="border-primary mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
-          <p>Checking server status...</p>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return null;
 
   return (
     <div className="space-y-6">

@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import { generateApiId } from "./id-generator";
 import { OpenAPIV3 } from "openapi-types";
 import fsSync from "fs";
+import SwaggerParser from "@apidevtools/swagger-parser";
 
 // Define the API data structure that will be stored in files
 interface ApiData {
@@ -99,11 +100,9 @@ const listApis = async (): Promise<ApiData[]> => {
           fsSync.existsSync(apiData.originalFilePath)
         ) {
           try {
-            const originalContent = await fs.readFile(
+            apiData.api = (await SwaggerParser.dereference(
               apiData.originalFilePath,
-              "utf-8",
-            );
-            apiData.api = JSON.parse(originalContent) as OpenAPIV3.Document;
+            )) as OpenAPIV3.Document;
           } catch (specError) {
             console.error(
               `Error loading API spec for file ${file}:`,

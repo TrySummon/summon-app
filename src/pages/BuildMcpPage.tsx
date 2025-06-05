@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Link } from "@tanstack/react-router";
 import { PlusCircle, Rocket, Wrench } from "lucide-react";
-import { EndpointPickerDialog } from "@/components/mcp-builder/EndpointPickerDialog";
+import { EndpointPickerDialog } from "@/components/mcp-builder/endpoint-picker";
 import { ApiPickerDialog } from "@/components/mcp-builder/ApiPickerDialog";
 import { SelectedEndpointsDisplay } from "@/components/mcp-builder/SelectedEndpointsDisplay";
 import {
@@ -185,6 +185,13 @@ export default function BuildMcpPage() {
     );
   };
 
+  // Handler for clearing all endpoints from an API group
+  const handleClearApiGroup = (apiId: string) => {
+    setSelectedEndpoints((prev) =>
+      prev.filter((endpoint) => endpoint.apiId !== apiId),
+    );
+  };
+
   return (
     <div className="flex h-full flex-col">
       <Breadcrumb>
@@ -234,6 +241,7 @@ export default function BuildMcpPage() {
                 <SelectedEndpointsDisplay
                   selectedEndpoints={selectedEndpoints}
                   onRemoveEndpoint={handleRemoveEndpoint}
+                  onClearApiGroup={handleClearApiGroup}
                 />
               ) : (
                 <div className="w-full py-6 text-center">

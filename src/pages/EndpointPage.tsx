@@ -26,7 +26,7 @@ export default function EndpointPage() {
   const { method } = useSearch({
     from: "/api/$apiId/endpoint/$endpointId",
   }) as EndpointSearchParams;
-  const { api } = useApi(apiId);
+  const { api, isLoading } = useApi(apiId);
 
   const path = api?.api.paths?.[endpointId];
 
@@ -34,6 +34,8 @@ export default function EndpointPage() {
     path && method in path
       ? (path[method as keyof typeof path] as OpenAPIV3.OperationObject)
       : undefined;
+
+  if (isLoading) return null;
 
   if (!api || !endpoint) {
     return (

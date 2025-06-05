@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useParams, useNavigate, useSearch } from "@tanstack/react-router";
-import { useApis } from "@/hooks/useApis";
+import { useApi } from "@/hooks/useApis";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -24,10 +24,10 @@ export default function ApiPage() {
   const { apiId } = useParams({ from: "/api/$apiId" });
   const navigate = useNavigate();
   const search = useSearch({ from: "/api/$apiId" }) as ApiPageSearchParams;
-  const { apis } = useApis();
+  const { api, isLoading } = useApi(apiId);
   const [activeTab, setActiveTab] = useState<string>(search.tab || "overview");
 
-  const api = apis.find((a) => a.id === apiId);
+  if (isLoading) return null;
 
   if (!api) {
     return (
