@@ -134,6 +134,16 @@ app.whenReady().then(() => {
         },
       }),
     );
+    helpMenu.submenu.append(
+      new MenuItem({
+        label: "Open Log Folder",
+        click: () => {
+          const logFile = log.transports.file.getFile();
+          const logDir = path.dirname(logFile.path);
+          shell.openPath(logDir);
+        },
+      }),
+    );
 
     // Update the application menu
     Menu.setApplicationMenu(currentMenu);
