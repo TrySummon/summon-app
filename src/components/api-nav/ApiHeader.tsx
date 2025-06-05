@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { RefreshCw, Plus } from "lucide-react";
 import { ImportApiDialog } from "@/components/ImportApiDialog";
 import { SidebarGroupLabel } from "@/components/ui/sidebar";
@@ -17,23 +17,15 @@ interface ApiHeaderProps {
 }
 
 export function ApiHeader({ isLoading, refetch }: ApiHeaderProps) {
-  const [isHovering, setIsHovering] = useState(false);
-
   const handleRefresh = () => {
     refetch();
     toast.success("API list refreshed");
   };
 
   return (
-    <div
-      className="flex items-center justify-between"
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-    >
+    <div className="flex items-center justify-between">
       <SidebarGroupLabel>APIs</SidebarGroupLabel>
-      <div
-        className={`flex items-center transition-opacity ${isHovering ? "opacity-100" : "opacity-0"}`}
-      >
+      <div className={`flex items-center`}>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

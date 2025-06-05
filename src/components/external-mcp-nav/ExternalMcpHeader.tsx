@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { RefreshCw, Plus } from "lucide-react";
 import { SidebarGroupLabel } from "@/components/ui/sidebar";
 import {
@@ -20,23 +20,15 @@ export function ExternalMcpHeader({
   isLoading,
   refetch,
 }: ExternalMcpHeaderProps) {
-  const [isHovering, setIsHovering] = useState(false);
-
   const handleRefresh = () => {
     refetch();
     toast.success("External MCP list refreshed");
   };
 
   return (
-    <div
-      className="flex items-center justify-between"
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-    >
+    <div className="flex items-center justify-between">
       <SidebarGroupLabel>External MCPs</SidebarGroupLabel>
-      <div
-        className={`flex items-center transition-opacity ${isHovering ? "opacity-100" : "opacity-0"}`}
-      >
+      <div className={`flex items-center`}>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

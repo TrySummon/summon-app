@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw, Download } from "lucide-react";
+import { AlertCircle, RefreshCw, Download, Edit } from "lucide-react";
 import CopyButton from "@/components/CopyButton";
 import { downloadMcpZip, showFileInFolder } from "@/ipc/mcp/mcp-client";
+import { Link } from "@tanstack/react-router";
 
 interface ServerStatusSectionProps {
   status: "running" | "starting" | "error" | "stopped";
@@ -95,22 +96,30 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
             onClick={refreshStatus}
             variant="outline"
             size="sm"
-            className="gap-1"
+            className="gap-2"
           >
             <RefreshCw className="h-3 w-3" />
             Refresh Status
           </Button>
-          {isExternal ? null : (
-            <Button
-              onClick={handleDownload}
-              variant="outline"
-              size="sm"
-              className="gap-1"
-              disabled={isDownloading}
-            >
-              <Download className="h-3 w-3" />
-              {isDownloading ? "Downloading..." : "Download MCP"}
-            </Button>
+          {!isExternal && (
+            <>
+              <Button asChild variant="outline" size="sm" className="gap-2">
+                <Link to="/build-mcp" search={{ edit: mcpId }}>
+                  <Edit className="h-3 w-3" />
+                  Edit
+                </Link>
+              </Button>
+              <Button
+                onClick={handleDownload}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={isDownloading}
+              >
+                <Download className="h-3 w-3" />
+                {isDownloading ? "Downloading..." : "Download"}
+              </Button>
+            </>
           )}
         </div>
       </div>
