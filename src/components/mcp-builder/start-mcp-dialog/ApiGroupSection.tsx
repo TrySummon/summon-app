@@ -32,9 +32,9 @@ export function ApiGroupSection({ api, form, isLast }: ApiGroupProps) {
     // Set default server URL if available
     if (
       serverUrls.length > 0 &&
-      !form.getValues(`apiAuth.${api.apiId}.serverUrl`)
+      !form.getValues(`configuredAuth.${api.apiId}.serverUrl`)
     ) {
-      form.setValue(`apiAuth.${api.apiId}.serverUrl`, serverUrls[0].url);
+      form.setValue(`configuredAuth.${api.apiId}.serverUrl`, serverUrls[0].url);
     }
   }, [api.apiId, form, serverUrls]);
 
@@ -42,7 +42,7 @@ export function ApiGroupSection({ api, form, isLast }: ApiGroupProps) {
   const updateAuthType = (apiId: string, useMockData: boolean) => {
     if (useMockData) {
       // Reset auth fields when switching to mock data
-      form.setValue(`apiAuth.${apiId}.auth`, { type: "noAuth" });
+      form.setValue(`configuredAuth.${apiId}.auth`, { type: "noAuth" });
     } else {
       // Set auth type based on security schemes
       const { authType, apiKeyDetails } =
@@ -50,12 +50,12 @@ export function ApiGroupSection({ api, form, isLast }: ApiGroupProps) {
 
       // Initialize fields based on auth type
       if (authType === "bearerToken") {
-        form.setValue(`apiAuth.${apiId}.auth`, {
+        form.setValue(`configuredAuth.${apiId}.auth`, {
           type: "bearerToken",
           token: "",
         });
       } else if (authType === "apiKey" && apiKeyDetails) {
-        form.setValue(`apiAuth.${apiId}.auth`, {
+        form.setValue(`configuredAuth.${apiId}.auth`, {
           type: "apiKey",
           key: "",
           in: apiKeyDetails.in,
@@ -63,7 +63,7 @@ export function ApiGroupSection({ api, form, isLast }: ApiGroupProps) {
         });
       } else {
         // Default to noAuth, but user can optionally configure authentication
-        form.setValue(`apiAuth.${apiId}.auth`, { type: "noAuth" });
+        form.setValue(`configuredAuth.${apiId}.auth`, { type: "noAuth" });
       }
     }
   };
@@ -71,7 +71,7 @@ export function ApiGroupSection({ api, form, isLast }: ApiGroupProps) {
   // Helper function to initialize API key auth with defaults when user selects it
   const initializeApiKeyAuth = () => {
     const { apiKeyDetails } = getAuthTypeFromSecuritySchemes(securitySchemes);
-    form.setValue(`apiAuth.${api.apiId}.auth`, {
+    form.setValue(`configuredAuth.${api.apiId}.auth`, {
       type: "apiKey",
       key: "",
       in: apiKeyDetails?.in || "header",
@@ -81,7 +81,7 @@ export function ApiGroupSection({ api, form, isLast }: ApiGroupProps) {
 
   // Helper function to initialize bearer token auth
   const initializeBearerTokenAuth = () => {
-    form.setValue(`apiAuth.${api.apiId}.auth`, {
+    form.setValue(`configuredAuth.${api.apiId}.auth`, {
       type: "bearerToken",
       token: "",
     });
@@ -101,7 +101,7 @@ export function ApiGroupSection({ api, form, isLast }: ApiGroupProps) {
 
       <FormField
         control={form.control}
-        name={`apiAuth.${api.apiId}.useMockData`}
+        name={`configuredAuth.${api.apiId}.useMockData`}
         render={({ field }) => (
           <div>
             {!field.value && (

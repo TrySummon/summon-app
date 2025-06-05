@@ -1,4 +1,5 @@
 import { app, BrowserWindow, Menu, MenuItem, shell } from "electron";
+import fixPath from "fix-path";
 import registerListeners from "./helpers/ipc/listeners-register";
 // "electron-squirrel-startup" seems broken when packaging with vite
 //import started from "electron-squirrel-startup";
@@ -87,6 +88,7 @@ app
   });
 
 app.whenReady().then(() => {
+  fixPath();
   const appDataDir = app.getPath("userData");
   const apiDataDir = getApiDataDir();
   const mcpDataDir = getMcpDataDir();

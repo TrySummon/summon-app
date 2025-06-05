@@ -176,7 +176,7 @@ export function registerMcpListeners() {
         ? {
             ...status,
             client: undefined,
-            serverProcess: undefined, // Remove the non-serializable process
+            expressServer: undefined, // Remove the non-serializable process
             // Convert any other non-serializable properties if needed
             mockProcesses: undefined,
           }
@@ -209,7 +209,7 @@ export function registerMcpListeners() {
         serializableStatuses[mcpId] = {
           ...status,
           client: undefined,
-          serverProcess: undefined, // Remove the non-serializable process
+          expressServer: undefined, // Remove the non-serializable process
           mockProcesses: {},
         };
       });
@@ -237,7 +237,7 @@ export function registerMcpListeners() {
       const serializableState = {
         ...serverState,
         client: undefined,
-        serverProcess: undefined, // Remove the non-serializable process
+        expressServer: undefined, // Remove the non-serializable process
         mockProcesses: {},
       };
 
@@ -265,7 +265,7 @@ export function registerMcpListeners() {
         ? {
             ...serverState,
             client: undefined,
-            serverProcess: undefined, // Remove the non-serializable process
+            expressServer: undefined, // Remove the non-serializable process
             mockProcesses: undefined,
           }
         : null;
@@ -293,7 +293,7 @@ export function registerMcpListeners() {
       const serializableState = {
         ...serverState,
         client: undefined,
-        serverProcess: undefined, // Remove the non-serializable process
+        expressServer: undefined, // Remove the non-serializable process
         // Convert any other non-serializable properties if needed
         mockProcesses: {},
       };

@@ -58,6 +58,7 @@ export default function ExternalMcpPage() {
             error={error}
             isLoading={isLoading}
             refreshStatus={refreshStatus}
+            isExternal
           />
         </div>
       </div>

@@ -122,16 +122,18 @@ export interface McpToolDefinition {
   operationId: string;
   securityScheme: {
     baseUrlEnvVar: string;
-    schema?: {
-      type: "apiKey"
+    schemas: Array<{
+      type: "apiKey";
       keyEnvVar: string;
       in: "header" | "query";
       name: string;
+      isInferred?: boolean;
     } | {
-      type: "bearerToken"
+      type: "bearerToken";
       tokenEnvVar: string;
-    }
-  }
+      isInferred?: boolean;
+    }>;
+  };
 }
 
 /**

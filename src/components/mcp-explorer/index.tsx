@@ -12,6 +12,7 @@ interface McpExplorerProps {
   status?: McpServerStatus;
   error?: Error | string | null;
   isLoading: boolean;
+  isExternal?: boolean;
   refreshStatus: () => void;
 }
 
@@ -22,6 +23,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
   status,
   error,
   isLoading,
+  isExternal,
   refreshStatus,
 }) => {
   const [mcpTools, setMcpTools] = useState<Tool[]>([]);
@@ -65,6 +67,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
         transport={transport?.type}
         refreshStatus={refreshStatus}
         mcpId={mcpId}
+        isExternal={isExternal}
       />
 
       {status === "running" && <ToolsList tools={mcpTools} />}

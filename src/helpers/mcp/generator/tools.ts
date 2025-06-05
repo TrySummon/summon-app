@@ -1,12 +1,8 @@
 import { McpApiGroup } from "@/helpers/db/mcp-db";
 import { McpToolDefinition } from "../types";
 import { convertEndpointsToTools } from "../parser/extract-tools";
-import {
-  apiKeyEnvVarName,
-  baseUrlEnvVarName,
-  bearerTokenEnvVarName,
-  kebabCase,
-} from "./utils";
+import { kebabCase } from "./utils";
+import { extractSecuritySchemes, getEnvVarName } from "./utils/security";
 import { getApiById } from "@/helpers/db/api-db";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import { OpenAPIV3 } from "openapi-types";
@@ -45,6 +41,9 @@ export async function generateMcpTools(apiGroups: Record<string, McpApiGroup>) {
       // Use extractToolsFromApi to process the endpoints directly
       const extractedTools = convertEndpointsToTools(dereferencedEndpoints);
 
+      // Extract all security schemes from the OpenAPI spec
+      const allSecuritySchemes = extractSecuritySchemes(apiSpec, apiGroup.name);
+
       // Add tools to the map
       extractedTools.forEach((tool) => {
         tools.push({
@@ -52,23 +51,8 @@ export async function generateMcpTools(apiGroups: Record<string, McpApiGroup>) {
           name: `${apiGroup.name}-${tool.name}`,
           tags: tool.tags.map((tag) => kebabCase(`${apiGroup.name}-${tag}`)),
           securityScheme: {
-            baseUrlEnvVar: baseUrlEnvVarName(apiGroup.name),
-            schema:
-              apiGroup.auth.type === "apiKey" &&
-              apiGroup.auth.in &&
-              apiGroup.auth.name
-                ? {
-                    type: "apiKey",
-                    keyEnvVar: apiKeyEnvVarName(apiGroup.name),
-                    in: apiGroup.auth.in,
-                    name: apiGroup.auth.name,
-                  }
-                : apiGroup.auth.type === "bearerToken"
-                  ? {
-                      type: "bearerToken",
-                      tokenEnvVar: bearerTokenEnvVarName(apiGroup.name),
-                    }
-                  : undefined,
+            baseUrlEnvVar: getEnvVarName(apiGroup.name, "BASE_URL"),
+            schemas: allSecuritySchemes,
           },
         });
       });

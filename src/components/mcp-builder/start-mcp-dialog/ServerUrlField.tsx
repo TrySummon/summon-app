@@ -34,7 +34,7 @@ export function ServerUrlField({
   // Initialize with first server URL if available and no value is set
   React.useEffect(() => {
     if (serverUrls.length > 0) {
-      form.setValue(`apiAuth.${apiId}.serverUrl`, serverUrls[0].url);
+      form.setValue(`configuredAuth.${apiId}.serverUrl`, serverUrls[0].url);
     } else {
       setCustomMode(true);
     }
@@ -47,14 +47,14 @@ export function ServerUrlField({
     // If switching to select mode and we have server URLs available,
     // set to the first server URL
     if (customMode && serverUrls.length > 0) {
-      form.setValue(`apiAuth.${apiId}.serverUrl`, serverUrls[0].url);
+      form.setValue(`configuredAuth.${apiId}.serverUrl`, serverUrls[0].url);
     }
   };
 
   return (
     <FormField
       control={form.control}
-      name={`apiAuth.${apiId}.serverUrl`}
+      name={`configuredAuth.${apiId}.serverUrl`}
       render={({ field }) => (
         <FormItem>
           <div className="flex items-center justify-between">

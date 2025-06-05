@@ -36,6 +36,5 @@ export async function callMcpTool(
     name: name,
     arguments: args,
   });
-
   return result;
 }

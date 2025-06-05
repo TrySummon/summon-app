@@ -5,11 +5,14 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import {
+  getDefaultEnvironment,
   StdioClientTransport,
+  // StdioClientTransport,
   StdioServerParameters,
 } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { McpServerState, runningMcpServers } from "../mcp/state";
 import { z } from "zod";
+import log from "electron-log";
 
 // Define Zod schemas for MCP JSON validation
 const McpServerConfigSchema = z
@@ -56,7 +59,7 @@ export const readMcpJsonFile = async (): Promise<McpJsonConfig> => {
     const fileContent = await fs.readFile(mcpJsonPath, "utf8");
     return validateMcpJsonConfig(JSON.parse(fileContent));
   } catch (error) {
-    console.error("Error reading mcp.json file:", error);
+    log.error("Error reading mcp.json file:", error);
     // Return empty config if file doesn't exist or is invalid
     return { mcpServers: {} };
   }
@@ -99,14 +102,14 @@ export const connectExternalMcp = async (
   config: McpServerConfig,
   force?: boolean,
 ): Promise<McpServerState> => {
-  console.info(`Starting external MCP server: ${serverName}`);
+  log.info(`Starting external MCP server: ${serverName}`);
 
   // Check if the server is already running
   if (
     runningMcpServers[serverName] &&
     runningMcpServers[serverName].status === "running"
   ) {
-    console.info(`External MCP server ${serverName} is already running`);
+    log.info(`External MCP server ${serverName} is already running`);
     return runningMcpServers[serverName];
   }
 
@@ -116,7 +119,7 @@ export const connectExternalMcp = async (
     runningMcpServers[serverName] &&
     runningMcpServers[serverName].status === "stopped"
   ) {
-    console.info(`External MCP server ${serverName} is already stopped`);
+    log.info(`External MCP server ${serverName} is already stopped`);
     return runningMcpServers[serverName];
   }
 
@@ -126,7 +129,7 @@ export const connectExternalMcp = async (
     isExternal: true,
     startedAt: new Date(),
     mockProcesses: {},
-    serverProcess: undefined,
+    expressServer: undefined,
     transport: undefined,
     client: undefined,
   };
@@ -143,6 +146,11 @@ export const connectExternalMcp = async (
     // Handle CLI-based server
     if (config.command) {
       const params = config as StdioServerParameters;
+      params.env = {
+        ...(params.env || {}),
+        ...getDefaultEnvironment(),
+        "ELE  CTRON_RUN_AS_NODE": "1",
+      };
       const transport = new StdioClientTransport(params);
 
       await client.connect(transport);
@@ -176,11 +184,11 @@ export const connectExternalMcp = async (
 
     // Update server status
     serverState.status = "running";
-    console.info(`External MCP server ${serverName} started successfully`);
+    log.info(`External MCP server ${serverName} started successfully`);
 
     return serverState;
   } catch (error) {
-    console.error(`Failed to start external MCP server ${serverName}:`, error);
+    log.error(`Failed to start external MCP server ${serverName}:`, error);
     serverState.status = "error";
     serverState.error = error instanceof Error ? error.message : String(error);
     return serverState;
@@ -193,11 +201,11 @@ export const connectExternalMcp = async (
 export const stopExternalMcp = async (
   serverName: string,
 ): Promise<McpServerState | null> => {
-  console.info(`Stopping external MCP server: ${serverName}`);
+  log.info(`Stopping external MCP server: ${serverName}`);
 
   // Check if the server is running
   if (!runningMcpServers[serverName]) {
-    console.info(`External MCP server ${serverName} is not running`);
+    log.info(`External MCP server ${serverName} is not running`);
     return null;
   }
 
@@ -213,10 +221,10 @@ export const stopExternalMcp = async (
     serverState.status = "stopped";
     serverState.stoppedAt = new Date();
 
-    console.info(`External MCP server ${serverName} stopped successfully`);
+    log.info(`External MCP server ${serverName} stopped successfully`);
     return serverState;
   } catch (error) {
-    console.error(`Failed to stop external MCP server ${serverName}:`, error);
+    log.error(`Failed to stop external MCP server ${serverName}:`, error);
     serverState.status = "error";
     serverState.error = error instanceof Error ? error.message : String(error);
     return serverState;
@@ -229,7 +237,7 @@ export const stopExternalMcp = async (
 export const connectAllExternalMcps = async (): Promise<
   Record<string, McpServerState>
 > => {
-  console.info("Connecting to all external MCP servers...");
+  log.info("Connecting to all external MCP servers...");
 
   try {
     // Read and validate the MCP JSON configuration
@@ -247,7 +255,7 @@ export const connectAllExternalMcps = async (): Promise<
           client: undefined,
         };
       } catch (error) {
-        console.error(
+        log.error(
           `Failed to connect to external MCP server ${serverName}:`,
           error,
         );
@@ -262,10 +270,10 @@ export const connectAllExternalMcps = async (): Promise<
       }
     }
 
-    console.info("All external MCP servers connected");
+    log.info("All external MCP servers connected");
     return results;
   } catch (error) {
-    console.error("Error connecting to external MCP servers:", error);
+    log.error("Error connecting to external MCP servers:", error);
     throw error;
   }
 };

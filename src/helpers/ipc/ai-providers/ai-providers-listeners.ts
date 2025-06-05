@@ -7,6 +7,7 @@ import {
   AI_PROVIDERS_DELETE_CREDENTIAL_CHANNEL,
 } from "./ai-providers-channels";
 import { AIProviderCredential } from "@/components/ai-providers/types";
+import log from "electron-log/main";
 
 // Directory for storing encrypted credentials
 const getCredentialsDir = () => {
@@ -34,7 +35,7 @@ export function registerAIProvidersListeners() {
   ipcMain.handle(AI_PROVIDERS_GET_CREDENTIALS_CHANNEL, async () => {
     try {
       if (!safeStorage.isEncryptionAvailable()) {
-        console.warn(
+        log.warn(
           "Encryption not available, cannot retrieve AI provider credentials",
         );
         return [];
@@ -61,7 +62,7 @@ export function registerAIProvidersListeners() {
                 ...providerData,
               });
             } catch {
-              console.error(`Error parsing provider data for ${providerId}`);
+              log.error(`Error parsing provider data for ${providerId}`);
               credentials.push({
                 id: providerId,
                 name: providerId,
@@ -78,7 +79,7 @@ export function registerAIProvidersListeners() {
         return [];
       }
     } catch {
-      console.error("Error getting AI provider credentials");
+      log.error("Error getting AI provider credentials");
       throw new Error("Failed to get credentials");
     }
   });
@@ -89,9 +90,7 @@ export function registerAIProvidersListeners() {
     async (_, providerId: string, providerData: AIProviderCredential) => {
       try {
         if (!safeStorage.isEncryptionAvailable()) {
-          console.warn(
-            "Encryption not available, credentials will not be stored",
-          );
+          log.warn("Encryption not available, credentials will not be stored");
           return { success: false, error: "Encryption not available" };
         }
 
@@ -106,7 +105,7 @@ export function registerAIProvidersListeners() {
 
         return { success: true };
       } catch {
-        console.error("Error saving AI provider credential");
+        log.error("Error saving AI provider credential");
         throw new Error("Failed to save credential");
       }
     },
@@ -127,7 +126,7 @@ export function registerAIProvidersListeners() {
           return { success: true };
         }
       } catch {
-        console.error("Error deleting AI provider credential");
+        log.error("Error deleting AI provider credential");
         throw new Error("Failed to delete credential");
       }
     },

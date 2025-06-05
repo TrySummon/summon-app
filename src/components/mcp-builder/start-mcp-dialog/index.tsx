@@ -48,7 +48,7 @@ const authSchema = z.discriminatedUnion("type", [
 // Define the form schema for the MCP server configuration
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  apiAuth: z.record(
+  configuredAuth: z.record(
     z
       .object({
         serverUrl: z.string().optional(),
@@ -112,9 +112,9 @@ export function StartMcpDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: isEditMode && editMcpData ? editMcpData.name : "",
-      apiAuth: {},
+      configuredAuth: {},
     },
-    mode: "onChange", // Enable validation on change for better UX feedback
+    mode: "onChange",
   });
 
   // Update form values when apiGroups changes or in edit mode
@@ -122,10 +122,10 @@ export function StartMcpDialog({
     if (Object.keys(apiGroups).length > 0) {
       // Get current form values
       const currentValues = form.getValues();
-      const currentApiAuth = currentValues.apiAuth || {};
+      const currentApiAuth = currentValues.configuredAuth || {};
 
       // Create updated apiAuth object with new apiGroups
-      const updatedApiAuth = Object.keys(apiGroups).reduce(
+      const updatedAuth = Object.keys(apiGroups).reduce(
         (acc, apiId) => {
           if (
             isEditMode &&
@@ -152,11 +152,14 @@ export function StartMcpDialog({
           }
           return acc;
         },
-        {} as Record<string, McpForm["apiAuth"][keyof McpForm["apiAuth"]]>,
+        {} as Record<
+          string,
+          McpForm["configuredAuth"][keyof McpForm["configuredAuth"]]
+        >,
       );
 
       // Update form values
-      form.setValue("apiAuth", updatedApiAuth);
+      form.setValue("configuredAuth", updatedAuth);
     }
   }, [apiGroups, form, isEditMode, editMcpData]);
 
@@ -174,7 +177,7 @@ export function StartMcpDialog({
       };
 
       // Add endpoints to each API group
-      Object.entries(data.apiAuth).forEach(([apiId, apiConfig]) => {
+      Object.entries(data.configuredAuth).forEach(([apiId, apiConfig]) => {
         mcpData.apiGroups[apiId] = {
           ...apiConfig,
           name: apiGroups[apiId]?.apiName,

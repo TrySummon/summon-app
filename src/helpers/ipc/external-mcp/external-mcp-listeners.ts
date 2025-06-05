@@ -8,6 +8,7 @@ import {
   readMcpJsonFile,
   stopExternalMcp,
 } from "@/helpers/external-mcp";
+import log from "electron-log";
 
 export function registerExternalMcpListeners() {
   // Start an MCP server
@@ -34,7 +35,7 @@ export function registerExternalMcpListeners() {
           data: serializableState,
         };
       } catch (error) {
-        console.error(`Error connecting MCP server ${mcpId}:`, error);
+        log.error(`Error connecting MCP server ${mcpId}:`, error);
         return {
           success: false,
           message:
@@ -62,7 +63,7 @@ export function registerExternalMcpListeners() {
         data: serializableState,
       };
     } catch (error) {
-      console.error(`Error stopping external MCP server ${mcpId}:`, error);
+      log.error(`Error stopping external MCP server ${mcpId}:`, error);
       return {
         success: false,
         message:

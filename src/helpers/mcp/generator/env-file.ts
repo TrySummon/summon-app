@@ -2,32 +2,90 @@
  * Generator for .env file and .env.example file
  */
 import { McpApiGroup } from "@/helpers/db/mcp-db";
-import {
-  apiKeyEnvVarName,
-  baseUrlEnvVarName,
-  bearerTokenEnvVarName,
-} from "./utils";
+import { extractSecuritySchemes, getEnvVarName } from "./utils/security";
+import { getApiById } from "@/helpers/db/api-db";
+import SwaggerParser from "@apidevtools/swagger-parser";
+import { OpenAPIV3 } from "openapi-types";
 
-export function generateEnvExample(
+export async function generateEnvExample(
   apiGroups: Record<string, McpApiGroup>,
-): string {
+): Promise<string> {
   const baseUrls = Object.values(apiGroups)
     .map(
-      (apiGroup) => `${baseUrlEnvVarName(apiGroup.name)}=${apiGroup.serverUrl}`,
+      (apiGroup) =>
+        `${getEnvVarName(apiGroup.name, "BASE_URL")}=${apiGroup.serverUrl}`,
     )
     .join("\n");
-  const keys = Object.values(apiGroups)
-    .map((apiGroup) => {
-      switch (apiGroup.auth.type) {
-        case "apiKey":
-          return `${apiKeyEnvVarName(apiGroup.name)}=`;
-        case "bearerToken":
-          return `${bearerTokenEnvVarName(apiGroup.name)}=`;
-        default:
-          return "";
+
+  // Extract all security schemes from all API groups
+  const allEnvVars = new Set<string>();
+  const inferredEnvVars = new Set<string>();
+
+  for (const [apiId, apiGroup] of Object.entries(apiGroups)) {
+    if (apiGroup.endpoints && apiGroup.endpoints.length > 0) {
+      const api = await getApiById(apiId);
+      if (api) {
+        try {
+          const apiSpec = (await SwaggerParser.dereference(
+            api.originalFilePath,
+          )) as OpenAPIV3.Document;
+
+          const securitySchemes = extractSecuritySchemes(
+            apiSpec,
+            apiGroup.name,
+          );
+
+          // Add environment variables for all security schemes
+          securitySchemes.forEach((scheme) => {
+            if (scheme.type === "apiKey") {
+              const envVar = `${scheme.keyEnvVar}=`;
+              allEnvVars.add(envVar);
+              if (scheme.isInferred) {
+                inferredEnvVars.add(envVar);
+              }
+            } else if (scheme.type === "bearerToken") {
+              const envVar = `${scheme.tokenEnvVar}=`;
+              allEnvVars.add(envVar);
+              if (scheme.isInferred) {
+                inferredEnvVars.add(envVar);
+              }
+            }
+          });
+        } catch (error) {
+          console.warn(
+            `Failed to process security schemes for API ${apiId}:`,
+            error,
+          );
+        }
       }
-    })
-    .join("\n");
+    }
+  }
+
+  const sortedEnvVars = Array.from(allEnvVars).sort();
+  let keys = "";
+
+  if (inferredEnvVars.size > 0) {
+    keys +=
+      "# Authentication credentials (inferred - not defined in OpenAPI spec)\n";
+    keys +=
+      "# These are common authentication methods that may work with this API\n";
+    sortedEnvVars.forEach((envVar) => {
+      if (inferredEnvVars.has(envVar)) {
+        keys += `${envVar}\n`;
+      }
+    });
+
+    const nonInferredVars = sortedEnvVars.filter(
+      (envVar) => !inferredEnvVars.has(envVar),
+    );
+    if (nonInferredVars.length > 0) {
+      keys += "\n# Authentication credentials (defined in OpenAPI spec)\n";
+      keys += nonInferredVars.join("\n");
+    }
+  } else {
+    keys = sortedEnvVars.join("\n");
+  }
+
   let content = `# MCP Server Environment Variables
 # Copy this file to .env and fill in the values
 

@@ -37,6 +37,9 @@ export function useExternalMcpServerState(
       const response = await getMcpServerStatus(mcpId);
       if (response.success) {
         setState(response.data ? response.data : null);
+        if (response.data?.error) {
+          setError(new Error(response.data.error));
+        }
       } else {
         setError(new Error(response.message || "Failed to get server status"));
       }

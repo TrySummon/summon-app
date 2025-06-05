@@ -12,6 +12,7 @@ interface ServerStatusSectionProps {
   error?: Error | string | null;
   serverName: string;
   transport?: string;
+  isExternal?: boolean;
   refreshStatus: () => void;
   mcpId: string;
 }
@@ -24,6 +25,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
   transport,
   refreshStatus,
   mcpId,
+  isExternal,
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -98,16 +100,18 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
             <RefreshCw className="h-3 w-3" />
             Refresh Status
           </Button>
-          <Button
-            onClick={handleDownload}
-            variant="outline"
-            size="sm"
-            className="gap-1"
-            disabled={isDownloading}
-          >
-            <Download className="h-3 w-3" />
-            {isDownloading ? "Downloading..." : "Download MCP"}
-          </Button>
+          {isExternal ? null : (
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              disabled={isDownloading}
+            >
+              <Download className="h-3 w-3" />
+              {isDownloading ? "Downloading..." : "Download MCP"}
+            </Button>
+          )}
         </div>
       </div>
     );

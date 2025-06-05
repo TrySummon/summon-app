@@ -2,8 +2,8 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioServerParameters } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransportOptions } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SSEClientTransportOptions } from "@modelcontextprotocol/sdk/client/sse.js";
-import { UtilityProcess } from "electron";
 import { MockApiResult } from "../mock";
+import { Server } from "http";
 
 // Define the status types for MCP servers
 export type McpServerStatus = "starting" | "running" | "error" | "stopped";
@@ -26,7 +26,9 @@ export interface McpServerState {
   status: McpServerStatus;
   error?: string;
   isExternal?: boolean;
-  serverProcess?: UtilityProcess;
+  expressServer?: Server;
+  port?: number;
+  url?: string;
   mockProcesses: Record<string, MockApiResult>;
   transport?: McpTransport;
   client?: Client;

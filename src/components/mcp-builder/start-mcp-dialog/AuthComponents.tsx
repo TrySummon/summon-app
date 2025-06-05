@@ -126,13 +126,13 @@ export function MockDataToggle({
   return (
     <FormField
       control={form.control}
-      name={`apiAuth.${apiId}.useMockData`}
+      name={`configuredAuth.${apiId}.useMockData`}
       render={({ field }) => (
         <FormItem className="flex flex-row items-center justify-between">
           <div className="space-y-0.5">
             <FormLabel className="text-xs font-medium">Mock Server</FormLabel>
             <FormDescription className="text-xs">
-              No real API calls will be made
+              No real API calls will be made in the playground
             </FormDescription>
           </div>
           <FormControl>
@@ -159,7 +159,7 @@ export function BearerTokenForm({ form, apiId }: BearerTokenFormProps) {
   return (
     <FormField
       control={form.control}
-      name={`apiAuth.${apiId}.auth.token`}
+      name={`configuredAuth.${apiId}.auth.token`}
       render={({ field }) => (
         <FormItem>
           <FormLabel className="text-xs">Token</FormLabel>
@@ -178,7 +178,7 @@ interface ApiKeyFormProps {
 }
 
 export function ApiKeyForm({ form, apiId }: ApiKeyFormProps) {
-  const authData = form.watch(`apiAuth.${apiId}.auth`);
+  const authData = form.watch(`configuredAuth.${apiId}.auth`);
   if (authData?.type !== "apiKey") {
     return null;
   }
@@ -188,7 +188,7 @@ export function ApiKeyForm({ form, apiId }: ApiKeyFormProps) {
     <div className="space-y-3">
       <FormField
         control={form.control}
-        name={`apiAuth.${apiId}.auth.key`}
+        name={`configuredAuth.${apiId}.auth.key`}
         render={({ field }) => (
           <FormItem>
             <FormLabel className="text-xs">API Key</FormLabel>
@@ -203,7 +203,7 @@ export function ApiKeyForm({ form, apiId }: ApiKeyFormProps) {
         <>
           <FormField
             control={form.control}
-            name={`apiAuth.${apiId}.auth.name`}
+            name={`configuredAuth.${apiId}.auth.name`}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Key Name</FormLabel>
@@ -224,7 +224,7 @@ export function ApiKeyForm({ form, apiId }: ApiKeyFormProps) {
 
           <FormField
             control={form.control}
-            name={`apiAuth.${apiId}.auth.in`}
+            name={`configuredAuth.${apiId}.auth.in`}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Location</FormLabel>
@@ -288,7 +288,7 @@ export function AuthForm({
   const hasMultipleSchemes = allowedAuthMethods.length > 1;
 
   // Ensure we have a valid auth type selected
-  const currentAuth = form.watch(`apiAuth.${apiId}.auth`);
+  const currentAuth = form.watch(`configuredAuth.${apiId}.auth`);
   const currentAuthType = currentAuth?.type;
 
   // If the current auth type isn't in the allowed methods, select the first allowed method
@@ -297,14 +297,16 @@ export function AuthForm({
       allowedAuthMethods.length > 0 &&
       !allowedAuthMethods.includes(currentAuthType)
     ) {
-      form.setValue(`apiAuth.${apiId}.auth`, { type: allowedAuthMethods[0] });
+      form.setValue(`configuredAuth.${apiId}.auth`, {
+        type: allowedAuthMethods[0],
+      });
     }
   }, [allowedAuthMethods, apiId, currentAuthType, form]);
 
   return (
     <FormField
       control={form.control}
-      name={`apiAuth.${apiId}.auth.type`}
+      name={`configuredAuth.${apiId}.auth.type`}
       render={({ field: authTypeField }) => (
         <FormItem>
           {hasMultipleSchemes ? (
@@ -322,7 +324,9 @@ export function AuthForm({
                 ) {
                   initializeBearerTokenAuth();
                 } else if (value === "noAuth") {
-                  form.setValue(`apiAuth.${apiId}.auth`, { type: "noAuth" });
+                  form.setValue(`configuredAuth.${apiId}.auth`, {
+                    type: "noAuth",
+                  });
                 }
               }}
               className="w-full"

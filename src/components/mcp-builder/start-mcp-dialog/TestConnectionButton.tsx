@@ -19,9 +19,9 @@ export function TestConnectionButton({
   }>({ status: "idle" });
 
   // Get the server URL and auth data from the form
-  const serverUrl = form.watch(`apiAuth.${apiId}.serverUrl`);
-  const auth = form.watch(`apiAuth.${apiId}.auth`);
-  const useMockData = form.watch(`apiAuth.${apiId}.useMockData`);
+  const serverUrl = form.watch(`configuredAuth.${apiId}.serverUrl`);
+  const auth = form.watch(`configuredAuth.${apiId}.auth`);
+  const useMockData = form.watch(`configuredAuth.${apiId}.useMockData`);
 
   // Button should be enabled if URL is provided and we're not in loading state
   // Trim the URL to ensure empty strings with whitespace don't enable the button

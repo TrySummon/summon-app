@@ -35,18 +35,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
 `;
 }
 
-export function baseUrlEnvVarName(apiName: string) {
-  return `${apiName.toUpperCase()}_API_BASE_URL`;
-}
-
-export function apiKeyEnvVarName(apiName: string) {
-  return `${apiName.toUpperCase()}_API_KEY`;
-}
-
-export function bearerTokenEnvVarName(apiName: string) {
-  return `${apiName.toUpperCase()}_BEARER_TOKEN`;
-}
-
 /**
  * Convert a string to title case
  *
