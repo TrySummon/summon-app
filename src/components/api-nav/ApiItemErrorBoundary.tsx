@@ -1,7 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { deleteApi } from "@/helpers/ipc/openapi/openapi-client";
+import { deleteApi } from "@/ipc/openapi/openapi-client";
 
 interface ApiItemErrorBoundaryProps {
   children: ReactNode;

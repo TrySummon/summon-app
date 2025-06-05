@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { AIProviderCredential, AI_PROVIDERS_CONFIG } from "./types";
-import { createLLMProvider } from "@/helpers/llm";
+import { createLLMProvider } from "@/lib/llm";
 import { Loader } from "../Loader";
 
 export const TestProviderButton = ({

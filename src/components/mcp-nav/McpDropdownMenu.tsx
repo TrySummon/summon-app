@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@tanstack/react-router";
-import { McpServerStatus } from "@/helpers/mcp/state";
+import { McpServerStatus } from "@/lib/mcp/state";
 
 interface McpDropdownMenuProps {
   mcpId: string;

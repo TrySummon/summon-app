@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { McpData } from "@/helpers/db/mcp-db";
+import { McpData } from "@/lib/db/mcp-db";
 import { McpSubmitData } from "@/components/mcp-builder/start-mcp-dialog";
 import {
   createMcp,
   deleteMcp,
   listMcps,
   updateMcp,
-} from "@/helpers/ipc/mcp/mcp-client";
+} from "@/ipc/mcp/mcp-client";
 
 // Query key for MCPs
 export const MCP_QUERY_KEY = "mcps";

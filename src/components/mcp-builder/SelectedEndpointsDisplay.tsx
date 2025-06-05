@@ -2,7 +2,7 @@ import React from "react";
 import { MethodBadge } from "@/components/MethodBadge";
 import { X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { McpEndpoint } from "@/helpers/db/mcp-db";
+import { McpEndpoint } from "@/lib/db/mcp-db";
 
 interface SelectedEndpointsDisplayProps {
   selectedEndpoints: McpEndpoint[];

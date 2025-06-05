@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw, Download } from "lucide-react";
 import CopyButton from "@/components/CopyButton";
-import { downloadMcpZip, showFileInFolder } from "@/helpers/ipc/mcp/mcp-client";
+import { downloadMcpZip, showFileInFolder } from "@/ipc/mcp/mcp-client";
 
 interface ServerStatusSectionProps {
   status: "running" | "starting" | "error" | "stopped";

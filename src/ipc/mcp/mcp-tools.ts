@@ -1,4 +1,4 @@
-import { runningMcpServers } from "@/helpers/mcp/state";
+import { runningMcpServers } from "@/lib/mcp/state";
 
 /**
  * Fetches tools from an MCP server using the provided configuration

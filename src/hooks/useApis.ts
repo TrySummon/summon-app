@@ -4,7 +4,7 @@ import {
   getApi,
   deleteApi,
   renameApi,
-} from "@/helpers/ipc/openapi/openapi-client";
+} from "@/ipc/openapi/openapi-client";
 
 export const LIST_API_QUERY_KEY = "list_apis";
 export const GET_API_QUERY_KEY = "get_api";

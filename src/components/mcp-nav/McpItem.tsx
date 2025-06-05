@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { McpDropdownMenu } from "@/components/mcp-nav/McpDropdownMenu";
-import { McpData } from "@/helpers/db/mcp-db";
+import { McpData } from "@/lib/db/mcp-db";
 import {
   Tooltip,
   TooltipContent,

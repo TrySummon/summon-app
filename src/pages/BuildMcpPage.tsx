@@ -18,9 +18,9 @@ import {
   StartMcpDialog,
 } from "@/components/mcp-builder/start-mcp-dialog";
 import { useSearch } from "@tanstack/react-router";
-import { McpData, McpEndpoint } from "@/helpers/db/mcp-db";
+import { McpData, McpEndpoint } from "@/lib/db/mcp-db";
 import { OpenAPIV3 } from "openapi-types";
-import { getMcp } from "@/helpers/ipc/mcp/mcp-client";
+import { getMcp } from "@/ipc/mcp/mcp-client";
 
 export default function BuildMcpPage() {
   const { apis, isLoading } = useApis();

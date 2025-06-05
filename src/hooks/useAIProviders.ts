@@ -7,7 +7,7 @@ import {
   getCredentials,
   saveCredential as _saveCredential,
   deleteCredential as _deleteCredential,
-} from "@/helpers/ipc/ai-providers/ai-providers-client";
+} from "@/ipc/ai-providers/ai-providers-client";
 
 // Query key for AI providers
 export const AI_PROVIDERS_QUERY_KEY = "aiProviders";

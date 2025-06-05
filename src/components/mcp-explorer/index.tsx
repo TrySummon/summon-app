@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Tool } from "@modelcontextprotocol/sdk/types";
 import { ServerStatusSection } from "./ServerStatusSection";
 import { ToolsList } from "./ToolsList";
-import { McpServerStatus, McpTransport } from "@/helpers/mcp/state";
-import { getMcpTools } from "@/helpers/ipc/mcp/mcp-client";
+import { McpServerStatus, McpTransport } from "@/lib/mcp/state";
+import { getMcpTools } from "@/ipc/mcp/mcp-client";
 
 interface McpExplorerProps {
   mcpId: string;

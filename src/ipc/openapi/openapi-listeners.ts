@@ -6,7 +6,7 @@ import {
   UPDATE_API_CHANNEL,
   DELETE_API_CHANNEL,
 } from "./openapi-channels";
-import { apiDb } from "@/helpers/db/api-db";
+import { apiDb } from "@/lib/db/api-db";
 import fs from "fs";
 import path from "path";
 import os from "os";

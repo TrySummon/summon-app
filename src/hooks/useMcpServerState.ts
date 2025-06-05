@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { McpServerState } from "@/helpers/mcp/state";
+import { McpServerState } from "@/lib/mcp/state";
 import { useQueryClient } from "@tanstack/react-query";
 import { MCP_QUERY_KEY } from "./useMcps";
 import { EXTERNAL_MCPS_QUERY_KEY } from "./useExternalMcps";
@@ -8,11 +8,11 @@ import {
   restartMcpServer,
   startMcpServer,
   stopMcpServer,
-} from "@/helpers/ipc/mcp/mcp-client";
+} from "@/ipc/mcp/mcp-client";
 import {
   connectExternalMcpServer,
   stopExternalMcpServer,
-} from "@/helpers/ipc/external-mcp/external-mcp-client";
+} from "@/ipc/external-mcp/external-mcp-client";
 
 interface useMcpServerStateResult {
   state: McpServerState | null;

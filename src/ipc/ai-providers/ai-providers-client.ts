@@ -1,4 +1,4 @@
-import { captureEvent } from "@/helpers/posthog";
+import { captureEvent } from "@/lib/posthog";
 import { AIProviderCredential } from "@/components/ai-providers/types";
 
 // AI Providers operations with PostHog instrumentation

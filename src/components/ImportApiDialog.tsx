@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/tailwind";
 import { useNavigate } from "@tanstack/react-router";
 import { LIST_API_QUERY_KEY } from "@/hooks/useApis";
-import { importApi } from "@/helpers/ipc/openapi/openapi-client";
+import { importApi } from "@/ipc/openapi/openapi-client";
 
 interface ImportApiDialogProps {
   children: React.ReactNode;

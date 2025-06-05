@@ -2,7 +2,7 @@ import { useMcps } from "./useMcps";
 import { useEffect, useState } from "react";
 import { useExternalMcps } from "./useExternalMcps";
 import { Tool as McpTool } from "@modelcontextprotocol/sdk/types.js";
-import { getMcpTools } from "@/helpers/ipc/mcp/mcp-client";
+import { getMcpTools } from "@/ipc/mcp/mcp-client";
 
 type ToolMapEntry = {
   name: string;

@@ -16,7 +16,7 @@ import {
   DOWNLOAD_MCP_ZIP_CHANNEL,
   SHOW_FILE_IN_FOLDER_CHANNEL,
 } from "./mcp-channels";
-import { McpData } from "@/helpers/db/mcp-db";
+import { McpData } from "@/lib/db/mcp-db";
 
 export function exposeMcpContext() {
   contextBridge.exposeInMainWorld("mcpApi", {

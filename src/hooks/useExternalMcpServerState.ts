@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { McpServerState } from "@/helpers/mcp/state";
-import { getMcpServerStatus } from "@/helpers/ipc/mcp/mcp-client";
+import { McpServerState } from "@/lib/mcp/state";
+import { getMcpServerStatus } from "@/ipc/mcp/mcp-client";
 import {
   connectExternalMcpServer,
   stopExternalMcpServer,
-} from "@/helpers/ipc/external-mcp/external-mcp-client";
+} from "@/ipc/external-mcp/external-mcp-client";
 
 interface UseExternalMcpServerStateResult {
   state: McpServerState | null;

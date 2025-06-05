@@ -1,14 +1,14 @@
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { syncThemeWithLocal } from "./helpers/theme_helpers";
+import { syncThemeWithLocal } from "@/lib/theme_helpers";
 import { router } from "./routes/router";
 import { RouterProvider } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { McpToolDefinition } from "./helpers/mcp/types";
+import { McpToolDefinition } from "@/lib/mcp/types";
 import { OpenAPIV3 } from "openapi-types";
-import { McpData } from "./helpers/db/mcp-db";
+import { McpData } from "@/lib/db/mcp-db";
 import { Tool } from "@modelcontextprotocol/sdk/types";
-import { McpServerState } from "./helpers/mcp/state";
+import { McpServerState } from "@/lib/mcp/state";
 import {
   AIProviderCredential,
   PersistedAIProviderCredential,
@@ -17,7 +17,7 @@ import {
   McpAuth,
   McpSubmitData,
 } from "./components/mcp-builder/start-mcp-dialog";
-import { initPostHog } from "./helpers/posthog";
+import { initPostHog } from "@/lib/posthog";
 
 export default function App() {
   useEffect(() => {

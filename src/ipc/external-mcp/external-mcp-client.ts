@@ -1,5 +1,5 @@
-import { captureEvent } from "@/helpers/posthog";
-import { McpServerState } from "@/helpers/mcp/state";
+import { captureEvent } from "@/lib/posthog";
+import { McpServerState } from "@/lib/mcp/state";
 
 // External MCP operations with PostHog instrumentation
 export const connectExternalMcpServer = async (

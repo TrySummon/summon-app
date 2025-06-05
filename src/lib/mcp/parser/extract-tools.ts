@@ -5,7 +5,7 @@ import type { JSONSchema7, JSONSchema7TypeName } from "json-schema";
 import { OpenAPIV3 } from "openapi-types";
 
 import { McpToolDefinition } from "../types/index";
-import { McpEndpoint } from "@/helpers/db/mcp-db";
+import { McpEndpoint } from "@/lib/db/mcp-db";
 import { generateOperationId, kebabCase } from "../generator/utils";
 
 /**

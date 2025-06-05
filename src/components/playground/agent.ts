@@ -5,15 +5,15 @@ import {
   ToolSet,
   tool as makeTool,
 } from "ai";
-import { createLLMProvider } from "@/helpers/llm";
+import { createLLMProvider } from "@/lib/llm";
 import { usePlaygroundStore, type PlaygroundStore } from "./store";
 import { v4 as uuidv4 } from "uuid";
 import { UIMessage } from "ai";
 import type { JSONSchema7 } from "json-schema";
-import { captureEvent } from "@/helpers/posthog";
-import { recurseCountKeys } from "@/helpers/object";
-import { getCredentials } from "@/helpers/ipc/ai-providers/ai-providers-client";
-import { callMcpTool } from "@/helpers/ipc/mcp/mcp-client";
+import { captureEvent } from "@/lib/posthog";
+import { recurseCountKeys } from "@/lib/object";
+import { getCredentials } from "@/ipc/ai-providers/ai-providers-client";
+import { callMcpTool } from "@/ipc/mcp/mcp-client";
 /**
  * Remaps modified tool arguments back to their original names for API compatibility.
  * Handles both tool name changes and deep property name changes using x-original-name metadata.

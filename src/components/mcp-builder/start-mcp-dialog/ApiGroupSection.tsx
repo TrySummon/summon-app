@@ -8,7 +8,7 @@ import { getAuthTypeFromSecuritySchemes } from "./AuthComponents";
 import { ServerUrlField } from "./ServerUrlField";
 import { TestConnectionButton } from "./TestConnectionButton";
 import { useApi } from "@/hooks/useApis";
-import { McpEndpoint } from "@/helpers/db/mcp-db";
+import { McpEndpoint } from "@/lib/db/mcp-db";
 import { McpForm } from ".";
 
 interface ApiGroupProps {

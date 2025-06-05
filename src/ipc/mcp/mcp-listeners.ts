@@ -18,7 +18,7 @@ import {
   SHOW_FILE_IN_FOLDER_CHANNEL,
 } from "./mcp-channels";
 import { callMcpTool, getMcpTools } from "./mcp-tools";
-import { mcpDb } from "@/helpers/db/mcp-db";
+import { mcpDb } from "@/lib/db/mcp-db";
 import {
   deleteMcpImpl,
   generateMcpImpl,
@@ -29,9 +29,9 @@ import {
   getAllMcpServerStatuses,
   downloadMcpZip,
   showFileInFolder,
-} from "@/helpers/mcp";
+} from "@/lib/mcp";
 import { McpSubmitData } from "@/components/mcp-builder/start-mcp-dialog";
-import { McpServerState } from "@/helpers/mcp/state";
+import { McpServerState } from "@/lib/mcp/state";
 
 export function registerMcpListeners() {
   // Create a new MCP configuration

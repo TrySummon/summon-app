@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ThemeMode } from "@/types/theme-mode";
-import { getCurrentTheme, setTheme } from "@/helpers/theme_helpers";
+import { getCurrentTheme, setTheme } from "@/lib/theme_helpers";
 import { Moon, Sun, Monitor } from "lucide-react";
 
 export const GeneralSettings: React.FC = () => {

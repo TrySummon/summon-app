@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { FileJson, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TabbedCodeSnippet, CodeTab } from "@/components/TabbedCodeSnippet";
-import { openUserDataMcpJsonFile } from "@/helpers/ipc/mcp/mcp-client";
+import { openUserDataMcpJsonFile } from "@/ipc/mcp/mcp-client";
 
 const codeSnippets: CodeTab[] = [
   {

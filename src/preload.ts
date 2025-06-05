@@ -1,3 +1,3 @@
-import exposeContexts from "./helpers/ipc/context-exposer";
+import exposeContexts from "./ipc/context-exposer";
 
 exposeContexts();

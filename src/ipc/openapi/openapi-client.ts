@@ -1,4 +1,4 @@
-import { captureEvent } from "@/helpers/posthog";
+import { captureEvent } from "@/lib/posthog";
 import { OpenAPIV3 } from "openapi-types";
 
 // API operations with PostHog instrumentation

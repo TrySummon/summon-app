@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { McpServerState } from "@/helpers/mcp/state";
+import { McpServerState } from "@/lib/mcp/state";
 import { useEffect } from "react";
-import { getAllMcpServerStatuses } from "@/helpers/ipc/mcp/mcp-client";
-import { onExternalMcpServersUpdated } from "@/helpers/ipc/external-mcp/external-mcp-client";
+import { getAllMcpServerStatuses } from "@/ipc/mcp/mcp-client";
+import { onExternalMcpServersUpdated } from "@/ipc/external-mcp/external-mcp-client";
 
 // Query key for External MCPs
 export const EXTERNAL_MCPS_QUERY_KEY = "externalMcps";

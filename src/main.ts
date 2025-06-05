@@ -1,6 +1,6 @@
 import { app, BrowserWindow, Menu, MenuItem, shell } from "electron";
 import fixPath from "fix-path";
-import registerListeners from "./helpers/ipc/listeners-register";
+import registerListeners from "./ipc/listeners-register";
 // "electron-squirrel-startup" seems broken when packaging with vite
 //import started from "electron-squirrel-startup";
 import path from "path";
@@ -10,15 +10,12 @@ import {
   installExtension,
   REACT_DEVELOPER_TOOLS,
 } from "electron-devtools-installer";
-import { getApiDataDir } from "./helpers/db/api-db";
-import { getMcpDataDir, getMcpImplDir, mcpDb } from "./helpers/db/mcp-db";
-import { startMcpServer } from "./helpers/mcp";
-import {
-  connectAllExternalMcps,
-  stopExternalMcp,
-} from "./helpers/external-mcp";
-import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "./helpers/ipc/external-mcp/external-mcp-channels";
-import { runningMcpServers } from "./helpers/mcp/state";
+import { getApiDataDir } from "@/lib/db/api-db";
+import { getMcpDataDir, getMcpImplDir, mcpDb } from "@/lib/db/mcp-db";
+import { startMcpServer } from "@/lib/mcp";
+import { connectAllExternalMcps, stopExternalMcp } from "@/lib/external-mcp";
+import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "@/ipc/external-mcp/external-mcp-channels";
+import { runningMcpServers } from "@/lib/mcp/state";
 
 // These are defined by Vite during build
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { McpData, McpEndpoint } from "@/helpers/db/mcp-db";
+import { McpData, McpEndpoint } from "@/lib/db/mcp-db";
 import { Form } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { ServerNameField } from "./ServerNameField";

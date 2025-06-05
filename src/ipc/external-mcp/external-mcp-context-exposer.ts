@@ -4,7 +4,7 @@ import {
   STOP_EXTERNAL_MCP_SERVER_CHANNEL,
   EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL,
 } from "./external-mcp-channels";
-import { McpServerState } from "@/helpers/mcp/state";
+import { McpServerState } from "@/lib/mcp/state";
 
 export function exposeExternalMcpContext() {
   contextBridge.exposeInMainWorld("externalMcpApi", {

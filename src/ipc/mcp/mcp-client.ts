@@ -1,6 +1,6 @@
-import { captureEvent } from "@/helpers/posthog";
-import { McpData } from "@/helpers/db/mcp-db";
-import { recurseCountKeys } from "@/helpers/object";
+import { captureEvent } from "@/lib/posthog";
+import { McpData } from "@/lib/db/mcp-db";
+import { recurseCountKeys } from "@/lib/object";
 
 // MCP operations with PostHog instrumentation
 export const createMcp = async (

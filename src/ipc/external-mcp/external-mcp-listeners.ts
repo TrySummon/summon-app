@@ -7,7 +7,7 @@ import {
   connectExternalMcp,
   readMcpJsonFile,
   stopExternalMcp,
-} from "@/helpers/external-mcp";
+} from "@/lib/external-mcp";
 import log from "electron-log";
 
 export function registerExternalMcpListeners() {

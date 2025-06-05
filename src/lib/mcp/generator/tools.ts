@@ -1,9 +1,9 @@
-import { McpApiGroup } from "@/helpers/db/mcp-db";
+import { McpApiGroup } from "@/lib/db/mcp-db";
 import { McpToolDefinition } from "../types";
 import { convertEndpointsToTools } from "../parser/extract-tools";
 import { kebabCase } from "./utils";
 import { extractSecuritySchemes, getEnvVarName } from "./utils/security";
-import { getApiById } from "@/helpers/db/api-db";
+import { getApiById } from "@/lib/db/api-db";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import { OpenAPIV3 } from "openapi-types";
 
