@@ -4,6 +4,7 @@ import http from "http";
 import { URL } from "url";
 import { AUTH_TEST_CREDENTIALS_CHANNEL } from "./auth-channels";
 import { McpAuth } from "@/components/mcp-builder/start-mcp-dialog";
+import log from "electron-log/main";
 
 // Helper function to make HTTP requests from the main process
 async function makeRequest(
@@ -108,7 +109,7 @@ export function registerAuthListeners() {
         const result = await makeRequest(finalUrl, headers);
         return result;
       } catch (error: unknown) {
-        console.error("Error testing credentials:", error);
+        log.error("Error testing credentials:", error);
         return {
           status: 0,
           success: false,

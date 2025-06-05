@@ -6,6 +6,7 @@ import {
   McpSubmitData,
 } from "@/components/mcp-builder/start-mcp-dialog";
 import { generateMcpId } from "./id-generator";
+import log from "electron-log/main";
 
 // Define endpoint data structure
 export interface McpEndpoint {
@@ -71,7 +72,7 @@ const ensureMcpDataDir = async () => {
   try {
     await fs.mkdir(mcpDataDir, { recursive: true });
   } catch (error) {
-    console.error("Failed to create MCP data directory:", error);
+    log.error("Failed to create MCP data directory:", error);
     throw error;
   }
 };
@@ -120,7 +121,7 @@ const storeCredentials = async (
       const filePath = getCredentialFilePath(key);
       await fs.writeFile(filePath, encrypted);
     } else {
-      console.warn("Encryption not available, credentials will not be stored");
+      log.warn("Encryption not available, credentials will not be stored");
     }
   } else if (auth.type === "apiKey" && auth.key) {
     const key = getMcpCredentialKey(mcpId, apiGroupName);
@@ -137,7 +138,7 @@ const storeCredentials = async (
       const filePath = getCredentialFilePath(key);
       await fs.writeFile(filePath, encrypted);
     } else {
-      console.warn("Encryption not available, credentials will not be stored");
+      log.warn("Encryption not available, credentials will not be stored");
     }
   }
 };
@@ -152,7 +153,7 @@ const retrieveCredentials = async (
     const filePath = getCredentialFilePath(key);
 
     if (!safeStorage.isEncryptionAvailable()) {
-      console.warn("Encryption not available, cannot retrieve credentials");
+      log.warn("Encryption not available, cannot retrieve credentials");
       return null;
     }
 
@@ -165,7 +166,7 @@ const retrieveCredentials = async (
       return null;
     }
   } catch {
-    console.error(`Error retrieving credentials for ${mcpId}:${apiGroupName}:`);
+    log.error(`Error retrieving credentials for ${mcpId}:${apiGroupName}:`);
     return null;
   }
 };
@@ -185,7 +186,7 @@ const deleteCredentials = async (
       // File doesn't exist, which is fine
     }
   } catch {
-    console.error(`Error deleting credentials for ${mcpId}:${apiGroupName}:`);
+    log.error(`Error deleting credentials for ${mcpId}:${apiGroupName}:`);
   }
 };
 
@@ -268,7 +269,7 @@ const listMcps = async (): Promise<McpData[]> => {
 
     return mcps;
   } catch {
-    console.error("Error listing MCPs:");
+    log.error("Error listing MCPs:");
     return [];
   }
 };
@@ -318,7 +319,7 @@ const getMcpById = async (
 
     return mcpData;
   } catch {
-    console.error(`Error getting MCP with ID ${id}:`);
+    log.error(`Error getting MCP with ID ${id}:`);
     return null;
   }
 };
@@ -377,7 +378,7 @@ const updateMcp = async (
 
     return true;
   } catch {
-    console.error(`Error updating MCP with ID ${id}:`);
+    log.error(`Error updating MCP with ID ${id}:`);
     return false;
   }
 };
@@ -402,7 +403,7 @@ const deleteMcp = async (id: string): Promise<boolean> => {
     await fs.unlink(getMcpFilePath(id));
     return true;
   } catch {
-    console.error(`Error deleting MCP with ID ${id}:`);
+    log.error(`Error deleting MCP with ID ${id}:`);
     return false;
   }
 };

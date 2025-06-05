@@ -12,6 +12,7 @@ import path from "path";
 import os from "os";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import { OpenAPIV3 } from "openapi-types";
+import log from "electron-log/main";
 
 interface ImportApiRequest {
   filename: string;
@@ -74,7 +75,7 @@ export function registerOpenApiListeners() {
         apiId,
       };
     } catch (error) {
-      console.error("Error importing API:", error);
+      log.error("Error importing API:", error);
       return {
         success: false,
         message:
@@ -86,7 +87,7 @@ export function registerOpenApiListeners() {
         try {
           fs.unlinkSync(tempFilePath);
         } catch (cleanupError) {
-          console.error("Error cleaning up temporary file:", cleanupError);
+          log.error("Error cleaning up temporary file:", cleanupError);
         }
       }
     }
@@ -101,7 +102,7 @@ export function registerOpenApiListeners() {
         apis,
       };
     } catch (error) {
-      console.error("Error listing APIs:", error);
+      log.error("Error listing APIs:", error);
       return {
         success: false,
         message:
@@ -133,7 +134,7 @@ export function registerOpenApiListeners() {
         api: apiData,
       };
     } catch (error) {
-      console.error(`Error getting API with ID ${id}:`, error);
+      log.error(`Error getting API with ID ${id}:`, error);
       return {
         success: false,
         message:
@@ -173,7 +174,7 @@ export function registerOpenApiListeners() {
           message: "API updated successfully",
         };
       } catch (error) {
-        console.error("Error updating API:", error);
+        log.error("Error updating API:", error);
         return {
           success: false,
           message:
@@ -200,7 +201,7 @@ export function registerOpenApiListeners() {
         message: "API deleted successfully",
       };
     } catch (error) {
-      console.error(`Error deleting API with ID ${id}:`, error);
+      log.error(`Error deleting API with ID ${id}:`, error);
       return {
         success: false,
         message:

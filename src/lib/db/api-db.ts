@@ -5,6 +5,7 @@ import { generateApiId } from "./id-generator";
 import { OpenAPIV3 } from "openapi-types";
 import fsSync from "fs";
 import SwaggerParser from "@apidevtools/swagger-parser";
+import log from "electron-log/main";
 
 // Define the API data structure that will be stored in files
 interface ApiData {
@@ -25,7 +26,7 @@ const ensureApiDataDir = async () => {
   try {
     await fs.mkdir(apiDataDir, { recursive: true });
   } catch (error) {
-    console.error("Failed to create API data directory:", error);
+    log.error("Failed to create API data directory:", error);
     throw error;
   }
 };
@@ -59,7 +60,7 @@ const createApi = async (buffer: Buffer): Promise<string> => {
     const apiSpec = JSON.parse(buffer.toString()) as OpenAPIV3.Document;
     apiName = apiSpec.info?.title;
   } catch (error) {
-    console.warn("Failed to parse API spec for name extraction:", error);
+    log.warn("Failed to parse API spec for name extraction:", error);
   }
 
   // Generate a unique ID for the API
@@ -104,23 +105,20 @@ const listApis = async (): Promise<ApiData[]> => {
               apiData.originalFilePath,
             )) as OpenAPIV3.Document;
           } catch (specError) {
-            console.error(
-              `Error loading API spec for file ${file}:`,
-              specError,
-            );
+            log.error(`Error loading API spec for file ${file}:`, specError);
           }
         }
 
         apis.push(apiData);
       } catch (error) {
-        console.error(`Error reading API file ${file}:`, error);
+        log.error(`Error reading API file ${file}:`, error);
         // Continue with other files
       }
     }
 
     return apis;
   } catch (error) {
-    console.error("Error listing APIs:", error);
+    log.error("Error listing APIs:", error);
     return [];
   }
 };
@@ -147,13 +145,13 @@ export const getApiById = async (
         );
         apiData.api = JSON.parse(originalContent) as OpenAPIV3.Document;
       } catch (specError) {
-        console.error(`Error loading API spec for ID ${id}:`, specError);
+        log.error(`Error loading API spec for ID ${id}:`, specError);
       }
     }
 
     return apiData;
   } catch (error) {
-    console.error(`Error getting API with ID ${id}:`, error);
+    log.error(`Error getting API with ID ${id}:`, error);
     return null;
   }
 };
@@ -179,7 +177,7 @@ const updateApi = async (id: string, buffer: Buffer): Promise<boolean> => {
 
     return true;
   } catch (error) {
-    console.error(`Error updating API with ID ${id}:`, error);
+    log.error(`Error updating API with ID ${id}:`, error);
     return false;
   }
 };
@@ -198,7 +196,7 @@ const deleteApi = async (id: string): Promise<boolean> => {
         // Delete the original file
         await fs.unlink(apiData.originalFilePath);
       } catch (originalFileError) {
-        console.error(
+        log.error(
           `Error deleting original file for API ${id}:`,
           originalFileError,
         );
@@ -210,7 +208,7 @@ const deleteApi = async (id: string): Promise<boolean> => {
 
     return true;
   } catch (error) {
-    console.error(`Error deleting API with ID ${id}:`, error);
+    log.error(`Error deleting API with ID ${id}:`, error);
     return false;
   }
 };
@@ -225,7 +223,7 @@ const getOriginalFileContent = async (id: string): Promise<Buffer | null> => {
   try {
     return await fs.readFile(apiData.originalFilePath);
   } catch (error) {
-    console.error(`Error reading original file for API ${id}:`, error);
+    log.error(`Error reading original file for API ${id}:`, error);
     return null;
   }
 };

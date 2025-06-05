@@ -16,6 +16,7 @@ import { startMcpServer } from "@/lib/mcp";
 import { connectAllExternalMcps, stopExternalMcp } from "@/lib/external-mcp";
 import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "@/ipc/external-mcp/external-mcp-channels";
 import { runningMcpServers } from "@/lib/mcp/state";
+import log from "electron-log/main";
 
 // These are defined by Vite during build
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
@@ -60,9 +61,9 @@ function createWindow() {
 async function installExtensions() {
   try {
     const result = await installExtension(REACT_DEVELOPER_TOOLS);
-    console.log(`Extensions installed successfully: ${result.name}`);
+    log.log(`Extensions installed successfully: ${result.name}`);
   } catch {
-    console.error("Failed to install extensions");
+    log.error("Failed to install extensions");
   }
 }
 
@@ -151,7 +152,7 @@ async function ensureMcpJsonFile(): Promise<void> {
   try {
     // Check if the file exists
     await fsPromises.access(mcpJsonPath, fs.constants.F_OK);
-    console.info("mcp.json file already exists");
+    log.info("mcp.json file already exists");
   } catch {
     // File doesn't exist, create it with default content
     const defaultContent = {
@@ -163,9 +164,9 @@ async function ensureMcpJsonFile(): Promise<void> {
         JSON.stringify(defaultContent, null, 2),
         "utf8",
       );
-      console.info("Created default mcp.json file");
+      log.info("Created default mcp.json file");
     } catch (writeError) {
-      console.error("Failed to create mcp.json file:", writeError);
+      log.error("Failed to create mcp.json file:", writeError);
     }
   }
 }
@@ -176,7 +177,7 @@ function watchMcpJsonFile(): void {
   try {
     const watcher = fs.watch(mcpJsonPath, async (eventType) => {
       if (eventType === "change") {
-        console.info("mcp.json file changed, reloading MCP servers...");
+        log.info("mcp.json file changed, reloading MCP servers...");
         try {
           // Get the current list of external MCP servers before updating
           const currentExternalMcpIds = Object.keys(runningMcpServers).filter(
@@ -194,18 +195,18 @@ function watchMcpJsonFile(): void {
 
           // Stop and clean up removed MCPs
           if (removedMcpIds.length > 0) {
-            console.info(
+            log.info(
               `Cleaning up ${removedMcpIds.length} external MCP servers that are no longer in the config...`,
             );
 
             for (const mcpId of removedMcpIds) {
               try {
                 await stopExternalMcp(mcpId);
-                console.info(`Stopped external MCP server: ${mcpId}`);
+                log.info(`Stopped external MCP server: ${mcpId}`);
                 // Remove from runningMcpServers after stopping
                 delete runningMcpServers[mcpId];
               } catch (stopError) {
-                console.error(
+                log.error(
                   `Failed to stop external MCP server ${mcpId}:`,
                   stopError,
                 );
@@ -222,38 +223,38 @@ function watchMcpJsonFile(): void {
             );
           }
         } catch (error) {
-          console.error("Error processing mcp.json changes:", error);
+          log.error("Error processing mcp.json changes:", error);
         }
       }
     });
 
     // Handle watcher errors
     watcher.on("error", (error) => {
-      console.error("Error watching mcp.json file:", error);
+      log.error("Error watching mcp.json file:", error);
     });
 
-    console.info("Watching mcp.json file for changes");
+    log.info("Watching mcp.json file for changes");
   } catch (error) {
-    console.error("Failed to set up watcher for mcp.json:", error);
+    log.error("Failed to set up watcher for mcp.json:", error);
   }
 }
 
 // Start all MCP servers when the app starts
 async function startAllMcpServers(): Promise<void> {
   try {
-    console.info("Starting all MCP servers...");
+    log.info("Starting all MCP servers...");
     const mcps = await mcpDb.listMcps();
 
     for (const mcp of mcps) {
-      console.info(`Starting MCP server: ${mcp.id}`);
+      log.info(`Starting MCP server: ${mcp.id}`);
       await startMcpServer(mcp.id).catch((error: Error) => {
-        console.error(`Failed to start MCP server ${mcp.id}:`, error);
+        log.error(`Failed to start MCP server ${mcp.id}:`, error);
       });
     }
 
-    console.info("All MCP servers started");
+    log.info("All MCP servers started");
   } catch (error) {
-    console.error(
+    log.error(
       "Error starting MCP servers:",
       error instanceof Error ? error.message : String(error),
     );

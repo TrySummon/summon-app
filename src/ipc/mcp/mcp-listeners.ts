@@ -32,6 +32,7 @@ import {
 } from "@/lib/mcp";
 import { McpSubmitData } from "@/components/mcp-builder/start-mcp-dialog";
 import { McpServerState } from "@/lib/mcp/state";
+import log from "electron-log/main";
 
 export function registerMcpListeners() {
   // Create a new MCP configuration
@@ -46,7 +47,7 @@ export function registerMcpListeners() {
         mcpId,
       };
     } catch (error) {
-      console.error("Error creating MCP configuration:", error);
+      log.error("Error creating MCP configuration:", error);
       return {
         success: false,
         message:
@@ -64,7 +65,7 @@ export function registerMcpListeners() {
         mcps,
       };
     } catch (error) {
-      console.error("Error listing MCPs:", error);
+      log.error("Error listing MCPs:", error);
       return {
         success: false,
         message:
@@ -90,7 +91,7 @@ export function registerMcpListeners() {
         mcp: mcpData,
       };
     } catch (error) {
-      console.error(`Error getting MCP with ID ${id}:`, error);
+      log.error(`Error getting MCP with ID ${id}:`, error);
       return {
         success: false,
         message:
@@ -128,7 +129,7 @@ export function registerMcpListeners() {
           message: "MCP updated successfully",
         };
       } catch (error) {
-        console.error("Error updating MCP:", error);
+        log.error("Error updating MCP:", error);
         return {
           success: false,
           message:
@@ -156,7 +157,7 @@ export function registerMcpListeners() {
         message: "MCP deleted successfully",
       };
     } catch (error) {
-      console.error(`Error deleting MCP with ID ${id}:`, error);
+      log.error(`Error deleting MCP with ID ${id}:`, error);
       return {
         success: false,
         message:
@@ -187,7 +188,7 @@ export function registerMcpListeners() {
         data: serializableStatus,
       };
     } catch (error) {
-      console.error(`Error getting MCP server status for ${mcpId}:`, error);
+      log.error(`Error getting MCP server status for ${mcpId}:`, error);
       return {
         success: false,
         message:
@@ -219,7 +220,7 @@ export function registerMcpListeners() {
         data: serializableStatuses,
       };
     } catch (error) {
-      console.error("Error getting all MCP server statuses:", error);
+      log.error("Error getting all MCP server statuses:", error);
       return {
         success: false,
         message:
@@ -246,7 +247,7 @@ export function registerMcpListeners() {
         data: serializableState,
       };
     } catch (error) {
-      console.error(`Error starting MCP server ${mcpId}:`, error);
+      log.error(`Error starting MCP server ${mcpId}:`, error);
       return {
         success: false,
         message:
@@ -275,7 +276,7 @@ export function registerMcpListeners() {
         data: serializableState,
       };
     } catch (error) {
-      console.error(`Error stopping MCP server ${mcpId}:`, error);
+      log.error(`Error stopping MCP server ${mcpId}:`, error);
       return {
         success: false,
         message:
@@ -303,7 +304,7 @@ export function registerMcpListeners() {
         data: serializableState,
       };
     } catch (error) {
-      console.error(`Error restarting MCP server ${mcpId}:`, error);
+      log.error(`Error restarting MCP server ${mcpId}:`, error);
       return {
         success: false,
         message:
@@ -321,7 +322,7 @@ export function registerMcpListeners() {
         data: tools,
       };
     } catch (error) {
-      console.error(`Error getting MCP tools:`, error);
+      log.error(`Error getting MCP tools:`, error);
       return {
         success: false,
         message:
@@ -348,7 +349,7 @@ export function registerMcpListeners() {
           data: result,
         };
       } catch (error) {
-        console.error(`Error calling MCP tool:`, error);
+        log.error(`Error calling MCP tool:`, error);
         return {
           success: false,
           message:
@@ -371,7 +372,7 @@ export function registerMcpListeners() {
         success: true,
       };
     } catch (error) {
-      console.error("Error opening mcp.json file:", error);
+      log.error("Error opening mcp.json file:", error);
       return {
         success: false,
         message:
@@ -389,7 +390,7 @@ export function registerMcpListeners() {
         data: result,
       };
     } catch (error) {
-      console.error(`Error downloading MCP zip:`, error);
+      log.error(`Error downloading MCP zip:`, error);
       return {
         success: false,
         message:
@@ -406,7 +407,7 @@ export function registerMcpListeners() {
         success: true,
       };
     } catch (error) {
-      console.error(`Error showing file in folder:`, error);
+      log.error(`Error showing file in folder:`, error);
       return {
         success: false,
         message:
