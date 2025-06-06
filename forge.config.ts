@@ -13,6 +13,7 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    extraResource: ["app-update.yml"],
     osxSign: {},
     osxNotarize: {
       appleApiKey: process.env.APPLE_API_KEY_PATH!,
@@ -36,12 +37,8 @@ const config: ForgeConfig = {
         owner: "AgentPort-Labs",
         name: "toolman",
       },
-      // This will be the default if ELECTRON_FORGE_PUBLISH_PRERELEASE is not set.
-      // In CI, the environment variable will override this.
+      generateReleaseNotes: true,
       prerelease: false,
-      // Since the CI trigger is on a 'published' release, the release is not a draft.
-      // Setting this to false aligns with that. If Forge were creating the release,
-      // this would determine if it's created as a draft.
       draft: false,
     }),
   ],

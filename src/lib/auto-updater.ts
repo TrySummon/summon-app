@@ -26,6 +26,13 @@ class AutoUpdaterService {
     log.transports.file.level = "info";
     autoUpdater.logger = log;
 
+    // Configure GitHub feed URL programmatically as fallback
+    autoUpdater.setFeedURL({
+      provider: "github",
+      owner: "AgentPort-Labs",
+      repo: "toolman",
+    });
+
     // Auto-updater events
     autoUpdater.on("checking-for-update", () => {
       log.log("Checking for update...");
