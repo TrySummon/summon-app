@@ -43,7 +43,7 @@ jobs:
         run: npm run typecheck
 
       - name: Lint
-        run: npm run lint 
+        run: npm run lint
 
       - name: Import Code-Signing Certificates (macOS only)
         if: matrix.platform == 'darwin'
