@@ -1,5 +1,6 @@
 import { autoUpdater, UpdateInfo } from "electron-updater";
 import { app, dialog, BrowserWindow } from "electron";
+import log from "electron-log/main";
 
 // Utility function to check if we're in development
 function isDev(): boolean {
@@ -22,22 +23,22 @@ class AutoUpdaterService {
       return;
     }
 
-    // Configure update server
-    // For GitHub releases, this is automatic if you have a repository field in package.json
-    // For custom server, set the feed URL:
-    // autoUpdater.setFeedURL({
-    //   provider: "generic",
-    //   url: "https://your-update-server.com/releases"
-    // });
+    // Configure GitHub repository for updates
+    autoUpdater.setFeedURL({
+      provider: "github",
+      owner: "AgentPort-Labs",
+      repo: "toolman",
+      private: false,
+    });
 
     // Auto-updater events
     autoUpdater.on("checking-for-update", () => {
-      console.log("Checking for update...");
+      log.log("Checking for update...");
       this.sendStatusToWindow("Checking for update...");
     });
 
     autoUpdater.on("update-available", (info) => {
-      console.log("Update available:", info);
+      log.log("Update available:", info);
       this.sendStatusToWindow("Update available");
 
       // Show update notification
@@ -45,12 +46,12 @@ class AutoUpdaterService {
     });
 
     autoUpdater.on("update-not-available", (info) => {
-      console.log("Update not available:", info);
+      log.log("Update not available:", info);
       this.sendStatusToWindow("Update not available");
     });
 
     autoUpdater.on("error", (err) => {
-      console.error("Update error:", err);
+      log.error("Update error:", err);
       this.sendStatusToWindow("Error in auto-updater: " + err);
     });
 
@@ -64,12 +65,12 @@ class AutoUpdaterService {
         "/" +
         progressObj.total +
         ")";
-      console.log(log_message);
+      log.log(log_message);
       this.sendStatusToWindow(log_message);
     });
 
     autoUpdater.on("update-downloaded", (info) => {
-      console.log("Update downloaded:", info);
+      log.log("Update downloaded:", info);
       this.sendStatusToWindow("Update downloaded");
 
       // Show restart dialog
@@ -83,7 +84,7 @@ class AutoUpdaterService {
 
   public checkForUpdates() {
     if (isDev()) {
-      console.log("Skipping update check in development mode");
+      log.log("Skipping update check in development mode");
       return;
     }
 
@@ -92,7 +93,7 @@ class AutoUpdaterService {
 
   public startPeriodicUpdateCheck(intervalMinutes: number = 60) {
     if (isDev()) {
-      console.log("Skipping periodic update check in development mode");
+      log.log("Skipping periodic update check in development mode");
       return;
     }
 
@@ -145,7 +146,7 @@ class AutoUpdaterService {
       autoUpdater.downloadUpdate();
     } else if (response.response === 2) {
       // Skip this version (you might want to store this preference)
-      console.log("User chose to skip version:", info.version);
+      log.log("User chose to skip version:", info.version);
     }
   }
 

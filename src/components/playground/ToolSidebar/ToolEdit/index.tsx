@@ -69,12 +69,6 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
     const schemaChanged =
       stringify(currentSchema) !== stringify(tool.inputSchema);
 
-    if (schemaChanged) {
-      console.log("schemaChanged");
-      console.log("current", JSON.stringify(currentSchema));
-      console.log("orig", JSON.stringify(tool.inputSchema));
-    }
-
     const changed = namedChanged || descChanged || schemaChanged;
 
     return changed;

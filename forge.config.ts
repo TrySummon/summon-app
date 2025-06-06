@@ -3,7 +3,7 @@ dotenvConfig();
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { PublisherGithub } from "@electron-forge/publisher-github";
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
-import { MakerZIP } from "@electron-forge/maker-zip";
+import { MakerDMG } from "@electron-forge/maker-dmg";
 import { MakerDeb } from "@electron-forge/maker-deb";
 import { MakerRpm } from "@electron-forge/maker-rpm";
 import { VitePlugin } from "@electron-forge/plugin-vite";
@@ -13,6 +13,7 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    extraResource: ["app-update.yml"],
     osxSign: {},
     osxNotarize: {
       appleApiKey: process.env.APPLE_API_KEY_PATH!,
@@ -22,8 +23,10 @@ const config: ForgeConfig = {
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({}),
-    new MakerZIP({}, ["darwin"]),
+    new MakerSquirrel({
+      remoteReleases: "https://github.com/AgentPort-Labs/toolman",
+    }),
+    new MakerDMG({}),
     new MakerRpm({}),
     new MakerDeb({}),
   ],

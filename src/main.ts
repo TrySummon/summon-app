@@ -1,9 +1,11 @@
 import { app, BrowserWindow, Menu, MenuItem, shell } from "electron";
+import started from "electron-squirrel-startup";
+if (started) {
+  app.quit();
+}
 import fixPath from "fix-path";
 import registerListeners from "./ipc/listeners-register";
 import autoUpdaterService from "./lib/auto-updater";
-// "electron-squirrel-startup" seems broken when packaging with vite
-//import started from "electron-squirrel-startup";
 import path from "path";
 import fs from "fs";
 import fsPromises from "fs/promises";
@@ -297,16 +299,8 @@ async function startAllMcpServers(): Promise<void> {
   }
 }
 
-//osX only
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
-
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
 });
-//osX only ends
