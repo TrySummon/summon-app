@@ -45,14 +45,15 @@ jobs:
       - name: Lint
         run: npm run lint 
 
-      - name: Import Code-Signing Certificates
+      - name: Import Code-Signing Certificates (macOS only)
         if: matrix.platform == 'darwin'
         uses: Apple-Actions/import-codesign-certs@v1
         with:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
-      - name: Verify certificate import
+      - name: Verify certificate import (macOS only)
+        if: matrix.platform == 'darwin'
         run: security find-identity -p codesigning -v
 
       - name: Setup Apple API Key (macOS only)
