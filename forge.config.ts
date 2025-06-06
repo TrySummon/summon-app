@@ -1,6 +1,7 @@
 import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
 import type { ForgeConfig } from "@electron-forge/shared-types";
+import { PublisherGithub } from "@electron-forge/publisher-github";
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
 import { MakerZIP } from "@electron-forge/maker-zip";
 import { MakerDeb } from "@electron-forge/maker-deb";
@@ -25,6 +26,21 @@ const config: ForgeConfig = {
     new MakerZIP({}, ["darwin"]),
     new MakerRpm({}),
     new MakerDeb({}),
+  ],
+  publishers: [
+    new PublisherGithub({
+      repository: {
+        owner: "AgentPort-Labs",
+        name: "toolman",
+      },
+      // This will be the default if ELECTRON_FORGE_PUBLISH_PRERELEASE is not set.
+      // In CI, the environment variable will override this.
+      prerelease: false,
+      // Since the CI trigger is on a 'published' release, the release is not a draft.
+      // Setting this to false aligns with that. If Forge were creating the release,
+      // this would determine if it's created as a draft.
+      draft: false,
+    }),
   ],
   plugins: [
     new VitePlugin({
