@@ -24,7 +24,8 @@ const config: ForgeConfig = {
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({
-      remoteReleases: "https://github.com/AgentPort-Labs/toolman",
+      // TODO: enable this when we open source
+      // remoteReleases: "https://github.com/AgentPort-Labs/toolman",
     }),
     new MakerDMG({}),
     new MakerRpm({}),
