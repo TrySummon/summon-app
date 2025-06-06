@@ -78,7 +78,7 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
     if (!hasChanges) {
       onRevert();
     }
-  }, [hasChanges, onRevert]);
+  }, [hasChanges, modifiedTool, onRevert]);
 
   const handleResetAll = useCallback(() => {
     setSchemaPath(["Root"]);

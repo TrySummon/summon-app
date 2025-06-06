@@ -107,7 +107,7 @@ export default function TabNavigation() {
                 className={cn(
                   "group relative flex h-12 cursor-pointer items-center border-r px-3",
                   currentTabId === tabId
-                    ? "bg-background z-10 -mb-px"
+                    ? "bg-background z-10"
                     : "bg-sidebar hover:bg-muted/40 border-b",
                 )}
                 onClick={() => setCurrentTab(tabId)}

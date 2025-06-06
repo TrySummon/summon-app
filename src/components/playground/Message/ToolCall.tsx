@@ -159,7 +159,7 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
           {/* Arguments Section */}
           <AccordionItem value="arguments" className="border-none">
             <AccordionTrigger className="py-2">
-              <span className="text-muted-foreground text-sm font-medium">
+              <span className="text-muted-foreground text-xs font-medium">
                 Arguments
               </span>
             </AccordionTrigger>
@@ -177,7 +177,7 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
           {invocation.state === "result" ? (
             <AccordionItem value="result" className="border-none">
               <AccordionTrigger className="py-2">
-                <span className="text-muted-foreground text-sm font-medium">
+                <span className="text-muted-foreground text-xs font-medium">
                   Result
                 </span>
               </AccordionTrigger>

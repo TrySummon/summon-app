@@ -82,7 +82,7 @@ const MessageEditor = ({
   }, [value, handlePaste]);
 
   const placeholderEl = isEditorEmpty ? (
-    <div className="text-muted-foreground pointer-events-none absolute top-[3px] left-[1px] z-10 text-[14px]">
+    <div className="text-muted-foreground pointer-events-none absolute top-[3px] left-[2px] z-10 text-[14px]">
       {placeholder || "Enter a message..."}
     </div>
   ) : null;

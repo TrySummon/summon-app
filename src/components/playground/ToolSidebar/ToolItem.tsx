@@ -49,6 +49,7 @@ export default function ToolItem({
 
   const modifiedTool = getModifiedTool(mcpId, tool.name);
   const hasModifications = !!modifiedTool;
+
   const displayName = getModifiedName(mcpId, tool.name, tool.name);
   const displayDescription = modifiedTool?.description ?? tool.description;
 
