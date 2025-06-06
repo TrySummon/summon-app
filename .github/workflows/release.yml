@@ -14,11 +14,11 @@ jobs:
       matrix:
         include:
           # macOS Intel (x64)
-          - os: macos-13  # Use macos-13 for Intel runners
+          - os: macos-13 # Use macos-13 for Intel runners
             platform: darwin
             arch: x64
-          # macOS Apple Silicon (arm64)  
-          - os: macos-latest  # Uses ARM runners
+          # macOS Apple Silicon (arm64)
+          - os: macos-latest # Uses ARM runners
             platform: darwin
             arch: arm64
           - os: ubuntu-latest
