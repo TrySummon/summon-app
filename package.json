@@ -1,7 +1,7 @@
 {
   "name": "AgentPort",
   "productName": "AgentPort",
-  "version": "0.0.1-alpha",
+  "version": "0.0.1",
   "description": "Your integrated environment for designing, building, and testing Model Context Protocol (MCP) servers and AI agents.",
   "main": ".vite/build/main.js",
   "private": true,

@@ -44,6 +44,8 @@ const config: ForgeConfig = {
       // Setting this to false aligns with that. If Forge were creating the release,
       // this would determine if it's created as a draft.
       draft: false,
+      // Generate release notes and update manifest files
+      generateReleaseNotes: true,
     }),
   ],
   plugins: [
