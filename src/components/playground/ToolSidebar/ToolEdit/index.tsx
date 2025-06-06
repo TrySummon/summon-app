@@ -25,6 +25,7 @@ import { cn } from "@/utils/tailwind";
 import { ModifiedTool } from "../../tabState";
 import { getNestedSchema, getOriginalProperty } from "./utils";
 import { SchemaEditor } from "./ToolSchemaEditor";
+import stringify from "json-stable-stringify";
 
 interface ToolEditDialogProps {
   open: boolean;
@@ -50,30 +51,33 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
   const [editingName, setEditingName] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
 
-  const [currentName, setCurrentName] = useState(
-    modifiedTool?.name || tool.name,
-  );
-  const [currentDescription, setCurrentDescription] = useState(
-    modifiedTool?.description || tool.description || "",
-  );
-  const [currentSchema, setCurrentSchema] = useState<JSONSchema7>(
-    // Deep clone to prevent modifying original tool.inputSchema or modifiedTool.schema
-    JSON.parse(
-      JSON.stringify(modifiedTool?.schema || tool.inputSchema),
-    ) as JSONSchema7,
-  );
-
   // schemaPath stores names, e.g., ['Root', 'user', 'address']
   const [schemaPath, setSchemaPath] = useState<string[]>(["Root"]);
 
   const originalRootSchema = tool.inputSchema as JSONSchema7;
 
+  // Get current values from modifiedTool or fallback to original tool
+  const currentName = modifiedTool?.name || tool.name;
+  const currentDescription =
+    modifiedTool?.description || tool.description || "";
+  const currentSchema =
+    modifiedTool?.schema || (tool.inputSchema as JSONSchema7);
+
   const hasChanges = useMemo(() => {
-    return (
-      currentName !== tool.name ||
-      currentDescription !== (tool.description || "") ||
-      JSON.stringify(currentSchema) !== JSON.stringify(tool.inputSchema)
-    );
+    const namedChanged = currentName !== tool.name;
+    const descChanged = currentDescription !== (tool.description || "");
+    const schemaChanged =
+      stringify(currentSchema) !== stringify(tool.inputSchema);
+
+    if (schemaChanged) {
+      console.log("schemaChanged");
+      console.log("current", JSON.stringify(currentSchema));
+      console.log("orig", JSON.stringify(tool.inputSchema));
+    }
+
+    const changed = namedChanged || descChanged || schemaChanged;
+
+    return changed;
   }, [currentName, currentDescription, currentSchema, tool]);
 
   useEffect(() => {
@@ -83,34 +87,37 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
   }, [hasChanges, onRevert]);
 
   const handleResetAll = useCallback(() => {
-    setCurrentName(tool.name);
-    setCurrentDescription(tool.description || "");
-    setCurrentSchema(
-      JSON.parse(JSON.stringify(tool.inputSchema)) as JSONSchema7,
-    );
     setSchemaPath(["Root"]);
     onRevert();
-  }, [tool, onRevert]);
+  }, [onRevert]);
 
-  const handleSave = useCallback(() => {
-    if (!hasChanges) return;
-    onSave({
-      name: currentName,
-      description: currentDescription,
-      schema: currentSchema,
-    });
-  }, [currentName, currentDescription, currentSchema, hasChanges, onSave]);
+  const handleSave = useCallback(
+    (updates: Partial<ModifiedTool>) => {
+      onSave({
+        name: updates.name !== undefined ? updates.name : currentName,
+        description:
+          updates.description !== undefined
+            ? updates.description
+            : currentDescription,
+        schema: updates.schema || currentSchema,
+      });
+    },
+    [currentName, currentDescription, currentSchema, onSave],
+  );
 
-  useEffect(() => {
-    // If an external modifiedTool is provided and changes, reset internal state
-    setCurrentName(modifiedTool?.name || tool.name);
-    setCurrentDescription(modifiedTool?.description || tool.description || "");
-    setCurrentSchema(
-      JSON.parse(
-        JSON.stringify(modifiedTool?.schema || tool.inputSchema),
-      ) as JSONSchema7,
-    );
-  }, [modifiedTool, tool]);
+  const handleNameChange = useCallback(
+    (newName: string) => {
+      handleSave({ name: newName });
+    },
+    [handleSave],
+  );
+
+  const handleDescriptionChange = useCallback(
+    (newDescription: string) => {
+      handleSave({ description: newDescription });
+    },
+    [handleSave],
+  );
 
   // Function to recursively update schema
   // pathPrefix: path to the parent of the property being modified
@@ -121,176 +128,165 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
       propertyName: string,
       updates: { description?: string; newName?: string; disabled?: boolean },
     ) => {
-      setCurrentSchema((prevSchema) => {
-        const newSchema = JSON.parse(JSON.stringify(prevSchema)) as JSONSchema7; // Deep clone
-        const parentSchema = getNestedSchema(newSchema, pathPrefix);
+      const newSchema = JSON.parse(
+        JSON.stringify(currentSchema),
+      ) as JSONSchema7; // Deep clone
+      const parentSchema = getNestedSchema(newSchema, pathPrefix);
 
+      if (
+        !parentSchema ||
+        typeof parentSchema === "boolean" ||
+        !parentSchema.properties
+      )
+        return; // Should not happen
+
+      const propSchema = parentSchema.properties[
+        propertyName
+      ] as JSONSchema7 & {
+        "x-original-name"?: string;
+        "x-ui-disabled"?: boolean;
+      };
+      if (!propSchema) return; // Property not found
+
+      const originalPropInfo = getOriginalProperty(
+        originalRootSchema,
+        pathPrefix,
+        propertyName,
+        propSchema,
+      );
+
+      // Handle description
+      if (updates.description !== undefined) {
+        propSchema.description = updates.description;
+      }
+
+      // Handle disabling (only for originally optional properties)
+      if (updates.disabled !== undefined && !originalPropInfo.wasRequired) {
+        if (updates.disabled) {
+          propSchema["x-ui-disabled"] = true;
+        } else {
+          delete propSchema["x-ui-disabled"];
+        }
+      }
+
+      // Handle rename
+      if (updates.newName && updates.newName !== propertyName) {
+        const newName = updates.newName;
+        // Store original name if not already set (first rename)
+        if (!propSchema["x-original-name"]) {
+          propSchema["x-original-name"] = propertyName;
+        }
+
+        parentSchema.properties[newName] = propSchema;
+        delete parentSchema.properties[propertyName];
+
+        // Update required array if this property was originally required
+        if (originalPropInfo.wasRequired) {
+          parentSchema.required = parentSchema.required?.filter(
+            (name) => name !== propertyName,
+          );
+          if (!parentSchema.required?.includes(newName)) {
+            parentSchema.required = [...(parentSchema.required || []), newName];
+          }
+        }
+
+        // Update schemaPath if the renamed property is part of the current path
+        const pathIndexToUpdate = pathPrefix.length; // Index of the property itself in full path
         if (
-          !parentSchema ||
-          typeof parentSchema === "boolean" ||
-          !parentSchema.properties
-        )
-          return prevSchema; // Should not happen
-
-        const propSchema = parentSchema.properties[
-          propertyName
-        ] as JSONSchema7 & {
-          "x-original-name"?: string;
-          "x-ui-disabled"?: boolean;
-        };
-        if (!propSchema) return prevSchema; // Property not found
-
-        const originalPropInfo = getOriginalProperty(
-          originalRootSchema,
-          pathPrefix,
-          propertyName,
-          propSchema,
-        );
-
-        // Handle description
-        if (updates.description !== undefined) {
-          propSchema.description = updates.description;
+          schemaPath.length > pathIndexToUpdate &&
+          schemaPath[pathIndexToUpdate] === propertyName
+        ) {
+          setSchemaPath((current) => {
+            const newP = [...current];
+            newP[pathIndexToUpdate] = newName;
+            return newP;
+          });
         }
+      }
 
-        // Handle disabling (only for originally optional properties)
-        if (updates.disabled !== undefined && !originalPropInfo.wasRequired) {
-          if (updates.disabled) {
-            propSchema["x-ui-disabled"] = true;
-          } else {
-            delete propSchema["x-ui-disabled"];
-          }
-        }
-
-        // Handle rename
-        if (updates.newName && updates.newName !== propertyName) {
-          const newName = updates.newName;
-          // Store original name if not already set (first rename)
-          if (!propSchema["x-original-name"]) {
-            propSchema["x-original-name"] = propertyName;
-          }
-
-          parentSchema.properties[newName] = propSchema;
-          delete parentSchema.properties[propertyName];
-
-          // Update required array if this property was originally required
-          if (originalPropInfo.wasRequired) {
-            parentSchema.required = parentSchema.required?.filter(
-              (name) => name !== propertyName,
-            );
-            if (!parentSchema.required?.includes(newName)) {
-              parentSchema.required = [
-                ...(parentSchema.required || []),
-                newName,
-              ];
-            }
-          }
-
-          // Update schemaPath if the renamed property is part of the current path
-          const pathIndexToUpdate = pathPrefix.length; // Index of the property itself in full path
-          if (
-            schemaPath.length > pathIndexToUpdate &&
-            schemaPath[pathIndexToUpdate] === propertyName
-          ) {
-            setSchemaPath((current) => {
-              const newP = [...current];
-              newP[pathIndexToUpdate] = newName;
-              return newP;
-            });
-          }
-        }
-        onSave({
-          name: currentName,
-          description: currentDescription,
-          schema: newSchema,
-        });
-        return newSchema;
-      });
+      handleSave({ schema: newSchema });
     },
-    [currentName, currentDescription, originalRootSchema, schemaPath, onSave],
+    [currentSchema, originalRootSchema, schemaPath, handleSave],
   );
 
   const revertSchemaProperty = useCallback(
     (pathPrefix: string[], propertyName: string) => {
-      setCurrentSchema((prevSchema) => {
-        const newSchema = JSON.parse(JSON.stringify(prevSchema)) as JSONSchema7;
-        const parentSchema = getNestedSchema(newSchema, pathPrefix);
-        const modifiedPropSchema = parentSchema?.properties?.[
-          propertyName
-        ] as JSONSchema7 & { "x-original-name"?: string };
+      const newSchema = JSON.parse(
+        JSON.stringify(currentSchema),
+      ) as JSONSchema7;
+      const parentSchema = getNestedSchema(newSchema, pathPrefix);
+      const modifiedPropSchema = parentSchema?.properties?.[
+        propertyName
+      ] as JSONSchema7 & { "x-original-name"?: string };
 
-        if (
-          !parentSchema ||
-          typeof parentSchema === "boolean" ||
-          !parentSchema.properties ||
-          !modifiedPropSchema
-        ) {
-          return prevSchema;
-        }
+      if (
+        !parentSchema ||
+        typeof parentSchema === "boolean" ||
+        !parentSchema.properties ||
+        !modifiedPropSchema
+      ) {
+        return;
+      }
 
-        const originalPropInfo = getOriginalProperty(
-          originalRootSchema,
-          pathPrefix,
-          propertyName,
-          modifiedPropSchema,
+      const originalPropInfo = getOriginalProperty(
+        originalRootSchema,
+        pathPrefix,
+        propertyName,
+        modifiedPropSchema,
+      );
+      const originalName = originalPropInfo.name;
+
+      // If property was new (not in original schema by its original name)
+      if (!originalPropInfo.schema) {
+        delete parentSchema.properties[propertyName];
+        parentSchema.required = parentSchema.required?.filter(
+          (name) => name !== propertyName && name !== originalName,
         );
-        const originalName = originalPropInfo.name;
+      } else {
+        // Restore from original
+        const restoredProp = JSON.parse(
+          JSON.stringify(originalPropInfo.schema),
+        ); // Deep clone original
 
-        // If property was new (not in original schema by its original name)
-        if (!originalPropInfo.schema) {
-          delete parentSchema.properties[propertyName];
-          parentSchema.required = parentSchema.required?.filter(
-            (name) => name !== propertyName && name !== originalName,
-          );
-        } else {
-          // Restore from original
-          const restoredProp = JSON.parse(
-            JSON.stringify(originalPropInfo.schema),
-          ); // Deep clone original
+        // Remove our custom fields from restored property
+        delete restoredProp["x-original-name"];
+        delete restoredProp["x-ui-disabled"];
 
-          // Remove our custom fields from restored property
-          delete restoredProp["x-original-name"];
-          delete restoredProp["x-ui-disabled"];
+        delete parentSchema.properties[propertyName]; // Remove current/renamed version
+        parentSchema.properties[originalName] = restoredProp; // Add back with original name and schema
 
-          delete parentSchema.properties[propertyName]; // Remove current/renamed version
-          parentSchema.properties[originalName] = restoredProp; // Add back with original name and schema
-
-          // Update required array
-          parentSchema.required = parentSchema.required?.filter(
-            (name) => name !== propertyName && name !== originalName,
-          );
-          if (
-            originalPropInfo.wasRequired &&
-            !parentSchema.required?.includes(originalName)
-          ) {
-            parentSchema.required = [
-              ...(parentSchema.required || []),
-              originalName,
-            ];
-          }
-
-          // If the propertyName was part of schemaPath and its name changed back to originalName
-          const pathIndexToUpdate = pathPrefix.length;
-          if (
-            schemaPath.length > pathIndexToUpdate &&
-            schemaPath[pathIndexToUpdate] === propertyName &&
-            propertyName !== originalName
-          ) {
-            setSchemaPath((current) => {
-              const newP = [...current];
-              newP[pathIndexToUpdate] = originalName;
-              return newP;
-            });
-          }
+        // Update required array
+        parentSchema.required = parentSchema.required?.filter(
+          (name) => name !== propertyName && name !== originalName,
+        );
+        if (
+          originalPropInfo.wasRequired &&
+          !parentSchema.required?.includes(originalName)
+        ) {
+          parentSchema.required = [
+            ...(parentSchema.required || []),
+            originalName,
+          ];
         }
-        onSave({
-          name: currentName,
-          description: currentDescription,
-          schema: newSchema,
-        });
-        return newSchema;
-      });
+
+        // If the propertyName was part of schemaPath and its name changed back to originalName
+        const pathIndexToUpdate = pathPrefix.length;
+        if (
+          schemaPath.length > pathIndexToUpdate &&
+          schemaPath[pathIndexToUpdate] === propertyName &&
+          propertyName !== originalName
+        ) {
+          setSchemaPath((current) => {
+            const newP = [...current];
+            newP[pathIndexToUpdate] = originalName;
+            return newP;
+          });
+        }
+      }
+
+      handleSave({ schema: newSchema });
     },
-    [originalRootSchema, schemaPath, currentName, currentDescription, onSave],
+    [currentSchema, originalRootSchema, schemaPath, handleSave],
   );
 
   const navigateToProperty = (propertyName: string) => {
@@ -322,25 +318,21 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
         className="flex h-5/6 w-[70vw] flex-col overflow-hidden sm:max-w-none"
       >
         <DialogHeader className="space-y-3">
-          {/* Tool Name and Description Editing UI (similar to original, adapted for currentName/currentDescription) */}
+          {/* Tool Name and Description Editing UI */}
           <DialogTitle className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               {editingName ? (
                 <Input
                   value={currentName}
-                  onChange={(e) => setCurrentName(e.target.value)}
-                  onBlur={() => {
-                    setEditingName(false);
-                    handleSave();
-                  }}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  onBlur={() => setEditingName(false)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       setEditingName(false);
-                      handleSave();
                     }
                     if (e.key === "Escape") {
                       e.stopPropagation();
-                      setCurrentName(modifiedTool?.name || tool.name); // Revert to original
+                      handleNameChange(tool.name); // Revert to original
                       setEditingName(false);
                     }
                   }}
@@ -370,7 +362,7 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setCurrentName(tool.name)}
+                      onClick={() => handleNameChange(tool.name)}
                       className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover/name:opacity-100"
                     >
                       <RotateCcw className="h-3 w-3" />
@@ -384,22 +376,16 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
             {editingDescription ? (
               <Textarea
                 value={currentDescription}
-                onChange={(e) => setCurrentDescription(e.target.value)}
-                onBlur={() => {
-                  setEditingDescription(false);
-                  handleSave();
-                }}
+                onChange={(e) => handleDescriptionChange(e.target.value)}
+                onBlur={() => setEditingDescription(false)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     setEditingDescription(false);
-                    handleSave();
                   }
                   if (e.key === "Escape") {
                     e.preventDefault();
                     e.stopPropagation();
-                    setCurrentDescription(
-                      modifiedTool?.description || tool.description || "",
-                    ); // Revert to original
+                    handleDescriptionChange(tool.description || ""); // Revert to original
                     setEditingDescription(false);
                   }
                 }}
@@ -431,12 +417,11 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={() =>
-                      setCurrentDescription(tool.description || "")
+                      handleDescriptionChange(tool.description || "")
                     }
                     className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover/desc:opacity-100"
                   >
-                    {" "}
-                    <RotateCcw className="h-3 w-3" />{" "}
+                    <RotateCcw className="h-3 w-3" />
                   </Button>
                 )}
               </div>

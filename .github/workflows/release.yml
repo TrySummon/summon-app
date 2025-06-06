@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write # Required for publisher-github to create releases and upload assets
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: windows-latest
+            platform: win32
+            arch: x64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Setup Apple API Key (macOS only)
+        if: matrix.platform == 'darwin'
+        run: |
+          echo "${{ secrets.APPLE_API_KEY }}" | base64 --decode > apple-api-key.p8
+          echo "APPLE_API_KEY_PATH=${{ github.workspace }}/apple-api-key.p8" >> $GITHUB_ENV # Use APPLE_API_KEY_PATH for clarity, forge might pick up APPLE_API_KEY automatically if it's the file path.
+        env:
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+
+      - name: Setup environment variables
+        run: |
+          echo "VITE_PUBLIC_POSTHOG_KEY=${{ secrets.VITE_PUBLIC_POSTHOG_KEY }}" >> $GITHUB_ENV
+          echo "VITE_PUBLIC_POSTHOG_HOST=${{ secrets.VITE_PUBLIC_POSTHOG_HOST }}" >> $GITHUB_ENV
+          echo "DISABLE_ANALYTICS=${{ secrets.DISABLE_ANALYTICS }}" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Setup Apple environment variables (macOS only)
+        if: matrix.platform == 'darwin'
+        run: |
+          echo "APPLE_API_KEY_ID=${{ secrets.APPLE_API_KEY_ID }}" >> $GITHUB_ENV # For notarization with API Key
+          echo "APPLE_API_ISSUER=${{ secrets.APPLE_API_ISSUER }}" >> $GITHUB_ENV # For notarization with API Key
+      
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG_NAME=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+            echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+            echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set Prerelease Flag for Publisher
+        if: contains(steps.version.outputs.RELEASE_VERSION, 'alpha') || contains(steps.version.outputs.RELEASE_VERSION, 'beta') || contains(steps.version.outputs.RELEASE_VERSION, 'rc')
+        run: echo "ELECTRON_FORGE_PUBLISH_PRERELEASE=true" >> $GITHUB_ENV
+
+      - name: Build and Publish
+        # Only publish on tag pushes or manual dispatch targeting a tag
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        run: npm run publish -- --tag ${{ env.TAG_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # APPLE_API_KEY_PATH, APPLE_API_KEY_ID, APPLE_API_ISSUER should be picked up by Forge
+          # VITE_*, DISABLE_ANALYTICS are also available for the build process
+
+
+      - name: Clean up Apple API Key (macOS only)
+        if: matrix.platform == 'darwin' && always()
+        run: rm -f apple-api-key.p8

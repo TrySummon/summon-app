@@ -1,3 +1,5 @@
+import { config as dotenvConfig } from "dotenv";
+dotenvConfig();
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
 import { MakerZIP } from "@electron-forge/maker-zip";
@@ -10,7 +12,12 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    // osxSign: {},
+    osxSign: {},
+    osxNotarize: {
+      appleApiKey: process.env.APPLE_API_KEY_PATH!,
+      appleApiKeyId: process.env.APPLE_API_KEY_ID!,
+      appleApiIssuer: process.env.APPLE_API_ISSUER!,
+    },
   },
   rebuildConfig: {},
   makers: [

@@ -12,6 +12,14 @@ interface ThemeModeContext {
   system: () => Promise<boolean>;
   current: () => Promise<"dark" | "light" | "system">;
 }
+
+interface UpdaterContext {
+  checkForUpdates: () => Promise<void>;
+  installUpdate: () => Promise<void>;
+  onUpdateStatus: (callback: (status: string) => void) => void;
+  removeUpdateStatusListener: () => void;
+}
+
 interface ElectronWindow {
   minimize: () => Promise<void>;
   maximize: () => Promise<void>;
@@ -21,4 +29,5 @@ interface ElectronWindow {
 declare interface Window {
   themeMode: ThemeModeContext;
   electronWindow: ElectronWindow;
+  updater: UpdaterContext;
 }

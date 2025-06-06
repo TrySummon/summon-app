@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, MenuItem, shell } from "electron";
 import fixPath from "fix-path";
 import registerListeners from "./ipc/listeners-register";
+import autoUpdaterService from "./lib/auto-updater";
 // "electron-squirrel-startup" seems broken when packaging with vite
 //import started from "electron-squirrel-startup";
 import path from "path";
@@ -41,6 +42,7 @@ function createWindow() {
     titleBarStyle: "hidden",
   });
   registerListeners(mainWindow);
+  autoUpdaterService.setMainWindow(mainWindow);
 
   // Handle links with target='_blank' or with rel='external' attribute
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -56,6 +58,7 @@ function createWindow() {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
+  return mainWindow;
 }
 
 async function installExtensions() {
@@ -83,6 +86,10 @@ app
         results,
       );
     }
+  })
+  .then(() => {
+    // Start periodic update checks (every 4 hours)
+    autoUpdaterService.startPeriodicUpdateCheck(240);
   });
 
 app.whenReady().then(() => {
@@ -93,6 +100,25 @@ app.whenReady().then(() => {
   const mcpImplDir = getMcpImplDir();
   // Get the current application menu
   const currentMenu = Menu.getApplicationMenu();
+
+  // Find the app menu (typically the first menu with the app name)
+  const appMenu = currentMenu?.items.find(
+    (item) => item.role === "appMenu" || item.label === app.getName(),
+  );
+
+  if (appMenu && appMenu.submenu) {
+    // Add a separator and Check for Updates to the app submenu at second position
+    appMenu.submenu.insert(1, new MenuItem({ type: "separator" }));
+    appMenu.submenu.insert(
+      2,
+      new MenuItem({
+        label: "Check for Updates",
+        click: () => {
+          autoUpdaterService.checkForUpdates();
+        },
+      }),
+    );
+  }
 
   // Find the Help menu in the current menu
   const helpMenu = currentMenu?.items.find(
