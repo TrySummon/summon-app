@@ -3,11 +3,11 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., v1.0.0)'
+        description: "Version to release (e.g., v1.0.0)"
         required: true
         type: string
 
@@ -29,7 +29,7 @@ jobs:
           - os: windows-latest
             platform: win32
             arch: x64
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,8 +37,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -72,7 +72,7 @@ jobs:
         run: |
           echo "APPLE_API_KEY_ID=${{ secrets.APPLE_API_KEY_ID }}" >> $GITHUB_ENV # For notarization with API Key
           echo "APPLE_API_ISSUER=${{ secrets.APPLE_API_ISSUER }}" >> $GITHUB_ENV # For notarization with API Key
-      
+
       - name: Get version
         id: version
         run: |
@@ -96,7 +96,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # APPLE_API_KEY_PATH, APPLE_API_KEY_ID, APPLE_API_ISSUER should be picked up by Forge
           # VITE_*, DISABLE_ANALYTICS are also available for the build process
-
 
       - name: Clean up Apple API Key (macOS only)
         if: matrix.platform == 'darwin' && always()
