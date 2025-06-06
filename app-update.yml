@@ -1,4 +1,0 @@
-provider: github
-owner: AgentPort-Labs
-repo: toolman
-updaterCacheDirName: agentport-updater

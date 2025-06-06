@@ -13,7 +13,6 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    extraResource: ["app-update.yml"],
     osxSign: {},
     osxNotarize: {
       appleApiKey: process.env.APPLE_API_KEY_PATH!,
@@ -44,8 +43,6 @@ const config: ForgeConfig = {
       // Setting this to false aligns with that. If Forge were creating the release,
       // this would determine if it's created as a draft.
       draft: false,
-      // Generate release notes and update manifest files
-      generateReleaseNotes: true,
     }),
   ],
   plugins: [

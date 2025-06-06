@@ -23,13 +23,8 @@ class AutoUpdaterService {
       return;
     }
 
-    // Configure GitHub repository for updates
-    autoUpdater.setFeedURL({
-      provider: "github",
-      owner: "AgentPort-Labs",
-      repo: "toolman",
-      private: false,
-    });
+    log.transports.file.level = "info";
+    autoUpdater.logger = log;
 
     // Auto-updater events
     autoUpdater.on("checking-for-update", () => {
