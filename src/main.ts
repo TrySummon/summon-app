@@ -178,6 +178,16 @@ app.whenReady().then(() => {
   }
 });
 
+app.on("window-all-closed", () => {
+  app.quit();
+});
+
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
+});
+
 // Get the path to the mcp.json file in the user data directory
 const getMcpJsonFilePath = () => {
   const userDataPath = app.getPath("userData");
@@ -298,9 +308,3 @@ async function startAllMcpServers(): Promise<void> {
     );
   }
 }
-
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
