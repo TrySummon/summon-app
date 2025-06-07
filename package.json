@@ -27,17 +27,17 @@
     "url": "https://github.com/AgentPort-Labs/toolman.git"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^7.8.0",
-    "@electron-forge/maker-deb": "^7.8.0",
+    "@electron-forge/cli": "^7.8.1",
+    "@electron-forge/maker-deb": "^7.8.1",
     "@electron-forge/maker-dmg": "^7.8.1",
-    "@electron-forge/maker-rpm": "^7.8.0",
-    "@electron-forge/maker-squirrel": "^7.8.0",
-    "@electron-forge/maker-zip": "^7.8.0",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.8.0",
-    "@electron-forge/plugin-fuses": "^7.8.0",
-    "@electron-forge/plugin-vite": "^7.8.0",
+    "@electron-forge/maker-rpm": "^7.8.1",
+    "@electron-forge/maker-squirrel": "^7.8.1",
+    "@electron-forge/maker-zip": "^7.8.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
+    "@electron-forge/plugin-fuses": "^7.8.1",
+    "@electron-forge/plugin-vite": "^7.8.1",
     "@electron-forge/publisher-github": "^7.8.1",
-    "@electron-forge/shared-types": "^7.8.0",
+    "@electron-forge/shared-types": "^7.8.1",
     "@electron/fuses": "^1.8.0",
     "@eslint/compat": "^1.2.8",
     "@eslint/js": "^9.25.1",
@@ -159,5 +159,14 @@
     "uuid": "^11.1.0",
     "zod": "^3.24.4",
     "zustand": "^5.0.5"
+  },
+  "build": {
+    "appId": "com.agentportlabs.toolman",
+    "productName": "AgentPort",
+    "publish": {
+      "provider": "github",
+      "owner": "AgentPort-Labs",
+      "repo": "toolman"
+    }
   }
 }
