@@ -90,7 +90,14 @@ class AutoUpdaterService {
       return;
     }
 
-    autoUpdater.checkForUpdatesAndNotify();
+    autoUpdater
+      .checkForUpdatesAndNotify()
+      .then((res) => {
+        log.log("Update check completed", res?.isUpdateAvailable);
+      })
+      .catch((err) => {
+        log.error("Update check failed", err);
+      });
   }
 
   public startPeriodicUpdateCheck(intervalMinutes: number = 60) {
