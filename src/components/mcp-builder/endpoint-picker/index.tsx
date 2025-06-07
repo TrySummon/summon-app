@@ -10,6 +10,7 @@ import { FolderList } from "./FolderList";
 import { DialogFooter } from "./DialogFooter";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ApiExplorer } from "@/components/api-explorer";
+import { cn } from "@/utils/tailwind";
 
 interface EndpointPickerDialogProps {
   open: boolean;
@@ -348,7 +349,12 @@ export function EndpointPickerDialog({
             onClose={() => onOpenChange(false)}
           />
 
-          <div className="flex flex-col gap-2 border-b py-1">
+          <div
+            className={cn(
+              "flex flex-col gap-2",
+              debouncedSearchQuery ? "" : "border-b",
+            )}
+          >
             <SearchBar
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
