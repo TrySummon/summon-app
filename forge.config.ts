@@ -14,6 +14,8 @@ import { MakerZIP } from "@electron-forge/maker-zip";
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    appBundleId: "com.agentportlabs.toolman",
+    appCategoryType: "public.app-category.developer-tools",
     extraResource: ["app-update.yml"],
     osxSign: {},
     osxNotarize: {
