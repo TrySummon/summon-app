@@ -1,8 +1,17 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as prerelease'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write # Required for publisher-github to create releases and upload assets
@@ -85,16 +94,14 @@ jobs:
       - name: Get version
         id: version
         run: |
-          echo "TAG_NAME=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
-          echo "RELEASE_VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          echo "TAG_NAME=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
 
       - name: Set Prerelease Flag for Publisher
-        if: contains(steps.version.outputs.RELEASE_VERSION, 'alpha') || contains(steps.version.outputs.RELEASE_VERSION, 'beta') || contains(steps.version.outputs.RELEASE_VERSION, 'rc')
+        if: github.event.inputs.prerelease == 'true'
         run: echo "ELECTRON_FORGE_PUBLISH_PRERELEASE=true" >> $GITHUB_ENV
 
       - name: Build and Publish
-        # Only publish on release events
-        if: github.event_name == 'release'
         run: npm run publish -- --tag ${{ env.TAG_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

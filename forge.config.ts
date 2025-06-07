@@ -9,7 +9,6 @@ import { MakerRpm } from "@electron-forge/maker-rpm";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
-import { MakerZIP } from "@electron-forge/maker-zip";
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -30,7 +29,6 @@ const config: ForgeConfig = {
       // TODO: enable this when we open source
       // remoteReleases: "https://github.com/AgentPort-Labs/toolman",
     }),
-    new MakerZIP({}, ["darwin"]),
     new MakerDMG(),
     new MakerRpm({}),
     new MakerDeb({}),
@@ -41,8 +39,9 @@ const config: ForgeConfig = {
         owner: "AgentPort-Labs",
         name: "toolman",
       },
-      prerelease: false,
       draft: true,
+      prerelease: false,
+      generateReleaseNotes: true,
     }),
   ],
   plugins: [
