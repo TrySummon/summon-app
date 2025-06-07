@@ -5,7 +5,6 @@ if (started) {
 }
 import fixPath from "fix-path";
 import registerListeners from "./ipc/listeners-register";
-import autoUpdaterService from "./lib/auto-updater";
 import path from "path";
 import fs from "fs";
 import fsPromises from "fs/promises";
@@ -20,6 +19,13 @@ import { connectAllExternalMcps, stopExternalMcp } from "@/lib/external-mcp";
 import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "@/ipc/external-mcp/external-mcp-channels";
 import { runningMcpServers } from "@/lib/mcp/state";
 import log from "electron-log/main";
+
+import { updateElectronApp } from "update-electron-app";
+
+updateElectronApp({
+  updateInterval: "1 hour",
+  logger: log,
+});
 
 // These are defined by Vite during build
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
@@ -44,7 +50,6 @@ function createWindow() {
     titleBarStyle: "hidden",
   });
   registerListeners(mainWindow);
-  autoUpdaterService.setMainWindow(mainWindow);
 
   // Handle links with target='_blank' or with rel='external' attribute
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -88,10 +93,6 @@ app
         results,
       );
     }
-  })
-  .then(() => {
-    // Start periodic update checks (every 4 hours)
-    autoUpdaterService.startPeriodicUpdateCheck(240);
   });
 
 app.whenReady().then(() => {
@@ -102,25 +103,6 @@ app.whenReady().then(() => {
   const mcpImplDir = getMcpImplDir();
   // Get the current application menu
   const currentMenu = Menu.getApplicationMenu();
-
-  // Find the app menu (typically the first menu with the app name)
-  const appMenu = currentMenu?.items.find(
-    (item) => item.role === "appMenu" || item.label === app.getName(),
-  );
-
-  if (appMenu && appMenu.submenu) {
-    // Add a separator and Check for Updates to the app submenu at second position
-    appMenu.submenu.insert(1, new MenuItem({ type: "separator" }));
-    appMenu.submenu.insert(
-      2,
-      new MenuItem({
-        label: "Check for Updates",
-        click: () => {
-          autoUpdaterService.checkForUpdates();
-        },
-      }),
-    );
-  }
 
   // Find the Help menu in the current menu
   const helpMenu = currentMenu?.items.find(
