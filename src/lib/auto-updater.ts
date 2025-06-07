@@ -31,6 +31,7 @@ class AutoUpdaterService {
       provider: "github",
       owner: "AgentPort-Labs",
       repo: "toolman",
+      private: false,
     });
 
     // Auto-updater events
@@ -90,14 +91,7 @@ class AutoUpdaterService {
       return;
     }
 
-    autoUpdater
-      .checkForUpdatesAndNotify()
-      .then((res) => {
-        log.log("Update check completed", res?.isUpdateAvailable);
-      })
-      .catch((err) => {
-        log.error("Update check failed", err);
-      });
+    autoUpdater.checkForUpdatesAndNotify();
   }
 
   public startPeriodicUpdateCheck(intervalMinutes: number = 60) {

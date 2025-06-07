@@ -167,6 +167,13 @@
       "provider": "github",
       "owner": "AgentPort-Labs",
       "repo": "toolman"
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ]
     }
   }
 }
