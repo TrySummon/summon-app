@@ -29,7 +29,9 @@ const config: ForgeConfig = {
       // remoteReleases: "https://github.com/AgentPort-Labs/toolman",
     }),
     new MakerZIP({}, ["darwin"]),
-    new MakerDMG({}),
+    new MakerDMG({
+      name: "AgentPort",
+    }),
     new MakerRpm({}),
     new MakerDeb({}),
   ],
