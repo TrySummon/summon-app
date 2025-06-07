@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => {
         env.VITE_PUBLIC_POSTHOG_HOST,
       ),
       "process.env.DISABLE_ANALYTICS": JSON.stringify(env.DISABLE_ANALYTICS),
+      "process.env.SENTRY_DSN": JSON.stringify(env.SENTRY_DSN),
     },
   };
 });

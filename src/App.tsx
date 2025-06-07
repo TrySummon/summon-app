@@ -18,14 +18,21 @@ import {
   McpSubmitData,
 } from "./components/mcp-builder/start-mcp-dialog";
 import { initPostHog } from "@/lib/posthog";
+import { initSentryRenderer } from "@/lib/sentry-renderer";
+import { SentryErrorBoundary } from "./components/SentryErrorBoundary";
 
 export default function App() {
   useEffect(() => {
     syncThemeWithLocal();
     initPostHog();
+    initSentryRenderer();
   }, []);
 
-  return <RouterProvider router={router} />;
+  return (
+    <SentryErrorBoundary>
+      <RouterProvider router={router} />
+    </SentryErrorBoundary>
+  );
 }
 
 const queryClient = new QueryClient();

@@ -74,6 +74,7 @@ jobs:
           echo "VITE_PUBLIC_POSTHOG_KEY=${{ secrets.VITE_PUBLIC_POSTHOG_KEY }}" >> $GITHUB_ENV
           echo "VITE_PUBLIC_POSTHOG_HOST=${{ secrets.VITE_PUBLIC_POSTHOG_HOST }}" >> $GITHUB_ENV
           echo "DISABLE_ANALYTICS=${{ secrets.DISABLE_ANALYTICS }}" >> $GITHUB_ENV
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> $GITHUB_ENV
         shell: bash
 
       - name: Setup Apple environment variables (macOS only)

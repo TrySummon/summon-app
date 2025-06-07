@@ -1,3 +1,6 @@
+import { initSentry } from "./lib/sentry";
+initSentry();
+
 import { app, BrowserWindow, Menu, MenuItem, shell } from "electron";
 import started from "electron-squirrel-startup";
 if (started) {
