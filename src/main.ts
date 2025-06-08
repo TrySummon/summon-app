@@ -25,11 +25,6 @@ import log from "electron-log/main";
 
 import { updateElectronApp } from "update-electron-app";
 
-updateElectronApp({
-  updateInterval: "1 hour",
-  logger: log,
-});
-
 // These are defined by Vite during build
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string | undefined;
@@ -94,6 +89,23 @@ app
       mainWindow.webContents.send(
         EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL,
         results,
+      );
+    }
+
+    if (app.isPackaged) {
+      log.log("App is packaged. Initializing auto-updater.");
+      try {
+        updateElectronApp({
+          updateInterval: "1 hour",
+          logger: log,
+        });
+        log.log("Auto-updater initialized.");
+      } catch (error) {
+        log.error("Failed to initialize auto-updater:", error);
+      }
+    } else {
+      log.log(
+        "App is not packaged (dev or test environment). Skipping auto-updater initialization.",
       );
     }
   });
