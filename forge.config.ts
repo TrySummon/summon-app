@@ -13,9 +13,10 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    appBundleId: "com.agentportlabs.toolman",
+    appBundleId: "com.summon.summon-app",
     appCategoryType: "public.app-category.developer-tools",
     extraResource: ["app-update.yml"],
+    icon: "images/icon",
     osxSign: {},
     osxNotarize: {
       appleApiKey: process.env.APPLE_API_KEY_PATH!,
@@ -27,17 +28,30 @@ const config: ForgeConfig = {
   makers: [
     new MakerSquirrel({
       // TODO: enable this when we open source
-      // remoteReleases: "https://github.com/AgentPort-Labs/toolman",
+      // remoteReleases: "https://github.com/summon/summon-app",
+      iconUrl: "./images/icon.ico",
+      setupIcon: "./images/icon.ico",
     }),
-    new MakerDMG(),
-    new MakerRpm({}),
-    new MakerDeb({}),
+    new MakerDMG({
+      icon: "./images/icon.icns",
+      background: undefined,
+    }),
+    new MakerRpm({
+      options: {
+        icon: "./images/icon.png",
+      },
+    }),
+    new MakerDeb({
+      options: {
+        icon: "./images/icon.png",
+      },
+    }),
   ],
   publishers: [
     new PublisherGithub({
       repository: {
-        owner: "AgentPort-Labs",
-        name: "toolman",
+        owner: "summon",
+        name: "summon-app",
       },
       draft: true,
       prerelease: false,

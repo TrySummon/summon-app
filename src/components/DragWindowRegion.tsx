@@ -2,7 +2,6 @@ import React from "react";
 import Logo from "./Logo";
 import { Button } from "./ui/button";
 import { StarIcon } from "lucide-react";
-import packageJson from "../../package.json";
 import {
   closeWindow,
   maximizeWindow,
@@ -16,9 +15,6 @@ export default function DragWindowRegion() {
       <div className="relative flex h-[var(--header-height)] flex-grow items-center px-2">
         <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1">
           <Logo />
-          <span className="text-muted-foreground font-mono text-xs">
-            v{packageJson.version}
-          </span>
         </div>
         <div
           className="ml-auto flex items-center gap-2"
@@ -30,7 +26,7 @@ export default function DragWindowRegion() {
             variant="ghost"
             size="icon"
             onClick={() =>
-              window.open("https://github.com/willydouhard/toolman", "_blank")
+              window.open("https://github.com/summon/summon-app", "_blank")
             }
           >
             <StarIcon className="h-4 w-4 text-yellow-500" />

@@ -1,8 +1,8 @@
-# Contributing to AgentPort
+# Contributing to Summon
 
-🎉 **Thank you for your interest in contributing to AgentPort!**
+🎉 **Thank you for your interest in contributing to Summon!**
 
-AgentPort is an open-source project that thrives on community contributions. Whether you're fixing bugs, adding features, improving documentation, or sharing ideas, your contributions make AgentPort better for everyone.
+Summon is an open-source project that thrives on community contributions. Whether you're fixing bugs, adding features, improving documentation, or sharing ideas, your contributions make Summon better for everyone.
 
 ## 🚀 Getting Started
 
@@ -17,8 +17,8 @@ AgentPort is an open-source project that thrives on community contributions. Whe
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/toolman.git
-   cd toolman
+   git clone https://github.com/YOUR_USERNAME/summon-app.git
+   cd summon-app
    ```
 3. **Install dependencies**:
    ```bash
@@ -98,7 +98,7 @@ Found a bug? We'd love to hear about it!
 
 ## 💡 Feature Requests
 
-Have an idea for AgentPort? Great!
+Have an idea for Summon? Great!
 
 1. **Check the roadmap** and existing feature requests
 2. **Open a discussion** to get community feedback
@@ -110,7 +110,7 @@ Have an idea for AgentPort? Great!
 ## 🏗️ Project Structure
 
 ```
-toolman/
+summon-app/
 ├── src/
 │   ├── components/     # React components
 │   ├── helpers/        # Utility functions
@@ -142,7 +142,7 @@ toolman/
 - 🐛 **Bug fixes** - Help us squash those pesky bugs
 - 📖 **Documentation** - Improve guides and API docs
 - 🧪 **Testing** - Add more test coverage
-- 🎨 **UI/UX** - Make AgentPort even more beautiful and intuitive
+- 🎨 **UI/UX** - Make Summon even more beautiful and intuitive
 - 🔌 **MCP Integrations** - Add support for more MCP servers
 - 🤖 **AI Model Support** - Expand AI provider integrations
 
@@ -158,4 +158,4 @@ Need help contributing? Reach out!
 
 **Ready to contribute?** We can't wait to see what you'll build! 🚀
 
-_Every contribution, no matter how small, makes AgentPort better for the entire community._
+_Every contribution, no matter how small, makes Summon better for the entire community._

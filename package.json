@@ -1,6 +1,6 @@
 {
-  "name": "AgentPort",
-  "productName": "AgentPort",
+  "name": "Summon",
+  "productName": "Summon",
   "version": "0.0.1",
   "description": "Your integrated environment for designing, building, and testing Model Context Protocol (MCP) servers and AI agents.",
   "main": ".vite/build/main.js",
@@ -23,7 +23,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AgentPort-Labs/toolman.git"
+    "url": "https://github.com/summon/summon-app.git"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.8.1",

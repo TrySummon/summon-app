@@ -39,5 +39,5 @@ test("renders the home page", async () => {
   const page: Page = await electronApp.firstWindow();
   const title = await page.waitForSelector("h1");
   const text = await title.textContent();
-  expect(text).toBe("Welcome to AgentPort!");
+  expect(text).toBe("Welcome to Summon!");
 });

@@ -53,7 +53,7 @@ export const initPostHog = () => {
 
       // Identify the user as an Electron app user
       posthog.register({
-        app_type: "AgentPort",
+        app_type: "Summon",
         app_version: packageJson.version,
       });
     } catch (error) {

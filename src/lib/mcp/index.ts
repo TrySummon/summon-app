@@ -389,7 +389,7 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
     serverState.transport = transport;
 
     const client = new Client({
-      name: "AgentPort",
+      name: "Summon",
       version: "1.0.0",
     });
     serverState.client = client;

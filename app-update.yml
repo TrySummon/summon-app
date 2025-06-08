@@ -1,4 +1,4 @@
 provider: github
-owner: AgentPort-Labs
-repo: toolman
-updaterCacheDirName: agentport-updater
+owner: summon
+repo: summon-app
+updaterCacheDirName: summon-updater

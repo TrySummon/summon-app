@@ -139,7 +139,7 @@ export const connectExternalMcp = async (
   try {
     // Create client
     const client = new Client({
-      name: "AgentPort",
+      name: "Summon",
       version: "1.0.0",
     });
 

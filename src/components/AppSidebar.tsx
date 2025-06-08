@@ -14,6 +14,7 @@ import { ApiNav } from "@/components/api-nav";
 import { McpNav } from "@/components/mcp-nav";
 import { ExternalMcpNav } from "@/components/external-mcp-nav";
 import { Link, useLocation } from "@tanstack/react-router";
+import packageJson from "../../package.json";
 
 export function AppSidebar() {
   const location = useLocation();
@@ -57,9 +58,15 @@ export function AppSidebar() {
           <Link to="/settings">
             <SidebarMenuButton
               size="lg"
+              className="flex items-center justify-between"
               isActive={location.pathname === "/settings"}
             >
-              <Settings className="h-4 w-4" /> Settings
+              <span className="flex items-center gap-2">
+                <Settings className="h-4 w-4" /> Settings
+              </span>
+              <span className="text-muted-foreground font-mono text-xs">
+                v{packageJson.version}
+              </span>
             </SidebarMenuButton>
           </Link>
         </SidebarFooter>

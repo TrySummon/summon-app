@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/willydouhard/toolman/main/src/assets/logo.svg" alt="AgentPort Logo" width="120"/>
+  <img src="https://raw.githubusercontent.com/willydouhard/toolman/main/src/assets/logo.svg" alt="Summon Logo" width="120"/>
 </p>
 
-<h1 align="center">AgentPort</h1>
+<h1 align="center">Summon</h1>
 
 <p align="center">
   <strong>Your All-in-One Desktop App for Designing, Building, and Testing Model Context Protocol (MCP) Servers & AI Agents.</strong>
@@ -17,7 +17,7 @@
 
 ---
 
-AgentPort streamlines the development workflow for AI agents using the Model Context Protocol (MCP). It empowers developers to:
+Summon streamlines the development workflow for AI agents using the Model Context Protocol (MCP). It empowers developers to:
 
 * **Generate MCP servers** from one or more OpenAPI specifications.
 * **Run and manage** these generated servers locally.
@@ -34,11 +34,11 @@ AgentPort streamlines the development workflow for AI agents using the Model Con
     *   Combine endpoints from multiple OpenAPI specifications into a single, cohesive MCP server.
     *   Easily manage authentication and server URLs for each integrated API.
 *   💻 **Local MCP Server Management:**
-    *   Start, stop, and restart your generated MCP servers directly from the AgentPort GUI.
+    *   Start, stop, and restart your generated MCP servers directly from the Summon GUI.
     *   View server status, logs (soon!), and available tools.
 *   🔗 **External MCP Integration:**
     *   Connect to any existing MCP server (local or remote) by configuring its URL or CLI command in `mcp.json`.
-    *   Bring external tools into your AgentPort Playground.
+    *   Bring external tools into your Summon Playground.
 *   🧪 **Interactive AI Playground:**
     *   Test your MCP tools in a chat-like interface with various AI models (OpenAI, Anthropic, Mistral, Azure OpenAI, etc.).
     *   Enable/disable specific tools from any connected MCP server for fine-grained testing.
@@ -54,21 +54,21 @@ AgentPort streamlines the development workflow for AI agents using the Model Con
 *(It would be great to add a GIF or a couple of screenshots here showing the main workflows, e.g., API import -> MCP build -> Playground testing)*
 
 <p align="center">
-  <em>(Imagine a GIF showcasing AgentPort in action here!)</em>
+  <em>(Imagine a GIF showcasing Summon in action here!)</em>
 </p>
 
 ## 🚀 Getting Started
 
 ### 1. Download
-Grab the latest release for your operating system from the [**GitHub Releases**](https://github.com/willydouhard/agent-port/releases) page.
+Grab the latest release for your operating system from the [**GitHub Releases**](https://github.com/willydouhard/summon-app/releases) page.
 
 ### 2. Install
 Follow the standard installation procedure for your OS:
 *   **Windows:** Run the `.exe` installer.
-*   **macOS:** Open the `.dmg` file and drag `AgentPort.app` to your Applications folder.
+*   **macOS:** Open the `.dmg` file and drag `Summon.app` to your Applications folder.
 *   **Linux:** Use the `.AppImage` or `.deb` package.
 
-### 3. Launch AgentPort
+### 3. Launch Summon
 Open the application and you're ready to go!
 
 ## 🛠️ Usage Workflow
@@ -85,12 +85,12 @@ Open the application and you're ready to go!
     *   Choose the specific endpoints you want to include in your MCP server.
     *   Click "Update" and then "Create & Start Server".
     *   Configure the server name and authentication details for each API group.
-    *   AgentPort will generate the server code and start it locally.
+    *   Summon will generate the server code and start it locally.
 
 3.  **Connect to an External MCP Server (Optional):**
     *   Navigate to "External MCPs" > "Connect MCP" or the "Connect to an External MCP" option on the Home page.
     *   Click "Open mcp.json". This file is located in your user data directory.
-    *   Add your external MCP server configurations to this file (see examples provided in the app). AgentPort will automatically detect changes and connect.
+    *   Add your external MCP server configurations to this file (see examples provided in the app). Summon will automatically detect changes and connect.
 
 4.  **Configure AI Providers (for Playground):**
     *   Go to "Settings" (⚙️ icon in the sidebar).
@@ -105,7 +105,7 @@ Open the application and you're ready to go!
 
 ## 💻 For Developers (Building from Source)
 
-If you want to contribute or run AgentPort from source:
+If you want to contribute or run Summon from source:
 
 1.  **Clone the repository:**
     ```bash
@@ -140,7 +140,7 @@ If you want to contribute or run AgentPort from source:
 
 ## 🗺️ Roadmap
 
-We have exciting plans for AgentPort! Our detailed roadmap, including upcoming features and long-term vision, can be found at:
+We have exciting plans for Summon! Our detailed roadmap, including upcoming features and long-term vision, can be found at:
 [**Link to Your Roadmap (e.g., a GitHub Project, Notion page, or website)**](https://your-roadmap-link.com)
 
 ## ❤️ Contributing
@@ -154,5 +154,5 @@ Contributions are welcome! Whether it's bug reports, feature requests, or code c
 ---
 
 <p align="center">
-  Made with ❤️ by the AgentPort Team
+  Made with ❤️ by the Summon Team
 </p>
