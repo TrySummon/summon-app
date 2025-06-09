@@ -1,4 +1,13 @@
 /**
+ * MCP Generator Module
+ *
+ * This code was inspired by the openapi-mcp-generator project:
+ * https://github.com/harsha-iiiv/openapi-mcp-generator (MIT License)
+ *
+ * Our implementation has been significantly modified.
+ */
+
+/**
  * Generator module exports
  */
 export * from "./server-code";
