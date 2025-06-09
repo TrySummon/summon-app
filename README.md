@@ -89,6 +89,7 @@ If you want to contribute or run Summon from source:
 *   **Zustand:** For global state management.
 *   **Model Context Protocol SDK:** For MCP client/server interactions.
 *   **AI SDK (Vercel AI SDK):** For LLM interactions in the Playground.
+*   **Express:** For running local MCP servers and API mock servers.
 
 
 ## ❤️ Contributing
