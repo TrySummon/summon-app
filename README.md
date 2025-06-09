@@ -1,8 +1,12 @@
-<picture align="center">
-  <source media="(prefers-color-scheme: light)" srcset="./images/logo-dark.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="./images/logo-light.svg">
-  <img alt="Summon Logo" src="images/logo-dark.svg" width="80%">
+<div align="center">
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="./images/logo-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./images/logo-dark.svg">
+  <img alt="Summon Logo" src="images/logo-dark.svg" width="200px">
 </picture>
+</div>
+
+<br>
 
 [![Latest Release](https://img.shields.io/github/v/release/TrySummon/summon-app?logo=github&color=brightgreen)](https://github.com/TrySummon/summon-app/releases)
 [![License](https://img.shields.io/github/license/TrySummon/summon-app?color=blue)](https://github.com/TrySummon/summon-app/blob/main/LICENSE)
@@ -21,30 +25,27 @@ Summon streamlines the development workflow for AI agents using the Model Contex
 * **Connect to external MCP servers**.
 * **Test and iterate** on tools within an interactive AI Playground, with the ability to **edit tool definitions on the fly**.
 
-## ✨ Key Features
+## ✨ Features
 
-*   🚀 **OpenAPI to MCP Server Generation:**
-    *   Import existing OpenAPI (v3) specifications.
-    *   Visually select endpoints to include in your MCP server.
-    *   Generate a complete, runnable Node.js MCP server project with a single click.
-*   🧩 **Multi-API Composition:**
-    *   Combine endpoints from multiple OpenAPI specifications into a single, cohesive MCP server.
-    *   Easily manage authentication and server URLs for each integrated API.
-*   💻 **Local MCP Server Management:**
-    *   Start, stop, and restart your generated MCP servers directly from the Summon GUI.
-    *   View server status, logs (soon!), and available tools.
-*   🔗 **External MCP Integration:**
-    *   Connect to any existing MCP server (local or remote) by configuring its URL or CLI command in `mcp.json`.
-    *   Bring external tools into your Summon Playground.
-*   🧪 **Interactive AI Playground:**
-    *   Test your MCP tools in a chat-like interface with various AI models (OpenAI, Anthropic, Mistral, Azure OpenAI, etc.).
-    *   Enable/disable specific tools from any connected MCP server for fine-grained testing.
-*   ✏️ **Dynamic Tool Editing (Playground):**
-    *   Modify tool names, descriptions, and even input schemas directly within the Playground.
-    *   Test changes immediately without regenerating or restarting your MCP server.
-    *   View a diff of your modifications against the original tool definition.
-*   🔐 **Secure Credential Management:**
-    *   Safely store API keys and tokens for AI providers and MCP-integrated APIs using system keychain services.
+| Category | Feature | Description |
+|----------|---------|-------------|
+| 🚀 **API Integration** | OpenAPI Import | Import existing OpenAPI (v3) specifications in JSON format |
+| | Multi-API Composition | Combine endpoints from multiple OpenAPI specs into a single MCP server |
+| | Endpoint Selection | Visually select specific endpoints to include in your MCP server |
+| 🏗️ **MCP Server Generation** | One-Click Generation | Generate complete, runnable Node.js MCP server projects instantly |
+| | Authentication Setup | Configure API keys, bearer tokens, and server URLs for each API |
+| | Local Server Management | Start, stop, and restart generated MCP servers from the GUI |
+| 🔗 **External Integration** | External MCP Support | Connect to any existing MCP server (local or remote) via `mcp.json` |
+| | CLI Integration | Support for MCP servers that run via command-line interface |
+| | Tool Discovery | Automatically discover and import tools from connected servers |
+| 🧪 **Interactive Testing** | AI Playground | Test MCP tools in a chat interface with multiple AI models |
+| | Model Support | Compatible with OpenAI, Anthropic, Mistral, Azure OpenAI, and more |
+| | Tool Management | Enable/disable specific tools for fine-grained testing |
+| ✏️ **Dynamic Editing** | Live Tool Editing | Modify tool names, descriptions, and schemas without server restart |
+| | Schema Modification | Edit input parameters and see changes immediately |
+| | Diff Visualization | View differences between original and modified tool definitions |
+| 🔐 **Security** | Secure Storage | Store API keys and tokens using system keychain services |
+| | Credential Management | Safely manage authentication for AI providers and APIs |
 
 ## 📺 Showcase
 
@@ -67,38 +68,6 @@ Follow the standard installation procedure for your OS:
 
 ### 3. Launch Summon
 Open the application and you're ready to go!
-
-## 🛠️ Usage Workflow
-
-1.  **Import Your APIs:**
-    *   Navigate to the "APIs" section in the sidebar.
-    *   Click the "+" button or the "Upload OpenAPI spec" button.
-    *   Select your OpenAPI v3 `json` or `yaml` file.
-    *   Your API will appear in the list, allowing you to explore its endpoints.
-
-2.  **Build an MCP Server (Optional - for local generation):**
-    *   Navigate to "My MCPs" > "Create MCP" or the "Build an MCP Server" option on the Home page.
-    *   Click "Pick Endpoints" and select an imported API.
-    *   Choose the specific endpoints you want to include in your MCP server.
-    *   Click "Update" and then "Create & Start Server".
-    *   Configure the server name and authentication details for each API group.
-    *   Summon will generate the server code and start it locally.
-
-3.  **Connect to an External MCP Server (Optional):**
-    *   Navigate to "External MCPs" > "Connect MCP" or the "Connect to an External MCP" option on the Home page.
-    *   Click "Open mcp.json". This file is located in your user data directory.
-    *   Add your external MCP server configurations to this file (see examples provided in the app). Summon will automatically detect changes and connect.
-
-4.  **Configure AI Providers (for Playground):**
-    *   Go to "Settings" (⚙️ icon in the sidebar).
-    *   Under "AI Providers", configure credentials for services like OpenAI, Anthropic, etc. These are stored securely in your system's keychain.
-
-5.  **Test in the Playground:**
-    *   Navigate to the "Playground" (💻 icon).
-    *   Select an AI model from the dropdown.
-    *   Open the "Enabled Tools" sidebar (➡️ icon or click the "Tools" button).
-    *   Enable the tools you want the AI to use from your local or external MCPs.
-    *   Start chatting! You can edit tool definitions (name, description, schema) on the fly by clicking the pencil icon next to a tool in the sidebar.
 
 ## 💻 For Developers (Building from Source)
 

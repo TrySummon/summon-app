@@ -1,8 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: 📚 Documentation
-    url: https://github.com/TrySummon/summon-app#readme
-    about: Check out the README for setup instructions and feature documentation
-  - name: 💬 Discussions
-    url: https://github.com/TrySummon/summon-app/discussions
-    about: Ask questions, share ideas, and discuss with the community

@@ -55,13 +55,3 @@ jobs:
                 labels: ['priority:high']
               });
             }
-            
-            // Add good first issue label for documentation issues
-            if (title.includes('[docs]')) {
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.number,
-                labels: ['good first issue']
-              });
-            }
