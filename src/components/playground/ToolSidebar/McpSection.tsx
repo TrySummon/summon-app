@@ -5,6 +5,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/utils/tailwind";
 import ToolItem from "./ToolItem";
+import WaitlistButton from "./WaitlistButton";
+import { usePlaygroundStore } from "../store";
 import type { Tool } from "@modelcontextprotocol/sdk/types";
 import type { ModifiedTool } from "../tabState";
 
@@ -52,6 +54,11 @@ export default function McpSection({
   onToolModify,
   onToolRevert,
 }: McpSectionProps) {
+  const modifiedToolMap = usePlaygroundStore(
+    (state) => state.getCurrentState().modifiedToolMap,
+  );
+  const hasModifiedTools = Object.keys(modifiedToolMap[mcpId] || {}).length > 0;
+
   return (
     <div key={mcpId}>
       <div
@@ -65,7 +72,16 @@ export default function McpSection({
             <ChevronRight className="h-4 w-4" />
           )}
           <span className="text-sm font-semibold">{name}</span>
+          {hasModifiedTools && (
+            <WaitlistButton
+              featureName="mcp-tool-save"
+              className="h-6 px-2 text-xs"
+            >
+              Save
+            </WaitlistButton>
+          )}
         </div>
+
         <Badge
           variant="outline"
           className={cn(

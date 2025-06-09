@@ -2,9 +2,14 @@ import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw, Download, Edit } from "lucide-react";
+import { AlertCircle, RefreshCw, Download, Edit, FileJson } from "lucide-react";
 import CopyButton from "@/components/CopyButton";
-import { downloadMcpZip, showFileInFolder } from "@/ipc/mcp/mcp-client";
+import WaitlistButton from "@/components/playground/ToolSidebar/WaitlistButton";
+import {
+  downloadMcpZip,
+  showFileInFolder,
+  openUserDataMcpJsonFile,
+} from "@/ipc/mcp/mcp-client";
 import { Link } from "@tanstack/react-router";
 
 interface ServerStatusSectionProps {
@@ -101,8 +106,26 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
             <RefreshCw className="h-3 w-3" />
             Refresh Status
           </Button>
-          {!isExternal && (
+          {isExternal ? (
+            <Button
+              onClick={() => openUserDataMcpJsonFile()}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <FileJson className="h-3 w-3" />
+              Edit
+            </Button>
+          ) : (
             <>
+              <WaitlistButton
+                featureName="MCP Server Deployment"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                Deploy
+              </WaitlistButton>
               <Button asChild variant="outline" size="sm" className="gap-2">
                 <Link to="/build-mcp" search={{ edit: mcpId }}>
                   <Edit className="h-3 w-3" />

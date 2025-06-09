@@ -46,9 +46,8 @@ export default function HomePage() {
               Welcome to Summon!
             </h1>
             <p className="text-muted-foreground mx-auto mb-6 max-w-xl text-sm md:mx-0">
-              Your integrated environment for designing, building, and testing
-              Model Context Protocol (MCP) servers and AI agents. Let's get you
-              started.
+              Your All-in-One Desktop App for Building, Testing and Sharing
+              Model Context Protocol (MCP) Servers & AI Agents.
             </p>
             <Button
               size="lg"
