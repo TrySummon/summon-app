@@ -1,9 +1,9 @@
 <div align="center">
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="./images/logo-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="./images/logo-dark.svg">
-  <img alt="Summon Logo" src="images/logo-dark.svg" width="200px">
-</picture>
+    <picture>
+    <source media="(prefers-color-scheme: light)" srcset="./images/logo-light.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="./images/logo-dark.svg">
+    <img alt="Summon Logo" src="images/logo-dark.svg" width="200px">
+    </picture>
 </div>
 
 <br>
@@ -14,7 +14,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/TrySummon/summon-app?logo=github&color=gold)](https://github.com/TrySummon/summon-app/stargazers)
 [![Y Combinator S25](https://img.shields.io/badge/Y%20Combinator-S25-orange)](https://www.ycombinator.com/companies?batch=S25)
 
-**Your All-in-One Desktop App for Designing, Building, and Testing Model Context Protocol (MCP) Servers & AI Agents.**
+**Your All-in-One Desktop App for Building, Testing and Sharing Model Context Protocol (MCP) Servers & AI Agents.**
 
 ---
 
@@ -22,10 +22,10 @@ The main Summon features are:
 
 | Features | Description |
 |----------|-------------|
-| **OpenAPI Integration** | Import OpenAPI (v3) specifications and visually select endpoints to include in your MCP server. Combine multiple APIs into a single, cohesive server. |
-| **MCP Server Generation** | Generate complete, runnable Node.js MCP server projects with one click. Configure authentication and manage servers directly from the GUI. |
+| **OpenAPI to MCP Generation** | Import OpenAPI specs, visually select endpoints to include in your MCP server. Combine multiple APIs into a single, cohesive server. |
+| **API Auth** | Configure authentication for real API calls or use mock servers to test your MCP tools without external dependencies. |
 | **External MCP Support** | Connect to any existing MCP server (local or remote) via `mcp.json` configuration. Support for CLI-based servers with automatic tool discovery. |
-| **AI Playground** | Test MCP tools in an interactive chat interface with multiple AI models including OpenAI, Anthropic, Mistral, and Azure OpenAI. |
+| **AI Playground** | Test MCP tool calling in an interactive chat interface with multiple AI models including OpenAI, Anthropic and more. |
 | **Live Tool Editing** | Modify tool names, descriptions, and input schemas on the fly without restarting servers. View diffs of your modifications in real-time. |
 | **Secure Credentials** | Store API keys and tokens safely using system keychain services. All credentials managed locally with secure authentication for AI providers and APIs. |
 
@@ -44,12 +44,16 @@ Grab the latest release for your operating system from the [**GitHub Releases**]
 
 ### 2. Install
 Follow the standard installation procedure for your OS:
-*   **Windows:** Run the `.exe` installer.
 *   **macOS:** Open the `.dmg` file and drag `Summon.app` to your Applications folder.
+*   **Windows:** Run the `.exe` installer.
 *   **Linux:** Use the `.AppImage` or `.deb` package.
 
 ### 3. Launch Summon
 Open the application and you're ready to go!
+
+## 🗺️ Roadmap
+
+We have exciting plans for Summon! Our collaborative roadmap, including upcoming features and long-term vision, can be found on our [website](https://www.trysummon.com/roadmap).
 
 ## 💻 For Developers (Building from Source)
 
@@ -86,9 +90,6 @@ If you want to contribute or run Summon from source:
 *   **Model Context Protocol SDK:** For MCP client/server interactions.
 *   **AI SDK (Vercel AI SDK):** For LLM interactions in the Playground.
 
-## 🗺️ Roadmap
-
-We have exciting plans for Summon! Our collaborative roadmap, including upcoming features and long-term vision, can be found on our [website](https://www.trysummon.com/roadmap).
 
 ## ❤️ Contributing
 
