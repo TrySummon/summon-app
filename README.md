@@ -1,19 +1,16 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/willydouhard/toolman/main/src/assets/logo.svg" alt="Summon Logo" width="120"/>
-</p>
+<picture align="center">
+  <source media="(prefers-color-scheme: light)" srcset="./images/logo-dark.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./images/logo-light.svg">
+  <img alt="Summon Logo" src="images/logo-dark.svg" width="80%">
+</picture>
 
-<h1 align="center">Summon</h1>
+[![Latest Release](https://img.shields.io/github/v/release/TrySummon/summon-app?logo=github&color=brightgreen)](https://github.com/TrySummon/summon-app/releases)
+[![License](https://img.shields.io/github/license/TrySummon/summon-app?color=blue)](https://github.com/TrySummon/summon-app/blob/main/LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/TrySummon/summon-app/build.yml?branch=main&logo=githubactions)](https://github.com/TrySummon/summon-app/actions/workflows/build.yml)
+[![GitHub Stars](https://img.shields.io/github/stars/TrySummon/summon-app?logo=github&color=gold)](https://github.com/TrySummon/summon-app/stargazers)
+[![Y Combinator S25](https://img.shields.io/badge/Y%20Combinator-S25-orange)](https://www.ycombinator.com/companies?batch=S25)
 
-<p align="center">
-  <strong>Your All-in-One Desktop App for Designing, Building, and Testing Model Context Protocol (MCP) Servers & AI Agents.</strong>
-</p>
-
-<p align="center">
-  <a href="https://github.com/willydouhard/agent-port/releases"><img src="https://img.shields.io/github/v/release/willydouhard/agent-port?style=for-the-badge&logo=github&color=brightgreen" alt="Latest Release"></a>
-  <a href="https://github.com/willydouhard/agent-port/blob/main/LICENSE"><img src="https://img.shields.io/github/license/willydouhard/agent-port?style=for-the-badge&color=blue" alt="License"></a>
-  <a href="https://github.com/willydouhard/agent-port/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/willydouhard/agent-port/build.yml?branch=main&style=for-the-badge&logo=githubactions" alt="Build Status"></a>
-  <a href="https://github.com/willydouhard/agent-port/stargazers"><img src="https://img.shields.io/github/stars/willydouhard/agent-port?style=for-the-badge&logo=github&color=gold" alt="GitHub Stars"></a>
-</p>
+**Your All-in-One Desktop App for Designing, Building, and Testing Model Context Protocol (MCP) Servers & AI Agents.**
 
 ---
 
@@ -60,7 +57,7 @@ Summon streamlines the development workflow for AI agents using the Model Contex
 ## 🚀 Getting Started
 
 ### 1. Download
-Grab the latest release for your operating system from the [**GitHub Releases**](https://github.com/willydouhard/summon-app/releases) page.
+Grab the latest release for your operating system from the [**GitHub Releases**](https://github.com/TrySummon/summon-app/releases) page.
 
 ### 2. Install
 Follow the standard installation procedure for your OS:
@@ -109,8 +106,8 @@ If you want to contribute or run Summon from source:
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/willydouhard/agent-port.git
-    cd agent-port
+    git clone https://github.com/TrySummon/summon-app.git
+    cd summon-app
     ```
 
 2.  **Install dependencies:**
@@ -140,15 +137,14 @@ If you want to contribute or run Summon from source:
 
 ## 🗺️ Roadmap
 
-We have exciting plans for Summon! Our detailed roadmap, including upcoming features and long-term vision, can be found at:
-[**Link to Your Roadmap (e.g., a GitHub Project, Notion page, or website)**](https://your-roadmap-link.com)
+We have exciting plans for Summon! Our collaborative roadmap, including upcoming features and long-term vision, can be found on our [website](https://www.trysummon.com/roadmap).
 
 ## ❤️ Contributing
 
 Contributions are welcome! Whether it's bug reports, feature requests, or code contributions, please feel free to:
 
-1.  Check our [Contribution Guidelines](CONTRIBUTING.md) (you'll need to create this file).
-2.  Open an issue on the [GitHub Issues page](https://github.com/willydouhard/agent-port/issues).
+1.  Check our [Contribution Guidelines](CONTRIBUTING.md).
+2.  Open an issue on the [GitHub Issues page](https://github.com/TrySummon/summon-app/issues).
 3.  Fork the repository and submit a pull request.
 
 ---

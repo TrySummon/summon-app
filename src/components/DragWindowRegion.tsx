@@ -26,7 +26,7 @@ export default function DragWindowRegion() {
             variant="ghost"
             size="icon"
             onClick={() =>
-              window.open("https://github.com/summon/summon-app", "_blank")
+              window.open("https://github.com/TrySummon/summon-app", "_blank")
             }
           >
             <StarIcon className="h-4 w-4 text-yellow-500" />

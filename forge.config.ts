@@ -28,7 +28,7 @@ const config: ForgeConfig = {
   makers: [
     new MakerSquirrel({
       // TODO: enable this when we open source
-      // remoteReleases: "https://github.com/summon/summon-app",
+      // remoteReleases: "https://github.com/TrySummon/summon-app",
       iconUrl: "./images/icon.ico",
       setupIcon: "./images/icon.ico",
     }),

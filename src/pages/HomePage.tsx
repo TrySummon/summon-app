@@ -54,7 +54,7 @@ export default function HomePage() {
               size="lg"
               className="bg-primary hover:bg-primary/90 text-primary-foreground"
               onClick={() =>
-                window.open("https://github.com/summon/summon-app", "_blank")
+                window.open("https://github.com/TrySummon/summon-app", "_blank")
               }
             >
               <StarIcon className="mr-2 h-5 w-5 fill-yellow-400 text-yellow-400" />

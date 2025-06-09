@@ -1,0 +1,77 @@
+name: 📚 Documentation Issue
+description: Report an issue with documentation or suggest documentation improvements
+title: "[Docs]: "
+labels: ["documentation"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve Summon's documentation! 📖
+        
+        Whether it's a typo, missing information, or unclear instructions, your feedback helps make Summon more accessible to everyone.
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation needs attention?
+      options:
+        - README.md
+        - Setup/Installation Guide
+        - Feature Documentation
+        - API Documentation
+        - Code Comments
+        - Contributing Guide
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What kind of documentation issue is this?
+      options:
+        - Missing Information
+        - Incorrect Information
+        - Unclear Instructions
+        - Typo/Grammar
+        - Broken Link
+        - Outdated Content
+        - Formatting Issue
+        - Suggestion for Improvement
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the documentation issue or improvement you'd like to see.
+      placeholder: The current documentation says... but it should say... / I was confused by... / It would be helpful to add...
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Where is this documentation located? (URL, file path, section name, etc.)
+      placeholder: e.g., README.md line 45, /docs/setup.md, "Getting Started" section
+
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested Fix
+      description: If you have a suggestion for how to fix or improve this documentation, please share it here.
+      placeholder: I suggest changing... / Adding a section about... / Including an example of...
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have checked that this documentation issue hasn't already been reported
+          required: true
