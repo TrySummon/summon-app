@@ -18,14 +18,7 @@
 
 ---
 
-Summon streamlines the development workflow for AI agents using the Model Context Protocol (MCP). It empowers developers to:
-
-* **Generate MCP servers** from one or more OpenAPI specifications.
-* **Run and manage** these generated servers locally.
-* **Connect to external MCP servers**.
-* **Test and iterate** on tools within an interactive AI Playground, with the ability to **edit tool definitions on the fly**.
-
-## ✨ Features
+The main Summon features are:
 
 | Features | Description |
 |----------|-------------|
