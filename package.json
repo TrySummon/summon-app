@@ -133,7 +133,7 @@
     "ai": "^4.3.16",
     "archiver": "^7.0.1",
     "axios": "^1.9.0",
-    "babel-plugin-react-compiler": "^19.0.0-beta-e993439-20250328",
+    "babel-plugin-react-compiler": "^19.0.0-beta-714736e-20250131",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "codemirror": "^6.0.1",
