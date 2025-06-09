@@ -27,25 +27,14 @@ Summon streamlines the development workflow for AI agents using the Model Contex
 
 ## ✨ Features
 
-| Category | Feature | Description |
-|----------|---------|-------------|
-| 🚀 **API Integration** | OpenAPI Import | Import existing OpenAPI (v3) specifications in JSON format |
-| | Multi-API Composition | Combine endpoints from multiple OpenAPI specs into a single MCP server |
-| | Endpoint Selection | Visually select specific endpoints to include in your MCP server |
-| 🏗️ **MCP Server Generation** | One-Click Generation | Generate complete, runnable Node.js MCP server projects instantly |
-| | Authentication Setup | Configure API keys, bearer tokens, and server URLs for each API |
-| | Local Server Management | Start, stop, and restart generated MCP servers from the GUI |
-| 🔗 **External Integration** | External MCP Support | Connect to any existing MCP server (local or remote) via `mcp.json` |
-| | CLI Integration | Support for MCP servers that run via command-line interface |
-| | Tool Discovery | Automatically discover and import tools from connected servers |
-| 🧪 **Interactive Testing** | AI Playground | Test MCP tools in a chat interface with multiple AI models |
-| | Model Support | Compatible with OpenAI, Anthropic, Mistral, Azure OpenAI, and more |
-| | Tool Management | Enable/disable specific tools for fine-grained testing |
-| ✏️ **Dynamic Editing** | Live Tool Editing | Modify tool names, descriptions, and schemas without server restart |
-| | Schema Modification | Edit input parameters and see changes immediately |
-| | Diff Visualization | View differences between original and modified tool definitions |
-| 🔐 **Security** | Secure Storage | Store API keys and tokens using system keychain services |
-| | Credential Management | Safely manage authentication for AI providers and APIs |
+| Features | Description |
+|----------|-------------|
+| **OpenAPI Integration** | Import OpenAPI (v3) specifications and visually select endpoints to include in your MCP server. Combine multiple APIs into a single, cohesive server. |
+| **MCP Server Generation** | Generate complete, runnable Node.js MCP server projects with one click. Configure authentication and manage servers directly from the GUI. |
+| **External MCP Support** | Connect to any existing MCP server (local or remote) via `mcp.json` configuration. Support for CLI-based servers with automatic tool discovery. |
+| **AI Playground** | Test MCP tools in an interactive chat interface with multiple AI models including OpenAI, Anthropic, Mistral, and Azure OpenAI. |
+| **Live Tool Editing** | Modify tool names, descriptions, and input schemas on the fly without restarting servers. View diffs of your modifications in real-time. |
+| **Secure Credentials** | Store API keys and tokens safely using system keychain services. All credentials managed locally with secure authentication for AI providers and APIs. |
 
 ## 📺 Showcase
 
