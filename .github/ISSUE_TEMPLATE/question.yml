@@ -8,7 +8,7 @@ body:
     attributes:
       value: |
         Have a question about using Summon? We're here to help! 🤝
-        
+
         Please check the documentation and existing issues first to see if your question has already been answered.
 
   - type: textarea

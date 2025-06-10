@@ -8,7 +8,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to report a bug! 🙏
-        
+
         Before submitting, please check if a similar issue already exists.
 
   - type: textarea
@@ -71,7 +71,7 @@ body:
         1. Opening Summon
         2. Going to Help menu → "Open Log Folder"
         3. Copy and paste relevant log entries here
-        
+
         **Important**: Please review logs for any sensitive information before sharing.
       placeholder: Paste relevant log entries here...
       render: text

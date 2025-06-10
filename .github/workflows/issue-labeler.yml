@@ -17,7 +17,7 @@ jobs:
             const issue = context.payload.issue;
             const title = issue.title.toLowerCase();
             const body = issue.body || '';
-            
+
             // Add platform labels based on issue content
             if (body.includes('macOS') || body.includes('mac')) {
               await github.rest.issues.addLabels({
@@ -27,7 +27,7 @@ jobs:
                 labels: ['platform:macOS']
               });
             }
-            
+
             if (body.includes('Windows') || body.includes('win')) {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
@@ -36,7 +36,7 @@ jobs:
                 labels: ['platform:Windows']
               });
             }
-            
+
             if (body.includes('Linux') || body.includes('ubuntu')) {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
@@ -45,7 +45,7 @@ jobs:
                 labels: ['platform:Linux']
               });
             }
-            
+
             // Add priority labels for feature requests
             if (title.includes('[feature]') && body.includes('High - Critical')) {
               await github.rest.issues.addLabels({
