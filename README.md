@@ -43,6 +43,10 @@ Follow the standard installation procedure for your OS:
 *   **Linux:** Use the `.rpm` or `.deb` package.
 
 ### 3. Launch Summon
+
+> [!NOTE]
+> **Keychain Access:** You may be prompted to grant keychain access when first using Summon. This is because Summon encrypts and stores API keys locally on your device using your system's secure keychain services. All credentials are stored locally and never sent to external servers.
+
 Open the application and you're ready to go!
 
 ## 🗺️ Roadmap
