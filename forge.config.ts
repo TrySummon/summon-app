@@ -34,7 +34,35 @@ const config: ForgeConfig = {
     }),
     new MakerDMG({
       icon: "./images/icon.icns",
-      background: undefined,
+      background: "./images/dmg-background.png",
+      iconSize: 100,
+      contents: (opts) => [
+        {
+          x: 180,
+          y: 170,
+          type: "file",
+          path: opts.appPath,
+        },
+        {
+          x: 480,
+          y: 170,
+          type: "link",
+          path: "/Applications",
+        },
+      ],
+      additionalDMGOptions: {
+        window: {
+          position: {
+            x: 400,
+            y: 100,
+          },
+          size: {
+            width: 660,
+            height: 400,
+          },
+        },
+      },
+      format: "ULFO",
     }),
     new MakerRpm({
       options: {

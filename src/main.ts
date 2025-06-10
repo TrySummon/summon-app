@@ -6,6 +6,28 @@ import started from "electron-squirrel-startup";
 if (started) {
   app.quit();
 }
+
+// Handle single instance lock to prevent crashes when multiple instances are opened
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // If we didn't get the lock, quit this instance
+  app.quit();
+} else {
+  // If we got the lock, handle the second-instance event
+  app.on("second-instance", () => {
+    // Someone tried to run a second instance, focus our window instead
+    const windows = BrowserWindow.getAllWindows();
+    if (windows.length > 0) {
+      const mainWindow = windows[0];
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
+    }
+  });
+}
+
 import fixPath from "fix-path";
 import registerListeners from "./ipc/listeners-register";
 import path from "path";
