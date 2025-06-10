@@ -1,0 +1,4 @@
+provider: github
+owner: trysummon
+repo: summon-app
+updaterCacheDirName: summon-updater

@@ -1,0 +1,6 @@
+{
+  "snapshot": "snapshot-20250526-78588da2-8086-40c3-88bf-5b564d747d3d",
+  "install": "npm install && npm audit fix",
+  "start": "npm run test",
+  "terminals": []
+}

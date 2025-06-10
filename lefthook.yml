@@ -1,0 +1,13 @@
+pre-commit:
+  commands:
+    format:
+      glob: "*.{js,ts,jsx,tsx,json}"
+      run: npx prettier --write {staged_files}
+      stage_fixed: true
+    lint:
+      glob: "*.{js,ts,jsx,tsx}"
+      run: npx eslint --fix {staged_files}
+      stage_fixed: true
+    typecheck:
+      glob: "*.{ts,tsx}"
+      run: npm run typecheck

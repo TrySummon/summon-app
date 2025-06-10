@@ -1,0 +1,57 @@
+name: Issue Labeler
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  label-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Add labels to issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+            const body = issue.body || '';
+            
+            // Add platform labels based on issue content
+            if (body.includes('macOS') || body.includes('mac')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['platform:macOS']
+              });
+            }
+            
+            if (body.includes('Windows') || body.includes('win')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['platform:Windows']
+              });
+            }
+            
+            if (body.includes('Linux') || body.includes('ubuntu')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['platform:Linux']
+              });
+            }
+            
+            // Add priority labels for feature requests
+            if (title.includes('[feature]') && body.includes('High - Critical')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['priority:high']
+              });
+            }
