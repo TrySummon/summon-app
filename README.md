@@ -40,7 +40,7 @@ Grab the latest release for your operating system from the [**GitHub Releases**]
 Follow the standard installation procedure for your OS:
 *   **macOS:** Open the `.dmg` file and drag `Summon.app` to your Applications folder.
 *   **Windows:** Run the `.exe` installer.
-*   **Linux:** Use the `.AppImage` or `.deb` package.
+*   **Linux:** Use the `.rpm` or `.deb` package.
 
 ### 3. Launch Summon
 Open the application and you're ready to go!
