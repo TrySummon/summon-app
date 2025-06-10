@@ -3,6 +3,12 @@ import { ChevronRight, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/utils/tailwind";
 import ToolItem from "./ToolItem";
 import WaitlistButton from "./WaitlistButton";
@@ -62,35 +68,49 @@ export default function McpSection({
   return (
     <div key={mcpId}>
       <div
-        className={`text-foreground bg-accent sticky top-0 z-10 flex cursor-pointer items-center justify-between p-2`}
-        onClick={onToggleSection}
+        className={`text-foreground bg-accent sticky top-0 z-10 flex flex-col gap-1 p-2`}
       >
-        <div className="flex items-center gap-2 select-none">
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-          <span className="text-sm font-semibold">{name}</span>
-          {hasModifiedTools && (
-            <WaitlistButton
-              featureName="mcp-tool-save"
-              className="h-6 px-2 text-xs"
-            >
-              Save
-            </WaitlistButton>
-          )}
-        </div>
-
-        <Badge
-          variant="outline"
-          className={cn(
-            "text-xs select-none",
-            !selectedToolCount && "opacity-0",
-          )}
+        <div
+          onClick={onToggleSection}
+          className="flex cursor-pointer items-center justify-between"
         >
-          {selectedToolCount || 0}
-        </Badge>
+          <div className="flex items-center gap-2 select-none">
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+            <span className="text-sm font-semibold">{name}</span>
+          </div>
+
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-xs select-none",
+              !selectedToolCount && "opacity-0",
+            )}
+          >
+            {selectedToolCount || 0}
+          </Badge>
+        </div>
+        {hasModifiedTools && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <WaitlistButton
+                  featureName="mcp-tool-save"
+                  className="ml-auto h-6 w-fit px-2 text-xs"
+                >
+                  Save
+                </WaitlistButton>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Your tool changes are active for this tab only.</p>
+                <p>Click to open a Pull Request.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
 
       {isExpanded && (

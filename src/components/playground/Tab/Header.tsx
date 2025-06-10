@@ -54,12 +54,15 @@ export default function TabHeader() {
   // Set up keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if focus is in a CodeMirror editor
+      // Check if focus is in a CodeMirror editor, input, or textarea
       const isInCodeMirror =
         document.activeElement?.closest(".cm-editor") !== null;
+      const isInInput =
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA";
 
-      // Don't handle shortcuts if we're in CodeMirror
-      if (isInCodeMirror) {
+      // Don't handle shortcuts if we're in CodeMirror, input, or textarea
+      if (isInCodeMirror || isInInput) {
         return;
       }
 

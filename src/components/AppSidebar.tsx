@@ -14,6 +14,7 @@ import { ApiNav } from "@/components/api-nav";
 import { McpNav } from "@/components/mcp-nav";
 import { ExternalMcpNav } from "@/components/external-mcp-nav";
 import { Link, useLocation } from "@tanstack/react-router";
+import FeedbackButton from "@/components/FeedbackButton";
 import packageJson from "../../package.json";
 
 export function AppSidebar() {
@@ -55,6 +56,9 @@ export function AppSidebar() {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
+          <FeedbackButton className="w-full justify-start">
+            Give Feedback
+          </FeedbackButton>
           <Link to="/settings">
             <SidebarMenuButton
               size="lg"
