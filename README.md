@@ -9,7 +9,7 @@
 <br>
 
 [![Latest Release](https://img.shields.io/github/v/release/TrySummon/summon-app?logo=github&color=brightgreen)](https://github.com/TrySummon/summon-app/releases)
-[![License](https://img.shields.io/github/license/TrySummon/summon-app?color=blue)](https://github.com/TrySummon/summon-app/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/TrySummon/summon-app?color=blue&v=1)](https://github.com/TrySummon/summon-app/blob/main/LICENSE)
 [![Y Combinator S25](https://img.shields.io/badge/Y%20Combinator-S25-orange)](https://www.ycombinator.com/companies?batch=S25)
 
 **Your All-in-One Desktop App for Building, Testing and Sharing Model Context Protocol (MCP) Servers & AI Agents.**
