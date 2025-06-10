@@ -162,7 +162,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
       <div>
         <h2 className="mb-4 text-xl font-bold">MCP Server Status</h2>
         <Alert className="border-yellow-500/30 bg-yellow-500/10 dark:bg-yellow-500/5">
-          <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
+          <AlertCircle className="h-4 w-4 !text-yellow-600 dark:text-yellow-500" />
           <AlertTitle className="text-yellow-800 dark:text-yellow-300">
             Server is starting
           </AlertTitle>

@@ -67,7 +67,7 @@ export default function ToolItem({
         key={mcpId + tool.name}
         className={cn(
           `group/tool relative border-b`,
-          hasModifications && "bg-blue-100 dark:bg-blue-900/30",
+          hasModifications && "bg-primary/10 dark:bg-primary/20",
         )}
       >
         <div className="p-2 py-4">
@@ -85,7 +85,8 @@ export default function ToolItem({
                   title={tool.name}
                   className={cn(
                     "text-foreground cursor-pointer text-sm font-normal",
-                    hasModifications && "text-blue-800 dark:text-blue-200",
+                    hasModifications &&
+                      "text-primary dark:text-primary-foreground",
                   )}
                 >
                   {displayName}
@@ -102,7 +103,7 @@ export default function ToolItem({
               className={cn(
                 "-mt-1 h-6 w-6 p-0 opacity-0 transition-opacity group-hover/tool:opacity-100",
                 hasModifications &&
-                  "bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:hover:bg-blue-900/50",
+                  "bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20 dark:text-primary-foreground dark:hover:bg-primary/30",
               )}
               title="Edit tool"
             >

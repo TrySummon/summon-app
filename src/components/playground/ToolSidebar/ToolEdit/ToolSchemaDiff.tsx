@@ -25,7 +25,7 @@ export const ToolSchemaDiff: React.FC<ToolSchemaDiffProps> = ({
     JSON.stringify(modifiedSchema) !== JSON.stringify(originalTool.inputSchema);
 
   return (
-    <div className="h-full space-y-6 overflow-y-auto pr-2">
+    <div className="h-full space-y-6 overflow-y-auto">
       {/* Tool Name Diff */}
       {nameChanged && (
         <div className="space-y-3">
@@ -516,27 +516,27 @@ const PropertyDiff: React.FC<PropertyDiffProps> = ({ change }) => {
         };
       case "enabled":
         return {
-          border: "border-blue-500/30",
-          bg: "bg-blue-500/10 dark:bg-blue-500/5",
-          text: "text-blue-700 dark:text-blue-400",
+          border: "border-primary/30",
+          bg: "bg-primary/10 dark:bg-primary/5",
+          text: "text-primary dark:text-primary-foreground",
           badge:
-            "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600",
+            "bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90",
         };
       case "name_changed":
         return {
-          border: "border-blue-500/30",
-          bg: "bg-blue-500/10 dark:bg-blue-500/5",
-          text: "text-blue-700 dark:text-blue-400",
+          border: "border-primary/30",
+          bg: "bg-primary/10 dark:bg-primary/5",
+          text: "text-primary dark:text-primary-foreground",
           badge:
-            "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600",
+            "bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90",
         };
       default:
         return {
-          border: "border-blue-500/30",
-          bg: "bg-blue-500/10 dark:bg-blue-500/5",
-          text: "text-blue-700 dark:text-blue-400",
+          border: "border-primary/30",
+          bg: "bg-primary/10 dark:bg-primary/5",
+          text: "text-primary dark:text-primary-foreground",
           badge:
-            "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600",
+            "bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90",
         };
     }
   };

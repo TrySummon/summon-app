@@ -1,9 +1,14 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -26,6 +31,7 @@ import { ModifiedTool } from "../../tabState";
 import { getNestedSchema, getOriginalProperty } from "./utils";
 import { SchemaEditor } from "./ToolSchemaEditor";
 import stringify from "json-stable-stringify";
+import { toast } from "sonner";
 
 interface ToolEditDialogProps {
   open: boolean;
@@ -50,6 +56,7 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
 }) => {
   const [editingName, setEditingName] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
+  const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // schemaPath stores names, e.g., ['Root', 'user', 'address']
   const [schemaPath, setSchemaPath] = useState<string[]>(["Root"]);
@@ -80,9 +87,19 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
     }
   }, [hasChanges, modifiedTool, onRevert]);
 
+  // Position cursor at end when editing description
+  useEffect(() => {
+    if (editingDescription && descriptionTextareaRef.current) {
+      const textarea = descriptionTextareaRef.current;
+      const length = textarea.value.length;
+      textarea.setSelectionRange(length, length);
+    }
+  }, [editingDescription]);
+
   const handleResetAll = useCallback(() => {
     setSchemaPath(["Root"]);
     onRevert();
+    toast.success("All changes reverted");
   }, [onRevert]);
 
   const handleSave = useCallback(
@@ -319,10 +336,18 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                 <Input
                   value={currentName}
                   onChange={(e) => handleNameChange(e.target.value)}
-                  onBlur={() => setEditingName(false)}
+                  onBlur={() => {
+                    setEditingName(false);
+                    if (currentName !== tool.name) {
+                      toast.success("Tool name updated");
+                    }
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       setEditingName(false);
+                      if (currentName !== tool.name) {
+                        toast.success("Tool name updated");
+                      }
                     }
                     if (e.key === "Escape") {
                       e.stopPropagation();
@@ -341,7 +366,7 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                         className={cn(
                           "hover:bg-muted/50 cursor-pointer rounded px-2 py-1 transition-colors",
                           currentName !== tool.name &&
-                            "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200",
+                            "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground",
                         )}
                         onClick={() => setEditingName(true)}
                       >
@@ -356,8 +381,11 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleNameChange(tool.name)}
-                      className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover/name:opacity-100"
+                      onClick={() => {
+                        handleNameChange(tool.name);
+                        toast.success("Tool name reverted");
+                      }}
+                      className="h-6 w-6 p-0"
                     >
                       <RotateCcw className="h-3 w-3" />
                     </Button>
@@ -369,12 +397,21 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
           <DialogDescription>
             {editingDescription ? (
               <Textarea
+                ref={descriptionTextareaRef}
                 value={currentDescription}
                 onChange={(e) => handleDescriptionChange(e.target.value)}
-                onBlur={() => setEditingDescription(false)}
+                onBlur={() => {
+                  setEditingDescription(false);
+                  if (currentDescription !== tool.description) {
+                    toast.success("Tool description updated");
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     setEditingDescription(false);
+                    if (currentDescription !== tool.description) {
+                      toast.success("Tool description updated");
+                    }
                   }
                   if (e.key === "Escape") {
                     e.preventDefault();
@@ -388,14 +425,14 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                 autoFocus
               />
             ) : (
-              <div className="group/desc flex items-start">
+              <div className="group/desc flex items-start gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <p
                       className={cn(
                         "text-muted-foreground hover:bg-muted/50 min-h-[20px] flex-1 cursor-pointer rounded px-2 py-1 text-sm transition-colors",
                         currentDescription !== (tool.description || "") &&
-                          "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200",
+                          "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground",
                       )}
                       onClick={() => setEditingDescription(true)}
                     >
@@ -410,10 +447,11 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() =>
-                      handleDescriptionChange(tool.description || "")
-                    }
-                    className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover/desc:opacity-100"
+                    onClick={() => {
+                      handleDescriptionChange(tool.description || "");
+                      toast.success("Tool description reverted");
+                    }}
+                    className="h-6 w-6 p-0"
                   >
                     <RotateCcw className="h-3 w-3" />
                   </Button>
@@ -426,10 +464,20 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
         <div className="flex-1 overflow-hidden">
           {hasChanges ? (
             <Tabs defaultValue="edit" className="flex h-full flex-col">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="edit">Edit Schema</TabsTrigger>
-                <TabsTrigger value="diff">View Changes</TabsTrigger>
-              </TabsList>
+              <div className="mb-2 flex items-center justify-between">
+                <TabsList className="grid w-fit grid-cols-2">
+                  <TabsTrigger value="edit">Edit Schema</TabsTrigger>
+                  <TabsTrigger value="diff">View Changes</TabsTrigger>
+                </TabsList>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleResetAll}
+                >
+                  <RotateCcw className="mr-1 h-3 w-3" />
+                  Reset All Changes
+                </Button>
+              </div>
               <TabsContent value="edit" className="flex-1 overflow-hidden">
                 <SchemaEditor
                   schemaPath={schemaPath}
@@ -443,7 +491,7 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                   currentPathToParentProperties={currentPathToParentProperties}
                 />
               </TabsContent>
-              <TabsContent value="diff" className="flex-1 overflow-hidden p-1">
+              <TabsContent value="diff" className="flex-1 overflow-hidden">
                 <ToolSchemaDiff
                   originalTool={tool}
                   modifiedName={currentName}
@@ -466,13 +514,6 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
             />
           )}
         </div>
-        <DialogFooter>
-          {hasChanges && (
-            <Button variant="destructive" onClick={handleResetAll}>
-              Reset All
-            </Button>
-          )}
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

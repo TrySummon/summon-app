@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { JSONSchema7, JSONSchema7Definition } from "json-schema";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ChevronRight, RotateCcw } from "lucide-react";
 import { formatTypeInfo, getOriginalProperty } from "./utils";
+import { toast } from "sonner";
 
 interface SchemaEditorProps {
   schemaPath: string[];
@@ -56,6 +57,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
     null,
   );
   const [currentNameValue, setCurrentNameValue] = useState("");
+  const propertyDescTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleStartEditDesc = (propName: string, desc: string) => {
     setEditingPropertyDesc(propName);
@@ -67,6 +69,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
       onUpdateProperty(currentPathToParentProperties, editingPropertyDesc, {
         description: currentDescValue,
       });
+      toast.success("Property description updated");
     }
     setEditingPropertyDesc(null);
   };
@@ -85,16 +88,45 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
       onUpdateProperty(currentPathToParentProperties, editingPropertyName, {
         newName: currentNameValue,
       });
+      if (currentNameValue !== editingPropertyName) {
+        toast.success("Property name updated");
+      }
     }
     setEditingPropertyName(null);
+  };
+
+  const handleRevertProperty = (propName: string) => {
+    onRevertProperty(currentPathToParentProperties, propName);
+    toast.success("Property reverted to original");
+  };
+
+  const handleToggleProperty = (
+    propertyName: string,
+    isCurrentlyDisabled: boolean,
+  ) => {
+    onUpdateProperty(currentPathToParentProperties, propertyName, {
+      disabled: !isCurrentlyDisabled,
+    });
+    toast.success(
+      isCurrentlyDisabled ? "Property enabled" : "Property disabled",
+    );
   };
 
   const sortedProperties = useMemo(() => {
     return Object.entries(properties).sort((a, b) => a[0].localeCompare(b[0]));
   }, [properties]);
 
+  // Position cursor at end when editing property description
+  useEffect(() => {
+    if (editingPropertyDesc && propertyDescTextareaRef.current) {
+      const textarea = propertyDescTextareaRef.current;
+      const length = textarea.value.length;
+      textarea.setSelectionRange(length, length);
+    }
+  }, [editingPropertyDesc]);
+
   return (
-    <div className="flex h-full flex-col space-y-4 p-1">
+    <div className="flex h-full flex-col space-y-4">
       {schemaPath.length > 1 && (
         <Breadcrumb>
           <BreadcrumbList className="border-none">
@@ -121,7 +153,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
         </Breadcrumb>
       )}
 
-      <div className="flex-1 space-y-3 overflow-y-auto pr-2">
+      <div className="flex-1 space-y-3 overflow-y-auto">
         {sortedProperties.map(([propertyName, propSchemaUntyped]) => {
           if (typeof propSchemaUntyped === "boolean") return null; // Should not happen with valid schemas
           const propSchema = propSchemaUntyped as JSONSchema7 & {
@@ -199,7 +231,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                             className={cn(
                               "hover:bg-muted/50 cursor-pointer rounded px-1 py-0.5 font-mono text-sm font-semibold transition-colors",
                               (isNameModified || isNewProperty) &&
-                                "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200",
+                                "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground",
                             )}
                             onClick={
                               !isDisabledUi
@@ -247,12 +279,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        onRevertProperty(
-                          currentPathToParentProperties,
-                          propertyName,
-                        )
-                      }
+                      onClick={() => handleRevertProperty(propertyName)}
                       className="h-6 w-6 p-0"
                       title="Revert property changes"
                     >
@@ -264,11 +291,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        onUpdateProperty(
-                          currentPathToParentProperties,
-                          propertyName,
-                          { disabled: !isDisabledUi },
-                        )
+                        handleToggleProperty(propertyName, isDisabledUi)
                       }
                       className="h-7 px-2 text-xs"
                       title={
@@ -316,6 +339,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
               <div>
                 {isEditingThisDesc ? (
                   <Textarea
+                    ref={propertyDescTextareaRef}
                     value={currentDescValue}
                     onChange={(e) => setCurrentDescValue(e.target.value)}
                     onBlur={handleSaveEditDesc}
@@ -343,7 +367,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                           className={cn(
                             "text-muted-foreground hover:bg-muted/50 min-h-[20px] flex-1 cursor-pointer rounded px-2 py-1 text-sm transition-colors",
                             isDescriptionModified &&
-                              "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200",
+                              "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground",
                           )}
                           onClick={
                             !isDisabledUi
