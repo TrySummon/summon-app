@@ -196,6 +196,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
           messages: [...tabToDuplicate.state.messages],
           settings: { ...tabToDuplicate.state.settings },
           enabledTools: tabToDuplicate.state.enabledTools,
+          modifiedToolMap: tabToDuplicate.state.modifiedToolMap,
           model: tabToDuplicate.state.model,
           credentialId: tabToDuplicate.state.credentialId,
         };
