@@ -28,7 +28,8 @@ const config: ForgeConfig = {
   makers: [
     new MakerSquirrel({
       remoteReleases: "https://github.com/TrySummon/summon-app",
-      iconUrl: "./images/icon.ico",
+      iconUrl:
+        "https://raw.githubusercontent.com/TrySummon/summon-app/refs/heads/main/images/icon.ico",
       setupIcon: "./images/icon.ico",
     }),
     new MakerDMG({
