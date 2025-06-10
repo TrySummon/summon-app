@@ -8,6 +8,11 @@ import {
   minimizeWindow,
 } from "@/lib/window_helpers";
 import { usePlatform } from "@/hooks/usePlatform";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function DragWindowRegion() {
   return (
@@ -21,16 +26,26 @@ export default function DragWindowRegion() {
           // @ts-expect-error css typing issue
           style={{ "-webkit-app-region": "no-drag" }}
         >
-          <Button
-            className="font-mono"
-            variant="ghost"
-            size="icon"
-            onClick={() =>
-              window.open("https://github.com/TrySummon/summon-app", "_blank")
-            }
-          >
-            <StarIcon className="h-4 w-4 text-yellow-500" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                className="font-mono"
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  window.open(
+                    "https://github.com/TrySummon/summon-app",
+                    "_blank",
+                  )
+                }
+              >
+                <StarIcon className="h-4 w-4 text-yellow-500" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Star the repo</p>
+            </TooltipContent>
+          </Tooltip>
           <WindowButtons />
         </div>
       </div>

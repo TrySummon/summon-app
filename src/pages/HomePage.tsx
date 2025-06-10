@@ -4,6 +4,11 @@ import { Button } from "@/components/ui/button";
 import { ImportApiDialog } from "@/components/ImportApiDialog";
 import IconLogo from "@/components/IconLogo";
 import { Upload, Wrench, Plug, SquareTerminal, StarIcon } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function HomePage() {
   const GetStartedItem = ({
@@ -49,16 +54,26 @@ export default function HomePage() {
               Your All-in-One Desktop App for Building, Testing and Sharing
               Model Context Protocol (MCP) Servers & AI Agents.
             </p>
-            <Button
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={() =>
-                window.open("https://github.com/TrySummon/summon-app", "_blank")
-              }
-            >
-              <StarIcon className="mr-2 h-5 w-5 fill-yellow-400 text-yellow-400" />
-              Star us on GitHub
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  onClick={() =>
+                    window.open(
+                      "https://github.com/TrySummon/summon-app",
+                      "_blank",
+                    )
+                  }
+                >
+                  <StarIcon className="mr-2 h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  Star us on GitHub
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Star the repo</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
