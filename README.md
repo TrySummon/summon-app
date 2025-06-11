@@ -12,7 +12,9 @@
 [![License](https://img.shields.io/github/license/TrySummon/summon-app?color=blue&v=1)](https://github.com/TrySummon/summon-app/blob/main/LICENSE)
 [![Y Combinator S25](https://img.shields.io/badge/Y%20Combinator-S25-orange)](https://www.ycombinator.com/companies?batch=S25)
 
-**The Collaborative Desktop App for Teams to Build, Test, and Manage MCP Servers & AI Agents — all in one place.**
+**The Collaborative Desktop App for Teams to Build, Test, and Manage MCP Servers & AI Agents.**
+
+[Download the latest release](https://www.trysummon.com/downloads)
 
 ---
 
