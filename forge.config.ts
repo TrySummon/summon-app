@@ -3,6 +3,7 @@ dotenvConfig();
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { PublisherGithub } from "@electron-forge/publisher-github";
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
+import { MakerZIP } from "@electron-forge/maker-zip";
 import { MakerDMG } from "@electron-forge/maker-dmg";
 import { MakerDeb } from "@electron-forge/maker-deb";
 import { MakerRpm } from "@electron-forge/maker-rpm";
@@ -32,6 +33,7 @@ const config: ForgeConfig = {
         "https://raw.githubusercontent.com/TrySummon/summon-app/refs/heads/main/images/icon.ico",
       setupIcon: "./images/icon.ico",
     }),
+    new MakerZIP({}, ["darwin", "linux"]),
     new MakerDMG({
       icon: "./images/icon.icns",
       background: "./images/dmg-background.png",
