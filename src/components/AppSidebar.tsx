@@ -13,6 +13,7 @@ import { Box, SquareTerminal, Settings } from "lucide-react";
 import { ApiNav } from "@/components/api-nav";
 import { McpNav } from "@/components/mcp-nav";
 import { ExternalMcpNav } from "@/components/external-mcp-nav";
+import { DatasetNav } from "@/components/dataset-nav";
 import { Link, useLocation } from "@tanstack/react-router";
 import FeedbackButton from "@/components/FeedbackButton";
 import packageJson from "../../package.json";
@@ -41,6 +42,7 @@ export function AppSidebar() {
           <ApiNav />
           <McpNav />
           <ExternalMcpNav />
+          <DatasetNav />
           <SidebarGroup>
             <SidebarMenu>
               <SidebarMenuItem>

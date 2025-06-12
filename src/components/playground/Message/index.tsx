@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { MessageContent } from "./Content";
 import RoleSelect from "./RoleSelect";
 import {
@@ -7,12 +7,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Trash2, PlayCircle } from "lucide-react";
+import { Trash2, PlayCircle, Database } from "lucide-react";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { UIMessage } from "ai";
 import CopyButton from "@/components/CopyButton";
 import { usePlaygroundStore } from "../store";
+import { SaveDatasetDialog } from "../SaveDatasetDialog";
 
 interface Props {
   message: UIMessage;
@@ -34,6 +35,9 @@ export default function Message({
   const rerunFromMessage = usePlaygroundStore(
     (state) => state.rerunFromMessage,
   );
+  const getCurrentState = usePlaygroundStore((state) => state.getCurrentState);
+
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const onChange = useCallback(
     (message: UIMessage) => {
@@ -50,6 +54,21 @@ export default function Message({
     rerunFromMessage(index);
   }, [index, rerunFromMessage]);
 
+  const onSaveToDataset = useCallback(() => {
+    setShowSaveDialog(true);
+  }, []);
+
+  // Get current conversation data for the dialog
+  const getCurrentConversationData = useCallback(() => {
+    const currentState = getCurrentState();
+    return {
+      messages: currentState.messages,
+      systemPrompt: currentState.systemPrompt,
+      model: currentState.model,
+      settings: currentState.settings,
+    };
+  }, [getCurrentState]);
+
   // Determine if buttons should be visible based on autoFocus
   const showButtons = autoFocus;
 
@@ -58,63 +77,97 @@ export default function Message({
       ? message.parts[0].text
       : JSON.stringify(message.parts, null, 2);
 
+  const conversationData = getCurrentConversationData();
+  const hasMessages = conversationData.messages.length > 0;
+
   return (
-    <div className="group flex flex-col gap-1">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <RoleSelect
-            disabled={!onChange}
-            value={message.role}
-            onValueChange={(v) => {
-              onChange?.({
-                ...message,
-                role: v,
-              });
-            }}
-          />
-        </div>
-        <TooltipProvider delayDuration={100}>
-          <div
-            className={`-mr-2 flex ${showButtons ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
-          >
-            {children}
-            <CopyButton className="h-3.5 w-3.5" content={messageContent} />
-            {onRerun && (
+    <>
+      <div className="group flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <RoleSelect
+              disabled={!onChange}
+              value={message.role}
+              onValueChange={(v) => {
+                onChange?.({
+                  ...message,
+                  role: v,
+                });
+              }}
+            />
+          </div>
+          <TooltipProvider delayDuration={100}>
+            <div
+              className={`-mr-2 flex ${showButtons ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+            >
+              {children}
+              <CopyButton className="h-3.5 w-3.5" content={messageContent} />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     className="text-muted-foreground"
-                    onClick={onRerun}
+                    onClick={onSaveToDataset}
                     variant="ghost"
                     size="icon"
+                    disabled={!hasMessages}
                   >
-                    <PlayCircle size={14} />
+                    <Database size={14} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  <p>Rerun from this message</p>
+                  <p>Add conversation to local dataset</p>
                 </TooltipContent>
               </Tooltip>
-            )}
-            {onDelete ? (
-              <Button
-                className="text-muted-foreground"
-                onClick={onDelete}
-                variant="ghost"
-                size="icon"
-              >
-                <Trash2 size={14} />
-              </Button>
-            ) : null}
-          </div>
-        </TooltipProvider>
+              {onRerun && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      className="text-muted-foreground"
+                      onClick={onRerun}
+                      variant="ghost"
+                      size="icon"
+                    >
+                      <PlayCircle size={14} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Rerun from this message</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {onDelete ? (
+                <Button
+                  className="text-muted-foreground"
+                  onClick={onDelete}
+                  variant="ghost"
+                  size="icon"
+                >
+                  <Trash2 size={14} />
+                </Button>
+              ) : null}
+            </div>
+          </TooltipProvider>
+        </div>
+        <MessageContent
+          autoFocus={autoFocus}
+          maxHeight={maxHeight}
+          message={message}
+          onChange={onChange}
+        />
       </div>
-      <MessageContent
-        autoFocus={autoFocus}
-        maxHeight={maxHeight}
-        message={message}
-        onChange={onChange}
+
+      <SaveDatasetDialog
+        open={showSaveDialog}
+        onOpenChange={setShowSaveDialog}
+        messages={conversationData.messages}
+        systemPrompt={conversationData.systemPrompt}
+        model={conversationData.model}
+        settings={conversationData.settings}
+        onSuccess={(datasetId) => {
+          console.log("Dataset saved with ID:", datasetId);
+          // Dialog will handle success toast and closing automatically
+        }}
       />
-    </div>
+    </>
   );
 }
