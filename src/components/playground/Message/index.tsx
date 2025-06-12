@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { UIMessage } from "ai";
 import CopyButton from "@/components/CopyButton";
 import { usePlaygroundStore } from "../store";
-import { SaveDatasetDialog } from "../SaveDatasetDialog";
+import { useLocalDatasets } from "@/hooks/useLocalDatasets";
+import { toast } from "sonner";
 
 interface Props {
   message: UIMessage;
@@ -37,7 +38,7 @@ export default function Message({
   );
   const getCurrentState = usePlaygroundStore((state) => state.getCurrentState);
 
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const { addDataset, getDataset, updateDataset } = useLocalDatasets();
 
   const onChange = useCallback(
     (message: UIMessage) => {
@@ -55,19 +56,37 @@ export default function Message({
   }, [index, rerunFromMessage]);
 
   const onSaveToDataset = useCallback(() => {
-    setShowSaveDialog(true);
-  }, []);
-
-  // Get current conversation data for the dialog
-  const getCurrentConversationData = useCallback(() => {
     const currentState = getCurrentState();
-    return {
-      messages: currentState.messages,
-      systemPrompt: currentState.systemPrompt,
-      model: currentState.model,
-      settings: currentState.settings,
+    const selectedDatasetId = currentState.selectedDatasetId;
+
+    if (!selectedDatasetId) {
+      toast.error("No dataset selected", {
+        description: "Please select a dataset from the dropdown in the header.",
+      });
+      return;
+    }
+
+    const selectedDataset = getDataset(selectedDatasetId);
+    if (!selectedDataset) {
+      toast.error("Dataset not found", {
+        description: "The selected dataset could not be found.",
+      });
+      return;
+    }
+
+    // Add the current conversation messages to the selected dataset
+    const updatedDataset = {
+      ...selectedDataset,
+      messages: [...selectedDataset.messages, ...currentState.messages],
+      updatedAt: new Date().toISOString(),
     };
-  }, [getCurrentState]);
+
+    updateDataset(selectedDatasetId, updatedDataset);
+
+    toast.success("Added to dataset", {
+      description: `Conversation added to "${selectedDataset.name}".`,
+    });
+  }, [getCurrentState, getDataset, updateDataset]);
 
   // Determine if buttons should be visible based on autoFocus
   const showButtons = autoFocus;
@@ -77,8 +96,8 @@ export default function Message({
       ? message.parts[0].text
       : JSON.stringify(message.parts, null, 2);
 
-  const conversationData = getCurrentConversationData();
-  const hasMessages = conversationData.messages.length > 0;
+  const currentState = getCurrentState();
+  const hasMessages = currentState.messages.length > 0;
 
   return (
     <>
@@ -155,19 +174,6 @@ export default function Message({
           onChange={onChange}
         />
       </div>
-
-      <SaveDatasetDialog
-        open={showSaveDialog}
-        onOpenChange={setShowSaveDialog}
-        messages={conversationData.messages}
-        systemPrompt={conversationData.systemPrompt}
-        model={conversationData.model}
-        settings={conversationData.settings}
-        onSuccess={(datasetId) => {
-          console.log("Dataset saved with ID:", datasetId);
-          // Dialog will handle success toast and closing automatically
-        }}
-      />
     </>
   );
 }

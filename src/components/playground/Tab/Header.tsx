@@ -11,6 +11,7 @@ import { Kbd } from "@/components/Kbd";
 import { toast } from "sonner";
 import { LLMPicker } from "@/components/llm-picker";
 import SidebarTrigger from "../ToolSidebar/Trigger";
+import { DatasetSelector } from "../DatasetSelector";
 
 export default function TabHeader() {
   const currentTabId = usePlaygroundStore((state) => state.currentTabId);
@@ -30,6 +31,9 @@ export default function TabHeader() {
   const clearCurrentTab = usePlaygroundStore((state) => state.clearCurrentTab);
   const undo = usePlaygroundStore((state) => state.undo);
   const redo = usePlaygroundStore((state) => state.redo);
+  const updateSelectedDatasetId = usePlaygroundStore(
+    (state) => state.updateSelectedDatasetId,
+  );
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
@@ -104,6 +108,10 @@ export default function TabHeader() {
               settings: config.settings,
             }))
           }
+        />
+        <DatasetSelector
+          selectedDatasetId={currentState.selectedDatasetId}
+          onDatasetChange={updateSelectedDatasetId}
         />
         {/* Tools button removed as sidebar is now always visible */}
       </div>

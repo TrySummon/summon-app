@@ -71,6 +71,7 @@ export interface PlaygroundStore {
   updateSettings: (settings: Partial<IPlaygroundTabState["settings"]>) => void;
   updateSystemPrompt: (systemPrompt: string) => void;
   updateEnabledTools: (toolProvider: string, toolIds: string[]) => void;
+  updateSelectedDatasetId: (datasetId: string | undefined) => void;
   modifyTool: (
     mcpId: string,
     toolName: string,
@@ -500,6 +501,13 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
         get().updateCurrentState((state) => ({
           ...state,
           systemPrompt,
+        }));
+      },
+
+      updateSelectedDatasetId: (selectedDatasetId) => {
+        get().updateCurrentState((state) => ({
+          ...state,
+          selectedDatasetId,
         }));
       },
 
