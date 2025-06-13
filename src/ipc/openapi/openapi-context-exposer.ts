@@ -3,10 +3,9 @@ import {
   IMPORT_API_CHANNEL,
   LIST_APIS_CHANNEL,
   GET_API_CHANNEL,
-  UPDATE_API_CHANNEL,
+  RENAME_API_CHANNEL,
   DELETE_API_CHANNEL,
 } from "./openapi-channels";
-import { OpenAPIV3 } from "openapi-types";
 
 export function exposeOpenApiContext() {
   try {
@@ -40,10 +39,8 @@ export function exposeOpenApiContext() {
         getApi: (id: string) => {
           return ipcRenderer.invoke(GET_API_CHANNEL, id);
         },
-        updateApi: (id: string, api: OpenAPIV3.Document) => {
-          // Convert the API object to a buffer
-          const buffer = Buffer.from(JSON.stringify(api));
-          return ipcRenderer.invoke(UPDATE_API_CHANNEL, { id, buffer });
+        renameApi: (id: string, newName: string) => {
+          return ipcRenderer.invoke(RENAME_API_CHANNEL, { id, newName });
         },
         deleteApi: (id: string) => {
           return ipcRenderer.invoke(DELETE_API_CHANNEL, id);
