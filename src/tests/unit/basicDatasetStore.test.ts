@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeEach, vi } from "vitest";
 import { useDatasetStore } from "@/stores/datasetStore";
-import { Dataset, DatasetItem } from "@/types/dataset";
+import { DatasetItem } from "@/types/dataset";
 import { UIMessage } from "ai";
 import { LLMSettings } from "@/components/playground/tabState";
 

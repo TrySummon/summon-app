@@ -200,15 +200,21 @@ describe("SaveDatasetDialog", () => {
 
   it("shows loading state during submission", async () => {
     const { useLocalDatasets } = await import("@/hooks/useLocalDatasets");
-    const mockAddDataset = vi.fn(
-      () => new Promise((resolve) => setTimeout(() => resolve("test-id"), 100)),
-    );
+    const mockAddDataset = vi.fn(() => "test-id");
 
     vi.mocked(useLocalDatasets).mockReturnValue({
       addDataset: mockAddDataset,
       datasets: [],
       datasetExists: vi.fn(() => false),
-    } as any);
+      updateDataset: vi.fn(),
+      deleteDataset: vi.fn(),
+      getDataset: vi.fn(),
+      searchDatasets: vi.fn(),
+      addItem: vi.fn(),
+      updateItem: vi.fn(),
+      deleteItem: vi.fn(),
+      count: 0,
+    });
 
     render(<SaveDatasetDialog {...defaultProps} />);
 
@@ -237,7 +243,15 @@ describe("SaveDatasetDialog", () => {
         },
       ],
       datasetExists: vi.fn(() => false),
-    } as any);
+      updateDataset: vi.fn(),
+      deleteDataset: vi.fn(),
+      getDataset: vi.fn(),
+      searchDatasets: vi.fn(),
+      addItem: vi.fn(),
+      updateItem: vi.fn(),
+      deleteItem: vi.fn(),
+      count: 1,
+    });
 
     render(<SaveDatasetDialog {...defaultProps} />);
 
