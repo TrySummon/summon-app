@@ -94,7 +94,7 @@ ${conversationContext}
 
 Please generate:
 1. A clear, descriptive name that explains what this conversation demonstrates (keep it concise but informative)
-2. A concise and straight to the point description of what this conversation tests or accomplishes
+2. A concise and straight to the point description of what this conversation accomplishes
 
 Focus on the main topic, tools used, problem-solving approach, and what makes this conversation valuable as a test case.`;
 
@@ -110,6 +110,7 @@ Focus on the main topic, tools used, problem-solving approach, and what makes th
       schema: basicInfoSchema,
       prompt,
       abortSignal,
+      temperature: 0.1,
     });
 
     // Stream updates
@@ -214,6 +215,7 @@ export async function generateCriteria(
       schema: criteriaSchema,
       prompt,
       abortSignal,
+      temperature: 0.1,
     });
 
     // Stream updates

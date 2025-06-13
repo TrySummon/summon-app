@@ -95,15 +95,9 @@ export default function CreateDatasetItemDialog({
 
   // Extract tool calls from ALL messages in the tab, not just cut messages
   useEffect(() => {
-    if (open) {
-      const toolCalls = extractToolCalls(messages);
-      setExpectedToolCalls(toolCalls);
-      setName(defaultName);
-      setDescription("");
-      setNaturalLanguageCriteria([]);
-      setCurrentStep(0);
-    }
-  }, [open, messages, defaultName]);
+    const toolCalls = extractToolCalls(messages);
+    setExpectedToolCalls(toolCalls);
+  }, [messages]);
 
   const handleConfirm = () => {
     if (!name.trim()) {
