@@ -14,7 +14,10 @@ export interface DatasetItem {
   createdAt: string;
   updatedAt: string;
   description?: string;
-  tags?: string[];
+  // Expectations for testing and validation
+  naturalLanguageCriteria?: string[];
+  expectedToolCalls?: string[];
+  inputOutputCutPosition?: number;
 }
 
 /**

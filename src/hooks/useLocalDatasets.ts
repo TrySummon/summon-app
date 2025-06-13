@@ -1,19 +1,31 @@
-import { useDatasetStore } from "@/stores/datasetStore";
+import { useDatasets } from "@/hooks/useDatasets";
 
 export function useLocalDatasets() {
-  const store = useDatasetStore();
+  const {
+    datasets,
+    addDataset,
+    updateDataset,
+    deleteDataset,
+    getDataset,
+    searchDatasets,
+    datasetExists,
+    count,
+    addItem,
+    updateItem,
+    deleteItem,
+  } = useDatasets();
 
   return {
-    datasets: store.listDatasets(),
-    addDataset: store.addDataset,
-    updateDataset: store.updateDataset,
-    deleteDataset: store.deleteDataset,
-    getDataset: store.getDataset,
-    searchDatasets: store.searchDatasets,
-    datasetExists: store.datasetExists,
-    count: store.getDatasetCount(),
-    addItem: store.addItem,
-    updateItem: store.updateItem,
-    deleteItem: store.deleteItem,
+    datasets,
+    addDataset,
+    updateDataset,
+    deleteDataset,
+    getDataset,
+    searchDatasets,
+    datasetExists,
+    count,
+    addItem,
+    updateItem,
+    deleteItem,
   };
 }
