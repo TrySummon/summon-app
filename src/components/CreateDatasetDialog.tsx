@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 
-import { useLocalDatasets } from "@/hooks/useLocalDatasets";
+import { useDatasets } from "@/hooks/useDatasets";
 
 import ChipInput from "@/components/ChipInput";
 import {
@@ -61,7 +61,7 @@ export function CreateDatasetDialog({
   onOpenChange,
   onSuccess,
 }: CreateDatasetDialogProps) {
-  const { addDataset, datasets } = useLocalDatasets();
+  const { addDataset, datasets } = useDatasets();
 
   // Create schema with current datasets for duplicate checking
   const formSchema = createFormSchema(datasets);

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { CreateDatasetDialog } from "@/components/CreateDatasetDialog";
-import { useLocalDatasets } from "@/hooks/useLocalDatasets";
+import { useDatasets } from "@/hooks/useDatasets";
 import { usePlaygroundStore } from "../store";
 
 export function SaveToDatasetButton() {
@@ -24,7 +24,7 @@ export function SaveToDatasetButton() {
     (state) => state.updateCurrentState,
   );
 
-  const { datasets } = useLocalDatasets();
+  const { datasets } = useDatasets();
   const [savePopoverOpen, setSavePopoverOpen] = useState(false);
   const [createDatasetDialogOpen, setCreateDatasetDialogOpen] = useState(false);
 

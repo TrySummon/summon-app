@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Scissors, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePlaygroundStore } from "../store";
-import { useLocalDatasets } from "@/hooks/useLocalDatasets";
+import { useDatasets } from "@/hooks/useDatasets";
 import { toast } from "sonner";
 import CreateDatasetItemDialog from "./CreateDatasetItemDialog";
 
@@ -12,7 +12,7 @@ export default function CutModeActionBar() {
   const updateCurrentState = usePlaygroundStore(
     (state) => state.updateCurrentState,
   );
-  const { getDataset, addItem } = useLocalDatasets();
+  const { getDataset, addItem } = useDatasets();
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
