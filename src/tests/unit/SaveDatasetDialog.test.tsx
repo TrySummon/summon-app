@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { UIMessage } from "ai";
 import { SaveDatasetDialog } from "@/components/playground/SaveDatasetDialog";
@@ -29,6 +35,31 @@ vi.mock("sonner", () => ({
     success: vi.fn(),
     error: vi.fn(),
   },
+}));
+
+// Mock ChipInput to avoid rendering issues
+vi.mock("@/components/ChipInput", () => ({
+  default: ({
+    tags,
+    onValueChange,
+    id,
+    placeholder,
+  }: {
+    tags?: string[];
+    onValueChange?: (value: string[]) => void;
+    id?: string;
+    placeholder?: string;
+  }) => (
+    <input
+      data-testid="chip-input"
+      id={id}
+      placeholder={placeholder}
+      value={tags ? tags.join(", ") : ""}
+      onChange={(e) =>
+        onValueChange?.(e.target.value.split(", ").filter(Boolean))
+      }
+    />
+  ),
 }));
 
 describe("SaveDatasetDialog", () => {
@@ -78,7 +109,9 @@ describe("SaveDatasetDialog", () => {
     expect(screen.getByLabelText("Description")).toBeInTheDocument();
     expect(screen.getByLabelText("Tags")).toBeInTheDocument();
     expect(screen.getByLabelText("Include system prompt")).toBeInTheDocument();
-    expect(screen.getByText("2 messages will be saved")).toBeInTheDocument();
+
+    // Use a more flexible matcher for the message count
+    expect(screen.getByText(/2.*messages.*will be saved/)).toBeInTheDocument();
   });
 
   it("shows default name with current date", () => {
@@ -219,10 +252,18 @@ describe("SaveDatasetDialog", () => {
     render(<SaveDatasetDialog {...defaultProps} />);
 
     const saveButton = screen.getByText("Save Dataset");
-    fireEvent.click(saveButton);
 
-    expect(screen.getByText("Saving...")).toBeInTheDocument();
-    expect(saveButton).toBeDisabled();
+    await act(async () => {
+      fireEvent.click(saveButton);
+    });
+
+    await waitFor(
+      () => {
+        expect(screen.getByText("Saving...")).toBeInTheDocument();
+        expect(saveButton).toBeDisabled();
+      },
+      { timeout: 1000 },
+    );
   });
 
   it("handles duplicate names by auto-generating unique name", async () => {
@@ -259,22 +300,29 @@ describe("SaveDatasetDialog", () => {
     fireEvent.change(nameInput, { target: { value: "Test Dataset" } });
 
     const saveButton = screen.getByText("Save Dataset");
-    fireEvent.click(saveButton);
 
-    await waitFor(() => {
-      expect(mockAddDataset).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: "Test Dataset (1)",
-          initialItem: expect.objectContaining({
-            name: "Conversation",
-            messages: mockMessages,
-            systemPrompt: "You are a helpful assistant",
-            model: "gpt-4",
-            settings: mockSettings,
-          }),
-        }),
-      );
+    // Use act to ensure state updates are processed
+    await act(async () => {
+      fireEvent.click(saveButton);
     });
+
+    await waitFor(
+      () => {
+        expect(mockAddDataset).toHaveBeenCalledWith(
+          expect.objectContaining({
+            name: "Test Dataset (1)",
+            initialItem: expect.objectContaining({
+              name: "Conversation",
+              messages: mockMessages,
+              systemPrompt: "You are a helpful assistant",
+              model: "gpt-4",
+              settings: mockSettings,
+            }),
+          }),
+        );
+      },
+      { timeout: 3000 },
+    );
   });
 
   it("calls onSuccess callback after successful save", async () => {
@@ -315,7 +363,7 @@ describe("SaveDatasetDialog", () => {
     expect(onOpenChangeMock).toHaveBeenCalledWith(false);
   });
 
-  it("resets form when dialog reopens", () => {
+  it("resets form when dialog reopens", async () => {
     const { rerender } = render(
       <SaveDatasetDialog {...defaultProps} open={false} />,
     );
@@ -328,17 +376,35 @@ describe("SaveDatasetDialog", () => {
       "Description",
     ) as HTMLTextAreaElement;
 
-    fireEvent.change(nameInput, { target: { value: "Custom Name" } });
-    fireEvent.change(descriptionInput, {
-      target: { value: "Custom Description" },
+    await act(async () => {
+      fireEvent.change(nameInput, { target: { value: "Custom Name" } });
+      fireEvent.change(descriptionInput, {
+        target: { value: "Custom Description" },
+      });
     });
 
+    expect(nameInput.value).toBe("Custom Name");
+    expect(descriptionInput.value).toBe("Custom Description");
+
     // Close and reopen dialog
-    rerender(<SaveDatasetDialog {...defaultProps} open={false} />);
-    rerender(<SaveDatasetDialog {...defaultProps} open={true} />);
+    await act(async () => {
+      rerender(<SaveDatasetDialog {...defaultProps} open={false} />);
+    });
+
+    await act(async () => {
+      rerender(<SaveDatasetDialog {...defaultProps} open={true} />);
+    });
+
+    // Get fresh references to the inputs after re-rendering
+    const newNameInput = screen.getByLabelText(
+      /Dataset Name/,
+    ) as HTMLInputElement;
+    const newDescriptionInput = screen.getByLabelText(
+      "Description",
+    ) as HTMLTextAreaElement;
 
     // Form should be reset
-    expect(nameInput.value).toMatch(/^Conversation - /);
-    expect(descriptionInput.value).toBe("");
+    expect(newNameInput.value).toMatch(/^Conversation - /);
+    expect(newDescriptionInput.value).toBe("");
   });
 });

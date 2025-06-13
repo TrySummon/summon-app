@@ -52,7 +52,7 @@ export function SaveDatasetDialog({
   settings,
   onSuccess,
 }: SaveDatasetDialogProps) {
-  const { addDataset, datasetExists, datasets } = useLocalDatasets();
+  const { addDataset, datasets } = useLocalDatasets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formState, setFormState] = useState<FormState>({
     name: `Conversation - ${new Date().toLocaleString()}`,
@@ -65,13 +65,15 @@ export function SaveDatasetDialog({
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
-      setFormState({
+      const defaultFormState = {
         name: `Conversation - ${new Date().toLocaleString()}`,
         description: "",
         tags: [],
         includeSystemPrompt: Boolean(systemPrompt),
-      });
+      };
+      setFormState(defaultFormState);
       setErrors({});
+      setIsSubmitting(false); // Also reset submitting state
     }
   }, [open, systemPrompt]);
 
@@ -85,15 +87,9 @@ export function SaveDatasetDialog({
       newErrors.name = "Dataset name is required";
     } else if (trimmedName.length > 100) {
       newErrors.name = "Dataset name must be 100 characters or less";
-    } else {
-      // Check for duplicate names (case-insensitive)
-      const isDuplicate = datasets.some(
-        (dataset) => dataset.name.toLowerCase() === trimmedName.toLowerCase(),
-      );
-      if (isDuplicate) {
-        newErrors.name = "A dataset with this name already exists";
-      }
     }
+    // Note: We don't validate for duplicate names here because
+    // the form submission will auto-generate a unique name
 
     // Description validation
     if (state.description.length > 500) {
@@ -116,10 +112,12 @@ export function SaveDatasetDialog({
     const newState = { ...formState, [field]: value };
     setFormState(newState);
 
-    // Clear field-specific errors when user starts typing
-    if (errors[field as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
+    // Validate the field immediately for real-time feedback
+    const validationErrors = validateForm(newState);
+    setErrors((prev) => ({
+      ...prev,
+      [field]: validationErrors[field as keyof FormErrors],
+    }));
   };
 
   // Generate unique name if duplicate exists

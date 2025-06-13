@@ -1,4 +1,5 @@
 import { expect, test, describe, beforeEach, vi } from "vitest";
+import { renderHook } from "@testing-library/react";
 import { useLocalDatasets } from "@/hooks/useLocalDatasets";
 import { useDatasetStore } from "@/stores/datasetStore";
 import { DatasetItem } from "@/types/dataset";
@@ -67,7 +68,8 @@ describe("useLocalDatasets Hook", () => {
   });
 
   test("should provide access to all dataset operations", () => {
-    const hook = useLocalDatasets();
+    const { result } = renderHook(() => useLocalDatasets());
+    const hook = result.current;
 
     // Check that all expected methods are available
     expect(typeof hook.addDataset).toBe("function");
@@ -84,30 +86,30 @@ describe("useLocalDatasets Hook", () => {
   });
 
   test("should handle basic CRUD operations", () => {
-    const hook = useLocalDatasets();
+    const { result, rerender } = renderHook(() => useLocalDatasets());
 
     // Start with empty datasets
-    expect(hook.datasets).toHaveLength(0);
-    expect(hook.count).toBe(0);
+    expect(result.current.datasets).toHaveLength(0);
+    expect(result.current.count).toBe(0);
 
     // Add a dataset with initial item
-    const id = hook.addDataset({
+    const id = result.current.addDataset({
       name: "Test Dataset",
       description: "A test dataset for unit testing",
       tags: ["test", "example"],
       initialItem: mockDatasetItem,
     });
     expect(typeof id).toBe("string");
-    expect(hook.datasetExists(id)).toBe(true);
+    expect(result.current.datasetExists(id)).toBe(true);
 
-    // Check it appears in datasets list
-    const updatedHook = useLocalDatasets();
-    expect(updatedHook.datasets).toHaveLength(1);
-    expect(updatedHook.count).toBe(1);
-    expect(updatedHook.datasets[0].name).toBe("Test Dataset");
+    // Re-render to get updated state
+    rerender();
+    expect(result.current.datasets).toHaveLength(1);
+    expect(result.current.count).toBe(1);
+    expect(result.current.datasets[0].name).toBe("Test Dataset");
 
     // Get the dataset
-    const retrieved = hook.getDataset(id);
+    const retrieved = result.current.getDataset(id);
     expect(retrieved).toBeDefined();
     expect(retrieved!.name).toBe("Test Dataset");
     expect(retrieved!.items).toHaveLength(1);
@@ -115,28 +117,30 @@ describe("useLocalDatasets Hook", () => {
     expect(retrieved!.items[0].settings).toEqual(mockSettings);
 
     // Update the dataset
-    const updateSuccess = hook.updateDataset(id, { name: "Updated Dataset" });
+    const updateSuccess = result.current.updateDataset(id, {
+      name: "Updated Dataset",
+    });
     expect(updateSuccess).toBe(true);
 
-    const updatedDataset = hook.getDataset(id);
+    const updatedDataset = result.current.getDataset(id);
     expect(updatedDataset!.name).toBe("Updated Dataset");
 
     // Delete the dataset
-    const deleteSuccess = hook.deleteDataset(id);
+    const deleteSuccess = result.current.deleteDataset(id);
     expect(deleteSuccess).toBe(true);
-    expect(hook.datasetExists(id)).toBe(false);
+    expect(result.current.datasetExists(id)).toBe(false);
 
-    // Check final state
-    const finalHook = useLocalDatasets();
-    expect(finalHook.datasets).toHaveLength(0);
-    expect(finalHook.count).toBe(0);
+    // Re-render to get final state
+    rerender();
+    expect(result.current.datasets).toHaveLength(0);
+    expect(result.current.count).toBe(0);
   });
 
   test("should handle search functionality", () => {
-    const hook = useLocalDatasets();
+    const { result } = renderHook(() => useLocalDatasets());
 
     // Add test datasets
-    hook.addDataset({
+    result.current.addDataset({
       name: "JavaScript Tutorial",
       description: "Learn JavaScript basics",
       tags: ["javascript", "tutorial"],
@@ -146,7 +150,7 @@ describe("useLocalDatasets Hook", () => {
       },
     });
 
-    hook.addDataset({
+    result.current.addDataset({
       name: "Python Guide",
       description: "Python programming guide",
       tags: ["python", "guide"],
@@ -157,42 +161,42 @@ describe("useLocalDatasets Hook", () => {
     });
 
     // Search by name
-    let results = hook.searchDatasets("javascript");
+    let results = result.current.searchDatasets("javascript");
     expect(results).toHaveLength(1);
     expect(results[0].name).toBe("JavaScript Tutorial");
 
     // Search by description
-    results = hook.searchDatasets("programming");
+    results = result.current.searchDatasets("programming");
     expect(results).toHaveLength(1);
     expect(results[0].name).toBe("Python Guide");
 
     // Search by tag
-    results = hook.searchDatasets("tutorial");
+    results = result.current.searchDatasets("tutorial");
     expect(results).toHaveLength(1);
     expect(results[0].name).toBe("JavaScript Tutorial");
 
     // Case insensitive search
-    results = hook.searchDatasets("PYTHON");
+    results = result.current.searchDatasets("PYTHON");
     expect(results).toHaveLength(1);
     expect(results[0].name).toBe("Python Guide");
 
     // Empty query returns all
-    results = hook.searchDatasets("");
+    results = result.current.searchDatasets("");
     expect(results).toHaveLength(2);
   });
 
   test("should handle validation errors", () => {
-    const hook = useLocalDatasets();
+    const { result } = renderHook(() => useLocalDatasets());
 
     // Test invalid name
     expect(() =>
-      hook.addDataset({ name: "", initialItem: mockDatasetItem }),
+      result.current.addDataset({ name: "", initialItem: mockDatasetItem }),
     ).toThrow("Dataset name must be between 1 and 100 characters");
 
     // Test too many tags
     const tooManyTags = Array.from({ length: 11 }, (_, i) => `tag${i}`);
     expect(() =>
-      hook.addDataset({
+      result.current.addDataset({
         name: "Test",
         tags: tooManyTags,
         initialItem: mockDatasetItem,
@@ -202,7 +206,7 @@ describe("useLocalDatasets Hook", () => {
     // Test description too long
     const longDescription = "a".repeat(501);
     expect(() =>
-      hook.addDataset({
+      result.current.addDataset({
         name: "Test",
         description: longDescription,
         initialItem: mockDatasetItem,
@@ -210,34 +214,34 @@ describe("useLocalDatasets Hook", () => {
     ).toThrow("Description must be maximum 500 characters");
 
     // Test item-level operations
-    const datasetId = hook.addDataset({
+    const datasetId = result.current.addDataset({
       name: "Test Dataset for Items",
       description: "Testing item operations",
     });
 
     // Add an item to the dataset
-    const itemId = hook.addItem(datasetId, mockDatasetItem);
+    const itemId = result.current.addItem(datasetId, mockDatasetItem);
     expect(typeof itemId).toBe("string");
 
     // Get the dataset and check the item was added
-    const datasetWithItem = hook.getDataset(datasetId);
+    const datasetWithItem = result.current.getDataset(datasetId);
     expect(datasetWithItem!.items).toHaveLength(1);
     expect(datasetWithItem!.items[0].name).toBe("Test Conversation");
 
     // Update the item
-    const updateSuccess = hook.updateItem(datasetId, itemId, {
+    const updateSuccess = result.current.updateItem(datasetId, itemId, {
       name: "Updated Conversation",
     });
     expect(updateSuccess).toBe(true);
 
-    const updatedDataset = hook.getDataset(datasetId);
+    const updatedDataset = result.current.getDataset(datasetId);
     expect(updatedDataset!.items[0].name).toBe("Updated Conversation");
 
     // Delete the item
-    const deleteSuccess = hook.deleteItem(datasetId, itemId);
+    const deleteSuccess = result.current.deleteItem(datasetId, itemId);
     expect(deleteSuccess).toBe(true);
 
-    const datasetAfterDelete = hook.getDataset(datasetId);
+    const datasetAfterDelete = result.current.getDataset(datasetId);
     expect(datasetAfterDelete!.items).toHaveLength(0);
   });
 });

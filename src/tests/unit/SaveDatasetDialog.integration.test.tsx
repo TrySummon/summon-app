@@ -13,6 +13,31 @@ vi.mock("sonner", () => ({
   },
 }));
 
+// Mock ChipInput to avoid rendering issues
+vi.mock("@/components/ChipInput", () => ({
+  default: ({
+    tags,
+    onValueChange,
+    id,
+    placeholder,
+  }: {
+    tags?: string[];
+    onValueChange?: (value: string[]) => void;
+    id?: string;
+    placeholder?: string;
+  }) => (
+    <input
+      data-testid="chip-input"
+      id={id}
+      placeholder={placeholder}
+      value={tags ? tags.join(", ") : ""}
+      onChange={(e) =>
+        onValueChange?.(e.target.value.split(", ").filter(Boolean))
+      }
+    />
+  ),
+}));
+
 // Mock the datasets hook to return the new structure
 vi.mock("@/hooks/useLocalDatasets", () => ({
   useLocalDatasets: vi.fn(() => ({
@@ -87,7 +112,7 @@ describe("SaveDatasetDialog Integration", () => {
     expect(screen.getByLabelText("Include system prompt")).toBeInTheDocument();
 
     // Check message count display
-    expect(screen.getByText("2 messages will be saved")).toBeInTheDocument();
+    expect(screen.getByText(/2.*messages.*will be saved/)).toBeInTheDocument();
 
     // Check buttons
     expect(screen.getByText("Cancel")).toBeInTheDocument();

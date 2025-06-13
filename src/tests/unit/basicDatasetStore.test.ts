@@ -65,7 +65,7 @@ describe("Dataset Store Implementation Test", () => {
     mockStorage.clear();
   });
 
-  test("should demonstrate complete CRUD functionality", () => {
+  test("should demonstrate complete CRUD functionality", async () => {
     const store = useDatasetStore.getState();
 
     // Initial state
@@ -106,6 +106,8 @@ describe("Dataset Store Implementation Test", () => {
     expect(retrieved!.updatedAt).toBeDefined();
 
     // Update the dataset
+    // Add a small delay to ensure updatedAt timestamp is different
+    await new Promise((resolve) => setTimeout(resolve, 1));
     const updateSuccess = store.updateDataset(id, {
       name: "Updated Dataset",
       description: "Updated description",
