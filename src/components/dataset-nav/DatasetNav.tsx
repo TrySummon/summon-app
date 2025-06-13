@@ -11,9 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocalDatasets } from "@/hooks/useLocalDatasets";
-import { DatasetItem } from "./DatasetItem";
+import { DatasetItem as DatasetRow } from "./DatasetItem";
 import { DatasetDetailsDialog } from "./DatasetDetailsDialog";
-import { DatasetItem as DatasetItemType } from "@/types/dataset";
+import { CreateDatasetDialog } from "./CreateDatasetDialog";
+import { Dataset } from "@/types/dataset";
 
 interface DatasetNavProps {
   className?: string;
@@ -32,9 +33,9 @@ const EmptyState = () => (
 export function DatasetNav({ className }: DatasetNavProps) {
   const { datasets, deleteDataset, count } = useLocalDatasets();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDataset, setSelectedDataset] =
-    useState<DatasetItemType | null>(null);
+  const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Filter datasets based on search query
   const filteredDatasets = useMemo(() => {
@@ -49,24 +50,24 @@ export function DatasetNav({ className }: DatasetNavProps) {
     );
   }, [datasets, searchQuery]);
 
-  const handleViewDataset = (dataset: DatasetItemType) => {
+  const handleViewDataset = (dataset: Dataset) => {
     setSelectedDataset(dataset);
     setShowDetailsDialog(true);
   };
 
-  const handleLoadDataset = (dataset: DatasetItemType) => {
+  const handleLoadDataset = (dataset: Dataset) => {
     // This will be implemented in TICKET_007
     console.log("Load dataset:", dataset.id);
   };
 
-  const handleExportDataset = (dataset: DatasetItemType) => {
+  const handleExportDataset = (dataset: Dataset) => {
     // Export dataset as JSON file
     const exportData = {
       version: "1.0",
       exportedAt: new Date().toISOString(),
       dataset,
       metadata: {
-        messageCount: dataset.messages.length,
+        itemCount: dataset.items.length,
       },
     };
 
@@ -87,7 +88,11 @@ export function DatasetNav({ className }: DatasetNavProps) {
     toast.success(`Dataset "${dataset.name}" exported successfully`);
   };
 
-  const handleDeleteDataset = (dataset: DatasetItemType) => {
+  const handleCreateDataset = () => {
+    setShowCreateDialog(true);
+  };
+
+  const handleDeleteDataset = (dataset: Dataset) => {
     // Show confirmation dialog
     if (confirm(`Are you sure you want to delete "${dataset.name}"?`)) {
       const success = deleteDataset(dataset.id);
@@ -106,7 +111,7 @@ export function DatasetNav({ className }: DatasetNavProps) {
           <Database className="h-4 w-4" />
           Datasets
           <SidebarGroupAction asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={handleCreateDataset}>
               <Plus className="h-4 w-4" />
             </Button>
           </SidebarGroupAction>
@@ -126,7 +131,7 @@ export function DatasetNav({ className }: DatasetNavProps) {
           {/* Dataset List */}
           <SidebarMenu>
             {filteredDatasets.map((dataset) => (
-              <DatasetItem
+              <DatasetRow
                 key={dataset.id}
                 dataset={dataset}
                 onView={handleViewDataset}
@@ -155,6 +160,15 @@ export function DatasetNav({ className }: DatasetNavProps) {
         dataset={selectedDataset}
         open={showDetailsDialog}
         onOpenChange={setShowDetailsDialog}
+      />
+
+      {/* Create Dataset Dialog */}
+      <CreateDatasetDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSuccess={(datasetId) => {
+          console.log("Dataset created with ID:", datasetId);
+        }}
       />
     </>
   );

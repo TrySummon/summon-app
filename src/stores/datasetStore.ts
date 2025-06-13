@@ -1,115 +1,92 @@
 import { create } from "zustand";
 import { persist, createJSONStorage, PersistOptions } from "zustand/middleware";
 import { v4 as uuidv4 } from "uuid";
-import { DatasetItem } from "@/types/dataset";
+import { Dataset, DatasetItem } from "@/types/dataset";
 
 interface LocalDatasetStore {
-  datasets: Record<string, DatasetItem>;
+  datasets: Record<string, Dataset>;
 
-  // CRUD operations
-  addDataset: (
-    dataset: Omit<DatasetItem, "id" | "createdAt" | "updatedAt">,
-  ) => string;
+  // Dataset-level operations
+  addDataset: (data: {
+    name: string;
+    description?: string;
+    tags?: string[];
+    initialItem?: Omit<DatasetItem, "id" | "createdAt" | "updatedAt">;
+  }) => string;
   updateDataset: (
     id: string,
-    updates: Partial<Omit<DatasetItem, "id">>,
+    updates: Partial<Omit<Dataset, "id" | "items" | "createdAt" | "updatedAt">>,
   ) => boolean;
   deleteDataset: (id: string) => boolean;
-  getDataset: (id: string) => DatasetItem | undefined;
-  listDatasets: () => DatasetItem[];
+  getDataset: (id: string) => Dataset | undefined;
+  listDatasets: () => Dataset[];
 
-  // Utility methods
+  // Item-level operations
+  addItem: (
+    datasetId: string,
+    item: Omit<DatasetItem, "id" | "createdAt" | "updatedAt">,
+  ) => string;
+  updateItem: (
+    datasetId: string,
+    itemId: string,
+    updates: Partial<Omit<DatasetItem, "id" | "createdAt" | "updatedAt">>,
+  ) => boolean;
+  deleteItem: (datasetId: string, itemId: string) => boolean;
+
+  // Utility
   datasetExists: (id: string) => boolean;
   getDatasetCount: () => number;
-  searchDatasets: (query: string) => DatasetItem[];
+  searchDatasets: (query: string) => Dataset[];
 }
 
-// Validation functions
-const validateDatasetName = (name: string): boolean => {
-  return (
-    typeof name === "string" &&
-    name.trim().length >= 1 &&
-    name.trim().length <= 100
-  );
-};
+// -------------------- Validation helpers --------------------
+const isValidName = (name?: string) =>
+  typeof name === "string" &&
+  name.trim().length >= 1 &&
+  name.trim().length <= 100;
 
-const validateTags = (tags?: string[]): boolean => {
-  if (!tags) return true;
-  return (
-    Array.isArray(tags) &&
+const isValidTags = (tags?: string[]) =>
+  !tags ||
+  (Array.isArray(tags) &&
     tags.length <= 10 &&
-    tags.every((tag) => typeof tag === "string")
-  );
-};
+    tags.every((t) => typeof t === "string"));
 
-const validateDescription = (description?: string): boolean => {
-  if (!description) return true;
-  return typeof description === "string" && description.length <= 500;
-};
+const isValidDescription = (d?: string) =>
+  !d || (typeof d === "string" && d.length <= 500);
 
-const validateMessages = (messages: any[]): boolean => {
-  return Array.isArray(messages);
-};
+const isValidMessages = (messages: any[]) => Array.isArray(messages);
 
-// Error handling for localStorage
-const createStorageWithErrorHandling = () => {
-  return {
-    getItem: (name: string) => {
-      try {
-        const item = localStorage.getItem(name);
-        return item;
-      } catch (error) {
-        console.warn("Failed to read from localStorage:", error);
-        return null;
-      }
-    },
-    setItem: (name: string, value: string) => {
-      try {
-        localStorage.setItem(name, value);
-      } catch (error) {
-        if (
-          error instanceof DOMException &&
-          error.code === DOMException.QUOTA_EXCEEDED_ERR
-        ) {
-          console.error(
-            "localStorage quota exceeded. Consider clearing old datasets.",
-          );
-          // Could implement auto-cleanup of oldest datasets here
-        } else {
-          console.error("Failed to write to localStorage:", error);
-        }
-        throw error;
-      }
-    },
-    removeItem: (name: string) => {
-      try {
-        localStorage.removeItem(name);
-      } catch (error) {
-        console.warn("Failed to remove from localStorage:", error);
-      }
-    },
-  };
-};
+// -------------------- Storage with quota handling --------------------
+const createStorageWithErrorHandling = () => ({
+  getItem: (key: string) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (err) {
+      console.warn("Failed to read localStorage", err);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (err) {
+      console.error("Failed to write localStorage", err);
+      throw err;
+    }
+  },
+  removeItem: (key: string) => {
+    try {
+      localStorage.removeItem(key);
+    } catch (err) {
+      console.warn("Failed to remove localStorage", err);
+    }
+  },
+});
 
 const persistConfig: PersistOptions<LocalDatasetStore> = {
   name: "local-datasets",
   storage: createJSONStorage(() => createStorageWithErrorHandling()),
-  version: 1,
-  migrate: (persistedState: any, version: number) => {
-    // Handle migrations for future schema changes
-    if (version === 0) {
-      // Add any migration logic for version 0 to 1
-      return persistedState;
-    }
-    return persistedState;
-  },
-  onRehydrateStorage: () => {
-    return (state, error) => {
-      if (error) {
-        console.error("Failed to rehydrate datasets from localStorage:", error);
-      }
-    };
-  },
+  version: 2, // bump version for migration
 };
 
 export const useDatasetStore = create<LocalDatasetStore>()(
@@ -117,152 +94,205 @@ export const useDatasetStore = create<LocalDatasetStore>()(
     (set, get) => ({
       datasets: {},
 
-      addDataset: (dataset) => {
-        // Validation
-        if (!validateDatasetName(dataset.name)) {
+      // ------------ Dataset-level ------------
+      addDataset: ({ name, description, tags, initialItem }) => {
+        if (!isValidName(name)) {
           throw new Error("Dataset name must be between 1 and 100 characters");
         }
-        if (!validateMessages(dataset.messages)) {
-          throw new Error("Messages must be a valid array");
-        }
-        if (!validateTags(dataset.tags)) {
+        if (!isValidTags(tags)) {
           throw new Error("Tags must be an array with maximum 10 items");
         }
-        if (!validateDescription(dataset.description)) {
+        if (!isValidDescription(description)) {
           throw new Error("Description must be maximum 500 characters");
-        }
-
-        const state = get();
-
-        // Check dataset limit
-        if (Object.keys(state.datasets).length >= 100) {
-          throw new Error("Maximum of 100 datasets allowed");
         }
 
         const id = uuidv4();
         const now = new Date().toISOString();
 
-        const newDataset: DatasetItem = {
-          ...dataset,
+        const items: DatasetItem[] = [];
+        if (initialItem) {
+          if (!isValidName(initialItem.name)) {
+            throw new Error("Item name must be valid");
+          }
+          if (!isValidMessages(initialItem.messages)) {
+            throw new Error("Item messages must be a valid array");
+          }
+          items.push({
+            ...initialItem,
+            id: uuidv4(),
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+
+        const newDataset: Dataset = {
           id,
+          name: name.trim(),
+          description,
+          tags,
           createdAt: now,
           updatedAt: now,
-          name: dataset.name.trim(),
+          items,
         };
 
         set((state) => ({
-          datasets: {
-            ...state.datasets,
-            [id]: newDataset,
-          },
+          datasets: { ...state.datasets, [id]: newDataset },
         }));
 
         return id;
       },
 
       updateDataset: (id, updates) => {
-        const state = get();
-        const existing = state.datasets[id];
+        const existing = get().datasets[id];
+        if (!existing) return false;
 
-        if (!existing) {
-          return false;
-        }
-
-        // Validation for updates
-        if (updates.name !== undefined && !validateDatasetName(updates.name)) {
+        if (updates.name && !isValidName(updates.name)) {
           throw new Error("Dataset name must be between 1 and 100 characters");
         }
-        if (
-          updates.messages !== undefined &&
-          !validateMessages(updates.messages)
-        ) {
-          throw new Error("Messages must be a valid array");
-        }
-        if (updates.tags !== undefined && !validateTags(updates.tags)) {
+        if (updates.tags && !isValidTags(updates.tags)) {
           throw new Error("Tags must be an array with maximum 10 items");
         }
-        if (
-          updates.description !== undefined &&
-          !validateDescription(updates.description)
-        ) {
+        if (updates.description && !isValidDescription(updates.description)) {
           throw new Error("Description must be maximum 500 characters");
         }
 
-        const updatedDataset: DatasetItem = {
+        const updated: Dataset = {
           ...existing,
           ...updates,
-          id, // Ensure ID cannot be changed
-          updatedAt: new Date().toISOString(),
           name: updates.name ? updates.name.trim() : existing.name,
+          updatedAt: new Date().toISOString(),
         };
 
         set((state) => ({
-          datasets: {
-            ...state.datasets,
-            [id]: updatedDataset,
-          },
+          datasets: { ...state.datasets, [id]: updated },
         }));
-
         return true;
       },
 
       deleteDataset: (id) => {
-        const state = get();
-
-        if (!state.datasets[id]) {
-          return false;
-        }
-
+        if (!get().datasets[id]) return false;
         set((state) => {
-          const { [id]: deleted, ...remaining } = state.datasets;
-          return { datasets: remaining };
+          const { [id]: _deleted, ...rest } = state.datasets;
+          return { datasets: rest };
         });
-
         return true;
       },
 
-      getDataset: (id) => {
-        const state = get();
-        return state.datasets[id];
-      },
+      getDataset: (id) => get().datasets[id],
 
-      listDatasets: () => {
-        const state = get();
-        return Object.values(state.datasets).sort(
+      listDatasets: () =>
+        Object.values(get().datasets).sort(
           (a, b) =>
             new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-        );
+        ),
+
+      // ------------ Item-level ------------
+      addItem: (datasetId, item) => {
+        const dataset = get().datasets[datasetId];
+        if (!dataset) throw new Error("Dataset not found");
+        if (!isValidName(item.name)) {
+          throw new Error("Item name must be between 1 and 100 characters");
+        }
+        if (!isValidMessages(item.messages)) {
+          throw new Error("Item messages must be a valid array");
+        }
+        const now = new Date().toISOString();
+        const newItem: DatasetItem = {
+          ...item,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        const updatedDataset: Dataset = {
+          ...dataset,
+          items: [...dataset.items, newItem],
+          updatedAt: now,
+        };
+
+        set((state) => ({
+          datasets: { ...state.datasets, [datasetId]: updatedDataset },
+        }));
+        return newItem.id;
       },
 
-      datasetExists: (id) => {
-        const state = get();
-        return id in state.datasets;
-      },
+      updateItem: (datasetId, itemId, updates) => {
+        const dataset = get().datasets[datasetId];
+        if (!dataset) return false;
+        const itemIndex = dataset.items.findIndex((i) => i.id === itemId);
+        if (itemIndex === -1) return false;
 
-      getDatasetCount: () => {
-        const state = get();
-        return Object.keys(state.datasets).length;
-      },
-
-      searchDatasets: (query) => {
-        const state = get();
-        const lowercaseQuery = query.toLowerCase().trim();
-
-        if (!lowercaseQuery) {
-          return Object.values(state.datasets);
+        const existingItem = dataset.items[itemIndex];
+        if (updates.name && !isValidName(updates.name)) {
+          throw new Error("Item name must be between 1 and 100 characters");
+        }
+        if (updates.messages && !isValidMessages(updates.messages)) {
+          throw new Error("Messages must be a valid array");
         }
 
-        return Object.values(state.datasets).filter((dataset) => {
-          const nameMatch = dataset.name.toLowerCase().includes(lowercaseQuery);
-          const descriptionMatch =
-            dataset.description?.toLowerCase().includes(lowercaseQuery) ||
-            false;
-          const tagMatch =
-            dataset.tags?.some((tag) =>
-              tag.toLowerCase().includes(lowercaseQuery),
-            ) || false;
+        const updatedItem: DatasetItem = {
+          ...existingItem,
+          ...updates,
+          name: updates.name ? updates.name.trim() : existingItem.name,
+          updatedAt: new Date().toISOString(),
+        };
 
-          return nameMatch || descriptionMatch || tagMatch;
+        const newItems = [...dataset.items];
+        newItems[itemIndex] = updatedItem;
+
+        set((state) => ({
+          datasets: {
+            ...state.datasets,
+            [datasetId]: {
+              ...dataset,
+              items: newItems,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        }));
+        return true;
+      },
+
+      deleteItem: (datasetId, itemId) => {
+        const dataset = get().datasets[datasetId];
+        if (!dataset) return false;
+        const exists = dataset.items.some((item) => item.id === itemId);
+        if (!exists) return false;
+
+        const newItems = dataset.items.filter((item) => item.id !== itemId);
+        set((state) => ({
+          datasets: {
+            ...state.datasets,
+            [datasetId]: {
+              ...dataset,
+              items: newItems,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        }));
+        return true;
+      },
+
+      // ------------ Utils ------------
+      datasetExists: (id) => id in get().datasets,
+      getDatasetCount: () => Object.keys(get().datasets).length,
+      searchDatasets: (query) => {
+        const q = query.toLowerCase().trim();
+        if (!q) return Object.values(get().datasets);
+        return Object.values(get().datasets).filter((d) => {
+          const metaMatch =
+            d.name.toLowerCase().includes(q) ||
+            (d.description?.toLowerCase().includes(q) ?? false) ||
+            (d.tags?.some((t) => t.toLowerCase().includes(q)) ?? false);
+          const itemMatch = d.items.some((i) =>
+            i.messages.some(
+              (m) =>
+                (!!(m as any).content &&
+                  (m as any).content.toLowerCase().includes(q)) ||
+                i.name.toLowerCase().includes(q),
+            ),
+          );
+          return metaMatch || itemMatch;
         });
       },
     }),

@@ -65,7 +65,7 @@ export function DatasetSelector({
                   <div className="flex w-full flex-col gap-1">
                     <span className="truncate font-medium">{dataset.name}</span>
                     <span className="text-muted-foreground text-xs">
-                      {dataset.messages.length} messages
+                      {dataset.items.length} items
                     </span>
                   </div>
                 </DropdownMenuItem>

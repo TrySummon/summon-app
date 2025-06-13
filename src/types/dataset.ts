@@ -1,6 +1,9 @@
 import { UIMessage } from "ai";
 import { LLMSettings } from "@/components/playground/tabState";
 
+/**
+ * An item within a dataset, representing a single conversation or run.
+ */
 export interface DatasetItem {
   id: string;
   name: string;
@@ -10,12 +13,24 @@ export interface DatasetItem {
   settings: LLMSettings;
   createdAt: string;
   updatedAt: string;
-  tags?: string[];
   description?: string;
+  tags?: string[];
+}
+
+/**
+ * A dataset is a collection of items.
+ */
+export interface Dataset {
+  id: string;
+  name: string;
+  description?: string;
+  tags?: string[];
+  items: DatasetItem[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DatasetMetadata {
-  messageCount: number;
-  tokenCount?: number;
-  lastMessageAt?: string;
+  itemCount: number;
+  lastItemAt?: string;
 }

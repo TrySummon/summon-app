@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { UIMessage } from "ai";
 import { toast } from "sonner";
 
-import { LLMSettings } from "@/components/playground/tabState";
 import { useLocalDatasets } from "@/hooks/useLocalDatasets";
 
 import ChipInput from "@/components/ChipInput";
@@ -17,16 +15,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
-interface SaveDatasetDialogProps {
+interface CreateDatasetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  messages: UIMessage[];
-  systemPrompt?: string;
-  model?: string;
-  settings: LLMSettings;
   onSuccess?: (datasetId: string) => void;
 }
 
@@ -34,7 +27,6 @@ interface FormState {
   name: string;
   description: string;
   tags: string[];
-  includeSystemPrompt: boolean;
 }
 
 interface FormErrors {
@@ -43,22 +35,17 @@ interface FormErrors {
   tags?: string;
 }
 
-export function SaveDatasetDialog({
+export function CreateDatasetDialog({
   open,
   onOpenChange,
-  messages,
-  systemPrompt,
-  model,
-  settings,
   onSuccess,
-}: SaveDatasetDialogProps) {
-  const { addDataset, datasetExists, datasets } = useLocalDatasets();
+}: CreateDatasetDialogProps) {
+  const { addDataset, datasets } = useLocalDatasets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formState, setFormState] = useState<FormState>({
-    name: `Conversation - ${new Date().toLocaleString()}`,
+    name: "",
     description: "",
     tags: [],
-    includeSystemPrompt: Boolean(systemPrompt),
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -66,14 +53,13 @@ export function SaveDatasetDialog({
   useEffect(() => {
     if (open) {
       setFormState({
-        name: `Conversation - ${new Date().toLocaleString()}`,
+        name: "",
         description: "",
         tags: [],
-        includeSystemPrompt: Boolean(systemPrompt),
       });
       setErrors({});
     }
-  }, [open, systemPrompt]);
+  }, [open]);
 
   // Validation function
   const validateForm = (state: FormState): FormErrors => {
@@ -111,7 +97,7 @@ export function SaveDatasetDialog({
   // Handle input changes with validation
   const handleInputChange = (
     field: keyof FormState,
-    value: string | boolean | string[],
+    value: string | string[],
   ) => {
     const newState = { ...formState, [field]: value };
     setFormState(newState);
@@ -166,19 +152,11 @@ export function SaveDatasetDialog({
         name: finalName,
         description: formState.description.trim() || undefined,
         tags: formState.tags.length > 0 ? formState.tags : undefined,
-        initialItem: {
-          name: "Conversation",
-          messages,
-          systemPrompt: formState.includeSystemPrompt
-            ? systemPrompt
-            : undefined,
-          model,
-          settings,
-        },
+        // No initial item - creating an empty dataset
       });
 
-      toast.success("Dataset saved", {
-        description: `"${finalName}" has been saved to your local datasets.`,
+      toast.success("Dataset created", {
+        description: `"${finalName}" has been created successfully.`,
       });
 
       onSuccess?.(datasetId);
@@ -188,7 +166,7 @@ export function SaveDatasetDialog({
         error instanceof Error
           ? error.message
           : "An unexpected error occurred.";
-      toast.error("Failed to save dataset", {
+      toast.error("Failed to create dataset", {
         description: errorMessage,
       });
     } finally {
@@ -210,12 +188,11 @@ export function SaveDatasetDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Save Conversation as Dataset</DialogTitle>
+          <DialogTitle>Create New Dataset</DialogTitle>
           <DialogDescription>
-            Save this conversation to your local datasets for future reference
-            or reuse.
+            Create a new dataset to organize your conversations and experiments.
           </DialogDescription>
         </DialogHeader>
 
@@ -296,44 +273,6 @@ export function SaveDatasetDialog({
               )}
             </div>
           </div>
-
-          {/* System Prompt Inclusion */}
-          {systemPrompt && (
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="include-system-prompt"
-                  checked={formState.includeSystemPrompt}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("includeSystemPrompt", Boolean(checked))
-                  }
-                />
-                <Label htmlFor="include-system-prompt">
-                  Include system prompt
-                </Label>
-              </div>
-              {formState.includeSystemPrompt && (
-                <div className="bg-muted mt-2 rounded-md p-3">
-                  <p className="text-muted-foreground mb-1 text-sm">
-                    System prompt preview:
-                  </p>
-                  <p className="bg-background rounded border p-2 font-mono text-sm">
-                    {systemPrompt.length > 200
-                      ? `${systemPrompt.slice(0, 200)}...`
-                      : systemPrompt}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Message Count Display */}
-          <div className="bg-muted rounded-md p-3">
-            <p className="text-muted-foreground text-sm">
-              <strong>{messages.length}</strong>{" "}
-              {messages.length === 1 ? "message" : "messages"} will be saved
-            </p>
-          </div>
         </form>
 
         <DialogFooter>
@@ -350,7 +289,7 @@ export function SaveDatasetDialog({
             disabled={isSubmitting || !isValid}
             onClick={handleSubmit}
           >
-            {isSubmitting ? "Saving..." : "Save Dataset"}
+            {isSubmitting ? "Creating..." : "Create Dataset"}
           </Button>
         </DialogFooter>
       </DialogContent>

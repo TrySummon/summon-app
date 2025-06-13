@@ -9,12 +9,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DatasetItem } from "@/types/dataset";
+import { Dataset } from "@/types/dataset";
 import { formatDate } from "@/utils/formatDate";
 import { UIMessage } from "ai";
 
 interface DatasetDetailsDialogProps {
-  dataset: DatasetItem | null;
+  dataset: Dataset | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -55,16 +55,15 @@ export function DatasetDetailsDialog({
               {formatDate(dataset.createdAt)}
             </div>
             <div>
-              <span className="font-medium">Messages:</span>{" "}
-              {dataset.messages.length}
+              <span className="font-medium">Items:</span> {dataset.items.length}
             </div>
             <div>
               <span className="font-medium">Model:</span>{" "}
-              {dataset.model || "None"}
+              {dataset.items[0]?.model || "None"}
             </div>
             <div>
               <span className="font-medium">System Prompt:</span>{" "}
-              {dataset.systemPrompt ? "Yes" : "No"}
+              {dataset.items[0]?.systemPrompt ? "Yes" : "No"}
             </div>
           </div>
 
@@ -92,24 +91,29 @@ export function DatasetDetailsDialog({
             </div>
           )}
 
-          {/* Message Preview */}
+          {/* Item Preview */}
           <div>
-            <span className="text-sm font-medium">Messages:</span>
-            <div className="mt-2 max-h-60 space-y-2 overflow-y-auto">
-              {dataset.messages.slice(0, 5).map((message, index) => (
-                <div key={index} className="rounded border p-2 text-xs">
-                  <div className="font-medium capitalize">{message.role}</div>
-                  <div className="text-muted-foreground mt-1 line-clamp-2">
-                    {getMessagePreview(message)}
+            <span className="text-sm font-medium">First item preview:</span>
+            {dataset.items.length === 0 && (
+              <p className="text-muted-foreground mt-1 text-sm">No items</p>
+            )}
+            {dataset.items.length > 0 && (
+              <div className="mt-2 max-h-60 space-y-2 overflow-y-auto">
+                {dataset.items[0].messages.slice(0, 5).map((message, index) => (
+                  <div key={index} className="rounded border p-2 text-xs">
+                    <div className="font-medium capitalize">{message.role}</div>
+                    <div className="text-muted-foreground mt-1 line-clamp-2">
+                      {getMessagePreview(message)}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {dataset.messages.length > 5 && (
-                <p className="text-muted-foreground text-center text-xs">
-                  ... and {dataset.messages.length - 5} more messages
-                </p>
-              )}
-            </div>
+                ))}
+                {dataset.items[0].messages.length > 5 && (
+                  <p className="text-muted-foreground text-center text-xs">
+                    ... and {dataset.items[0].messages.length - 5} more messages
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

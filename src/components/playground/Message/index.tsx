@@ -38,7 +38,7 @@ export default function Message({
   );
   const getCurrentState = usePlaygroundStore((state) => state.getCurrentState);
 
-  const { addDataset, getDataset, updateDataset } = useLocalDatasets();
+  const { getDataset, addItem } = useLocalDatasets();
 
   const onChange = useCallback(
     (message: UIMessage) => {
@@ -74,19 +74,21 @@ export default function Message({
       return;
     }
 
-    // Add the current conversation messages to the selected dataset
-    const updatedDataset = {
-      ...selectedDataset,
-      messages: [...selectedDataset.messages, ...currentState.messages],
-      updatedAt: new Date().toISOString(),
-    };
-
-    updateDataset(selectedDatasetId, updatedDataset);
+    // Create a new item in the selected dataset with messages up to and including this message
+    const messagesUpToHere = currentState.messages.slice(0, index + 1);
+    const itemName = `Conversation up to message ${index + 1} - ${new Date().toLocaleString()}`;
+    const itemId = addItem(selectedDatasetId, {
+      name: itemName,
+      messages: messagesUpToHere,
+      systemPrompt: currentState.systemPrompt,
+      model: currentState.model,
+      settings: currentState.settings,
+    });
 
     toast.success("Added to dataset", {
-      description: `Conversation added to "${selectedDataset.name}".`,
+      description: `${messagesUpToHere.length} messages added to "${selectedDataset.name}" as item #${itemId.slice(0, 8)}.`,
     });
-  }, [getCurrentState, getDataset, updateDataset]);
+  }, [getCurrentState, getDataset, addItem, index]);
 
   // Determine if buttons should be visible based on autoFocus
   const showButtons = autoFocus;
@@ -134,7 +136,7 @@ export default function Message({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  <p>Add conversation to local dataset</p>
+                  <p>Add conversation up to this message to dataset</p>
                 </TooltipContent>
               </Tooltip>
               {onRerun && (

@@ -12,5 +12,8 @@ export function useLocalDatasets() {
     searchDatasets: store.searchDatasets,
     datasetExists: store.datasetExists,
     count: store.getDatasetCount(),
+    addItem: store.addItem,
+    updateItem: store.updateItem,
+    deleteItem: store.deleteItem,
   };
 }

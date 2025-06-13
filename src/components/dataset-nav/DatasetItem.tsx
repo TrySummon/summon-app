@@ -19,15 +19,15 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { DatasetItem as DatasetItemType } from "@/types/dataset";
+import { Dataset } from "@/types/dataset";
 import { formatDate } from "@/utils/formatDate";
 
 interface DatasetItemProps {
-  dataset: DatasetItemType;
-  onView?: (dataset: DatasetItemType) => void;
-  onLoad?: (dataset: DatasetItemType) => void;
-  onExport?: (dataset: DatasetItemType) => void;
-  onDelete?: (dataset: DatasetItemType) => void;
+  dataset: Dataset;
+  onView?: (dataset: Dataset) => void;
+  onLoad?: (dataset: Dataset) => void;
+  onExport?: (dataset: Dataset) => void;
+  onDelete?: (dataset: Dataset) => void;
 }
 
 export function DatasetItem({
@@ -44,7 +44,7 @@ export function DatasetItem({
         <div className="flex-1 truncate">
           <div className="truncate font-medium">{dataset.name}</div>
           <div className="text-muted-foreground text-xs">
-            {dataset.messages.length} messages • {formatDate(dataset.createdAt)}
+            {dataset.items.length} items • {formatDate(dataset.createdAt)}
           </div>
         </div>
       </SidebarMenuButton>
