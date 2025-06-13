@@ -13,8 +13,9 @@ vi.mock("@/hooks/useLocalDatasets", () => ({
       {
         id: "1",
         name: "Existing Dataset",
-        messages: [],
-        settings: {},
+        description: undefined,
+        tags: undefined,
+        items: [],
         createdAt: "",
         updatedAt: "",
       },
@@ -228,8 +229,9 @@ describe("SaveDatasetDialog", () => {
         {
           id: "1",
           name: "Test Dataset",
-          messages: [],
-          settings: {},
+          description: undefined,
+          tags: undefined,
+          items: [],
           createdAt: "",
           updatedAt: "",
         },
@@ -249,6 +251,13 @@ describe("SaveDatasetDialog", () => {
       expect(mockAddDataset).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "Test Dataset (1)",
+          initialItem: expect.objectContaining({
+            name: "Conversation",
+            messages: mockMessages,
+            systemPrompt: "You are a helpful assistant",
+            model: "gpt-4",
+            settings: mockSettings,
+          }),
         }),
       );
     });

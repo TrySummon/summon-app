@@ -13,6 +13,25 @@ vi.mock("sonner", () => ({
   },
 }));
 
+// Mock the datasets hook to return the new structure
+vi.mock("@/hooks/useLocalDatasets", () => ({
+  useLocalDatasets: vi.fn(() => ({
+    addDataset: vi.fn(() => "test-id-123"),
+    datasets: [
+      {
+        id: "1",
+        name: "Existing Dataset",
+        description: "Test dataset",
+        tags: ["test"],
+        items: [],
+        createdAt: "2023-01-01T00:00:00.000Z",
+        updatedAt: "2023-01-01T00:00:00.000Z",
+      },
+    ],
+    datasetExists: vi.fn(() => false),
+  })),
+}));
+
 // Simple integration test to show the component works
 describe("SaveDatasetDialog Integration", () => {
   const mockMessages: UIMessage[] = [

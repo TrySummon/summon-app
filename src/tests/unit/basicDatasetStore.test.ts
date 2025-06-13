@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeEach, vi } from "vitest";
 import { useDatasetStore } from "@/stores/datasetStore";
-import { DatasetItem } from "@/types/dataset";
+import { Dataset, DatasetItem } from "@/types/dataset";
 import { UIMessage } from "ai";
 import { LLMSettings } from "@/components/playground/tabState";
 
@@ -45,14 +45,14 @@ const mockSettings: LLMSettings = {
   maxTokens: 1000,
 };
 
-const mockDataset: Omit<DatasetItem, "id" | "createdAt" | "updatedAt"> = {
-  name: "Test Dataset",
+const mockDatasetItem: Omit<DatasetItem, "id" | "createdAt" | "updatedAt"> = {
+  name: "Test Conversation",
   messages: mockMessages,
   systemPrompt: "You are a helpful assistant",
   model: "gpt-4",
   settings: mockSettings,
   tags: ["test", "example"],
-  description: "A test dataset for unit testing",
+  description: "A test conversation for unit testing",
 };
 
 describe("Dataset Store Implementation Test", () => {
@@ -72,8 +72,13 @@ describe("Dataset Store Implementation Test", () => {
     expect(store.getDatasetCount()).toBe(0);
     expect(store.listDatasets()).toHaveLength(0);
 
-    // Add a dataset
-    const id = store.addDataset(mockDataset);
+    // Add a dataset with an initial item
+    const id = store.addDataset({
+      name: "Test Dataset",
+      description: "A test dataset for unit testing",
+      tags: ["test", "example"],
+      initialItem: mockDatasetItem,
+    });
     expect(typeof id).toBe("string");
     expect(id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
@@ -87,12 +92,16 @@ describe("Dataset Store Implementation Test", () => {
     const retrieved = store.getDataset(id);
     expect(retrieved).toBeDefined();
     expect(retrieved!.name).toBe("Test Dataset");
-    expect(retrieved!.messages).toEqual(mockMessages);
-    expect(retrieved!.settings).toEqual(mockSettings);
     expect(retrieved!.tags).toEqual(["test", "example"]);
     expect(retrieved!.description).toBe("A test dataset for unit testing");
-    expect(retrieved!.systemPrompt).toBe("You are a helpful assistant");
-    expect(retrieved!.model).toBe("gpt-4");
+    expect(retrieved!.items).toHaveLength(1);
+    expect(retrieved!.items[0].name).toBe("Test Conversation");
+    expect(retrieved!.items[0].messages).toEqual(mockMessages);
+    expect(retrieved!.items[0].settings).toEqual(mockSettings);
+    expect(retrieved!.items[0].systemPrompt).toBe(
+      "You are a helpful assistant",
+    );
+    expect(retrieved!.items[0].model).toBe("gpt-4");
     expect(retrieved!.createdAt).toBeDefined();
     expect(retrieved!.updatedAt).toBeDefined();
 
@@ -120,22 +129,30 @@ describe("Dataset Store Implementation Test", () => {
     const store = useDatasetStore.getState();
 
     // Test various validation scenarios
-    expect(() => store.addDataset({ ...mockDataset, name: "" })).toThrow(
-      "Dataset name must be between 1 and 100 characters",
-    );
+    expect(() =>
+      store.addDataset({ name: "", initialItem: mockDatasetItem }),
+    ).toThrow("Dataset name must be between 1 and 100 characters");
 
     expect(() =>
-      store.addDataset({ ...mockDataset, name: "a".repeat(101) }),
+      store.addDataset({ name: "a".repeat(101), initialItem: mockDatasetItem }),
     ).toThrow("Dataset name must be between 1 and 100 characters");
 
     const tooManyTags = Array.from({ length: 11 }, (_, i) => `tag${i}`);
     expect(() =>
-      store.addDataset({ ...mockDataset, tags: tooManyTags }),
+      store.addDataset({
+        name: "Test",
+        tags: tooManyTags,
+        initialItem: mockDatasetItem,
+      }),
     ).toThrow("Tags must be an array with maximum 10 items");
 
     const longDescription = "a".repeat(501);
     expect(() =>
-      store.addDataset({ ...mockDataset, description: longDescription }),
+      store.addDataset({
+        name: "Test",
+        description: longDescription,
+        initialItem: mockDatasetItem,
+      }),
     ).toThrow("Description must be maximum 500 characters");
   });
 
@@ -144,17 +161,23 @@ describe("Dataset Store Implementation Test", () => {
 
     // Add test datasets
     store.addDataset({
-      ...mockDataset,
       name: "JavaScript Tutorial",
       description: "Learn JavaScript basics",
       tags: ["javascript", "tutorial"],
+      initialItem: {
+        ...mockDatasetItem,
+        name: "JS Conversation",
+      },
     });
 
     store.addDataset({
-      ...mockDataset,
       name: "Python Guide",
       description: "Python programming guide",
       tags: ["python", "guide"],
+      initialItem: {
+        ...mockDatasetItem,
+        name: "Python Conversation",
+      },
     });
 
     // Test search by name
@@ -186,7 +209,12 @@ describe("Dataset Store Implementation Test", () => {
     const store = useDatasetStore.getState();
 
     // Add a dataset
-    const id = store.addDataset(mockDataset);
+    const id = store.addDataset({
+      name: "Test Dataset",
+      description: "A test dataset for unit testing",
+      tags: ["test", "example"],
+      initialItem: mockDatasetItem,
+    });
 
     // Verify localStorage was called
     expect(mockStorage.setItem).toHaveBeenCalled();
@@ -198,6 +226,37 @@ describe("Dataset Store Implementation Test", () => {
 
     const storedData = JSON.parse(lastCall[1]);
     expect(storedData.state.datasets[id]).toBeDefined();
-    expect(storedData.state.datasets[id].name).toBe(mockDataset.name);
+    expect(storedData.state.datasets[id].name).toBe("Test Dataset");
+  });
+
+  test("should handle creating empty datasets without initial items", () => {
+    const store = useDatasetStore.getState();
+
+    // Create empty dataset
+    const id = store.addDataset({
+      name: "Empty Dataset",
+      description: "A dataset without initial items",
+      tags: ["empty", "test"],
+    });
+
+    expect(typeof id).toBe("string");
+    expect(store.datasetExists(id)).toBe(true);
+
+    // Get the dataset and verify it's empty
+    const retrieved = store.getDataset(id);
+    expect(retrieved).toBeDefined();
+    expect(retrieved!.name).toBe("Empty Dataset");
+    expect(retrieved!.description).toBe("A dataset without initial items");
+    expect(retrieved!.tags).toEqual(["empty", "test"]);
+    expect(retrieved!.items).toHaveLength(0);
+
+    // Add items using addItem
+    const itemId = store.addItem(id, mockDatasetItem);
+    expect(typeof itemId).toBe("string");
+
+    // Verify item was added
+    const updatedDataset = store.getDataset(id);
+    expect(updatedDataset!.items).toHaveLength(1);
+    expect(updatedDataset!.items[0].name).toBe("Test Conversation");
   });
 });
