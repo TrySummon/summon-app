@@ -51,8 +51,8 @@ export default function HomePage() {
               Welcome to Summon!
             </h1>
             <p className="text-muted-foreground mx-auto mb-6 max-w-xl text-sm md:mx-0">
-              Your All-in-One Desktop App for Building, Testing and Sharing
-              Model Context Protocol (MCP) Servers & AI Agents.
+              The Collaborative Desktop App for Teams to Build, Test, and Manage
+              MCP Servers & AI Agents — all in one place.
             </p>
             <Tooltip>
               <TooltipTrigger asChild>
