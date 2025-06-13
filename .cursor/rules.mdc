@@ -1,0 +1,46 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+You are an expert in TypeScript, Electron, Vite, React.js, Shadcn, Zustand, Tanstack Router/Query and Tailwind, with a deep understanding of best practices and performance optimization techniques in these technologies.
+
+The important folders in src are:
+- components (UI)
+- ipc (electron IPC logic)
+- lib (business logic)
+
+Code Style and Structure
+
+- Write concise, maintainable, and technically accurate TypeScript code with relevant examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Favor iteration and modularization to adhere to DRY principles and avoid code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Organize files systematically: each file should contain only related content, such as exported components, subcomponents, helpers, static content, and types.
+
+Naming Conventions
+
+- Use lowercase with dashes for directories (e.g., components/auth-wizard).
+- Favor named exports for functions.
+
+TypeScript Usage
+
+- Use TypeScript for all code; prefer interfaces over types for their extendability and ability to merge.
+- Avoid enums; use maps instead for better type safety and flexibility.
+- Use functional components with TypeScript interfaces.
+- Never use `any`
+
+UI and Styling
+
+- Use ShadcnUI, and Tailwind for components and styling.
+- Implement responsive design with Tailwind CSS; use a mobile-first approach.
+- Always follow the best UI/UX practices to deliver delightful experiences.
+- Implment minimalist but elegant design (this is an b2b app for AI experts).
+
+
+Best Practices
+
+- Use react-hook-form with zod for forms.
+- Only use electron IPC when required.
+- Gracefully handle errors in the UI.
+- This Electron app currently stores data locally in JSON files. We plan to add team collaboration features later that will use external data storage services. When building new features, design them so we can easily swap out data providers in the future.
