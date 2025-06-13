@@ -87,9 +87,13 @@ export function SaveDatasetDialog({
       newErrors.name = "Dataset name is required";
     } else if (trimmedName.length > 100) {
       newErrors.name = "Dataset name must be 100 characters or less";
+    } else if (
+      datasets.some(
+        (dataset) => dataset.name.toLowerCase() === trimmedName.toLowerCase(),
+      )
+    ) {
+      newErrors.name = "A dataset with this name already exists";
     }
-    // Note: We don't validate for duplicate names here because
-    // the form submission will auto-generate a unique name
 
     // Description validation
     if (state.description.length > 500) {
@@ -112,29 +116,9 @@ export function SaveDatasetDialog({
     const newState = { ...formState, [field]: value };
     setFormState(newState);
 
-    // Validate the field immediately for real-time feedback
+    // Validate the entire form to keep errors in sync
     const validationErrors = validateForm(newState);
-    setErrors((prev) => ({
-      ...prev,
-      [field]: validationErrors[field as keyof FormErrors],
-    }));
-  };
-
-  // Generate unique name if duplicate exists
-  const generateUniqueName = (baseName: string): string => {
-    let uniqueName = baseName;
-    let counter = 1;
-
-    while (
-      datasets.some(
-        (dataset) => dataset.name.toLowerCase() === uniqueName.toLowerCase(),
-      )
-    ) {
-      uniqueName = `${baseName} (${counter})`;
-      counter++;
-    }
-
-    return uniqueName;
+    setErrors(validationErrors);
   };
 
   // Handle form submission
@@ -150,18 +134,8 @@ export function SaveDatasetDialog({
     setIsSubmitting(true);
 
     try {
-      // Auto-fix duplicate name if needed
-      let finalName = formState.name.trim();
-      if (
-        datasets.some(
-          (dataset) => dataset.name.toLowerCase() === finalName.toLowerCase(),
-        )
-      ) {
-        finalName = generateUniqueName(finalName);
-      }
-
       const datasetId = addDataset({
-        name: finalName,
+        name: formState.name.trim(),
         description: formState.description.trim() || undefined,
         tags: formState.tags.length > 0 ? formState.tags : undefined,
         initialItem: {
@@ -176,7 +150,7 @@ export function SaveDatasetDialog({
       });
 
       toast.success("Dataset saved", {
-        description: `"${finalName}" has been saved to your local datasets.`,
+        description: `"${formState.name.trim()}" has been saved to your local datasets.`,
       });
 
       onSuccess?.(datasetId);

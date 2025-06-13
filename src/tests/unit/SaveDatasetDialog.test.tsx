@@ -266,9 +266,10 @@ describe("SaveDatasetDialog", () => {
     );
   });
 
-  it("handles duplicate names by auto-generating unique name", async () => {
+  it("prevents saving with duplicate dataset names", async () => {
     const { useLocalDatasets } = await import("@/hooks/useLocalDatasets");
     const mockAddDataset = vi.fn(() => "test-id-123");
+    const mockDatasetExists = vi.fn((name: string) => name === "Test Dataset");
 
     vi.mocked(useLocalDatasets).mockReturnValue({
       addDataset: mockAddDataset,
@@ -283,7 +284,7 @@ describe("SaveDatasetDialog", () => {
           updatedAt: "",
         },
       ],
-      datasetExists: vi.fn(() => false),
+      datasetExists: mockDatasetExists,
       updateDataset: vi.fn(),
       deleteDataset: vi.fn(),
       getDataset: vi.fn(),
@@ -301,28 +302,18 @@ describe("SaveDatasetDialog", () => {
 
     const saveButton = screen.getByText("Save Dataset");
 
-    // Use act to ensure state updates are processed
-    await act(async () => {
-      fireEvent.click(saveButton);
+    // Check that validation error appears
+    await waitFor(() => {
+      expect(
+        screen.getByText("A dataset with this name already exists"),
+      ).toBeInTheDocument();
     });
 
-    await waitFor(
-      () => {
-        expect(mockAddDataset).toHaveBeenCalledWith(
-          expect.objectContaining({
-            name: "Test Dataset (1)",
-            initialItem: expect.objectContaining({
-              name: "Conversation",
-              messages: mockMessages,
-              systemPrompt: "You are a helpful assistant",
-              model: "gpt-4",
-              settings: mockSettings,
-            }),
-          }),
-        );
-      },
-      { timeout: 3000 },
-    );
+    // Save button should be disabled due to validation error
+    expect(saveButton).toBeDisabled();
+
+    // addDataset should not be called
+    expect(mockAddDataset).not.toHaveBeenCalled();
   });
 
   it("calls onSuccess callback after successful save", async () => {
