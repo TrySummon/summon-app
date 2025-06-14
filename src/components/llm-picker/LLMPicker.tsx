@@ -140,7 +140,7 @@ export default function LLMPicker({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger
                   id={`provider-${providerName}`}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1"
                 >
                   <ProviderLogo svgString={providerDetails.logo} width={22} />
                   {providerName}
@@ -304,7 +304,7 @@ export default function LLMPicker({
               id="model-selector"
               variant="outline"
               role="combobox"
-              className={cn("gap-2", model && "rounded-r-none border-r-0")}
+              className={cn("gap-1", model && "rounded-r-none border-r-0")}
               size="sm"
             >
               {isLoading ? (

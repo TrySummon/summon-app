@@ -20,6 +20,7 @@ import {
 import { initPostHog } from "@/lib/posthog";
 import { initSentryRenderer } from "@/lib/sentry-renderer";
 import { SentryErrorBoundary } from "./components/SentryErrorBoundary";
+import { Dataset, DatasetItem } from "@/types/dataset";
 
 export default function App() {
   useEffect(() => {
@@ -180,6 +181,62 @@ declare global {
       onExternalMcpServersUpdated: (
         callback: (mcpServers: Record<string, McpServerState>) => void,
       ) => () => void;
+    };
+    datasets: {
+      // Dataset-level operations
+      addDataset: (data: {
+        name: string;
+        description?: string;
+        tags?: string[];
+        initialItem?: Omit<DatasetItem, "id" | "createdAt" | "updatedAt">;
+      }) => Promise<{ success: boolean; id?: string; message?: string }>;
+      updateDataset: (
+        id: string,
+        updates: Partial<
+          Omit<Dataset, "id" | "items" | "createdAt" | "updatedAt">
+        >,
+      ) => Promise<{ success: boolean; message?: string }>;
+      deleteDataset: (
+        id: string,
+      ) => Promise<{ success: boolean; message?: string }>;
+      getDataset: (id: string) => Promise<{
+        success: boolean;
+        dataset?: Dataset;
+        message?: string;
+      }>;
+      listDatasets: () => Promise<{
+        success: boolean;
+        datasets?: Dataset[];
+        message?: string;
+      }>;
+      searchDatasets: (query: string) => Promise<{
+        success: boolean;
+        datasets?: Dataset[];
+        message?: string;
+      }>;
+      // Item-level operations
+      addItem: (
+        datasetId: string,
+        item: Omit<DatasetItem, "id" | "createdAt" | "updatedAt">,
+      ) => Promise<{ success: boolean; id?: string; message?: string }>;
+      updateItem: (
+        datasetId: string,
+        itemId: string,
+        updates: Partial<Omit<DatasetItem, "id" | "createdAt" | "updatedAt">>,
+      ) => Promise<{ success: boolean; message?: string }>;
+      deleteItem: (
+        datasetId: string,
+        itemId: string,
+      ) => Promise<{ success: boolean; message?: string }>;
+      // Utility operations
+      datasetExists: (
+        id: string,
+      ) => Promise<{ success: boolean; exists?: boolean; message?: string }>;
+      getDatasetCount: () => Promise<{
+        success: boolean;
+        count?: number;
+        message?: string;
+      }>;
     };
   }
 }

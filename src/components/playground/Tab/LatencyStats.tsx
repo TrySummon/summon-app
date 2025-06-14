@@ -20,6 +20,9 @@ export default function LatencyStats({
   const latency = usePlaygroundStore(
     (state) => state.getCurrentState().latency,
   );
+  const cutMode = usePlaygroundStore(
+    (state) => state.getCurrentState().cutMode,
+  );
 
   // Format latency to be more readable (ms or s)
   const formatLatency = (latencyMs?: number) => {
@@ -29,6 +32,11 @@ export default function LatencyStats({
   };
 
   const showDetails = tokenUsage || latency;
+
+  // Hide LatencyStats completely in cut mode to avoid overlapping with cut indicators
+  if (cutMode) {
+    return null;
+  }
 
   if (!showDetails && !showScrollButton) {
     return null;

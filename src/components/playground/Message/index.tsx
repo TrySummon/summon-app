@@ -59,62 +59,64 @@ export default function Message({
       : JSON.stringify(message.parts, null, 2);
 
   return (
-    <div className="group flex flex-col gap-1">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <RoleSelect
-            disabled={!onChange}
-            value={message.role}
-            onValueChange={(v) => {
-              onChange?.({
-                ...message,
-                role: v,
-              });
-            }}
-          />
-        </div>
-        <TooltipProvider delayDuration={100}>
-          <div
-            className={`-mr-2 flex ${showButtons ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
-          >
-            {children}
-            <CopyButton className="h-3.5 w-3.5" content={messageContent} />
-            {onRerun && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    className="text-muted-foreground"
-                    onClick={onRerun}
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <PlayCircle size={14} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <p>Rerun from this message</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {onDelete ? (
-              <Button
-                className="text-muted-foreground"
-                onClick={onDelete}
-                variant="ghost"
-                size="icon"
-              >
-                <Trash2 size={14} />
-              </Button>
-            ) : null}
+    <>
+      <div className="group flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <RoleSelect
+              disabled={!onChange}
+              value={message.role}
+              onValueChange={(v) => {
+                onChange?.({
+                  ...message,
+                  role: v,
+                });
+              }}
+            />
           </div>
-        </TooltipProvider>
+          <TooltipProvider delayDuration={100}>
+            <div
+              className={`-mr-2 flex ${showButtons ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+            >
+              {children}
+              <CopyButton className="h-3.5 w-3.5" content={messageContent} />
+              {onRerun && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      className="text-muted-foreground"
+                      onClick={onRerun}
+                      variant="ghost"
+                      size="icon"
+                    >
+                      <PlayCircle size={14} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Rerun from this message</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {onDelete ? (
+                <Button
+                  className="text-muted-foreground"
+                  onClick={onDelete}
+                  variant="ghost"
+                  size="icon"
+                >
+                  <Trash2 size={14} />
+                </Button>
+              ) : null}
+            </div>
+          </TooltipProvider>
+        </div>
+        <MessageContent
+          autoFocus={autoFocus}
+          maxHeight={maxHeight}
+          message={message}
+          onChange={onChange}
+        />
       </div>
-      <MessageContent
-        autoFocus={autoFocus}
-        maxHeight={maxHeight}
-        message={message}
-        onChange={onChange}
-      />
-    </div>
+    </>
   );
 }
