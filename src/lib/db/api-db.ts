@@ -157,29 +157,27 @@ export const getApiById = async (
 };
 
 // Update an API
-const updateApi = async (id: string, buffer: Buffer): Promise<boolean> => {
-  if (!(await apiExists(id))) {
-    return false;
+const renameApi = async (id: string, newName: string): Promise<boolean> => {
+  // Get existing API data to keep the original file path
+  const existingApiData = await getApiById(id, true);
+  if (!existingApiData) {
+    throw new Error(`API with ID ${id} not found`);
   }
 
-  try {
-    // Get existing API data to keep the original file path
-    const existingApiData = await getApiById(id, false);
-    if (!existingApiData) {
-      return false;
-    }
+  const updatedApiData = {
+    ...existingApiData.api!,
+    info: {
+      ...existingApiData.api!.info,
+      title: newName,
+    },
+  };
 
-    // Update the original file
-    await fs.writeFile(existingApiData.originalFilePath, buffer);
+  const buffer = Buffer.from(JSON.stringify(updatedApiData, null, 2));
 
-    const originalFilePath = getApiOriginalFilePath(id);
-    await fs.writeFile(originalFilePath, buffer);
+  // Update the original file
+  await fs.writeFile(existingApiData.originalFilePath, buffer);
 
-    return true;
-  } catch (error) {
-    log.error(`Error updating API with ID ${id}:`, error);
-    return false;
-  }
+  return true;
 };
 
 // Delete an API and all its tools
@@ -233,7 +231,7 @@ export const apiDb = {
   createApi,
   listApis,
   getApiById,
-  updateApi,
+  renameApi,
   deleteApi,
   getOriginalFileContent,
 };

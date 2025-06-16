@@ -22,6 +22,7 @@ export function useApis() {
       }
       return result.apis || [];
     },
+    structuralSharing: false,
   });
 
   // Mutation to delete an API
@@ -65,6 +66,7 @@ export function useApi(apiId: string) {
       }
       return result.api;
     },
+    structuralSharing: false,
   });
 
   return {

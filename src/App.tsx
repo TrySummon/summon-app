@@ -65,9 +65,9 @@ declare global {
           };
           message?: string;
         }>;
-        updateApi: (
+        renameApi: (
           id: string,
-          api: OpenAPIV3.Document,
+          newName: string,
         ) => Promise<{
           success: boolean;
           message: string;

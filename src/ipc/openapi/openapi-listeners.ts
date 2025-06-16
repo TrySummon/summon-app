@@ -3,7 +3,7 @@ import {
   IMPORT_API_CHANNEL,
   LIST_APIS_CHANNEL,
   GET_API_CHANNEL,
-  UPDATE_API_CHANNEL,
+  RENAME_API_CHANNEL,
   DELETE_API_CHANNEL,
 } from "./openapi-channels";
 import { apiDb } from "@/lib/db/api-db";
@@ -143,31 +143,14 @@ export function registerOpenApiListeners() {
     }
   });
 
-  // Update an API
+  // Rename an API
   ipcMain.handle(
-    UPDATE_API_CHANNEL,
-    async (_, request: { id: string; buffer: Buffer }) => {
+    RENAME_API_CHANNEL,
+    async (_, request: { id: string; newName: string }) => {
       try {
-        const { id, buffer } = request;
+        const { id, newName } = request;
 
-        // Validate the OpenAPI spec using swagger-parser
-        const valid = isOpenAPISpecV3OrHigher(JSON.parse(buffer.toString()));
-
-        if (!valid) {
-          return {
-            success: false,
-            message: "Invalid OpenAPI spec",
-          };
-        }
-
-        const success = await apiDb.updateApi(id, buffer);
-
-        if (!success) {
-          return {
-            success: false,
-            message: `API with ID ${id} not found`,
-          };
-        }
+        await apiDb.renameApi(id, newName);
 
         return {
           success: true,
