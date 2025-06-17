@@ -1,5 +1,31 @@
 import posthog from "posthog-js";
 import packageJson from "../../package.json";
+import { v4 as uuidv4 } from "uuid";
+
+// Generate or retrieve persistent user ID
+const getUserId = (): string => {
+  const storageKey = "summon_user_id";
+
+  try {
+    // Try to get existing user ID from localStorage
+    let userId = localStorage.getItem(storageKey);
+
+    if (!userId) {
+      // Generate new UUID if none exists
+      userId = uuidv4();
+      localStorage.setItem(storageKey, userId);
+    }
+
+    return userId;
+  } catch (error) {
+    // Fallback if localStorage is not available
+    console.warn(
+      "Unable to access localStorage for user ID, using session-based ID:",
+      error,
+    );
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+};
 
 export const initPostHog = () => {
   // Check if analytics is disabled
@@ -21,6 +47,8 @@ export const initPostHog = () => {
 
   if (typeof window !== "undefined" && posthogKey) {
     try {
+      const userId = getUserId();
+
       posthog.init(posthogKey, {
         api_host: posthogHost || "https://eu.i.posthog.com",
         // Important for Electron apps - disable automatic pageview capture
@@ -36,14 +64,18 @@ export const initPostHog = () => {
         bootstrap: {},
         // Important for Electron - handle CSP issues
         cross_subdomain_cookie: false,
-        // Disable persistence in localStorage for Electron security
-        persistence: "memory",
+        // Use localStorage for persistence to maintain user identity across sessions
+        persistence: "localStorage",
         // Disable automatic error tracking
         capture_performance: false,
         // Custom configuration for Electron
         loaded: () => {
-          // Only capture pageviews manually when routes change
-          console.log("PostHog loaded successfully");
+          // Identify the user with consistent ID
+          posthog.identify(userId, {
+            app_type: "Summon",
+            app_version: packageJson.version,
+          });
+          console.log("PostHog loaded successfully with user ID:", userId);
         },
         // Handle errors gracefully
         on_xhr_error: (failedRequest: unknown) => {
@@ -51,7 +83,7 @@ export const initPostHog = () => {
         },
       });
 
-      // Identify the user as an Electron app user
+      // Register global properties
       posthog.register({
         app_type: "Summon",
         app_version: packageJson.version,

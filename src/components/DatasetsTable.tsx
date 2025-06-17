@@ -117,12 +117,6 @@ export const DatasetsTable: React.FC<DatasetsTableProps> = ({
                 ? "No datasets match your search criteria"
                 : "No datasets found. Create your first dataset to get started."}
             </div>
-            {!searchQuery && (
-              <Button className="mt-4" onClick={onCreateDataset}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Dataset
-              </Button>
-            )}
           </div>
         ) : (
           <div className="flex flex-grow flex-col overflow-y-auto">
