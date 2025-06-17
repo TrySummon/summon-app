@@ -1,40 +1,31 @@
 name: ❓ Question
-description: Ask a question about using Summon
+description: Ask a question about Summon
 title: "[Question]: "
 labels: ["question"]
-assignees: []
 body:
   - type: markdown
     attributes:
       value: |
-        Have a question about using Summon? We're here to help! 🤝
-
-        Please check the documentation and existing issues first to see if your question has already been answered.
+        Need help? Ask away! 🤝
 
   - type: textarea
     id: question
     attributes:
-      label: Your Question
-      description: What would you like to know about Summon?
-      placeholder: How do I...? / Why does...? / What is the best way to...?
+      label: Your question
+      placeholder: "How do I...? / Why does...? / What's the best way to...?"
     validations:
       required: true
 
   - type: dropdown
     id: category
     attributes:
-      label: Question Category
-      description: What area is your question about?
+      label: Topic
       options:
         - Getting Started
         - MCP Server Generation
         - OpenAPI Integration
-        - AI Playground Usage
-        - Tool Configuration
-        - External MCP Servers
-        - Authentication Setup
+        - AI Playground
         - Troubleshooting
-        - Best Practices
         - Other
     validations:
       required: true
@@ -43,28 +34,4 @@ body:
     id: context
     attributes:
       label: Context
-      description: Provide any relevant context about what you're trying to accomplish.
-      placeholder: I'm trying to... / My goal is to... / I'm working on...
-
-  - type: textarea
-    id: attempted
-    attributes:
-      label: What Have You Tried?
-      description: Let us know what you've already attempted or researched.
-      placeholder: I've tried... / I've looked at... / I've read...
-
-  - type: input
-    id: version
-    attributes:
-      label: Summon Version
-      description: What version of Summon are you using? (Check Help → About)
-      placeholder: e.g., 0.0.1
-
-  - type: checkboxes
-    id: terms
-    attributes:
-      label: Checklist
-      description: Please confirm the following
-      options:
-        - label: I have searched existing issues and discussions for similar questions
-          required: true
+      placeholder: "I'm trying to... / My goal is to..."
