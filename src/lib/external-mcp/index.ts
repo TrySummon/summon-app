@@ -161,7 +161,8 @@ export const connectExternalMcp = async (
     // Handle URL-based server (HTTP or SSE)
     else if (config.url) {
       const url = config.url;
-      const isSSE = config.transport !== "http";
+      const isSSE = config.url.endsWith("/sse");
+      const isHTTP = config.url.endsWith("/mcp");
 
       if (isSSE) {
         await client.connect(new SSEClientTransport(new URL(url)));
@@ -171,7 +172,7 @@ export const connectExternalMcp = async (
           options: {},
         };
         serverState.client = client;
-      } else {
+      } else if (isHTTP) {
         await client.connect(new StreamableHTTPClientTransport(new URL(url)));
         serverState.transport = {
           type: "http",
@@ -179,6 +180,8 @@ export const connectExternalMcp = async (
           options: {},
         };
         serverState.client = client;
+      } else {
+        throw new Error("Invalid URL, must end with /sse or /mcp");
       }
     }
 

@@ -52,7 +52,6 @@ const codeSnippets: CodeTab[] = [
   "mcpServers": {
     "server-name": {
       "url": "http://localhost:3000/mcp",
-      "transport": "http",
       "env": {
         "API_KEY": "value"
       }
