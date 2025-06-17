@@ -5,38 +5,76 @@ import { v4 as uuidv4 } from "uuid";
 import { Dataset, DatasetItem } from "@/types/dataset";
 import log from "electron-log/main";
 
-interface DatasetStorage {
-  datasets: Record<string, Dataset>;
-}
-
 class DatasetDB {
-  private dataFile: string;
-  private data: DatasetStorage;
+  private datasetsDir: string;
 
   constructor() {
     const userDataPath = app.getPath("userData");
-    this.dataFile = path.join(userDataPath, "datasets.json");
-    this.data = this.loadData();
+    this.datasetsDir = path.join(userDataPath, "datasets");
+
+    // Ensure datasets directory exists
+    this.ensureDirectoryExists();
   }
 
-  private loadData(): DatasetStorage {
+  private ensureDirectoryExists(): void {
     try {
-      if (fs.existsSync(this.dataFile)) {
-        const rawData = fs.readFileSync(this.dataFile, "utf-8");
+      if (!fs.existsSync(this.datasetsDir)) {
+        fs.mkdirSync(this.datasetsDir, { recursive: true });
+      }
+    } catch (error) {
+      log.error("Error creating datasets directory:", error);
+      throw error;
+    }
+  }
+
+  private getDatasetFilePath(id: string): string {
+    return path.join(this.datasetsDir, `${id}.json`);
+  }
+
+  private loadDatasetFromFile(id: string): Dataset | null {
+    try {
+      const filePath = this.getDatasetFilePath(id);
+      if (fs.existsSync(filePath)) {
+        const rawData = fs.readFileSync(filePath, "utf-8");
         return JSON.parse(rawData);
       }
     } catch (error) {
-      log.error("Error loading dataset data:", error);
+      log.error(`Error loading dataset ${id}:`, error);
     }
-    return { datasets: {} };
+    return null;
   }
 
-  private saveData(): void {
+  private saveDatasetToFile(dataset: Dataset): void {
     try {
-      fs.writeFileSync(this.dataFile, JSON.stringify(this.data, null, 2));
+      const filePath = this.getDatasetFilePath(dataset.id);
+      fs.writeFileSync(filePath, JSON.stringify(dataset, null, 2));
     } catch (error) {
-      log.error("Error saving dataset data:", error);
+      log.error(`Error saving dataset ${dataset.id}:`, error);
       throw error;
+    }
+  }
+
+  private deleteDatasetFile(id: string): void {
+    try {
+      const filePath = this.getDatasetFilePath(id);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      log.error(`Error deleting dataset file ${id}:`, error);
+      throw error;
+    }
+  }
+
+  private getAllDatasetIds(): string[] {
+    try {
+      const files = fs.readdirSync(this.datasetsDir);
+      return files
+        .filter((file) => file.endsWith(".json"))
+        .map((file) => file.replace(".json", ""));
+    } catch (error) {
+      log.error("Error reading datasets directory:", error);
+      return [];
     }
   }
 
@@ -70,8 +108,7 @@ class DatasetDB {
       items,
     };
 
-    this.data.datasets[id] = newDataset;
-    this.saveData();
+    this.saveDatasetToFile(newDataset);
     return id;
   }
 
@@ -79,7 +116,7 @@ class DatasetDB {
     id: string,
     updates: Partial<Omit<Dataset, "id" | "items" | "createdAt" | "updatedAt">>,
   ): Promise<boolean> {
-    const existing = this.data.datasets[id];
+    const existing = this.loadDatasetFromFile(id);
     if (!existing) return false;
 
     const updated: Dataset = {
@@ -89,24 +126,34 @@ class DatasetDB {
       updatedAt: new Date().toISOString(),
     };
 
-    this.data.datasets[id] = updated;
-    this.saveData();
+    this.saveDatasetToFile(updated);
     return true;
   }
 
   async deleteDataset(id: string): Promise<boolean> {
-    if (!this.data.datasets[id]) return false;
-    delete this.data.datasets[id];
-    this.saveData();
+    const existing = this.loadDatasetFromFile(id);
+    if (!existing) return false;
+
+    this.deleteDatasetFile(id);
     return true;
   }
 
   async getDataset(id: string): Promise<Dataset | null> {
-    return this.data.datasets[id] || null;
+    return this.loadDatasetFromFile(id);
   }
 
   async listDatasets(): Promise<Dataset[]> {
-    return Object.values(this.data.datasets).sort(
+    const datasetIds = this.getAllDatasetIds();
+    const datasets: Dataset[] = [];
+
+    for (const id of datasetIds) {
+      const dataset = this.loadDatasetFromFile(id);
+      if (dataset) {
+        datasets.push(dataset);
+      }
+    }
+
+    return datasets.sort(
       (a, b) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     );
@@ -116,20 +163,35 @@ class DatasetDB {
     const q = query.toLowerCase().trim();
     if (!q) return this.listDatasets();
 
-    return Object.values(this.data.datasets).filter((d) => {
+    const datasetIds = this.getAllDatasetIds();
+    const matchingDatasets: Dataset[] = [];
+
+    for (const id of datasetIds) {
+      const dataset = this.loadDatasetFromFile(id);
+      if (!dataset) continue;
+
       const metaMatch =
-        d.name.toLowerCase().includes(q) ||
-        (d.description?.toLowerCase().includes(q) ?? false) ||
-        (d.tags?.some((t) => t.toLowerCase().includes(q)) ?? false);
-      const itemMatch = d.items.some((i) =>
+        dataset.name.toLowerCase().includes(q) ||
+        (dataset.description?.toLowerCase().includes(q) ?? false) ||
+        (dataset.tags?.some((t) => t.toLowerCase().includes(q)) ?? false);
+
+      const itemMatch = dataset.items.some((i) =>
         i.messages.some(
           (m) =>
             (m.content && m.content.toLowerCase().includes(q)) ||
             i.name.toLowerCase().includes(q),
         ),
       );
-      return metaMatch || itemMatch;
-    });
+
+      if (metaMatch || itemMatch) {
+        matchingDatasets.push(dataset);
+      }
+    }
+
+    return matchingDatasets.sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
   }
 
   // Item-level operations
@@ -137,7 +199,7 @@ class DatasetDB {
     datasetId: string,
     item: Omit<DatasetItem, "id" | "createdAt" | "updatedAt">,
   ): Promise<string> {
-    const dataset = this.data.datasets[datasetId];
+    const dataset = this.loadDatasetFromFile(datasetId);
     if (!dataset) throw new Error("Dataset not found");
 
     const now = new Date().toISOString();
@@ -150,7 +212,7 @@ class DatasetDB {
 
     dataset.items.push(newItem);
     dataset.updatedAt = now;
-    this.saveData();
+    this.saveDatasetToFile(dataset);
     return newItem.id;
   }
 
@@ -159,7 +221,7 @@ class DatasetDB {
     itemId: string,
     updates: Partial<Omit<DatasetItem, "id" | "createdAt" | "updatedAt">>,
   ): Promise<boolean> {
-    const dataset = this.data.datasets[datasetId];
+    const dataset = this.loadDatasetFromFile(datasetId);
     if (!dataset) return false;
 
     const itemIndex = dataset.items.findIndex((i) => i.id === itemId);
@@ -175,12 +237,12 @@ class DatasetDB {
 
     dataset.items[itemIndex] = updatedItem;
     dataset.updatedAt = new Date().toISOString();
-    this.saveData();
+    this.saveDatasetToFile(dataset);
     return true;
   }
 
   async deleteItem(datasetId: string, itemId: string): Promise<boolean> {
-    const dataset = this.data.datasets[datasetId];
+    const dataset = this.loadDatasetFromFile(datasetId);
     if (!dataset) return false;
 
     const initialLength = dataset.items.length;
@@ -189,17 +251,17 @@ class DatasetDB {
     if (dataset.items.length === initialLength) return false;
 
     dataset.updatedAt = new Date().toISOString();
-    this.saveData();
+    this.saveDatasetToFile(dataset);
     return true;
   }
 
   // Utility operations
   async datasetExists(id: string): Promise<boolean> {
-    return id in this.data.datasets;
+    return fs.existsSync(this.getDatasetFilePath(id));
   }
 
   async getDatasetCount(): Promise<number> {
-    return Object.keys(this.data.datasets).length;
+    return this.getAllDatasetIds().length;
   }
 }
 
