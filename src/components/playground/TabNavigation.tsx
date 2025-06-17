@@ -26,6 +26,7 @@ export default function TabNavigation() {
     setCurrentTab,
     renameTab,
     duplicateTab,
+    createTab,
   } = usePlaygroundStore();
 
   const { captureEvent } = usePostHog();
@@ -95,6 +96,12 @@ export default function TabNavigation() {
         0,
       ),
     });
+  };
+
+  // Handle creating a new tab
+  const handleCreateTab = () => {
+    createTab();
+    captureEvent("playground_tab_created");
   };
 
   return (
@@ -168,6 +175,22 @@ export default function TabNavigation() {
             </ContextMenuContent>
           </ContextMenu>
         ))}
+
+        {/* Add New Tab Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="bg-sidebar hover:bg-muted/40 h-12 w-12 rounded-none border-b"
+              onClick={handleCreateTab}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Create new tab</TooltipContent>
+        </Tooltip>
+
         <div className="bg-sidebar h-12 flex-1 border-b" />
       </div>
     </div>

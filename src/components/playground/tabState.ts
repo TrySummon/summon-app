@@ -103,4 +103,7 @@ export interface IPlaygroundTabState {
   // Latency in milliseconds
   latency?: number;
   autoExecuteTools?: boolean;
+  selectedDatasetId?: string;
+  cutMode?: boolean;
+  cutPosition?: number;
 }

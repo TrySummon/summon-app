@@ -7,7 +7,7 @@ You are an expert in TypeScript, Electron, Vite, React.js, Shadcn, Zustand, Tans
 
 The important folders in src are:
 - components (UI)
-- ipc (electron IPC logic)
+- ipc (electron IPC logic, the typing of ipc is in App.tsx)
 - lib (business logic)
 
 Code Style and Structure
@@ -41,6 +41,5 @@ UI and Styling
 Best Practices
 
 - Use react-hook-form with zod for forms.
-- Only use electron IPC when required.
 - Gracefully handle errors in the UI.
 - This Electron app currently stores data locally in JSON files. We plan to add team collaboration features later that will use external data storage services. When building new features, design them so we can easily swap out data providers in the future.

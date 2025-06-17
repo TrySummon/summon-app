@@ -7,6 +7,8 @@ import BuildMcpPage from "@/pages/BuildMcpPage";
 import McpPage from "@/pages/McpPage";
 import ExternalMcpPage from "@/pages/ExternalMcpPage";
 import PlaygroundPage from "@/pages/PlaygroundPage";
+import DatasetsPage from "@/pages/DatasetsPage";
+import DatasetDetailPage from "@/pages/DatasetDetailPage";
 import SettingsPage from "@/pages/SettingsPage";
 import ConnectMcpPage from "@/pages/ConnectMcpPage";
 
@@ -71,6 +73,18 @@ export const PlaygroundRoute = createRoute({
   component: PlaygroundPage,
 });
 
+export const DatasetsRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/datasets",
+  component: DatasetsPage,
+});
+
+export const DatasetDetailRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "/datasets/$datasetId",
+  component: DatasetDetailPage,
+});
+
 export const SettingsRoute = createRoute({
   getParentRoute: () => RootRoute,
   path: "/settings",
@@ -97,6 +111,8 @@ export const rootTree = RootRoute.addChildren([
   McpRoute,
   ExternalMcpRoute,
   PlaygroundRoute,
+  DatasetsRoute,
+  DatasetDetailRoute,
   SettingsRoute,
   ConnectMcpRoute,
 ]);
