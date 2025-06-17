@@ -15,7 +15,7 @@ export const STEPS = [
   },
   {
     id: "tools",
-    title: "Expected Tools",
+    title: "Expected Tool Calls",
     description: "Select expected tool calls (optional)",
     icon: Wrench,
   },

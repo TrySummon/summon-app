@@ -142,7 +142,9 @@ export const DatasetItemsTable: React.FC<DatasetItemsTableProps> = ({
                   <TableRow>
                     <TableHead className="min-w-[200px]">Name</TableHead>
                     <TableHead className="min-w-[250px]">Input</TableHead>
-                    <TableHead className="min-w-[200px]">Tool Calls</TableHead>
+                    <TableHead className="min-w-[200px]">
+                      Expected Tool Calls
+                    </TableHead>
                     <TableHead className="min-w-[200px]">Criteria</TableHead>
                     <TableHead className="min-w-[120px]">Created</TableHead>
                   </TableRow>
