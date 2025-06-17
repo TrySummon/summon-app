@@ -124,7 +124,14 @@ export const DatasetItemDetailsSidebar: React.FC<
     }
   }, [isMobile, item, setOpen, setOpenMobile]);
 
-  if (!item) return null;
+  if (!item)
+    // Don't return null, otherwise the sidebar animation will not play
+    return (
+      <Sidebar
+        side="right"
+        className="top-[var(--header-height)] !h-[calc(100svh-var(--header-height))]"
+      />
+    );
 
   const inputMessages = getInputMessages(item);
   const outputMessages = getOutputMessages(item);
