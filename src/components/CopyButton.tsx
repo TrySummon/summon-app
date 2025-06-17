@@ -50,9 +50,9 @@ const CopyButton = ({ content, className }: Props) => {
             className={"text-muted-foreground"}
           >
             {copied ? (
-              <Check className={cn("h-4 w-4", className)} />
+              <Check className={cn("h-3.5 w-3.5", className)} />
             ) : (
-              <Copy className={cn("h-4 w-4", className)} />
+              <Copy className={cn("h-3.5 w-3.5", className)} />
             )}
           </Button>
         </TooltipTrigger>

@@ -53,7 +53,7 @@ export function AppSidebar() {
                 </Link>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <Link to="/playground">
+                <Link to="/datasets">
                   <SidebarMenuButton
                     isActive={location.pathname === "/datasets"}
                   >

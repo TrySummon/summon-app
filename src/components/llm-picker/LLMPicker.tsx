@@ -80,7 +80,27 @@ export default function LLMPicker({
     }
   }, [credentialId, credentials, config, onChange]);
 
-  // No need for additional effect since we're handling credential validation in the useMemo above
+  // Infer credential ID from model if model exists but no credential ID
+  useEffect(() => {
+    if (!model || credentialId || !credentials?.length) return;
+
+    // Search through all credentials to find one that supports this model
+    for (const credential of credentials) {
+      const providerConfig = AI_PROVIDERS_CONFIG[credential.provider];
+
+      // Check if model exists in provider's default models
+      const isDefaultModel = providerConfig && model in providerConfig.models;
+
+      // Check if model exists in credential's custom models
+      const isCustomModel = credential.models?.includes(model);
+
+      if (isDefaultModel || isCustomModel) {
+        // Found a credential that supports this model, use it
+        onChange({ ...config, credentialId: credential.id });
+        break;
+      }
+    }
+  }, [model, credentialId, credentials, config, onChange]);
 
   const currentProvider = useMemo(() => {
     if (!provider) return null;
