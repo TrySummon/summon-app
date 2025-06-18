@@ -11,6 +11,7 @@ import { DialogFooter } from "./DialogFooter";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ApiExplorer } from "@/components/api-explorer";
 import { cn } from "@/utils/tailwind";
+import { usePlatform } from "@/hooks/usePlatform";
 
 interface EndpointPickerDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ export function EndpointPickerDialog({
   initialSelectedEndpoints = [],
   onBackClick,
 }: EndpointPickerDialogProps) {
+  const { isMac } = usePlatform();
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>(
     initialSelectedEndpoints,
@@ -423,6 +425,7 @@ export function EndpointPickerDialog({
         <SheetContent
           side="right"
           className="max-w-none min-w-[100vw] p-0 py-8 sm:min-w-[100vw]"
+          sheetCloseClassname={isMac ? "" : "left-4"}
         >
           <div className="flex-1 overflow-y-auto">
             {selectedEndpointForDetails && (

@@ -150,17 +150,12 @@ export default function BuildMcpPage() {
 
     const newEndpoints = selectedEndpointIds.map((id) => {
       const [method, path] = id.split("-");
-      const pathObj = api.api.paths[path] || {};
-      const operation = (
-        method in pathObj ? pathObj[method as keyof typeof pathObj] : {}
-      ) as OpenAPIV3.OperationObject;
 
       return {
         apiId,
         apiName,
         method,
         path,
-        operation,
       };
     });
 
