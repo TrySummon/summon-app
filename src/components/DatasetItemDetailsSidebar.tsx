@@ -212,21 +212,13 @@ export const DatasetItemDetailsSidebar: React.FC<
                 )}
               </CollapsibleTrigger>
               <CollapsibleContent className="px-4 pb-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">
-                      {item.systemPrompt.length} characters
-                    </span>
-                    <CopyButton content={item.systemPrompt} />
-                  </div>
-                  <CodeEditor
-                    defaultValue={item.systemPrompt}
-                    language="markdown"
-                    readOnly
-                    height="120px"
-                    className="rounded-md border"
-                  />
-                </div>
+                <CodeEditor
+                  defaultValue={item.systemPrompt}
+                  language="markdown"
+                  readOnly
+                  height="120px"
+                  className="rounded-md border p-2"
+                />
               </CollapsibleContent>
             </Collapsible>
           </div>

@@ -66,7 +66,7 @@ export function SubNav({
   };
 
   return (
-    <div className={cn("mb-4", className)}>
+    <div className={cn("", className)}>
       <NavigationMenu className="w-full">
         <NavigationMenuList className="h-fit justify-start space-x-4 bg-transparent p-0">
           {items.map((item) => (
