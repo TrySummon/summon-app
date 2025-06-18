@@ -53,24 +53,23 @@ export function AssertionResult({ assertion }: AssertionResultProps) {
 
   return (
     <div
-      className={`rounded-lg border p-4 ${assertion.passed ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}
+      className={`rounded-lg border p-4 ${
+        assertion.passed
+          ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30"
+          : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30"
+      }`}
     >
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {assertion.passed ? (
-            <CheckCircle className="h-5 w-5 text-green-600" />
+            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
           ) : (
-            <XCircle className="h-5 w-5 text-red-600" />
+            <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
           )}
           <div>
             <Badge variant="outline" className="text-sm">
               {getAssertionTypeLabel(assertion.assertion.assertionType)}
             </Badge>
-            {assertion.assertion.path && (
-              <div className="text-muted-foreground mt-1 text-xs">
-                Path: {assertion.assertion.path}
-              </div>
-            )}
           </div>
         </div>
         <Badge
@@ -84,10 +83,10 @@ export function AssertionResult({ assertion }: AssertionResultProps) {
       <div className="space-y-3">
         {assertion.assertion.value && (
           <div>
-            <div className="mb-1 text-sm font-medium text-gray-700">
+            <div className="text-foreground mb-1 text-sm font-medium">
               Expected:
             </div>
-            <div className="rounded border bg-white p-3 text-sm text-gray-900">
+            <div className="bg-card text-card-foreground rounded border p-3 text-sm">
               {assertion.assertion.value}
             </div>
           </div>
@@ -95,10 +94,10 @@ export function AssertionResult({ assertion }: AssertionResultProps) {
 
         {assertion.reason && (
           <div>
-            <div className="mb-1 text-sm font-medium text-gray-700">
+            <div className="text-foreground mb-1 text-sm font-medium">
               Reason:
             </div>
-            <div className="rounded border bg-white p-3 text-sm text-gray-900">
+            <div className="bg-card text-card-foreground rounded border p-3 text-sm">
               {assertion.reason}
             </div>
           </div>
@@ -107,7 +106,7 @@ export function AssertionResult({ assertion }: AssertionResultProps) {
         {assertion.actualValue !== undefined && (
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <div className="text-sm font-medium text-gray-700">
+              <div className="text-foreground text-sm font-medium">
                 Actual Value:
               </div>
               {isLongValue && (

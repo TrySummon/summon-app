@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { usePlaygroundStore } from "../store";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import useToolMap from "@/hooks/useToolMap";
 import type { Tool } from "@modelcontextprotocol/sdk/types";
-import type { ModifiedTool } from "../tabState";
+import { ModifiedTool } from "@/stores/types";
 
 export function useToolSidebar() {
   const { mcpToolMap } = useToolMap();
@@ -229,6 +229,7 @@ export function useToolSidebar() {
     toolCount,
     expandedSections,
     selectedToolCounts,
+    modifiedToolMap,
     toggleSection,
     handleToggleTool,
     handleToggleAllTools,

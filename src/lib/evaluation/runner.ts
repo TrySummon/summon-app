@@ -1,13 +1,18 @@
 import { DatasetItem } from "@/types/dataset";
 import { UIMessage } from "ai";
-import { runAgent } from "@/components/playground/agent";
-import { usePlaygroundStore } from "@/components/playground/store";
+import { runAgent, RunAgentConfig } from "@/lib/agent";
 import { AssertionScorer, Assertion, EvaluationResult } from "./index";
+import { ModifiedToolMap, ToolMap } from "@/stores/playgroundStore";
 
 export interface EvaluationConfig {
-  credentialId: string;
-  model: string;
+  agentCredentialId: string;
+  agentModel: string;
+  assertionCredentialId: string;
+  assertionModel: string;
   maxSteps?: number;
+  enabledTools?: Record<string, string[]>;
+  modifiedToolMap?: ModifiedToolMap;
+  mcpToolMap: ToolMap;
 }
 
 export interface EvaluationSummary {
@@ -28,7 +33,6 @@ function createAssertionsFromDatasetItem(item: DatasetItem): Assertion[] {
   if (item.naturalLanguageCriteria) {
     item.naturalLanguageCriteria.forEach((criteria) => {
       assertions.push({
-        path: `messages.${item.messages.length}.parts.0.text`, // Check the agent's final response
         assertionType: "llm_criteria_met",
         value: criteria,
       });
@@ -39,7 +43,6 @@ function createAssertionsFromDatasetItem(item: DatasetItem): Assertion[] {
   if (item.expectedToolCalls) {
     item.expectedToolCalls.forEach((toolName) => {
       assertions.push({
-        path: "messages", // Check all messages for tool calls
         assertionType: "tool_called",
         value: toolName,
       });
@@ -91,31 +94,28 @@ async function evaluateDatasetItem(
     // Prepare input messages
     const inputMessages = prepareInputMessages(item);
 
-    // Set up the playground store with the item's configuration
-    const store = usePlaygroundStore.getState();
-    store.updateCurrentState((state) => ({
-      ...state,
+    // Configure the agent run
+    const agentConfig: RunAgentConfig = {
       messages: inputMessages,
       systemPrompt: item.systemPrompt || "",
-      credentialId: config.credentialId,
-      model: config.model,
+      credentialId: config.agentCredentialId,
+      model: config.agentModel,
       settings: item.settings,
       maxSteps: config.maxSteps || 5,
-    }));
+      enabledTools: config.enabledTools || {},
+      modifiedToolMap: config.modifiedToolMap || {},
+      mcpToolMap: config.mcpToolMap,
+    };
 
     // Run the agent
-    await runAgent();
-
-    // Get the final state after agent execution
-    const finalState = store.getCurrentState();
-    const outputMessages = finalState.messages;
+    const outputMessages = await runAgent(agentConfig);
 
     // Run assertions against the output
     const assertionResults = await AssertionScorer({
-      output: { messages: outputMessages },
+      output: outputMessages,
       assertions,
-      credentialId: config.credentialId,
-      model: config.model,
+      credentialId: config.assertionCredentialId,
+      model: config.assertionModel,
     });
 
     const passed = assertionResults.every((result) => result.passed);

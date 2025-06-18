@@ -3,7 +3,7 @@ import { useParams, Link } from "@tanstack/react-router";
 import { useDatasets } from "@/hooks/useDatasets";
 import { DatasetItemsTable } from "@/components/DatasetItemsTable";
 import { DatasetItemDetailsSidebar } from "@/components/DatasetItemDetailsSidebar";
-import { DatasetEvaluation } from "@/components/DatasetEvaluation";
+import { SafeDatasetEvaluation } from "@/components/dataset-evaluation";
 import { SubNav, NavItem } from "@/components/SubNav";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { DatasetItem } from "@/types/dataset";
@@ -61,7 +61,10 @@ const DatasetDetailPage: React.FC = () => {
       case "eval":
         return (
           <div className="container flex flex-1 flex-col overflow-y-auto py-4">
-            <DatasetEvaluation items={dataset.items} />
+            <SafeDatasetEvaluation
+              items={dataset.items}
+              datasetId={datasetId}
+            />
           </div>
         );
       case "items":

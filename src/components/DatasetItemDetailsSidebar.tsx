@@ -24,7 +24,7 @@ import CodeEditor from "@/components/CodeEditor";
 import { Badge } from "@/components/ui/badge";
 import { MessageContent } from "@/components/playground/Message/Content";
 import { useNavigate } from "@tanstack/react-router";
-import { usePlaygroundStore } from "@/components/playground/store";
+import { usePlaygroundStore } from "@/stores/playgroundStore";
 import { useDatasets } from "@/hooks/useDatasets";
 import { toast } from "sonner";
 import {

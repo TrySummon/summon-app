@@ -12,9 +12,8 @@ import {
 import { cn } from "@/utils/tailwind";
 import ToolItem from "./ToolItem";
 import WaitlistButton from "./WaitlistButton";
-import { usePlaygroundStore } from "../store";
 import type { Tool } from "@modelcontextprotocol/sdk/types";
-import type { ModifiedTool } from "../tabState";
+import { ModifiedTool } from "@/stores/types";
 
 interface McpSectionProps {
   mcpId: string;
@@ -23,6 +22,7 @@ interface McpSectionProps {
   isExpanded: boolean;
   selectedToolCount: number;
   areAllToolsSelected: boolean;
+  modifiedToolMap: Record<string, Record<string, ModifiedTool>>;
   onToggleSection: () => void;
   onToggleAllTools: () => void;
   onToggleTool: (toolId: string) => void;
@@ -51,6 +51,7 @@ export default function McpSection({
   isExpanded,
   selectedToolCount,
   areAllToolsSelected,
+  modifiedToolMap,
   onToggleSection,
   onToggleAllTools,
   onToggleTool,
@@ -60,9 +61,6 @@ export default function McpSection({
   onToolModify,
   onToolRevert,
 }: McpSectionProps) {
-  const modifiedToolMap = usePlaygroundStore(
-    (state) => state.getCurrentState().modifiedToolMap,
-  );
   const hasModifiedTools = Object.keys(modifiedToolMap[mcpId] || {}).length > 0;
 
   return (
@@ -123,10 +121,7 @@ export default function McpSection({
             }}
           >
             <div className="flex w-full items-center gap-2">
-              <Checkbox
-                checked={areAllToolsSelected}
-                onCheckedChange={onToggleAllTools}
-              />
+              <Checkbox checked={areAllToolsSelected} />
               <Label className="text-foreground cursor-pointer text-sm font-medium">
                 Select All
               </Label>

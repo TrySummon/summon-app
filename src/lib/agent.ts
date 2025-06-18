@@ -2,11 +2,17 @@ import {
   CoreSystemMessage,
   jsonSchema,
   streamText,
+  generateText,
   ToolSet,
   tool as makeTool,
 } from "ai";
 import { createLLMProvider } from "@/lib/llm";
-import { usePlaygroundStore, type PlaygroundStore } from "./store";
+import {
+  ModifiedToolMap,
+  ToolMap,
+  usePlaygroundStore,
+  type PlaygroundStore,
+} from "@/stores/playgroundStore";
 import { v4 as uuidv4 } from "uuid";
 import { UIMessage } from "ai";
 import type { JSONSchema7 } from "json-schema";
@@ -14,6 +20,7 @@ import { captureEvent } from "@/lib/posthog";
 import { recurseCountKeys } from "@/lib/object";
 import { getCredentials } from "@/ipc/ai-providers/ai-providers-client";
 import { callMcpTool } from "@/ipc/mcp/mcp-client";
+import { LLMSettings } from "@/stores/types";
 /**
  * Remaps modified tool arguments back to their original names for API compatibility.
  * Handles both tool name changes and deep property name changes using x-original-name metadata.
@@ -112,20 +119,25 @@ export function remapArgsToOriginal(
   return remappedArgs;
 }
 
-export function makeExecuteFunction(mcpId: string, toolName: string) {
+export function makeExecuteFunction(
+  mcpToolMap: ToolMap,
+  modifiedToolMap: ModifiedToolMap,
+  mcpId: string,
+  toolName: string,
+) {
   return (args: unknown) => {
-    const store = usePlaygroundStore.getState();
+    const mcp = mcpToolMap[mcpId];
+    if (!mcp) {
+      throw new Error(`MCP ${mcpId} not found`);
+    }
 
-    const mcp = store.mcpToolMap[mcpId];
     const tool = mcp.tools.find((tool) => tool.name === toolName);
 
     if (!tool) {
       throw new Error(`Tool ${toolName} not found for MCP ${mcpId}`);
     }
 
-    const currentState = store.getCurrentState();
-
-    const modification = currentState.modifiedToolMap[mcpId]?.[toolName];
+    const modification = modifiedToolMap[mcpId]?.[toolName];
 
     if (modification) {
       // Remap modified args back to original args
@@ -147,7 +159,7 @@ export function makeExecuteFunction(mcpId: string, toolName: string) {
   };
 }
 
-export async function runAgent() {
+export async function runPlaygroundAgent() {
   // Track start time for latency calculation
   const startTime = Date.now();
   // Track token usage if available from API response
@@ -234,7 +246,12 @@ export async function runAgent() {
             parameters: finalParameters,
             // @ts-expect-error AI SDK typing issue.
             execute: autoExecuteTools
-              ? makeExecuteFunction(mcpId, mcpTool.name)
+              ? makeExecuteFunction(
+                  mcpToolMap,
+                  modifiedToolMap,
+                  mcpId,
+                  mcpTool.name,
+                )
               : undefined,
           });
 
@@ -493,4 +510,172 @@ export function findOriginalToolInfo(modifiedToolName: string): {
   }
 
   return null;
+}
+
+export interface RunAgentConfig {
+  messages: UIMessage[];
+  systemPrompt?: string;
+  credentialId: string;
+  model: string;
+  settings?: LLMSettings;
+  maxSteps?: number;
+  enabledTools?: Record<string, string[]>;
+  modifiedToolMap?: ModifiedToolMap;
+  mcpToolMap: ToolMap;
+}
+
+/**
+ * Standalone agent runner that doesn't depend on playground store.
+ * Used for evaluations and other scenarios where we need to run the agent
+ * with specific configuration without affecting the UI state.
+ */
+export async function runAgent(config: RunAgentConfig): Promise<UIMessage[]> {
+  const {
+    messages,
+    systemPrompt,
+    credentialId,
+    model,
+    settings = { temperature: 0, maxTokens: 4096 },
+    maxSteps = 5,
+    enabledTools = {},
+    modifiedToolMap = {},
+    mcpToolMap,
+  } = config;
+
+  try {
+    // Create a filtered toolset based on selected tools
+    const toolSet: ToolSet = {};
+
+    // Iterate through each MCP's tools
+    Object.entries(mcpToolMap).forEach(([mcpId, mcp]) => {
+      // Get the list of enabled tool IDs for this MCP
+      const enabledToolIds = enabledTools[mcpId] || [];
+
+      // Only add tools that are enabled
+      mcp.tools.forEach((mcpTool) => {
+        // Check if this tool is enabled for this MCP
+        if (enabledToolIds.includes(mcpTool.name)) {
+          // Check if there are modifications for this tool
+          const modification = modifiedToolMap[mcpId]?.[mcpTool.name];
+
+          const finalName = modification?.name || mcpTool.name;
+          const finalDescription =
+            modification?.description || mcpTool.description;
+          const finalParameters = modification?.schema
+            ? jsonSchema(modification.schema)
+            : jsonSchema(mcpTool.inputSchema as unknown as JSONSchema7);
+
+          const aiTool = makeTool({
+            description: finalDescription,
+            parameters: finalParameters,
+            // Always auto-execute tools in standalone mode
+            execute: makeExecuteFunction(
+              mcpToolMap,
+              modifiedToolMap,
+              mcpId,
+              mcpTool.name,
+            ),
+          });
+
+          toolSet[finalName] = aiTool;
+        }
+      });
+    });
+
+    const systemPromptMessage: CoreSystemMessage | undefined = systemPrompt
+      ?.trim()
+      .replace(/^\n+|\n+$/g, "")
+      ? {
+          role: "system",
+          content: systemPrompt,
+        }
+      : undefined;
+
+    const credentials = await getCredentials();
+    const credential = credentials.find((c) => c.id === credentialId);
+
+    if (!credential) {
+      throw new Error("Credential not found");
+    }
+    const llmProvider = createLLMProvider(credential);
+
+    // Use generateText instead of streamText for better performance in evaluation
+    const result = await generateText({
+      model: llmProvider(model),
+      tools: toolSet,
+      messages: systemPromptMessage
+        ? [systemPromptMessage, ...messages]
+        : messages,
+      maxSteps,
+      ...settings,
+    });
+
+    // Convert the result to UIMessage format
+    const outputMessages: UIMessage[] = [...messages];
+
+    // Add tool call messages
+    if (result.steps) {
+      for (const step of result.steps) {
+        if (step.toolCalls && step.toolCalls.length > 0) {
+          const toolMessages: UIMessage[] = step.toolCalls.map(
+            (toolCall, i) => {
+              const toolResult = step.toolResults?.[i];
+
+              return {
+                id: toolCall.toolCallId,
+                role: "assistant" as const,
+                content: "",
+                parts: [
+                  {
+                    type: "tool-invocation",
+                    toolInvocation: {
+                      state: toolResult ? "result" : "partial-call",
+                      toolCallId: toolCall.toolCallId,
+                      toolName: toolCall.toolName,
+                      args: toolCall.args,
+                      result: toolResult
+                        ? (toolResult as unknown as { result: unknown }).result
+                        : undefined,
+                    },
+                  },
+                ],
+                createdAt: new Date(),
+              };
+            },
+          );
+          outputMessages.push(...toolMessages);
+        }
+      }
+    }
+
+    // Add the final assistant message if there's content
+    if (result.text && result.text.trim()) {
+      const finalAssistantMessage: UIMessage = {
+        id: uuidv4(),
+        role: "assistant",
+        content: "",
+        parts: [{ type: "text", text: result.text }],
+        createdAt: new Date(),
+      };
+      outputMessages.push(finalAssistantMessage);
+    }
+
+    return outputMessages;
+  } catch (error) {
+    // Add error message to the conversation
+    const errorMessage: UIMessage = {
+      id: uuidv4(),
+      role: "assistant",
+      content: "",
+      parts: [
+        {
+          type: "text",
+          text: `Sorry, there was an error generating a response:\n\`\`\`\n${String(error)}\n\`\`\``,
+        },
+      ],
+      createdAt: new Date(),
+    };
+
+    return [...messages, errorMessage];
+  }
 }

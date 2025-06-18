@@ -11,13 +11,13 @@ import {
   Rocket,
 } from "lucide-react";
 import CopyButton from "@/components/CopyButton";
-import WaitlistButton from "@/components/playground/ToolSidebar/WaitlistButton";
 import {
   downloadMcpZip,
   showFileInFolder,
   openUserDataMcpJsonFile,
 } from "@/ipc/mcp/mcp-client";
 import { Link } from "@tanstack/react-router";
+import WaitlistButton from "../tool-sidebar/WaitlistButton";
 
 interface ServerStatusSectionProps {
   status: "running" | "starting" | "error" | "stopped";

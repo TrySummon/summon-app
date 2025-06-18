@@ -12,7 +12,7 @@ import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { UIMessage } from "ai";
 import CopyButton from "@/components/CopyButton";
-import { usePlaygroundStore } from "../store";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
 
 interface Props {
   message: UIMessage;

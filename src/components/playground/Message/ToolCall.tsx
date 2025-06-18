@@ -17,8 +17,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { CodeSnippet } from "@/components/CodeSnippet";
-import { usePlaygroundStore } from "../store";
-import { findOriginalToolInfo, makeExecuteFunction } from "../agent";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
+import { findOriginalToolInfo, makeExecuteFunction } from "@/lib/agent";
 import { Loader } from "@/components/Loader";
 
 interface ToolCallProps {
@@ -26,6 +26,10 @@ interface ToolCallProps {
 }
 
 export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
+  const toolMap = usePlaygroundStore((state) => state.mcpToolMap);
+  const modifiedToolMap = usePlaygroundStore(
+    (state) => state.getCurrentState().modifiedToolMap,
+  );
   const addToolResult = usePlaygroundStore((state) => state.addToolResult);
 
   const [loading, setLoading] = useState(false);
@@ -48,6 +52,8 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
 
     try {
       const executeFunction = makeExecuteFunction(
+        toolMap,
+        modifiedToolMap,
         toolInfo.mcpId,
         toolInfo.originalToolName,
       );

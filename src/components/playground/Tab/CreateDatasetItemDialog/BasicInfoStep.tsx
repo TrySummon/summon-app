@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { usePlaygroundStore } from "../../store";
+import { usePlaygroundStore } from "../../../../stores/playgroundStore";
 import { generateBasicInfo } from "./prefillGenerator";
 import { AIGenerationSection } from "./AIGenerationSection";
 import { MessageSquare } from "lucide-react";

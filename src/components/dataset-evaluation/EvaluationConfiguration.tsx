@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,45 +9,48 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Play, Loader2, TestTubeDiagonal, ListChecks } from "lucide-react";
-import LLMPicker, {
-  IModelConfiguration,
-} from "@/components/llm-picker/LLMPicker";
+import LLMPicker from "@/components/llm-picker/LLMPicker";
 import { ItemSelectionSection } from "./ItemSelectionSection";
 import { DatasetItem } from "@/types/dataset";
+import {
+  useEvaluationState,
+  useEvaluationToolSelection,
+} from "@/stores/evaluationStore";
 
 interface EvaluationConfigurationProps {
-  modelConfig: IModelConfiguration;
-  onModelConfigChange: (config: IModelConfiguration) => void;
+  datasetId: string;
   evaluableItems: DatasetItem[];
-  selectedItems: Set<string>;
-  showItemSelection: boolean;
-  onToggleItemSelection: () => void;
   onRunEvaluation: () => void;
-  isRunning: boolean;
-  getTotalSelectedToolCount: () => number;
-  // Item selection props
-  onItemSelection: (itemId: string, checked: boolean) => void;
-  onSelectAllItems: () => void;
-  onSelectNoItems: () => void;
-  getItemCriteriaCount: (item: DatasetItem) => number;
 }
 
 export function EvaluationConfiguration({
-  modelConfig,
-  onModelConfigChange,
+  datasetId,
   evaluableItems,
-  selectedItems,
-  showItemSelection,
-  onToggleItemSelection,
   onRunEvaluation,
-  isRunning,
-  getTotalSelectedToolCount,
-  // Item selection props
-  onItemSelection,
-  onSelectAllItems,
-  onSelectNoItems,
-  getItemCriteriaCount,
 }: EvaluationConfigurationProps) {
+  const {
+    agentModelConfig,
+    assertionModelConfig,
+    selectedItems,
+    isRunning,
+    showItemSelection,
+    setAgentModelConfig,
+    setAssertionModelConfig,
+    setShowItemSelection,
+    setSelectedItems,
+    selectItem,
+  } = useEvaluationState(datasetId);
+
+  const { enabledToolCount } = useEvaluationToolSelection(datasetId);
+
+  const onSelectAllItems = useCallback(() => {
+    setSelectedItems(new Set(evaluableItems.map((item) => item.id)));
+  }, [evaluableItems, setSelectedItems]);
+
+  const onSelectNoItems = useCallback(() => {
+    setSelectedItems(new Set());
+  }, [setSelectedItems]);
+
   return (
     <Card>
       <CardHeader>
@@ -56,21 +59,40 @@ export function EvaluationConfiguration({
           Evaluation Configuration
         </CardTitle>
         <CardDescription>
-          Configure the model and items for running evaluations. Tools can be
+          Configure the models and items for running evaluations. Tools can be
           selected in the sidebar.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Evaluation Model
-            </label>
-            <LLMPicker
-              config={modelConfig}
-              onChange={onModelConfigChange}
-              className="w-full"
-            />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                Agent Model
+              </label>
+              <p className="text-muted-foreground mb-2 text-xs">
+                Model used to run the agent and generate responses
+              </p>
+              <LLMPicker
+                config={agentModelConfig}
+                onChange={setAgentModelConfig}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                Assertion Model
+              </label>
+              <p className="text-muted-foreground mb-2 text-xs">
+                Model used to evaluate if criteria are met
+              </p>
+              <LLMPicker
+                config={assertionModelConfig}
+                onChange={setAssertionModelConfig}
+                className="w-full"
+              />
+            </div>
           </div>
 
           <Separator />
@@ -89,7 +111,7 @@ export function EvaluationConfiguration({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={onToggleItemSelection}
+                  onClick={() => setShowItemSelection(!showItemSelection)}
                 >
                   <ListChecks className="mr-2 h-4 w-4" />
                   {showItemSelection ? "Hide Items" : "Select Items"}
@@ -102,10 +124,9 @@ export function EvaluationConfiguration({
               <ItemSelectionSection
                 evaluableItems={evaluableItems}
                 selectedItems={selectedItems}
-                onItemSelection={onItemSelection}
+                onItemSelection={selectItem}
                 onSelectAllItems={onSelectAllItems}
                 onSelectNoItems={onSelectNoItems}
-                getItemCriteriaCount={getItemCriteriaCount}
               />
             )}
           </div>
@@ -114,8 +135,10 @@ export function EvaluationConfiguration({
             onClick={onRunEvaluation}
             disabled={
               isRunning ||
-              !modelConfig.credentialId ||
-              !modelConfig.model ||
+              !agentModelConfig.credentialId ||
+              !agentModelConfig.model ||
+              !assertionModelConfig.credentialId ||
+              !assertionModelConfig.model ||
               selectedItems.size === 0
             }
             className="w-full"
@@ -128,8 +151,8 @@ export function EvaluationConfiguration({
             ) : (
               <>
                 <Play className="mr-2 h-4 w-4" />
-                Run Evaluation ({selectedItems.size} items,{" "}
-                {getTotalSelectedToolCount()} tools)
+                Run Evaluation ({selectedItems.size} items, {enabledToolCount}{" "}
+                tools enabled)
               </>
             )}
           </Button>

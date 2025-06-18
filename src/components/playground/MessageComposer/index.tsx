@@ -12,10 +12,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { usePlaygroundStore } from "../store";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import { Attachment, UIMessage } from "ai";
 import { v4 as uuidv4 } from "uuid";
-import { runAgent } from "../agent";
+import { runPlaygroundAgent } from "@/lib/agent";
 import { ArrowUp, Square, Zap } from "lucide-react";
 import { MessageContent } from "../Message/Content";
 import ImageDialog from "@/components/ImageDialog";
@@ -89,7 +89,7 @@ export default function MessageComposer() {
       content: "",
       parts: [{ type: "text", text: "" }],
     }));
-    runAgent();
+    runPlaygroundAgent();
   }, [disabled, composer, captureEvent, addMessage]);
 
   // Keyboard shortcut handler

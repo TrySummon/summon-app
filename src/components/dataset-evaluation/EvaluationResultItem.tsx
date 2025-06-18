@@ -6,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Collapsible,
@@ -48,11 +47,6 @@ export function EvaluationResultItem({ result }: EvaluationResultItemProps) {
           <CardHeader className="hover:bg-muted/50 py-4 transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                {isExpanded ? (
-                  <ChevronDown className="text-muted-foreground h-4 w-4" />
-                ) : (
-                  <ChevronRight className="text-muted-foreground h-4 w-4" />
-                )}
                 {result.passed ? (
                   <CheckCircle className="h-6 w-6 text-green-600" />
                 ) : (
@@ -78,12 +72,11 @@ export function EvaluationResultItem({ result }: EvaluationResultItemProps) {
                   </CardDescription>
                 </div>
               </div>
-              <Badge
-                variant={result.passed ? "default" : "destructive"}
-                className="px-4 py-2 text-sm font-semibold"
-              >
-                {result.passed ? "PASS" : "FAIL"}
-              </Badge>
+              {isExpanded ? (
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
+              ) : (
+                <ChevronRight className="text-muted-foreground h-4 w-4" />
+              )}
             </div>
           </CardHeader>
         </CollapsibleTrigger>

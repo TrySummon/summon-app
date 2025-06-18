@@ -11,8 +11,18 @@ interface ItemSelectionSectionProps {
   onItemSelection: (itemId: string, checked: boolean) => void;
   onSelectAllItems: () => void;
   onSelectNoItems: () => void;
-  getItemCriteriaCount: (item: DatasetItem) => number;
 }
+
+const getItemCriteriaCount = (item: DatasetItem) => {
+  let count = 0;
+  if (item.naturalLanguageCriteria?.length) {
+    count += item.naturalLanguageCriteria.length;
+  }
+  if (item.expectedToolCalls?.length) {
+    count += item.expectedToolCalls.length;
+  }
+  return count;
+};
 
 export function ItemSelectionSection({
   evaluableItems,
@@ -20,7 +30,6 @@ export function ItemSelectionSection({
   onItemSelection,
   onSelectAllItems,
   onSelectNoItems,
-  getItemCriteriaCount,
 }: ItemSelectionSectionProps) {
   const isAllItemsSelected = selectedItems.size === evaluableItems.length;
   const isNoItemsSelected = selectedItems.size === 0;

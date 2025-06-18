@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, X, Target, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { usePlaygroundStore } from "../../store";
+import { usePlaygroundStore } from "../../../../stores/playgroundStore";
 import { generateCriteria } from "./prefillGenerator";
 import { AIGenerationSection } from "./AIGenerationSection";
 import { UIMessage } from "ai";
