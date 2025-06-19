@@ -164,7 +164,7 @@ export function ApiEndpointList({
               apiId={apiId}
               groupName={segment}
               paths={paths}
-              pathPrefix={`/${segment}/`}
+              pathPrefix={`/${segment}`}
             />
           ))}
 

@@ -50,17 +50,61 @@ export function ApiEndpointGroup({
     Object.entries(paths).forEach(([path, pathItem]) => {
       if (!pathItem) return;
 
-      // Skip paths that don't start with the prefix
+      // Skip paths that don't match the prefix pattern
+      // Path should either be exactly the prefix or start with prefix followed by /
       if (!path.startsWith(pathPrefix)) return;
+
+      // If path is exactly the prefix, treat it as a direct endpoint
+      if (path === pathPrefix) {
+        const methods = [
+          "get",
+          "post",
+          "put",
+          "delete",
+          "patch",
+          "options",
+          "head",
+        ] as const;
+
+        methods.forEach((method) => {
+          const operation = pathItem[method];
+          if (!operation) return;
+
+          // Use a special key for direct endpoints
+          if (!result["__direct__"]) {
+            result["__direct__"] = {
+              subgroups: {},
+              endpoints: [],
+            };
+          }
+
+          result["__direct__"].endpoints.push({
+            path,
+            method,
+            operation: {
+              ...operation,
+              "x-path": path,
+              "x-method": method,
+            },
+          });
+        });
+        return;
+      }
 
       // Get the remaining path after the prefix
       const remainingPath = path.slice(pathPrefix.length);
 
-      // Skip if there's no remaining path
-      if (!remainingPath) return;
+      // Skip if remaining path doesn't start with /
+      if (!remainingPath.startsWith("/")) return;
+
+      // Remove the leading slash
+      const pathAfterSlash = remainingPath.slice(1);
+
+      // Skip if there's no remaining path after the slash
+      if (!pathAfterSlash) return;
 
       // Split the remaining path by '/'
-      const segments = remainingPath.split("/").filter(Boolean);
+      const segments = pathAfterSlash.split("/").filter(Boolean);
 
       if (segments.length === 0) return;
 
@@ -144,24 +188,36 @@ export function ApiEndpointGroup({
             {Object.entries(groupedEndpoints).map(
               ([segment, { subgroups, endpoints }]) => (
                 <React.Fragment key={segment}>
-                  {/* Render subgroups recursively */}
-                  {Object.keys(subgroups).length > 0 && (
-                    <ApiEndpointGroup
-                      apiId={apiId}
-                      groupName={segment}
-                      paths={paths}
-                      pathPrefix={`${pathPrefix}${segment}/`}
-                    />
-                  )}
+                  {/* Render direct endpoints (for exact path matches) */}
+                  {segment === "__direct__" &&
+                    endpoints.map(({ path, method, operation }) => (
+                      <EndpointNav
+                        key={`${apiId}-${method}-${path}`}
+                        apiId={apiId}
+                        def={operation}
+                      />
+                    ))}
 
-                  {/* Render direct endpoints */}
-                  {endpoints.map(({ path, method, operation }) => (
-                    <EndpointNav
-                      key={`${apiId}-${method}-${path}`}
-                      apiId={apiId}
-                      def={operation}
-                    />
-                  ))}
+                  {/* Render subgroups recursively */}
+                  {segment !== "__direct__" &&
+                    Object.keys(subgroups).length > 0 && (
+                      <ApiEndpointGroup
+                        apiId={apiId}
+                        groupName={segment}
+                        paths={paths}
+                        pathPrefix={`${pathPrefix}/${segment}`}
+                      />
+                    )}
+
+                  {/* Render direct endpoints for subgroups */}
+                  {segment !== "__direct__" &&
+                    endpoints.map(({ path, method, operation }) => (
+                      <EndpointNav
+                        key={`${apiId}-${method}-${path}`}
+                        apiId={apiId}
+                        def={operation}
+                      />
+                    ))}
                 </React.Fragment>
               ),
             )}

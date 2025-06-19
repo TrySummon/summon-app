@@ -252,6 +252,7 @@ export function StartMcpDialog({
               }
             },
             onError: (error: unknown) => {
+              console.error(error);
               toast.error(
                 `Failed to create MCP server: ${error instanceof Error ? error.message : "Unknown error"}`,
               );
