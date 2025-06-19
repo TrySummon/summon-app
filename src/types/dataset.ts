@@ -1,5 +1,5 @@
+import { LLMSettings } from "@/stores/types";
 import { UIMessage } from "ai";
-import { LLMSettings } from "@/components/playground/tabState";
 
 /**
  * An item within a dataset, representing a single conversation or run.

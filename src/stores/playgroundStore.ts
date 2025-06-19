@@ -1,10 +1,40 @@
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 import { UIMessage } from "ai";
-import { IPlaygroundTabState, ModifiedTool } from "./tabState";
 import { persist, createJSONStorage, PersistOptions } from "zustand/middleware";
-import { runAgent } from "./agent";
+import { runPlaygroundAgent } from "@/lib/agent";
 import { Tool as McpTool } from "@modelcontextprotocol/sdk/types";
+import { LLMSettings, ModifiedTool } from "./types";
+
+export type ToolMap = Record<string, { name: string; tools: McpTool[] }>;
+export type ModifiedToolMap = Record<string, Record<string, ModifiedTool>>;
+
+export interface IPlaygroundTabState {
+  id: string;
+  credentialId?: string;
+  model?: string;
+  settings: LLMSettings;
+  systemPrompt?: string;
+  messages: UIMessage[];
+  enabledTools: Record<string, string[]>;
+  // Tool modifications: mcpId -> toolName -> modified schema and name
+  modifiedToolMap: ModifiedToolMap;
+  running: boolean;
+  maxSteps: number;
+  shouldScrollToDock?: boolean;
+  abortController?: AbortController;
+  // Token usage information
+  tokenUsage?: {
+    inputTokens: number;
+    outputTokens: number;
+  };
+  // Latency in milliseconds
+  latency?: number;
+  autoExecuteTools?: boolean;
+  selectedDatasetId?: string;
+  cutMode?: boolean;
+  cutPosition?: number;
+}
 
 interface HistoryEntry {
   state: IPlaygroundTabState;
@@ -23,7 +53,7 @@ export interface PlaygroundStore {
   // All tabs
   tabs: Record<string, PlaygroundTab>;
   // All available tools in mcp-sdk format
-  mcpToolMap: Record<string, { name: string; tools: McpTool[] }>;
+  mcpToolMap: ToolMap;
   // Current active tab ID
   currentTabId: string;
   // Tool sidebar visibility
@@ -78,9 +108,7 @@ export interface PlaygroundStore {
     modifiedTool: ModifiedTool,
   ) => void;
   revertTool: (mcpId: string, toolName: string) => void;
-  updateMcpToolMap: (
-    mcpToolMap: Record<string, { name: string; tools: McpTool[] }>,
-  ) => void;
+  updateMcpToolMap: (mcpToolMap: ToolMap) => void;
   updateShouldScrollToDock: (shouldScrollToDock: boolean) => void;
   setShowToolSidebar: (show: boolean) => void;
   addToolResult: (
@@ -371,7 +399,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
 
         // If no pending tool calls remain, run the agent
         if (!hasPendingToolCalls) {
-          runAgent();
+          runPlaygroundAgent();
         }
       },
 
@@ -613,7 +641,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
         );
 
         // Run the agent with the updated state
-        runAgent();
+        runPlaygroundAgent();
       },
 
       stopAgent: () => {

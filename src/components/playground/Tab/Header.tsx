@@ -5,13 +5,13 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { usePlaygroundStore } from "../store";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/Kbd";
 import { toast } from "sonner";
 import { LLMPicker } from "@/components/llm-picker";
-import SidebarTrigger from "../ToolSidebar/Trigger";
 import { SaveToDatasetButton } from "./SaveToDatasetButton";
+import ToolSidebarTrigger from "@/components/tool-sidebar/Trigger";
 
 export default function TabHeader() {
   const currentTabId = usePlaygroundStore((state) => state.currentTabId);
@@ -172,7 +172,7 @@ export default function TabHeader() {
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <SidebarTrigger showOnlyOnOpen />
+            <ToolSidebarTrigger showOnlyOnOpen />
           </TooltipTrigger>
           <TooltipContent>
             <p>Open tools</p>

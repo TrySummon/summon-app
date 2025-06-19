@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Edit2, Plus } from "lucide-react";
-import { usePlaygroundStore } from "./store";
+import { usePlaygroundStore } from "../../stores/playgroundStore";
 import { usePostHog } from "@/hooks/usePostHog";
 
 import { Button } from "@/components/ui/button";

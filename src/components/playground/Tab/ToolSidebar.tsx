@@ -1,17 +1,17 @@
 import React from "react";
 import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
 import { useToolSidebar } from "./useToolSidebar";
-import ToolSidebarHeader from "./SidebarHeader";
-import McpSection from "./McpSection";
 import type { Tool } from "@modelcontextprotocol/sdk/types";
+import ToolSidebarHeader from "@/components/tool-sidebar/SidebarHeader";
+import McpSection from "@/components/tool-sidebar/McpSection";
 
 export default function ToolSidebar() {
-  // Use the custom hook for all the sidebar logic
   const {
     mcps,
     toolCount,
     expandedSections,
     selectedToolCounts,
+    modifiedToolMap,
     toggleSection,
     handleToggleTool,
     handleToggleAllTools,
@@ -50,6 +50,7 @@ export default function ToolSidebar() {
                 mcpId={mcpId}
                 name={name}
                 tools={tools}
+                modifiedToolMap={modifiedToolMap}
                 isExpanded={expandedSections[mcpId]}
                 selectedToolCount={selectedToolCounts[mcpId]}
                 areAllToolsSelected={areAllToolsSelected(mcpId, tools)}

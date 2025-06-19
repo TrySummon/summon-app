@@ -14,6 +14,7 @@ export default function ToolSidebarTrigger({
   onClick,
   showOnlyOnOpen,
   showOnlyOnDesktop,
+  children,
   ...props
 }: SidebarTriggerProps) {
   const { toggleSidebar, open, openMobile, isMobile } = useSidebar();
@@ -46,6 +47,7 @@ export default function ToolSidebarTrigger({
       ) : (
         <ArrowLeft className="h-4 w-4" />
       )}
+      {children}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

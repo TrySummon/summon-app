@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/hover-card";
 import { Pencil } from "lucide-react";
 import type { Tool } from "@modelcontextprotocol/sdk/types";
-import type { ModifiedTool } from "../tabState";
 import { ToolEditDialog } from "./ToolEdit";
+import { ModifiedTool } from "@/stores/types";
 
 interface ToolItemProps {
   tool: Tool;
@@ -79,7 +79,7 @@ export default function ToolItem({
                 onToggle();
               }}
             >
-              <Checkbox checked={isSelected} onCheckedChange={onToggle} />
+              <Checkbox checked={isSelected} />
               <div className="flex flex-1 items-center gap-2">
                 <Label
                   title={tool.name}

@@ -1,7 +1,7 @@
 import React from "react";
 import { Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { usePlaygroundStore } from "../store";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import { cn } from "@/utils/tailwind";
 
 interface CutIndicatorProps {

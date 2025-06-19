@@ -27,11 +27,11 @@ import type { Tool } from "@modelcontextprotocol/sdk/types";
 import type { JSONSchema7 } from "json-schema";
 import { ToolSchemaDiff } from "./ToolSchemaDiff";
 import { cn } from "@/utils/tailwind";
-import { ModifiedTool } from "../../tabState";
 import { getNestedSchema, getOriginalProperty } from "./utils";
 import { SchemaEditor } from "./ToolSchemaEditor";
 import stringify from "json-stable-stringify";
 import { toast } from "sonner";
+import { ModifiedTool } from "@/stores/types";
 
 interface ToolEditDialogProps {
   open: boolean;
@@ -82,7 +82,7 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
   }, [currentName, currentDescription, currentSchema, tool]);
 
   useEffect(() => {
-    if (!hasChanges) {
+    if (!hasChanges && modifiedTool) {
       onRevert();
     }
   }, [hasChanges, modifiedTool, onRevert]);
@@ -334,18 +334,21 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
             <div className="min-w-0 flex-1">
               {editingName ? (
                 <Input
-                  value={currentName}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  onBlur={() => {
+                  defaultValue={currentName}
+                  onBlur={(e) => {
                     setEditingName(false);
-                    if (currentName !== tool.name) {
+                    const newName = e.target.value;
+                    if (newName !== tool.name) {
+                      handleNameChange(newName);
                       toast.success("Tool name updated");
                     }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       setEditingName(false);
-                      if (currentName !== tool.name) {
+                      const newName = e.currentTarget.value;
+                      if (newName !== tool.name) {
+                        handleNameChange(newName);
                         toast.success("Tool name updated");
                       }
                     }
@@ -398,18 +401,22 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
             {editingDescription ? (
               <Textarea
                 ref={descriptionTextareaRef}
-                value={currentDescription}
-                onChange={(e) => handleDescriptionChange(e.target.value)}
-                onBlur={() => {
+                defaultValue={currentDescription}
+                onBlur={(e) => {
                   setEditingDescription(false);
-                  if (currentDescription !== tool.description) {
+                  const newDescription = e.target.value;
+                  if (newDescription !== tool.description) {
+                    handleDescriptionChange(newDescription);
                     toast.success("Tool description updated");
                   }
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     setEditingDescription(false);
-                    if (currentDescription !== tool.description) {
+                    const newDescription = e.currentTarget.value;
+
+                    if (newDescription !== tool.description) {
+                      handleDescriptionChange(newDescription);
                       toast.success("Tool description updated");
                     }
                   }

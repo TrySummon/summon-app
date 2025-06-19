@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import { usePlaygroundStore } from "../store";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import LatencyStats from "./LatencyStats";
 import SystemPrompt from "../SystemPrompt";
 import Messages from "../Messages";

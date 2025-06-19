@@ -11,7 +11,7 @@ import { EditorView } from "codemirror";
 import { keymap } from "@codemirror/view";
 import { Extension } from "@codemirror/state";
 import CodeMirrorEditor from "@/components/CodeEditor";
-import { usePlaygroundStore } from "../store";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import { usePostHog } from "@/hooks/usePostHog";
 
 interface SystemPromptProps {

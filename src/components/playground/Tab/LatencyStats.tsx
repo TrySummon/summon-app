@@ -1,5 +1,5 @@
 import React from "react";
-import { usePlaygroundStore } from "../store";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import { cn } from "@/utils/tailwind";
 import { ChevronDown, Clock, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";

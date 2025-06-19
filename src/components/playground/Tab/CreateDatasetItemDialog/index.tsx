@@ -13,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Database, ChevronLeft, ChevronRight } from "lucide-react";
 import { UIMessage } from "ai";
 import { toast } from "sonner";
-import { usePlaygroundStore } from "../../store";
+import { usePlaygroundStore } from "../../../../stores/playgroundStore";
 import type { Tool } from "@modelcontextprotocol/sdk/types";
 import { Stepper } from "./Stepper";
 import { BasicInfoStep } from "./BasicInfoStep";

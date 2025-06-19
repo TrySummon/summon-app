@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CreateDatasetDialog } from "@/components/CreateDatasetDialog";
 import { useDatasets } from "@/hooks/useDatasets";
-import { usePlaygroundStore } from "../store";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
 
 export function SaveToDatasetButton() {
   const currentTabId = usePlaygroundStore((state) => state.currentTabId);

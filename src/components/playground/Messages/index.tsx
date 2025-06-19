@@ -1,5 +1,5 @@
 import React from "react";
-import { usePlaygroundStore } from "../store";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import Message from "../Message";
 import CutIndicator from "./CutIndicator";
 import { cn } from "@/utils/tailwind";

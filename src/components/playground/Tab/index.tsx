@@ -2,10 +2,10 @@ import React from "react";
 import MessageComposer from "../MessageComposer";
 import CutModeActionBar from "./CutModeActionBar";
 import TabHeader from "./Header";
-import ToolSidebar from "../ToolSidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import TabBody from "./Body";
-import { usePlaygroundStore } from "../store";
+import { usePlaygroundStore } from "../../../stores/playgroundStore";
+import ToolSidebar from "./ToolSidebar";
 
 export default function PlaygroundTab() {
   const cutMode = usePlaygroundStore(
