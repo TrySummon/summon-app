@@ -43,18 +43,32 @@ type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
 type McpJsonConfig = z.infer<typeof McpJsonConfigSchema>;
 
 /**
- * Get the path to the mcp.json file in the user data directory
+ * Get the path to the mcp.json file in the current workspace directory
  */
-export const getMcpJsonFilePath = (): string => {
-  const userDataPath = app.getPath("userData");
-  return path.join(userDataPath, "mcp.json");
+export const getMcpJsonFilePath = async (): Promise<string> => {
+  try {
+    const { workspaceDb } = await import("@/lib/db/workspace-db");
+    const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+    const workspaceDataDir = workspaceDb.getWorkspaceDataDir(
+      currentWorkspace.id,
+    );
+    return path.join(workspaceDataDir, "mcp.json");
+  } catch (error) {
+    // Fallback to root directory if workspace system fails
+    console.error(
+      "Failed to get workspace for mcp.json, falling back to root:",
+      error,
+    );
+    const userDataPath = app.getPath("userData");
+    return path.join(userDataPath, "mcp.json");
+  }
 };
 
 /**
  * Read and parse the mcp.json file
  */
 export const readMcpJsonFile = async (): Promise<McpJsonConfig> => {
-  const mcpJsonPath = getMcpJsonFilePath();
+  const mcpJsonPath = await getMcpJsonFilePath();
   try {
     const fileContent = await fs.readFile(mcpJsonPath, "utf8");
     return validateMcpJsonConfig(JSON.parse(fileContent));
@@ -237,9 +251,9 @@ export const stopExternalMcp = async (
 /**
  * Start all external MCP servers defined in the mcp.json file
  */
-export const connectAllExternalMcps = async (): Promise<
-  Record<string, McpServerState>
-> => {
+export const connectAllExternalMcps = async (
+  force?: boolean,
+): Promise<Record<string, McpServerState>> => {
   log.info("Connecting to all external MCP servers...");
 
   try {
@@ -252,7 +266,11 @@ export const connectAllExternalMcps = async (): Promise<
       config.mcpServers,
     )) {
       try {
-        const serverState = await connectExternalMcp(serverName, serverConfig);
+        const serverState = await connectExternalMcp(
+          serverName,
+          serverConfig,
+          force,
+        );
         results[serverName] = {
           ...serverState,
           client: undefined,

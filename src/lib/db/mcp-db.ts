@@ -1,4 +1,4 @@
-import { app, safeStorage } from "electron";
+import { safeStorage, app } from "electron";
 import path from "path";
 import fs from "fs/promises";
 import {
@@ -7,6 +7,7 @@ import {
 } from "@/components/mcp-builder/start-mcp-dialog";
 import { generateMcpId } from "./id-generator";
 import log from "electron-log/main";
+import { workspaceDb } from "./workspace-db";
 
 // Define endpoint data structure
 export interface McpEndpoint {
@@ -34,24 +35,39 @@ export interface McpData {
   updatedAt: string;
 }
 
-// Define the directory where MCP data will be stored
-export const getMcpDataDir = () => {
-  const userDataPath = app.getPath("userData");
-  return path.join(userDataPath, "mcp-data");
+// Get workspace-specific directories
+const getMcpDataDir = async () => {
+  const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+  const workspaceDataDir = workspaceDb.getWorkspaceDataDir(currentWorkspace.id);
+  return path.join(workspaceDataDir, "mcp-data");
 };
 
-export const getMcpImplDir = () => {
-  const userDataPath = app.getPath("userData");
-  return path.join(userDataPath, "mcp-impl");
+// Export for main.ts usage
+export { getMcpDataDir };
+
+export const getMcpImplDir = async (mcpId?: string) => {
+  const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+  const workspaceDataDir = workspaceDb.getWorkspaceDataDir(currentWorkspace.id);
+  const mcpImplDir = path.join(workspaceDataDir, "mcp-impl");
+
+  if (mcpId) {
+    return path.join(mcpImplDir, mcpId);
+  }
+  return mcpImplDir;
 };
 
-// Directory for storing encrypted credentials
+// Alias for backward compatibility
+export const getMcpImplPath = async (mcpId: string) => {
+  return getMcpImplDir(mcpId);
+};
+
+// Credentials are shared across workspaces - stored in root credentials directory
 const getCredentialsDir = () => {
   const userDataPath = app.getPath("userData");
   return path.join(userDataPath, "credentials");
 };
 
-// Ensure the credentials directory exists
+// Ensure directories exist
 const ensureCredentialsDir = async () => {
   const credentialsDir = getCredentialsDir();
   try {
@@ -61,14 +77,8 @@ const ensureCredentialsDir = async () => {
   }
 };
 
-// Get the file path for storing encrypted credentials
-const getCredentialFilePath = (key: string) => {
-  return path.join(getCredentialsDir(), `${key}.enc`);
-};
-
-// Ensure the MCP data directory exists
 const ensureMcpDataDir = async () => {
-  const mcpDataDir = getMcpDataDir();
+  const mcpDataDir = await getMcpDataDir();
   try {
     await fs.mkdir(mcpDataDir, { recursive: true });
   } catch (error) {
@@ -77,19 +87,22 @@ const ensureMcpDataDir = async () => {
   }
 };
 
-// Get the file path for an MCP
-const getMcpFilePath = (mcpId: string) => {
-  return path.join(getMcpDataDir(), `${mcpId}.json`);
+// Get file paths
+const getCredentialFilePath = (key: string) => {
+  const credentialsDir = getCredentialsDir();
+  return path.join(credentialsDir, `${key}.enc`);
 };
 
-export const getMcpImplPath = (mcpId: string) => {
-  return path.join(getMcpImplDir(), `${mcpId}`);
+const getMcpFilePath = async (mcpId: string) => {
+  const mcpDataDir = await getMcpDataDir();
+  return path.join(mcpDataDir, `${mcpId}.json`);
 };
 
 // Check if an MCP exists
 const mcpExists = async (mcpId: string): Promise<boolean> => {
   try {
-    await fs.access(getMcpFilePath(mcpId));
+    const filePath = await getMcpFilePath(mcpId);
+    await fs.access(filePath);
     return true;
   } catch {
     return false;
@@ -236,20 +249,19 @@ const createMcp = async (mcpData: McpSubmitData): Promise<string> => {
     updatedAt: now,
   };
 
-  await fs.writeFile(
-    getMcpFilePath(mcpId),
-    JSON.stringify(fullMcpData, null, 2),
-  );
+  const filePath = await getMcpFilePath(mcpId);
+  await fs.writeFile(filePath, JSON.stringify(fullMcpData, null, 2));
 
   return mcpId;
 };
 
-// List all MCPs
+// List all MCPs in current workspace
 const listMcps = async (): Promise<McpData[]> => {
   await ensureMcpDataDir();
 
   try {
-    const files = await fs.readdir(getMcpDataDir());
+    const mcpDataDir = await getMcpDataDir();
+    const files = await fs.readdir(mcpDataDir);
     // Filter only MCP data files
     const mcpFiles = files.filter((file) => file.endsWith(".json"));
 
@@ -257,7 +269,7 @@ const listMcps = async (): Promise<McpData[]> => {
 
     for (const file of mcpFiles) {
       try {
-        const filePath = path.join(getMcpDataDir(), file);
+        const filePath = path.join(mcpDataDir, file);
         const fileContent = await fs.readFile(filePath, "utf-8");
         const mcpData = JSON.parse(fileContent) as McpData;
         // Never include credentials in list - they're already sanitized in storage
@@ -274,7 +286,7 @@ const listMcps = async (): Promise<McpData[]> => {
   }
 };
 
-// Get an MCP by ID
+// Get an MCP by ID from current workspace
 const getMcpById = async (
   id: string,
   includeCredentials: boolean = false,
@@ -284,7 +296,8 @@ const getMcpById = async (
   }
 
   try {
-    const fileContent = await fs.readFile(getMcpFilePath(id), "utf-8");
+    const filePath = await getMcpFilePath(id);
+    const fileContent = await fs.readFile(filePath, "utf-8");
     const mcpData = JSON.parse(fileContent) as McpData;
 
     // If requested, fetch and include credentials
@@ -371,10 +384,8 @@ const updateMcp = async (
     };
 
     // Write the completely new data to the file
-    await fs.writeFile(
-      getMcpFilePath(id),
-      JSON.stringify(updatedMcpData, null, 2),
-    );
+    const filePath = await getMcpFilePath(id);
+    await fs.writeFile(filePath, JSON.stringify(updatedMcpData, null, 2));
 
     return true;
   } catch {
@@ -383,7 +394,7 @@ const updateMcp = async (
   }
 };
 
-// Delete an MCP
+// Delete an MCP from current workspace
 const deleteMcp = async (id: string): Promise<boolean> => {
   if (!(await mcpExists(id))) {
     return false;
@@ -400,7 +411,8 @@ const deleteMcp = async (id: string): Promise<boolean> => {
     }
 
     // Delete the MCP data file
-    await fs.unlink(getMcpFilePath(id));
+    const filePath = await getMcpFilePath(id);
+    await fs.unlink(filePath);
     return true;
   } catch {
     log.error(`Error deleting MCP with ID ${id}:`);

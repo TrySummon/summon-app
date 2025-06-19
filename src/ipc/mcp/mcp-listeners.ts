@@ -1,4 +1,4 @@
-import { ipcMain, app } from "electron";
+import { ipcMain } from "electron";
 import path from "path";
 import {
   CREATE_MCP_CHANNEL,
@@ -359,11 +359,16 @@ export function registerMcpListeners() {
     },
   );
 
-  // Open the mcp.json file in the user data directory
+  // Open the mcp.json file in the current workspace directory
   ipcMain.handle(OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL, async () => {
     try {
-      const userDataPath = app.getPath("userData");
-      const mcpJsonPath = path.join(userDataPath, "mcp.json");
+      // Get workspace-specific mcp.json path using the same function as main.ts
+      const { workspaceDb } = await import("@/lib/db/workspace-db");
+      const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+      const workspaceDataDir = workspaceDb.getWorkspaceDataDir(
+        currentWorkspace.id,
+      );
+      const mcpJsonPath = path.join(workspaceDataDir, "mcp.json");
 
       // Open the file with the default editor
       await showFileInFolder(mcpJsonPath);

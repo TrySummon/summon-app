@@ -37,8 +37,7 @@ import {
   installExtension,
   REACT_DEVELOPER_TOOLS,
 } from "electron-devtools-installer";
-import { getApiDataDir } from "@/lib/db/api-db";
-import { getMcpDataDir, getMcpImplDir, mcpDb } from "@/lib/db/mcp-db";
+import { mcpDb } from "@/lib/db/mcp-db";
 import { startMcpServer } from "@/lib/mcp";
 import { connectAllExternalMcps, stopExternalMcp } from "@/lib/external-mcp";
 import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "@/ipc/external-mcp/external-mcp-channels";
@@ -46,6 +45,7 @@ import { runningMcpServers } from "@/lib/mcp/state";
 import log from "electron-log/main";
 
 import { updateElectronApp } from "update-electron-app";
+import { workspaceDb } from "./lib/db/workspace-db";
 
 // These are defined by Vite during build
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
@@ -101,8 +101,8 @@ app
   .whenReady()
   .then(createWindow)
   .then(installExtensions)
-  .then(ensureMcpJsonFile)
-  .then(watchMcpJsonFile)
+  .then(ensureMcpJsonFiles)
+  .then(watchAllMcpJsonFiles)
   .then(startAllMcpServers)
   .then(async () => {
     const results = await connectAllExternalMcps();
@@ -132,12 +132,10 @@ app
     }
   });
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   fixPath();
   const appDataDir = app.getPath("userData");
-  const apiDataDir = getApiDataDir();
-  const mcpDataDir = getMcpDataDir();
-  const mcpImplDir = getMcpImplDir();
+
   // Get the current application menu
   const currentMenu = Menu.getApplicationMenu();
 
@@ -159,25 +157,15 @@ app.whenReady().then(() => {
     );
     helpMenu.submenu.append(
       new MenuItem({
-        label: "Open Api Data Folder",
-        click: () => {
-          shell.openPath(apiDataDir);
-        },
-      }),
-    );
-    helpMenu.submenu.append(
-      new MenuItem({
-        label: "Open MCP Data Folder",
-        click: () => {
-          shell.openPath(mcpDataDir);
-        },
-      }),
-    );
-    helpMenu.submenu.append(
-      new MenuItem({
-        label: "Open MCP Implementation Folder",
-        click: () => {
-          shell.openPath(mcpImplDir);
+        label: "Open Workspace Data Folder",
+        click: async () => {
+          try {
+            const workspace = await workspaceDb.getCurrentWorkspace();
+            const workspaceDir = workspaceDb.getWorkspaceDataDir(workspace.id);
+            shell.openPath(workspaceDir);
+          } catch (error) {
+            log.error("Failed to open API data folder:", error);
+          }
         },
       }),
     );
@@ -207,107 +195,197 @@ app.on("activate", () => {
   }
 });
 
-// Get the path to the mcp.json file in the user data directory
-const getMcpJsonFilePath = () => {
-  const userDataPath = app.getPath("userData");
-  return path.join(userDataPath, "mcp.json");
-};
-
-// Ensure the mcp.json file exists with default content
-async function ensureMcpJsonFile(): Promise<void> {
-  const mcpJsonPath = getMcpJsonFilePath();
+// Ensure mcp.json files exist for all workspaces
+async function ensureMcpJsonFiles(): Promise<void> {
   try {
-    // Check if the file exists
-    await fsPromises.access(mcpJsonPath, fs.constants.F_OK);
-    log.info("mcp.json file already exists");
-  } catch {
-    // File doesn't exist, create it with default content
-    const defaultContent = {
-      mcpServers: {},
-    };
-    try {
-      await fsPromises.writeFile(
-        mcpJsonPath,
-        JSON.stringify(defaultContent, null, 2),
-        "utf8",
-      );
-      log.info("Created default mcp.json file");
-    } catch (writeError) {
-      log.error("Failed to create mcp.json file:", writeError);
-    }
-  }
-}
+    // Initialize workspace system to ensure default workspace exists
+    await workspaceDb.initializeWorkspaces();
 
-// Watch for changes to the mcp.json file
-function watchMcpJsonFile(): void {
-  const mcpJsonPath = getMcpJsonFilePath();
-  try {
-    const watcher = fs.watch(mcpJsonPath, async (eventType) => {
-      if (eventType === "change") {
-        log.info("mcp.json file changed, reloading MCP servers...");
+    // Get all workspaces
+    const workspaces = await workspaceDb.listWorkspaces();
+
+    for (const workspace of workspaces) {
+      const workspaceDataDir = workspaceDb.getWorkspaceDataDir(workspace.id);
+      const mcpJsonPath = path.join(workspaceDataDir, "mcp.json");
+
+      try {
+        // Check if the file exists
+        await fsPromises.access(mcpJsonPath, fs.constants.F_OK);
+        log.info(
+          `mcp.json file already exists for workspace ${workspace.name} (${workspace.id})`,
+        );
+      } catch {
+        // File doesn't exist, create it with default content
+        const defaultContent = {
+          mcpServers: {},
+        };
         try {
-          // Get the current list of external MCP servers before updating
-          const currentExternalMcpIds = Object.keys(runningMcpServers).filter(
-            (id) => runningMcpServers[id].isExternal,
+          // Ensure workspace directory exists first
+          await fsPromises.mkdir(workspaceDataDir, { recursive: true });
+
+          await fsPromises.writeFile(
+            mcpJsonPath,
+            JSON.stringify(defaultContent, null, 2),
+            "utf8",
           );
-
-          // Connect to all external MCPs based on the updated configuration
-          const results = await connectAllExternalMcps();
-
-          // Clean up state for external MCPs that are no longer in the file
-          const newExternalMcpIds = Object.keys(results);
-          const removedMcpIds = currentExternalMcpIds.filter(
-            (id) => !newExternalMcpIds.includes(id),
+          log.info(
+            `Created default mcp.json file for workspace ${workspace.name} (${workspace.id})`,
           );
-
-          // Stop and clean up removed MCPs
-          if (removedMcpIds.length > 0) {
-            log.info(
-              `Cleaning up ${removedMcpIds.length} external MCP servers that are no longer in the config...`,
-            );
-
-            for (const mcpId of removedMcpIds) {
-              try {
-                await stopExternalMcp(mcpId);
-                log.info(`Stopped external MCP server: ${mcpId}`);
-                // Remove from runningMcpServers after stopping
-                delete runningMcpServers[mcpId];
-              } catch (stopError) {
-                log.error(
-                  `Failed to stop external MCP server ${mcpId}:`,
-                  stopError,
-                );
-              }
-            }
-          }
-
-          // Notify the renderer process about the update
-          const mainWindow = BrowserWindow.getAllWindows()[0];
-          if (mainWindow) {
-            mainWindow.webContents.send(
-              EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL,
-              results,
-            );
-          }
-        } catch (error) {
-          log.error("Error processing mcp.json changes:", error);
+        } catch (writeError) {
+          log.error(
+            `Failed to create mcp.json file for workspace ${workspace.id}:`,
+            writeError,
+          );
         }
       }
-    });
-
-    // Handle watcher errors
-    watcher.on("error", (error) => {
-      log.error("Error watching mcp.json file:", error);
-    });
-
-    log.info("Watching mcp.json file for changes");
+    }
   } catch (error) {
-    log.error("Failed to set up watcher for mcp.json:", error);
+    log.error("Error ensuring mcp.json files:", error);
   }
 }
 
+// Map to store file watchers for cleanup
+const mcpFileWatchers = new Map<string, fs.FSWatcher>();
+
+// Watch for changes to all mcp.json files across workspaces
+async function watchAllMcpJsonFiles(): Promise<void> {
+  try {
+    // Clean up existing watchers
+    for (const [workspaceId, watcher] of mcpFileWatchers.entries()) {
+      try {
+        watcher.close();
+        log.info(
+          `Closed existing mcp.json watcher for workspace ${workspaceId}`,
+        );
+      } catch (error) {
+        log.error(`Error closing watcher for workspace ${workspaceId}:`, error);
+      }
+    }
+    mcpFileWatchers.clear();
+
+    // Get all workspaces
+    const workspaces = await workspaceDb.listWorkspaces();
+
+    for (const workspace of workspaces) {
+      const workspaceDataDir = workspaceDb.getWorkspaceDataDir(workspace.id);
+      const mcpJsonPath = path.join(workspaceDataDir, "mcp.json");
+
+      try {
+        // Check if file exists before watching
+        await fsPromises.access(mcpJsonPath, fs.constants.F_OK);
+
+        const watcher = fs.watch(mcpJsonPath, async (eventType) => {
+          if (eventType === "change") {
+            log.info(
+              `mcp.json file changed for workspace ${workspace.name} (${workspace.id}), checking if current workspace...`,
+            );
+
+            try {
+              // Check if this is the current workspace
+              const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+
+              if (currentWorkspace.id === workspace.id) {
+                log.info(
+                  "Changed mcp.json belongs to current workspace, reloading external MCP servers...",
+                );
+
+                // Get the current list of external MCP servers before updating
+                const currentExternalMcpIds = Object.keys(
+                  runningMcpServers,
+                ).filter((id) => runningMcpServers[id].isExternal);
+
+                // Connect to all external MCPs based on the updated configuration
+                const results = await connectAllExternalMcps();
+
+                // Clean up state for external MCPs that are no longer in the file
+                const newExternalMcpIds = Object.keys(results);
+                const removedMcpIds = currentExternalMcpIds.filter(
+                  (id) => !newExternalMcpIds.includes(id),
+                );
+
+                // Stop and clean up removed MCPs
+                if (removedMcpIds.length > 0) {
+                  log.info(
+                    `Cleaning up ${removedMcpIds.length} external MCP servers that are no longer in the config...`,
+                  );
+
+                  for (const mcpId of removedMcpIds) {
+                    try {
+                      await stopExternalMcp(mcpId);
+                      log.info(`Stopped external MCP server: ${mcpId}`);
+                      // Remove from runningMcpServers after stopping
+                      delete runningMcpServers[mcpId];
+                    } catch (stopError) {
+                      log.error(
+                        `Failed to stop external MCP server ${mcpId}:`,
+                        stopError,
+                      );
+                    }
+                  }
+                }
+
+                // Notify the renderer process about the update
+                const mainWindow = BrowserWindow.getAllWindows()[0];
+                if (mainWindow) {
+                  mainWindow.webContents.send(
+                    EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL,
+                    results,
+                  );
+                }
+              } else {
+                log.info(
+                  `Changed mcp.json belongs to workspace ${workspace.name} (${workspace.id}), not current workspace. Ignoring.`,
+                );
+              }
+            } catch (error) {
+              log.error(
+                `Error processing mcp.json changes for workspace ${workspace.id}:`,
+                error,
+              );
+            }
+          }
+        });
+
+        // Handle watcher errors
+        watcher.on("error", (error) => {
+          log.error(
+            `Error watching mcp.json file for workspace ${workspace.id}:`,
+            error,
+          );
+          // Remove failed watcher from map
+          mcpFileWatchers.delete(workspace.id);
+        });
+
+        // Store watcher for cleanup later
+        mcpFileWatchers.set(workspace.id, watcher);
+        log.info(
+          `Watching mcp.json file for workspace ${workspace.name} (${workspace.id})`,
+        );
+      } catch (error) {
+        log.error(
+          `Failed to set up watcher for workspace ${workspace.id}:`,
+          error,
+        );
+      }
+    }
+
+    log.info(
+      `Set up ${mcpFileWatchers.size} mcp.json file watchers across all workspaces`,
+    );
+  } catch (error) {
+    log.error("Failed to set up watchers for mcp.json files:", error);
+  }
+}
+
+// Helper function to refresh watchers when workspaces change
+export const refreshMcpJsonWatchers = async (): Promise<void> => {
+  log.info("Refreshing mcp.json watchers for all workspaces...");
+  await ensureMcpJsonFiles();
+  await watchAllMcpJsonFiles();
+};
+
 // Start all MCP servers when the app starts
-async function startAllMcpServers(): Promise<void> {
+export async function startAllMcpServers(): Promise<void> {
   try {
     log.info("Starting all MCP servers...");
     const mcps = await mcpDb.listMcps();

@@ -71,7 +71,7 @@ export function EvaluationConfiguration({
                 Agent Model
               </label>
               <p className="text-muted-foreground mb-2 text-xs">
-                Model used to run the agent and generate responses
+                Model used to generate responses
               </p>
               <LLMPicker
                 config={agentModelConfig}

@@ -74,7 +74,7 @@ export async function generateMcpImpl(mcpId: string) {
     throw new Error("MCP not found");
   }
 
-  const output = getMcpImplPath(mcp.id);
+  const output = await getMcpImplPath(mcp.id);
 
   // Determine server name and version
   const serverName = mcp.name.toLowerCase().replace(/[^a-z0-9_-]/g, "-");
@@ -214,7 +214,7 @@ export async function generateMcpImpl(mcpId: string) {
 }
 
 export async function deleteMcpImpl(mcpId: string) {
-  const implPath = getMcpImplPath(mcpId);
+  const implPath = await getMcpImplPath(mcpId);
 
   try {
     // Check if directory exists before attempting to delete
@@ -291,7 +291,7 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
       return serverState;
     }
 
-    const implPath = getMcpImplPath(mcpId);
+    const implPath = await getMcpImplPath(mcpId);
     log.info(`Starting MCP server from: ${implPath}`);
 
     // Prepare environment variables for the MCP server
@@ -510,7 +510,7 @@ export async function downloadMcpZip(
       return { success: false, message: "MCP not found" };
     }
 
-    const implPath = getMcpImplPath(mcpId);
+    const implPath = await getMcpImplPath(mcpId);
 
     // Check if the implementation folder exists
     try {

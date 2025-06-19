@@ -7,6 +7,7 @@ import { registerAuthListeners } from "./auth/auth-listeners";
 import { registerMcpListeners } from "./mcp/mcp-listeners";
 import { registerAIProvidersListeners } from "./ai-providers/ai-providers-listeners";
 import { registerExternalMcpListeners } from "./external-mcp/external-mcp-listeners";
+import { registerWorkspaceListeners } from "./workspace/workspace-listeners";
 
 export default function registerListeners(mainWindow: BrowserWindow) {
   addWindowEventListeners(mainWindow);
@@ -17,4 +18,5 @@ export default function registerListeners(mainWindow: BrowserWindow) {
   registerMcpListeners();
   registerAIProvidersListeners();
   registerExternalMcpListeners();
+  registerWorkspaceListeners();
 }

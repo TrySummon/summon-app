@@ -1,25 +1,24 @@
 import fs from "fs";
 import path from "path";
-import { app } from "electron";
 import { v4 as uuidv4 } from "uuid";
 import { Dataset, DatasetItem } from "@/types/dataset";
 import log from "electron-log/main";
+import { workspaceDb } from "./workspace-db";
 
 class DatasetDB {
-  private datasetsDir: string;
-
-  constructor() {
-    const userDataPath = app.getPath("userData");
-    this.datasetsDir = path.join(userDataPath, "datasets");
-
-    // Ensure datasets directory exists
-    this.ensureDirectoryExists();
+  private async getDatasetsDir(): Promise<string> {
+    const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+    const workspaceDataDir = workspaceDb.getWorkspaceDataDir(
+      currentWorkspace.id,
+    );
+    return path.join(workspaceDataDir, "datasets");
   }
 
-  private ensureDirectoryExists(): void {
+  private async ensureDirectoryExists(): Promise<void> {
     try {
-      if (!fs.existsSync(this.datasetsDir)) {
-        fs.mkdirSync(this.datasetsDir, { recursive: true });
+      const datasetsDir = await this.getDatasetsDir();
+      if (!fs.existsSync(datasetsDir)) {
+        fs.mkdirSync(datasetsDir, { recursive: true });
       }
     } catch (error) {
       log.error("Error creating datasets directory:", error);
@@ -27,13 +26,14 @@ class DatasetDB {
     }
   }
 
-  private getDatasetFilePath(id: string): string {
-    return path.join(this.datasetsDir, `${id}.json`);
+  private async getDatasetFilePath(id: string): Promise<string> {
+    const datasetsDir = await this.getDatasetsDir();
+    return path.join(datasetsDir, `${id}.json`);
   }
 
-  private loadDatasetFromFile(id: string): Dataset | null {
+  private async loadDatasetFromFile(id: string): Promise<Dataset | null> {
     try {
-      const filePath = this.getDatasetFilePath(id);
+      const filePath = await this.getDatasetFilePath(id);
       if (fs.existsSync(filePath)) {
         const rawData = fs.readFileSync(filePath, "utf-8");
         return JSON.parse(rawData);
@@ -44,9 +44,9 @@ class DatasetDB {
     return null;
   }
 
-  private saveDatasetToFile(dataset: Dataset): void {
+  private async saveDatasetToFile(dataset: Dataset): Promise<void> {
     try {
-      const filePath = this.getDatasetFilePath(dataset.id);
+      const filePath = await this.getDatasetFilePath(dataset.id);
       fs.writeFileSync(filePath, JSON.stringify(dataset, null, 2));
     } catch (error) {
       log.error(`Error saving dataset ${dataset.id}:`, error);
@@ -54,9 +54,9 @@ class DatasetDB {
     }
   }
 
-  private deleteDatasetFile(id: string): void {
+  private async deleteDatasetFile(id: string): Promise<void> {
     try {
-      const filePath = this.getDatasetFilePath(id);
+      const filePath = await this.getDatasetFilePath(id);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
@@ -66,9 +66,10 @@ class DatasetDB {
     }
   }
 
-  private getAllDatasetIds(): string[] {
+  private async getAllDatasetIds(): Promise<string[]> {
     try {
-      const files = fs.readdirSync(this.datasetsDir);
+      const datasetsDir = await this.getDatasetsDir();
+      const files = fs.readdirSync(datasetsDir);
       return files
         .filter((file) => file.endsWith(".json"))
         .map((file) => file.replace(".json", ""));
@@ -85,6 +86,8 @@ class DatasetDB {
     tags?: string[];
     initialItem?: Omit<DatasetItem, "id" | "createdAt" | "updatedAt">;
   }): Promise<string> {
+    await this.ensureDirectoryExists();
+
     const id = uuidv4();
     const now = new Date().toISOString();
 
@@ -108,7 +111,7 @@ class DatasetDB {
       items,
     };
 
-    this.saveDatasetToFile(newDataset);
+    await this.saveDatasetToFile(newDataset);
     return id;
   }
 
@@ -116,7 +119,7 @@ class DatasetDB {
     id: string,
     updates: Partial<Omit<Dataset, "id" | "items" | "createdAt" | "updatedAt">>,
   ): Promise<boolean> {
-    const existing = this.loadDatasetFromFile(id);
+    const existing = await this.loadDatasetFromFile(id);
     if (!existing) return false;
 
     const updated: Dataset = {
@@ -126,28 +129,29 @@ class DatasetDB {
       updatedAt: new Date().toISOString(),
     };
 
-    this.saveDatasetToFile(updated);
+    await this.saveDatasetToFile(updated);
     return true;
   }
 
   async deleteDataset(id: string): Promise<boolean> {
-    const existing = this.loadDatasetFromFile(id);
+    const existing = await this.loadDatasetFromFile(id);
     if (!existing) return false;
 
-    this.deleteDatasetFile(id);
+    await this.deleteDatasetFile(id);
     return true;
   }
 
   async getDataset(id: string): Promise<Dataset | null> {
-    return this.loadDatasetFromFile(id);
+    return await this.loadDatasetFromFile(id);
   }
 
   async listDatasets(): Promise<Dataset[]> {
-    const datasetIds = this.getAllDatasetIds();
+    await this.ensureDirectoryExists();
+    const datasetIds = await this.getAllDatasetIds();
     const datasets: Dataset[] = [];
 
     for (const id of datasetIds) {
-      const dataset = this.loadDatasetFromFile(id);
+      const dataset = await this.loadDatasetFromFile(id);
       if (dataset) {
         datasets.push(dataset);
       }
@@ -163,11 +167,11 @@ class DatasetDB {
     const q = query.toLowerCase().trim();
     if (!q) return this.listDatasets();
 
-    const datasetIds = this.getAllDatasetIds();
+    const datasetIds = await this.getAllDatasetIds();
     const matchingDatasets: Dataset[] = [];
 
     for (const id of datasetIds) {
-      const dataset = this.loadDatasetFromFile(id);
+      const dataset = await this.loadDatasetFromFile(id);
       if (!dataset) continue;
 
       const metaMatch =
@@ -199,7 +203,7 @@ class DatasetDB {
     datasetId: string,
     item: Omit<DatasetItem, "id" | "createdAt" | "updatedAt">,
   ): Promise<string> {
-    const dataset = this.loadDatasetFromFile(datasetId);
+    const dataset = await this.loadDatasetFromFile(datasetId);
     if (!dataset) throw new Error("Dataset not found");
 
     const now = new Date().toISOString();
@@ -212,7 +216,7 @@ class DatasetDB {
 
     dataset.items.push(newItem);
     dataset.updatedAt = now;
-    this.saveDatasetToFile(dataset);
+    await this.saveDatasetToFile(dataset);
     return newItem.id;
   }
 
@@ -221,7 +225,7 @@ class DatasetDB {
     itemId: string,
     updates: Partial<Omit<DatasetItem, "id" | "createdAt" | "updatedAt">>,
   ): Promise<boolean> {
-    const dataset = this.loadDatasetFromFile(datasetId);
+    const dataset = await this.loadDatasetFromFile(datasetId);
     if (!dataset) return false;
 
     const itemIndex = dataset.items.findIndex((i) => i.id === itemId);
@@ -237,12 +241,12 @@ class DatasetDB {
 
     dataset.items[itemIndex] = updatedItem;
     dataset.updatedAt = new Date().toISOString();
-    this.saveDatasetToFile(dataset);
+    await this.saveDatasetToFile(dataset);
     return true;
   }
 
   async deleteItem(datasetId: string, itemId: string): Promise<boolean> {
-    const dataset = this.loadDatasetFromFile(datasetId);
+    const dataset = await this.loadDatasetFromFile(datasetId);
     if (!dataset) return false;
 
     const initialLength = dataset.items.length;
@@ -251,17 +255,19 @@ class DatasetDB {
     if (dataset.items.length === initialLength) return false;
 
     dataset.updatedAt = new Date().toISOString();
-    this.saveDatasetToFile(dataset);
+    await this.saveDatasetToFile(dataset);
     return true;
   }
 
   // Utility operations
   async datasetExists(id: string): Promise<boolean> {
-    return fs.existsSync(this.getDatasetFilePath(id));
+    const filePath = await this.getDatasetFilePath(id);
+    return fs.existsSync(filePath);
   }
 
   async getDatasetCount(): Promise<number> {
-    return this.getAllDatasetIds().length;
+    const datasetIds = await this.getAllDatasetIds();
+    return datasetIds.length;
   }
 }
 

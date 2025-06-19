@@ -1,4 +1,3 @@
-import { app } from "electron";
 import path from "path";
 import fs from "fs/promises";
 import { generateApiId } from "./id-generator";
@@ -6,6 +5,7 @@ import { OpenAPIV3 } from "openapi-types";
 import fsSync from "fs";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import log from "electron-log/main";
+import { workspaceDb } from "./workspace-db";
 
 // Define the API data structure that will be stored in files
 interface ApiData {
@@ -14,15 +14,24 @@ interface ApiData {
   api?: OpenAPIV3.Document; // Optional as we'll load it on demand
 }
 
-// Define the directory where API data will be stored
-export const getApiDataDir = () => {
-  const userDataPath = app.getPath("userData");
-  return path.join(userDataPath, "api-data");
+// Define the directory where API data will be stored for a specific workspace
+const getApiDataDirForWorkspace = (workspaceId: string) => {
+  const workspaceDataDir = workspaceDb.getWorkspaceDataDir(workspaceId);
+  return path.join(workspaceDataDir, "api-data");
 };
 
-// Ensure the API data directory exists
-const ensureApiDataDir = async () => {
-  const apiDataDir = getApiDataDir();
+// Export a function to get API data directory for current workspace
+export const getCurrentWorkspaceApiDataDir = async () => {
+  const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+  return getApiDataDirForWorkspace(currentWorkspace.id);
+};
+
+// Export for backward compatibility - but now returns current workspace's directory
+export const getApiDataDir = getCurrentWorkspaceApiDataDir;
+
+// Ensure the API data directory exists for a workspace
+const ensureApiDataDir = async (workspaceId: string) => {
+  const apiDataDir = getApiDataDirForWorkspace(workspaceId);
   try {
     await fs.mkdir(apiDataDir, { recursive: true });
   } catch (error) {
@@ -31,28 +40,35 @@ const ensureApiDataDir = async () => {
   }
 };
 
-// Get the file path for an API
-const getApiFilePath = (apiId: string) => {
-  return path.join(getApiDataDir(), `${apiId}.json`);
+// Get the file path for an API in a specific workspace
+const getApiFilePath = (workspaceId: string, apiId: string) => {
+  return path.join(getApiDataDirForWorkspace(workspaceId), `${apiId}.json`);
 };
 
-const getApiOriginalFilePath = (apiId: string) => {
-  return path.join(getApiDataDir(), `${apiId}-original.json`);
+const getApiOriginalFilePath = (workspaceId: string, apiId: string) => {
+  return path.join(
+    getApiDataDirForWorkspace(workspaceId),
+    `${apiId}-original.json`,
+  );
 };
 
-// Check if an API exists
-const apiExists = async (apiId: string): Promise<boolean> => {
+// Check if an API exists in a workspace
+const apiExists = async (
+  workspaceId: string,
+  apiId: string,
+): Promise<boolean> => {
   try {
-    await fs.access(getApiFilePath(apiId));
+    await fs.access(getApiFilePath(workspaceId, apiId));
     return true;
   } catch {
     return false;
   }
 };
 
-// Create a new API and its tools
+// Create a new API in the current workspace
 const createApi = async (buffer: Buffer): Promise<string> => {
-  await ensureApiDataDir();
+  const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+  await ensureApiDataDir(currentWorkspace.id);
 
   // Parse the API spec to extract the name
   let apiName: string | undefined;
@@ -66,22 +82,28 @@ const createApi = async (buffer: Buffer): Promise<string> => {
   // Generate a unique ID for the API
   const apiId = generateApiId(apiName);
   // Save the original file
-  const originalFilePath = getApiOriginalFilePath(apiId);
+  const originalFilePath = getApiOriginalFilePath(currentWorkspace.id, apiId);
   await fs.writeFile(originalFilePath, buffer);
 
   // Create the API metadata file
   const apiData: ApiData = { id: apiId, originalFilePath };
-  await fs.writeFile(getApiFilePath(apiId), JSON.stringify(apiData, null, 2));
+  await fs.writeFile(
+    getApiFilePath(currentWorkspace.id, apiId),
+    JSON.stringify(apiData, null, 2),
+  );
 
   return apiId;
 };
 
-// List all APIs
+// List all APIs in the current workspace
 const listApis = async (): Promise<ApiData[]> => {
-  await ensureApiDataDir();
+  const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+  await ensureApiDataDir(currentWorkspace.id);
 
   try {
-    const files = await fs.readdir(getApiDataDir());
+    const files = await fs.readdir(
+      getApiDataDirForWorkspace(currentWorkspace.id),
+    );
     // Filter only API metadata files (not the original spec files which end with -original.json)
     const apiFiles = files.filter(
       (file) => file.endsWith(".json") && !file.endsWith("-original.json"),
@@ -91,7 +113,10 @@ const listApis = async (): Promise<ApiData[]> => {
 
     for (const file of apiFiles) {
       try {
-        const filePath = path.join(getApiDataDir(), file);
+        const filePath = path.join(
+          getApiDataDirForWorkspace(currentWorkspace.id),
+          file,
+        );
         const fileContent = await fs.readFile(filePath, "utf-8");
         const apiData = JSON.parse(fileContent) as ApiData;
 
@@ -123,17 +148,22 @@ const listApis = async (): Promise<ApiData[]> => {
   }
 };
 
-// Get an API by ID
+// Get an API by ID from the current workspace
 export const getApiById = async (
   id: string,
   loadSpec: boolean = true,
 ): Promise<ApiData | null> => {
-  if (!(await apiExists(id))) {
+  const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+
+  if (!(await apiExists(currentWorkspace.id, id))) {
     return null;
   }
 
   try {
-    const fileContent = await fs.readFile(getApiFilePath(id), "utf-8");
+    const fileContent = await fs.readFile(
+      getApiFilePath(currentWorkspace.id, id),
+      "utf-8",
+    );
     const apiData = JSON.parse(fileContent) as ApiData;
 
     // Load and parse the spec if requested
@@ -156,7 +186,7 @@ export const getApiById = async (
   }
 };
 
-// Update an API
+// Update an API in the current workspace
 const renameApi = async (id: string, newName: string): Promise<boolean> => {
   // Get existing API data to keep the original file path
   const existingApiData = await getApiById(id, true);
@@ -180,9 +210,11 @@ const renameApi = async (id: string, newName: string): Promise<boolean> => {
   return true;
 };
 
-// Delete an API and all its tools
+// Delete an API from the current workspace
 const deleteApi = async (id: string): Promise<boolean> => {
-  if (!(await apiExists(id))) {
+  const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+
+  if (!(await apiExists(currentWorkspace.id, id))) {
     return false;
   }
 
@@ -202,7 +234,7 @@ const deleteApi = async (id: string): Promise<boolean> => {
     }
 
     // Delete the API file
-    await fs.unlink(getApiFilePath(id));
+    await fs.unlink(getApiFilePath(currentWorkspace.id, id));
 
     return true;
   } catch (error) {
@@ -211,7 +243,7 @@ const deleteApi = async (id: string): Promise<boolean> => {
   }
 };
 
-// Get the original file content
+// Get the original file content for an API in the current workspace
 const getOriginalFileContent = async (id: string): Promise<Buffer | null> => {
   const apiData = await getApiById(id, false);
   if (!apiData || !apiData.originalFilePath) {

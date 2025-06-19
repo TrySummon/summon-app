@@ -6,6 +6,7 @@ import { extractSecuritySchemes, getEnvVarName } from "./utils/security";
 import { getApiById } from "@/lib/db/api-db";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import { OpenAPIV3 } from "openapi-types";
+import log from "electron-log/main";
 
 export async function generateMcpTools(apiGroups: Record<string, McpApiGroup>) {
   const tools: McpToolDefinition[] = [];
@@ -22,21 +23,27 @@ export async function generateMcpTools(apiGroups: Record<string, McpApiGroup>) {
         api.originalFilePath,
       )) as OpenAPIV3.Document;
 
-      const dereferencedEndpoints = apiGroup.endpoints.map((endpoint) => {
-        const path = apiSpec.paths[endpoint.path];
-        const operation = path?.[
-          endpoint.method as OpenAPIV3.HttpMethods
-        ] as OpenAPIV3.OperationObject;
-        operation.parameters = operation.parameters || [];
-        if (path?.parameters) {
-          operation.parameters.push(...path.parameters);
-        }
+      const dereferencedEndpoints = apiGroup.endpoints
+        .map((endpoint) => {
+          const path = apiSpec.paths[endpoint.path];
+          const operation = path?.[endpoint.method as OpenAPIV3.HttpMethods] as
+            | OpenAPIV3.OperationObject
+            | undefined;
+          if (!operation) {
+            log.warn(`Operation not found for endpoint ${endpoint.path}`);
+            return null;
+          }
+          operation.parameters = operation.parameters || [];
+          if (path?.parameters) {
+            operation.parameters.push(...path.parameters);
+          }
 
-        return {
-          ...endpoint,
-          operation: operation,
-        };
-      });
+          return {
+            ...endpoint,
+            operation: operation,
+          };
+        })
+        .filter((endpoint) => endpoint !== null);
 
       // Use extractToolsFromApi to process the endpoints directly
       const extractedTools = convertEndpointsToTools(dereferencedEndpoints);
