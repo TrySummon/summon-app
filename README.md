@@ -27,7 +27,8 @@ The main features of the Summon app are:
 | **External MCP Support** | Connect to any existing MCP server (local or remote) via `mcp.json` configuration. Support for CLI-based servers with automatic tool discovery. |
 | **AI Playground** | Test MCP tool calling in an interactive chat interface with multiple AI models including OpenAI, Anthropic and more. |
 | **Live Tool Editing** | Modify tool names, descriptions, and input schemas on the fly without restarting servers. View diffs of your modifications in real-time. |
-| **Secure Credentials** | Store API keys and tokens safely using system keychain services. All credentials managed locally with secure authentication for AI providers and APIs. |
+| **Datasets** | Create and manage test datasets with conversation scenarios, expected tool calls, and evaluation criteria. AI-assisted generation of test cases. |
+| **Evals** | Run evaluations of your MCPs against dataset items. Track performance metrics and tool calling accuracy. |
 
 ## 📺 Showcase
 
