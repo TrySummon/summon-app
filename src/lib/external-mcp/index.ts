@@ -7,12 +7,12 @@ import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import {
   getDefaultEnvironment,
   StdioClientTransport,
-  // StdioClientTransport,
   StdioServerParameters,
 } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { McpServerState, runningMcpServers } from "../mcp/state";
 import { z } from "zod";
 import log from "electron-log";
+import { workspaceDb } from "../db/workspace-db";
 
 // Define Zod schemas for MCP JSON validation
 const McpServerConfigSchema = z
@@ -47,7 +47,6 @@ type McpJsonConfig = z.infer<typeof McpJsonConfigSchema>;
  */
 export const getMcpJsonFilePath = async (): Promise<string> => {
   try {
-    const { workspaceDb } = await import("@/lib/db/workspace-db");
     const currentWorkspace = await workspaceDb.getCurrentWorkspace();
     const workspaceDataDir = workspaceDb.getWorkspaceDataDir(
       currentWorkspace.id,

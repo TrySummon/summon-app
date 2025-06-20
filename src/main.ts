@@ -229,20 +229,6 @@ app.on("window-all-closed", async () => {
   app.quit();
 });
 
-app.on("before-quit", async (event) => {
-  // Prevent immediate quit to allow cleanup
-  event.preventDefault();
-
-  try {
-    await performAppShutdownCleanup();
-  } catch (error) {
-    log.error("Error during app shutdown cleanup:", error);
-  } finally {
-    // Now actually quit the app
-    app.exit(0);
-  }
-});
-
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
