@@ -3,9 +3,8 @@ import { WORKSPACE_CHANNELS } from "./workspace-channels";
 import { workspaceDb, Workspace } from "@/lib/db/workspace-db";
 import log from "electron-log/main";
 import { refreshMcpJsonWatchers, startAllMcpServers } from "@/main";
-import { stopMcpServer } from "@/lib/mcp";
-import { connectAllExternalMcps, stopExternalMcp } from "@/lib/external-mcp";
-import { runningMcpServers } from "@/lib/mcp/state";
+import { stopAllMcpServers } from "@/lib/mcp";
+import { connectAllExternalMcps } from "@/lib/external-mcp";
 import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "@/ipc/external-mcp/external-mcp-channels";
 
 export const registerWorkspaceListeners = () => {
@@ -43,24 +42,10 @@ export const registerWorkspaceListeners = () => {
         log.info(`Switching to workspace: ${workspaceId}`);
 
         // Stop all currently running MCP servers (both internal and external)
-        log.info("Stopping all running MCP servers...");
-
-        const serverIds = Object.keys(runningMcpServers);
-        for (const serverId of serverIds) {
-          const serverState = runningMcpServers[serverId];
-          try {
-            if (serverState.isExternal) {
-              log.info(`Stopping external MCP server: ${serverId}`);
-              await stopExternalMcp(serverId);
-              delete runningMcpServers[serverId];
-            } else {
-              log.info(`Stopping internal MCP server: ${serverId}`);
-              await stopMcpServer(serverId, true); // true = remove from state
-            }
-          } catch (error) {
-            log.error(`Failed to stop MCP server ${serverId}:`, error);
-          }
-        }
+        await stopAllMcpServers({
+          parallel: false, // Sequential for more controlled workspace switching
+          removeFromState: true,
+        });
 
         // Switch to the new workspace
         const result = await workspaceDb.setCurrentWorkspace(workspaceId);

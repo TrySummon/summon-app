@@ -31,6 +31,7 @@ import {
 import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
+import { stopExternalMcp } from "../external-mcp";
 
 /**
  * Creates a directory if it doesn't exist
@@ -429,7 +430,7 @@ export async function stopMcpServer(
   for (const apiId in serverState.mockProcesses) {
     try {
       const mockResult = serverState.mockProcesses[apiId];
-      if (mockResult.server && mockResult.server.getStatus().isRunning) {
+      if (mockResult.server) {
         log.info(`Stopping mock server for API ${apiId}`);
         await mockResult.server.stop();
       }
@@ -593,4 +594,68 @@ export async function downloadMcpZip(
  */
 export function showFileInFolder(filePath: string): void {
   shell.showItemInFolder(filePath);
+}
+
+/**
+ * Stop all running MCP servers (both internal and external)
+ *
+ * @param options Configuration options for stopping servers
+ * @returns Promise that resolves when all servers are stopped
+ */
+export async function stopAllMcpServers(
+  options: {
+    /** Whether to stop servers in parallel (faster) or sequential (more controlled) */
+    parallel?: boolean;
+    /** Whether to remove servers from the running state after stopping */
+    removeFromState?: boolean;
+  } = {},
+): Promise<void> {
+  const { parallel = true, removeFromState = true } = options;
+
+  try {
+    log.info("Stopping all MCP servers...");
+    const serverIds = Object.keys(runningMcpServers);
+
+    if (serverIds.length === 0) {
+      log.info("No MCP servers to stop");
+      return;
+    }
+
+    log.info(`Stopping ${serverIds.length} MCP servers...`);
+
+    const stopServer = async (serverId: string) => {
+      const serverState = runningMcpServers[serverId];
+      try {
+        if (serverState.isExternal) {
+          log.info(`Stopping external MCP server: ${serverId}`);
+          await stopExternalMcp(serverId);
+          if (removeFromState) {
+            delete runningMcpServers[serverId];
+          }
+        } else {
+          log.info(`Stopping internal MCP server: ${serverId}`);
+          await stopMcpServer(serverId, removeFromState);
+        }
+        log.info(`Successfully stopped MCP server: ${serverId}`);
+      } catch (error) {
+        log.error(`Failed to stop MCP server ${serverId}:`, error);
+      }
+    };
+
+    if (parallel) {
+      // Stop all servers in parallel for faster shutdown
+      const stopPromises = serverIds.map(stopServer);
+      await Promise.allSettled(stopPromises);
+    } else {
+      // Stop servers sequentially for more controlled shutdown
+      for (const serverId of serverIds) {
+        await stopServer(serverId);
+      }
+    }
+
+    log.info("All MCP servers stopped successfully");
+  } catch (error) {
+    log.error("Error stopping MCP servers:", error);
+    throw error;
+  }
 }

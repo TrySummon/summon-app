@@ -149,8 +149,9 @@ export default function BuildMcpPage() {
     if (!api) return;
 
     const newEndpoints = selectedEndpointIds.map((id) => {
-      const [method, path] = id.split("-");
-
+      const firstDashIndex = id.indexOf("-");
+      const method = id.substring(0, firstDashIndex);
+      const path = id.substring(firstDashIndex + 1);
       return {
         apiId,
         apiName,
@@ -250,7 +251,7 @@ export default function BuildMcpPage() {
                 </div>
               )}
 
-              <div className="mt-8 flex justify-center">
+              <div className="my-8 flex justify-center">
                 <Button
                   className="w-full"
                   disabled={selectedEndpoints.length === 0}

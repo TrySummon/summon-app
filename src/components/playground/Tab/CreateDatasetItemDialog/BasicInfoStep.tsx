@@ -7,13 +7,14 @@ import { usePlaygroundStore } from "../../../../stores/playgroundStore";
 import { generateBasicInfo } from "./prefillGenerator";
 import { AIGenerationSection } from "./AIGenerationSection";
 import { MessageSquare } from "lucide-react";
+import { UIMessage } from "ai";
 
 interface BasicInfoStepProps {
   name: string;
   setName: (name: string) => void;
   description: string;
   setDescription: (description: string) => void;
-  messages: import("ai").UIMessage[];
+  messages: UIMessage[];
   cutPosition: number;
 }
 
