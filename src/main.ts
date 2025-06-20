@@ -46,6 +46,7 @@ import log from "electron-log/main";
 
 import { updateElectronApp } from "update-electron-app";
 import { workspaceDb } from "./lib/db/workspace-db";
+import { stopAllMcpServers } from "@/lib/mcp";
 
 // These are defined by Vite during build
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
@@ -185,8 +186,61 @@ app.whenReady().then(async () => {
   }
 });
 
-app.on("window-all-closed", () => {
+// Clean up all MCP JSON file watchers
+async function cleanupMcpFileWatchers(): Promise<void> {
+  try {
+    log.info("Cleaning up MCP file watchers...");
+
+    for (const [workspaceId, watcher] of mcpFileWatchers.entries()) {
+      try {
+        watcher.close();
+        log.info(`Closed mcp.json watcher for workspace ${workspaceId}`);
+      } catch (error) {
+        log.error(`Error closing watcher for workspace ${workspaceId}:`, error);
+      }
+    }
+    mcpFileWatchers.clear();
+
+    log.info("All MCP file watchers cleaned up successfully");
+  } catch (error) {
+    log.error("Error cleaning up MCP file watchers:", error);
+  }
+}
+
+// Comprehensive app shutdown cleanup
+async function performAppShutdownCleanup(): Promise<void> {
+  try {
+    log.info("Performing app shutdown cleanup...");
+
+    // Stop all MCP servers in parallel for faster shutdown
+    await stopAllMcpServers({ parallel: true, removeFromState: true });
+
+    // Clean up file watchers
+    await cleanupMcpFileWatchers();
+
+    log.info("App shutdown cleanup completed successfully");
+  } catch (error) {
+    log.error("Error during app shutdown cleanup:", error);
+  }
+}
+
+app.on("window-all-closed", async () => {
+  await performAppShutdownCleanup();
   app.quit();
+});
+
+app.on("before-quit", async (event) => {
+  // Prevent immediate quit to allow cleanup
+  event.preventDefault();
+
+  try {
+    await performAppShutdownCleanup();
+  } catch (error) {
+    log.error("Error during app shutdown cleanup:", error);
+  } finally {
+    // Now actually quit the app
+    app.exit(0);
+  }
 });
 
 app.on("activate", () => {
