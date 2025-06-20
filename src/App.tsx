@@ -238,6 +238,37 @@ declare global {
         message?: string;
       }>;
     };
+    workspaces: {
+      listWorkspaces: () => Promise<
+        {
+          id: string;
+          name: string;
+          isDefault: boolean;
+          createdAt: string;
+          updatedAt: string;
+        }[]
+      >;
+      getCurrentWorkspace: () => Promise<{
+        id: string;
+        name: string;
+        isDefault: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+      setCurrentWorkspace: (workspaceId: string) => Promise<boolean>;
+      createWorkspace: (name: string) => Promise<{
+        id: string;
+        name: string;
+        isDefault: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+      updateWorkspace: (
+        id: string,
+        updates: Partial<{ name: string }>,
+      ) => Promise<boolean>;
+      deleteWorkspace: (id: string) => Promise<boolean>;
+    };
   }
 }
 

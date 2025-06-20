@@ -9,10 +9,11 @@ import {
   SidebarMenuButton,
   SidebarMenu,
 } from "@/components/ui/sidebar";
-import { Box, SquareTerminal, Settings, Database } from "lucide-react";
+import { SquareTerminal, Settings, Database } from "lucide-react";
 import { ApiNav } from "@/components/api-nav";
 import { McpNav } from "@/components/mcp-nav";
 import { ExternalMcpNav } from "@/components/external-mcp-nav";
+import { WorkspaceSelector } from "@/components/WorkspaceSelector";
 import { Link, useLocation } from "@tanstack/react-router";
 import FeedbackButton from "@/components/FeedbackButton";
 import packageJson from "../../package.json";
@@ -26,14 +27,7 @@ export function AppSidebar() {
         <SidebarHeader className="border-b">
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link to="/">
-                <SidebarMenuButton className="w-fit px-1.5">
-                  <Box />
-                  <span className="truncate font-mono font-semibold">
-                    Local Workspace
-                  </span>
-                </SidebarMenuButton>
-              </Link>
+              <WorkspaceSelector />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
