@@ -301,18 +301,12 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
     };
 
     // Process each API group
-    for (const apiGroup of Object.values(mcp.apiGroups)) {
+    for (const [apiId, apiGroup] of Object.entries(mcp.apiGroups)) {
       // Set base URL environment variable
       const baseUrlEnvVar = getEnvVarName(apiGroup.name, "BASE_URL");
 
       // Check if this API should be mocked
-      if (
-        apiGroup.useMockData &&
-        apiGroup.endpoints &&
-        apiGroup.endpoints.length > 0
-      ) {
-        // Get the API ID from the first endpoint
-        const apiId = apiGroup.endpoints[0].apiId;
+      if (apiGroup.useMockData && apiGroup.tools && apiGroup.tools.length > 0) {
         log.info(`Mocking API: ${apiGroup.name}`);
         // Start the mock server and get the URL
         const mockResult = await mockApi(apiId);

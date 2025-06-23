@@ -81,7 +81,7 @@ const DatasetDetailPage: React.FC = () => {
               } as React.CSSProperties
             }
           >
-            <SidebarInset className="container flex flex-1 flex-col gap-4 overflow-y-auto py-4">
+            <SidebarInset className="container flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto py-4">
               <DatasetItemsTable
                 items={dataset.items}
                 isLoading={false}

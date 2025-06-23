@@ -1,21 +1,27 @@
 import React, { useEffect } from "react";
 import { FormLabel } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { FormField } from "@/components/ui/form";
+import {
+  FormField,
+  FormItem,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { MockDataToggle, AuthForm } from "./AuthComponents";
 import { getAuthTypeFromSecuritySchemes } from "./AuthComponents";
 import { ServerUrlField } from "./ServerUrlField";
 import { TestConnectionButton } from "./TestConnectionButton";
 import { useApi } from "@/hooks/useApis";
-import { McpEndpoint } from "@/lib/db/mcp-db";
+import { McpToolDefinitionWithoutAuth } from "@/lib/mcp/types";
 import { McpForm } from ".";
 
 interface ApiGroupProps {
   api: {
     apiId: string;
     apiName: string;
-    endpoints: McpEndpoint[];
+    endpoints: McpToolDefinitionWithoutAuth[];
   };
   form: UseFormReturn<McpForm>;
   isLast: boolean;
@@ -89,9 +95,27 @@ export function ApiGroupSection({ api, form, isLast }: ApiGroupProps) {
 
   return (
     <div className="space-y-4">
-      <FormLabel className="text-sm font-medium">
-        {api.apiName} Authorization
+      <FormLabel className="text-lg font-semibold">
+        Configure {api.apiName} API
       </FormLabel>
+
+      {/* Tool Prefix Field */}
+      <FormField
+        control={form.control}
+        name={`configuredAuth.${api.apiId}.toolPrefix`}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-xs font-medium">Tool Prefix</FormLabel>
+            <FormControl>
+              <Input
+                placeholder={`e.g., ${api.apiName.toLowerCase()}_`}
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       <MockDataToggle
         form={form}

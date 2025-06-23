@@ -6,21 +6,19 @@ import { RouterProvider } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { McpToolDefinition } from "@/lib/mcp/types";
 import { OpenAPIV3 } from "openapi-types";
-import { McpData } from "@/lib/db/mcp-db";
+import type { McpData, McpSubmitData } from "@/lib/db/mcp-db";
 import { Tool } from "@modelcontextprotocol/sdk/types";
 import { McpServerState } from "@/lib/mcp/state";
 import {
   AIProviderCredential,
   PersistedAIProviderCredential,
 } from "./components/ai-providers/types";
-import {
-  McpAuth,
-  McpSubmitData,
-} from "./components/mcp-builder/start-mcp-dialog";
+import { McpAuth } from "./components/mcp-builder/api-config";
 import { initPostHog } from "@/lib/posthog";
 import { initSentryRenderer } from "@/lib/sentry-renderer";
 import { SentryErrorBoundary } from "./components/SentryErrorBoundary";
 import { Dataset, DatasetItem } from "@/types/dataset";
+import type { UserInfo } from "./ipc/auth/auth-listeners";
 
 export default function App() {
   useEffect(() => {
@@ -88,6 +86,20 @@ declare global {
         baseUrl: string,
         authData: McpAuth,
       ) => Promise<{ status: number; success: boolean; message?: string }>;
+      // OAuth methods
+      authenticate: () => Promise<{
+        success: boolean;
+        token?: string;
+        user?: UserInfo;
+        message?: string;
+      }>;
+      getUser: () => Promise<{
+        success: boolean;
+        user?: UserInfo;
+        token?: string;
+        message?: string;
+      }>;
+      logout: () => Promise<{ success: boolean }>;
     };
     aiProviders: {
       getCredentials: () => Promise<PersistedAIProviderCredential[]>;

@@ -4,7 +4,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
-  SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -414,7 +413,6 @@ export const DatasetItemDetailsSidebar: React.FC<
             </div>
           )}
       </SidebarContent>
-      <SidebarRail />
     </Sidebar>
   );
 };

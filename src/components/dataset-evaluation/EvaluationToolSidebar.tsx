@@ -71,7 +71,7 @@ export default function EvaluationToolSidebar({
             );
           })}
       </SidebarContent>
-      <SidebarRail />
+      <SidebarRail direction="left" />
     </Sidebar>
   );
 }

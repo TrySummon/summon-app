@@ -7,35 +7,80 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 import { extractToolParameters } from "./utils";
 import { JsonSchema } from "../json-schema";
+import { AddEndpointsButton } from "./AddEndpointsButton";
+import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 
 interface ToolsListProps {
   tools: Tool[];
+  onDeleteTool?: (toolName: string) => void;
+  onAddEndpoints?: (apiId: string, tools: SelectedEndpoint[]) => void;
 }
 
-export const ToolsList: React.FC<ToolsListProps> = ({ tools }) => {
+export const ToolsList: React.FC<ToolsListProps> = ({
+  tools,
+  onDeleteTool,
+  onAddEndpoints,
+}) => {
   if (tools.length === 0) {
-    return null;
+    return (
+      <div className="w-full py-6 text-center">
+        <p className="mb-1 text-sm font-medium">This MCP has no tools.</p>
+        {onAddEndpoints ? (
+          <>
+            <p className="text-muted-foreground mb-4 text-xs">
+              Create tools with our AI agent. You can also add tools manually.
+            </p>
+            <AddEndpointsButton onAddEndpoints={onAddEndpoints} />
+          </>
+        ) : null}
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="mb-4">
-        <h2 className="text-xl font-bold">Available MCP Tools</h2>
-        <p className="text-muted-foreground text-sm">
-          Expand a tool to view its details and parameters
-        </p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">MCP Tools</h2>
       </div>
+
+      {onAddEndpoints ? (
+        <AddEndpointsButton onAddEndpoints={onAddEndpoints} />
+      ) : null}
 
       <Accordion type="single" collapsible className="w-full">
         {tools.map((tool, index) => (
           <AccordionItem key={tool.name} value={`tool-${index}`}>
-            <AccordionTrigger className="hover:no-underline">
-              <div className="flex w-full flex-col items-start gap-1 text-left">
-                <span className="font-medium">{tool.name}</span>
+            <AccordionTrigger className="group hover:no-underline">
+              <div className="flex flex-col items-start gap-1 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{tool.name}</span>
+                  <div className="flex items-center gap-2">
+                    {onDeleteTool && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const confirmed = window.confirm(
+                            `Are you sure you want to delete the tool "${tool.name}"? This action cannot be undone.`,
+                          );
+                          if (confirmed) {
+                            onDeleteTool(tool.name);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
                 {tool.description && (
-                  <p className="text-muted-foreground text-sm font-normal">
+                  <p className="text-muted-foreground line-clamp-2 text-sm font-normal">
                     {tool.description}
                   </p>
                 )}

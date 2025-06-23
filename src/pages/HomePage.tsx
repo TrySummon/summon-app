@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ImportApiDialog } from "@/components/ImportApiDialog";
+import { CreateMcpDialog } from "@/components/CreateMcpDialog";
 import IconLogo from "@/components/IconLogo";
 import { Upload, Wrench, Plug, SquareTerminal, StarIcon } from "lucide-react";
 import {
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 
 export default function HomePage() {
+  const [createMcpOpen, setCreateMcpOpen] = useState(false);
   const GetStartedItem = ({
     icon,
     title,
@@ -98,11 +100,13 @@ export default function HomePage() {
               title="Build an MCP Server"
               description="Create a new Model Context Protocol server by selecting endpoints from your imported APIs."
               actionButton={
-                <Link to="/build-mcp" search={{ edit: undefined }}>
-                  <Button variant="outline" size="sm">
-                    Build Server
-                  </Button>
-                </Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCreateMcpOpen(true)}
+                >
+                  Build Server
+                </Button>
               }
             />
             <GetStartedItem
@@ -132,6 +136,8 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      <CreateMcpDialog open={createMcpOpen} onOpenChange={setCreateMcpOpen} />
     </div>
   );
 }

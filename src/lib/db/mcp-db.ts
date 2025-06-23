@@ -1,29 +1,20 @@
 import { safeStorage, app } from "electron";
 import path from "path";
 import fs from "fs/promises";
-import {
-  McpAuth,
-  McpSubmitData,
-} from "@/components/mcp-builder/start-mcp-dialog";
+import { McpAuth } from "@/components/mcp-builder/api-config";
 import { generateMcpId } from "./id-generator";
 import log from "electron-log/main";
 import { workspaceDb } from "./workspace-db";
-
-// Define endpoint data structure
-export interface McpEndpoint {
-  apiId: string;
-  apiName: string;
-  method: string;
-  path: string;
-}
+import { McpToolDefinitionWithoutAuth } from "../mcp/types";
 
 // Define the MCP data structure that will be stored in files
 export interface McpApiGroup {
   name: string;
   serverUrl?: string;
+  toolPrefix?: string;
   useMockData?: boolean;
   auth: McpAuth;
-  endpoints?: McpEndpoint[];
+  tools?: McpToolDefinitionWithoutAuth[];
 }
 
 export interface McpData {
@@ -34,6 +25,8 @@ export interface McpData {
   createdAt: string;
   updatedAt: string;
 }
+
+export type McpSubmitData = Omit<McpData, "id" | "createdAt" | "updatedAt">;
 
 // Get workspace-specific directories
 const getMcpDataDir = async () => {

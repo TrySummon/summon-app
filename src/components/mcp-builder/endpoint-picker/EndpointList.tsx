@@ -17,6 +17,7 @@ interface Endpoint {
 interface EndpointListProps {
   endpoints: Endpoint[];
   selectedEndpoints: string[];
+  alreadySelectedEndpoints?: string[];
   onToggleEndpoint: (endpointId: string) => void;
   onToggleAllEndpoints: (checked: boolean) => void;
   title: string;
@@ -31,6 +32,7 @@ interface EndpointListProps {
 export function EndpointList({
   endpoints,
   selectedEndpoints,
+  alreadySelectedEndpoints = [],
   onToggleEndpoint,
   onToggleAllEndpoints,
   title,
@@ -41,9 +43,15 @@ export function EndpointList({
   searchQuery = "",
   highlightText,
 }: EndpointListProps) {
+  // Only consider endpoints that are not already selected for the "all selected" calculation
+  const availableEndpoints = endpoints.filter(
+    (endpoint) =>
+      !alreadySelectedEndpoints.includes(`${endpoint.method}-${endpoint.path}`),
+  );
+
   const allSelected =
-    endpoints.length > 0 &&
-    endpoints.every((endpoint) =>
+    availableEndpoints.length > 0 &&
+    availableEndpoints.every((endpoint) =>
       selectedEndpoints.includes(`${endpoint.method}-${endpoint.path}`),
     );
 
@@ -68,6 +76,7 @@ export function EndpointList({
           <Checkbox
             checked={allSelected}
             onCheckedChange={onToggleAllEndpoints}
+            disabled={availableEndpoints.length === 0}
           />
           <div>
             <h3 className="font-medium">{title}</h3>
@@ -81,27 +90,38 @@ export function EndpointList({
         {endpoints.map((endpoint) => {
           const endpointId = `${endpoint.method}-${endpoint.path}`;
           const isSelected = selectedEndpoints.includes(endpointId);
+          const isAlreadySelected =
+            alreadySelectedEndpoints.includes(endpointId);
 
           return (
             <div
               key={endpointId}
               className={cn(
-                "cursor-pointer border-b px-4 py-3 transition-colors",
-                "hover:bg-muted/5",
+                "border-b px-4 py-3 transition-colors",
+                !isAlreadySelected && "hover:bg-muted/5 cursor-pointer",
                 isSelected && "bg-green-50 dark:bg-green-900/10",
+                isAlreadySelected && "bg-muted/20 opacity-60",
               )}
-              onClick={() => onToggleEndpoint(endpointId)}
+              onClick={() => !isAlreadySelected && onToggleEndpoint(endpointId)}
             >
               <div className="flex items-start gap-3">
                 <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={() => onToggleEndpoint(endpointId)}
+                  checked={isSelected || isAlreadySelected}
+                  onCheckedChange={() =>
+                    !isAlreadySelected && onToggleEndpoint(endpointId)
+                  }
                   className="pointer-events-none mt-0.5"
+                  disabled={isAlreadySelected}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-2">
                     <MethodBadge method={endpoint.method} size="md" />
-                    <span className="font-mono text-sm">
+                    <span
+                      className={cn(
+                        "font-mono text-sm",
+                        isAlreadySelected && "text-muted-foreground",
+                      )}
+                    >
                       {isSearchMode && highlightText
                         ? highlightText(endpoint.path, searchQuery)
                         : endpoint.path}
@@ -115,6 +135,11 @@ export function EndpointList({
                             : endpoint.folder}
                         </span>
                       </div>
+                    )}
+                    {isAlreadySelected && (
+                      <span className="text-muted-foreground ml-2 text-xs">
+                        Already added
+                      </span>
                     )}
                     {apiId && (
                       <Button
@@ -135,7 +160,14 @@ export function EndpointList({
                   </div>
 
                   {(endpoint.summary || endpoint.description) && (
-                    <div className="text-muted-foreground text-sm">
+                    <div
+                      className={cn(
+                        "text-sm",
+                        isAlreadySelected
+                          ? "text-muted-foreground/70"
+                          : "text-muted-foreground",
+                      )}
+                    >
                       {isSearchMode && highlightText ? (
                         <>
                           {endpoint.summary &&

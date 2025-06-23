@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { McpData } from "@/lib/db/mcp-db";
-import { McpSubmitData } from "@/components/mcp-builder/start-mcp-dialog";
+import { McpData, McpSubmitData } from "@/lib/db/mcp-db";
 import {
   createMcp,
   deleteMcp,

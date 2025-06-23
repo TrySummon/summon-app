@@ -29,6 +29,9 @@ export default defineConfig(({ mode }) => {
       ),
       "process.env.DISABLE_ANALYTICS": JSON.stringify(env.DISABLE_ANALYTICS),
       "process.env.SENTRY_DSN": JSON.stringify(env.SENTRY_DSN),
+      "process.env.VITE_PUBLIC_SUMMON_HOST": JSON.stringify(
+        env.VITE_PUBLIC_SUMMON_HOST,
+      ),
     },
   };
 });

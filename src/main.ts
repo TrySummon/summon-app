@@ -1,11 +1,25 @@
 import { initSentry } from "./lib/sentry";
 initSentry();
 
-import { app, BrowserWindow, Menu, MenuItem, shell } from "electron";
+import { app, BrowserWindow, Menu, MenuItem, shell, protocol } from "electron";
 import started from "electron-squirrel-startup";
 if (started) {
   app.quit();
 }
+
+// Register custom protocol schemes before app is ready
+const OAUTH_PROTOCOL = "summon";
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: OAUTH_PROTOCOL,
+    privileges: {
+      standard: true,
+      secure: true,
+      allowServiceWorkers: true,
+      supportFetchAPI: true,
+    },
+  },
+]);
 
 // Handle single instance lock to prevent crashes when multiple instances are opened
 const gotTheLock = app.requestSingleInstanceLock();
@@ -30,6 +44,7 @@ if (!gotTheLock) {
 
 import fixPath from "fix-path";
 import registerListeners from "./ipc/listeners-register";
+import { handleOAuthProtocolCallback } from "./ipc/auth/auth-listeners";
 import path from "path";
 import fs from "fs";
 import fsPromises from "fs/promises";
@@ -234,6 +249,54 @@ app.on("activate", () => {
     createWindow();
   }
 });
+
+// Handle protocol URLs when app is already running
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  if (url.startsWith(`${OAUTH_PROTOCOL}://`)) {
+    log.info(`Protocol URL received: ${url}`);
+
+    // Handle OAuth callback
+    handleOAuthProtocolCallback(url);
+
+    // Focus the main window if it exists
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
+    }
+  }
+});
+
+// Handle protocol URLs when app is launched by protocol
+app.on("second-instance", (event, commandLine) => {
+  // Check if app was launched with a protocol URL
+  const protocolArg = commandLine.find((arg) =>
+    arg.startsWith(`${OAUTH_PROTOCOL}://`),
+  );
+  if (protocolArg) {
+    log.info(`Protocol URL received via second-instance: ${protocolArg}`);
+
+    // Handle OAuth callback
+    handleOAuthProtocolCallback(protocolArg);
+  }
+
+  // Focus the main window
+  const mainWindow = BrowserWindow.getAllWindows()[0];
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.focus();
+  }
+});
+
+// Set app as default protocol client
+if (!app.isDefaultProtocolClient(OAUTH_PROTOCOL)) {
+  app.setAsDefaultProtocolClient(OAUTH_PROTOCOL);
+}
 
 // Ensure mcp.json files exist for all workspaces
 async function ensureMcpJsonFiles(): Promise<void> {

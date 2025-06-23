@@ -2,7 +2,6 @@
  * Core type definitions for the openapi-to-mcp generator
  */
 import type { JSONSchema7 } from "json-schema";
-import type { OpenAPIV3 } from "openapi-types";
 
 /**
  * Transport types supported by the MCP server
@@ -26,14 +25,11 @@ export interface McpToolDefinition {
   tags: string[];
   /** URL path template with parameter placeholders */
   pathTemplate: string;
-  /** OpenAPI parameter objects for this operation */
-  parameters: OpenAPIV3.ParameterObject[];
   /** Parameter names and locations for execution */
   executionParameters: { name: string; in: string }[];
   /** Content type for request body, if applicable */
   requestBodyContentType?: string;
   /** Original operation ID from the OpenAPI spec */
-  operationId: string;
   securityScheme: {
     baseUrlEnvVar: string;
     schemas: Array<
@@ -51,7 +47,17 @@ export interface McpToolDefinition {
         }
     >;
   };
+  /** Improved input schema for the tool */
+  improvedInputSchema?: JSONSchema7 | boolean;
+  improvedExecutionParameters?: { name: string; in: string }[];
+  improvedName?: string;
+  improvedDescription?: string;
 }
+
+export type McpToolDefinitionWithoutAuth = Omit<
+  McpToolDefinition,
+  "securityScheme"
+>;
 
 /**
  * Helper type for JSON objects

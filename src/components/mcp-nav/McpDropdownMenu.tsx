@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Play,
-  Square,
-  RefreshCw,
-} from "lucide-react";
+import { MoreHorizontal, Trash2, Play, Square, RefreshCw } from "lucide-react";
 import { SidebarMenuAction } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -15,7 +8,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "@tanstack/react-router";
 import { McpServerStatus } from "@/lib/mcp/state";
 
 interface McpDropdownMenuProps {
@@ -46,13 +38,6 @@ export function McpDropdownMenu({
         </SidebarMenuAction>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-38" side="right" align="start">
-        <Link to="/build-mcp" search={{ edit: mcpId }}>
-          <DropdownMenuItem className="text-xs">
-            <Edit className="text-muted-foreground mr-2 !size-3" />
-            <span>Edit MCP</span>
-          </DropdownMenuItem>
-        </Link>
-
         {/* Server control actions */}
         {status && onStart && onStop && onRestart && (
           <>

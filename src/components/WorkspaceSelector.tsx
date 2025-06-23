@@ -167,7 +167,7 @@ export function WorkspaceSelector() {
             >
               <div className="flex min-w-0 items-center gap-2.5">
                 <FolderOpen className="text-muted-foreground h-4 w-4 flex-shrink-0" />
-                <span className="truncate font-medium">{workspace.name}</span>
+                <span className="truncate">{workspace.name}</span>
               </div>
               {currentWorkspace?.id === workspace.id && (
                 <Check className="text-primary h-4 w-4" />
@@ -187,7 +187,7 @@ export function WorkspaceSelector() {
                 className="cursor-pointer px-3 py-2.5"
               >
                 <Plus className="mr-2.5 h-4 w-4" />
-                <span className="font-medium">Create Workspace</span>
+                <span>Create Workspace</span>
               </DropdownMenuItem>
             </DialogTrigger>
           </Dialog>
@@ -201,7 +201,7 @@ export function WorkspaceSelector() {
                 className="cursor-pointer px-3 py-2.5"
               >
                 <Settings className="mr-2.5 h-4 w-4" />
-                <span className="font-medium">Rename Current</span>
+                <span>Rename Current</span>
               </DropdownMenuItem>
 
               {workspaces.length > 1 && (
@@ -212,7 +212,7 @@ export function WorkspaceSelector() {
                   className="text-destructive focus:text-destructive cursor-pointer px-3 py-2.5"
                 >
                   <Trash2 className="mr-2.5 h-4 w-4" />
-                  <span className="font-medium">Delete Current</span>
+                  <span>Delete Current</span>
                 </DropdownMenuItem>
               )}
             </>

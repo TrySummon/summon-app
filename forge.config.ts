@@ -18,6 +18,12 @@ const config: ForgeConfig = {
     appCategoryType: "public.app-category.developer-tools",
     extraResource: ["app-update.yml"],
     icon: "images/icon",
+    protocols: [
+      {
+        name: "Summon OAuth",
+        schemes: ["summon"],
+      },
+    ],
     osxSign: {},
     osxNotarize: {
       appleApiKey: process.env.APPLE_API_KEY_PATH!,

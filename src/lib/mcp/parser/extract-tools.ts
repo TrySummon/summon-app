@@ -4,9 +4,13 @@
 import type { JSONSchema7, JSONSchema7TypeName } from "json-schema";
 import { OpenAPIV3 } from "openapi-types";
 
-import { McpToolDefinition } from "../types/index";
-import { McpEndpoint } from "@/lib/db/mcp-db";
+import { McpToolDefinitionWithoutAuth } from "../types/index";
 import { generateOperationId, kebabCase } from "../generator/utils";
+
+export interface SelectedEndpoint {
+  path: string;
+  method: string;
+}
 
 /**
  * Generates input schema and extracts parameter details from an operation
@@ -174,10 +178,6 @@ function mapOpenApiSchemaToJsonSchema(
   return jsonSchema;
 }
 
-interface DereferencedMcpEndpoint extends McpEndpoint {
-  operation: OpenAPIV3.OperationObject;
-}
-
 /**
  * Extracts tool definitions from an array of endpoints
  *
@@ -186,35 +186,40 @@ interface DereferencedMcpEndpoint extends McpEndpoint {
  * @returns Array of MCP tool definitions
  */
 export function convertEndpointsToTools(
-  endpoints: DereferencedMcpEndpoint[],
+  api: OpenAPIV3.Document,
+  endpoints: SelectedEndpoint[],
   options?: { ignoreDeprecated?: boolean; ignoreOptional?: boolean },
 ) {
-  const tools: Omit<McpToolDefinition, "securityScheme">[] = [];
-  const usedNames = new Set<string>();
+  // Security schemes are added at generation time
+  const tools: McpToolDefinitionWithoutAuth[] = [];
 
   for (const endpoint of endpoints) {
-    if (!endpoint.operation) continue;
-    const operation = endpoint.operation;
+    const path = api.paths[endpoint.path];
+    const operation = path?.[endpoint.method as OpenAPIV3.HttpMethods] as
+      | OpenAPIV3.OperationObject
+      | undefined;
+    if (!operation) {
+      console.warn(`Operation not found for endpoint ${endpoint.path}`);
+      continue;
+    }
+    operation.parameters = operation.parameters || [];
+    if (path?.parameters) {
+      operation.parameters.push(...path.parameters);
+    }
+
     if (options?.ignoreDeprecated && operation.deprecated) continue;
 
     // Generate a unique name for the tool
-    let baseName =
+    let name =
       operation.operationId ||
       generateOperationId(endpoint.method, endpoint.path);
-    if (!baseName) continue;
+    if (!name) continue;
 
     // Sanitize the name to be MCP-compatible (only a-z, 0-9, _, -)
-    baseName = baseName
+    name = name
       .replace(/\./g, "_")
       .replace(/[^a-z0-9_-]/gi, "_")
       .toLowerCase();
-
-    let finalToolName = baseName;
-    let counter = 1;
-    while (usedNames.has(finalToolName)) {
-      finalToolName = `${baseName}_${counter++}`;
-    }
-    usedNames.add(finalToolName);
 
     // Get or create a description
     const description =
@@ -234,16 +239,14 @@ export function convertEndpointsToTools(
 
     // Create the tool definition
     tools.push({
-      name: finalToolName,
+      name,
       description,
       tags: operation.tags?.map((tag: string) => kebabCase(tag)) || [],
       inputSchema,
       method: endpoint.method,
       pathTemplate: endpoint.path,
-      parameters,
       executionParameters,
       requestBodyContentType,
-      operationId: baseName,
     });
   }
 

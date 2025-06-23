@@ -18,7 +18,7 @@ import {
   SHOW_FILE_IN_FOLDER_CHANNEL,
 } from "./mcp-channels";
 import { callMcpTool, getMcpTools } from "./mcp-tools";
-import { mcpDb } from "@/lib/db/mcp-db";
+import { mcpDb, McpSubmitData } from "@/lib/db/mcp-db";
 import {
   deleteMcpImpl,
   generateMcpImpl,
@@ -30,7 +30,6 @@ import {
   downloadMcpZip,
   showFileInFolder,
 } from "@/lib/mcp";
-import { McpSubmitData } from "@/components/mcp-builder/start-mcp-dialog";
 import { McpServerState } from "@/lib/mcp/state";
 import log from "electron-log/main";
 

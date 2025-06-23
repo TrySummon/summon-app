@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   SidebarGroup,
   SidebarMenu,
@@ -10,14 +10,19 @@ import { useMcps } from "@/hooks/useMcps";
 import { McpHeader } from "@/components/mcp-nav/McpHeader";
 import { McpItem } from "@/components/mcp-nav/McpItem";
 import { Loader } from "@/components/Loader";
-import { Link } from "@tanstack/react-router";
+import { CreateMcpDialog } from "@/components/CreateMcpDialog";
 
 export function McpNav() {
   const { mcps, isLoading, error, isError, refetch } = useMcps();
+  const [createMcpOpen, setCreateMcpOpen] = useState(false);
 
   return (
     <SidebarGroup>
-      <McpHeader isLoading={isLoading} refetch={refetch} />
+      <McpHeader
+        isLoading={isLoading}
+        refetch={refetch}
+        onCreateMcp={() => setCreateMcpOpen(true)}
+      />
       <SidebarMenu>
         {isLoading ? (
           <SidebarMenuItem>
@@ -34,11 +39,12 @@ export function McpNav() {
           </SidebarMenuItem>
         ) : mcps.length === 0 ? (
           <SidebarMenuItem>
-            <Link to="/build-mcp" search={{ edit: undefined }}>
-              <SidebarMenuButton className="text-xs">
-                <Plus className="size-3" /> Create MCP
-              </SidebarMenuButton>
-            </Link>
+            <SidebarMenuButton
+              className="text-xs"
+              onClick={() => setCreateMcpOpen(true)}
+            >
+              <Plus className="size-3" /> Create MCP
+            </SidebarMenuButton>
           </SidebarMenuItem>
         ) : (
           <>
@@ -48,6 +54,8 @@ export function McpNav() {
           </>
         )}
       </SidebarMenu>
+
+      <CreateMcpDialog open={createMcpOpen} onOpenChange={setCreateMcpOpen} />
     </SidebarGroup>
   );
 }

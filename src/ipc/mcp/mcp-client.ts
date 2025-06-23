@@ -13,7 +13,7 @@ export const createMcp = async (
       0,
     ),
     toolCount: Object.values(mcpData.apiGroups ?? []).reduce(
-      (acc, apiGroup) => acc + (apiGroup.endpoints?.length ?? 0),
+      (acc, apiGroup) => acc + (apiGroup.tools?.length ?? 0),
       0,
     ),
   });
@@ -39,7 +39,7 @@ export const updateMcp = async (
       0,
     ),
     toolCount: Object.values(mcpData.apiGroups ?? []).reduce(
-      (acc, apiGroup) => acc + (apiGroup.endpoints?.length ?? 0),
+      (acc, apiGroup) => acc + (apiGroup.tools?.length ?? 0),
       0,
     ),
   });

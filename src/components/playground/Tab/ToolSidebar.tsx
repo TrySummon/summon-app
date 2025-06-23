@@ -66,7 +66,7 @@ export default function ToolSidebar() {
             );
           })}
       </SidebarContent>
-      <SidebarRail />
+      <SidebarRail direction="left" />
     </Sidebar>
   );
 }
