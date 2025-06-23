@@ -553,6 +553,7 @@ export async function downloadMcpZip(
       // Add files to archive, excluding node_modules and other unnecessary files
       archive.glob("**/*", {
         cwd: implPath,
+        dot: true, // Include dotfiles (files starting with .)
         ignore: [
           "node_modules/**",
           ".git/**",

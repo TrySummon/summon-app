@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Tool } from "@modelcontextprotocol/sdk/types";
 import { ServerStatusSection } from "./ServerStatusSection";
 import { ToolsList } from "./ToolsList";
@@ -37,22 +37,37 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
       ? state.transport.url
       : undefined;
 
-  useEffect(() => {
-    const fetchMcpTools = async () => {
-      if (state?.status === "running") {
-        try {
-          const response = await getMcpTools(mcpId);
-          if (response.success && response.data) {
-            setMcpTools(response.data);
-          }
-        } catch (err) {
-          console.error("Failed to fetch MCP tools:", err);
+  const fetchMcpTools = useCallback(async () => {
+    if (state?.status === "running") {
+      try {
+        const response = await getMcpTools(mcpId);
+        if (response.success && response.data) {
+          setMcpTools(response.data);
+        } else {
+          console.error("Failed to fetch MCP tools:", response.message);
+          setMcpTools([]);
         }
+      } catch (err) {
+        console.error("Failed to fetch MCP tools:", err);
+        setMcpTools([]);
       }
-    };
-
-    fetchMcpTools();
+    } else {
+      setMcpTools([]);
+    }
   }, [mcpId, state?.status, apiGroups]);
+
+  // Enhanced refresh function that refreshes both status and tools
+  const handleRefreshStatus = useCallback(async () => {
+    refreshStatus();
+    // Also refresh tools after a short delay to ensure status is updated first
+    setTimeout(() => {
+      fetchMcpTools();
+    }, 100);
+  }, [refreshStatus, fetchMcpTools]);
+
+  useEffect(() => {
+    fetchMcpTools();
+  }, [fetchMcpTools]);
 
   if (isLoading) return null;
 
@@ -63,7 +78,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
         url={url || undefined}
         error={error}
         serverName={mcpName}
-        refreshStatus={refreshStatus}
+        refreshStatus={handleRefreshStatus}
         mcpId={mcpId}
         isExternal={isExternal}
         onEditName={onEditName}
