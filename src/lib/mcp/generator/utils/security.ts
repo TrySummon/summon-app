@@ -296,12 +296,7 @@ async function executeApiTool(toolName: string, definition: McpToolDefinition, a
       throw new Error(\`Failed to resolve path parameters: \${url}\`);
     }
 
-    // Add query parameters to URL
-    const queryString = Object.keys(queryParams).length > 0 
-        ? '?' + Object.entries(queryParams).map(([k, v]) => \`\${encodeURIComponent(k)}=\${encodeURIComponent(v)}\`).join('&')
-        : '';
-    
-    const finalUrl = url + queryString;
+    const finalUrl = url;
 
     // Prepare request body
     let body: string | undefined;

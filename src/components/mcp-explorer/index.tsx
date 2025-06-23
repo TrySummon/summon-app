@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Tool } from "@modelcontextprotocol/sdk/types";
 import { ServerStatusSection } from "./ServerStatusSection";
 import { ToolsList } from "./ToolsList";
@@ -29,22 +29,37 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
   const [mcpTools, setMcpTools] = useState<Tool[]>([]);
   const url = transport && "url" in transport ? transport.url : undefined;
 
-  useEffect(() => {
-    const fetchMcpTools = async () => {
-      if (status === "running") {
-        try {
-          const response = await getMcpTools(mcpId);
-          if (response.success && response.data) {
-            setMcpTools(response.data);
-          }
-        } catch (err) {
-          console.error("Failed to fetch MCP tools:", err);
+  const fetchMcpTools = useCallback(async () => {
+    if (status === "running") {
+      try {
+        const response = await getMcpTools(mcpId);
+        if (response.success && response.data) {
+          setMcpTools(response.data);
+        } else {
+          console.error("Failed to fetch MCP tools:", response.message);
+          setMcpTools([]);
         }
+      } catch (err) {
+        console.error("Failed to fetch MCP tools:", err);
+        setMcpTools([]);
       }
-    };
-
-    fetchMcpTools();
+    } else {
+      setMcpTools([]);
+    }
   }, [mcpId, status]);
+
+  // Enhanced refresh function that refreshes both status and tools
+  const handleRefreshStatus = useCallback(async () => {
+    refreshStatus();
+    // Also refresh tools after a short delay to ensure status is updated first
+    setTimeout(() => {
+      fetchMcpTools();
+    }, 100);
+  }, [refreshStatus, fetchMcpTools]);
+
+  useEffect(() => {
+    fetchMcpTools();
+  }, [fetchMcpTools]);
 
   if (isLoading) return null;
 
@@ -56,7 +71,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
         error={error}
         serverName={mcpName}
         transport={transport?.type}
-        refreshStatus={refreshStatus}
+        refreshStatus={handleRefreshStatus}
         mcpId={mcpId}
         isExternal={isExternal}
       />
