@@ -125,18 +125,7 @@ export async function executeApiTool(
       throw new Error(`Failed to resolve path parameters: ${url}`);
     }
 
-    // Add query parameters to URL
-    const queryString =
-      Object.keys(queryParams).length > 0
-        ? "?" +
-          Object.entries(queryParams)
-            .map(
-              ([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`,
-            )
-            .join("&")
-        : "";
-
-    const finalUrl = url + queryString;
+    const finalUrl = url;
 
     // Prepare request body
     let body: string | undefined;
@@ -166,6 +155,7 @@ export async function executeApiTool(
         | "DELETE"
         | "PATCH",
       url: finalUrl,
+      params: queryParams,
       headers: headers,
       ...(body !== undefined && { data: body }),
     };
