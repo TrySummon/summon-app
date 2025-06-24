@@ -13,11 +13,18 @@ import {
   RESTART_MCP_SERVER_CHANNEL,
   GET_MCP_TOOLS_CHANNEL,
   CALL_MCP_TOOL_CHANNEL,
+  GET_MCP_PROMPTS_CHANNEL,
+  GET_MCP_RESOURCES_CHANNEL,
   OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL,
   DOWNLOAD_MCP_ZIP_CHANNEL,
   SHOW_FILE_IN_FOLDER_CHANNEL,
 } from "./mcp-channels";
-import { callMcpTool, getMcpTools } from "./mcp-tools";
+import {
+  callMcpTool,
+  getMcpTools,
+  getMcpPrompts,
+  getMcpResources,
+} from "./mcp-capabilities";
 import { mcpDb } from "@/lib/db/mcp-db";
 import {
   deleteMcpImpl,
@@ -323,6 +330,42 @@ export function registerMcpListeners() {
       };
     } catch (error) {
       log.error(`Error getting MCP tools:`, error);
+      return {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  });
+
+  // Get MCP prompts
+  ipcMain.handle(GET_MCP_PROMPTS_CHANNEL, async (_, mcpId: string) => {
+    try {
+      const prompts = await getMcpPrompts(mcpId);
+      return {
+        success: true,
+        data: prompts,
+      };
+    } catch (error) {
+      log.error(`Error getting MCP prompts:`, error);
+      return {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  });
+
+  // Get MCP resources
+  ipcMain.handle(GET_MCP_RESOURCES_CHANNEL, async (_, mcpId: string) => {
+    try {
+      const resources = await getMcpResources(mcpId);
+      return {
+        success: true,
+        data: resources,
+      };
+    } catch (error) {
+      log.error(`Error getting MCP resources:`, error);
       return {
         success: false,
         message:

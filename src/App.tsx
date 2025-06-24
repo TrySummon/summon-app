@@ -146,6 +146,12 @@ declare global {
       getMcpTools: (
         mcpId: string,
       ) => Promise<{ success: boolean; data?: Tool[]; message?: string }>;
+      getMcpPrompts: (
+        mcpId: string,
+      ) => Promise<{ success: boolean; data?: unknown[]; message?: string }>;
+      getMcpResources: (
+        mcpId: string,
+      ) => Promise<{ success: boolean; data?: unknown[]; message?: string }>;
       callMcpTool: (
         mcpId: string,
         name: string,

@@ -12,6 +12,8 @@ import {
   RESTART_MCP_SERVER_CHANNEL,
   GET_MCP_TOOLS_CHANNEL,
   CALL_MCP_TOOL_CHANNEL,
+  GET_MCP_PROMPTS_CHANNEL,
+  GET_MCP_RESOURCES_CHANNEL,
   OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL,
   DOWNLOAD_MCP_ZIP_CHANNEL,
   SHOW_FILE_IN_FOLDER_CHANNEL,
@@ -68,7 +70,15 @@ export function exposeMcpContext() {
       return ipcRenderer.invoke(GET_MCP_TOOLS_CHANNEL, mcpId);
     },
 
-    callMcpTool: async (
+    getMcpPrompts: (mcpId: string) => {
+      return ipcRenderer.invoke(GET_MCP_PROMPTS_CHANNEL, mcpId);
+    },
+
+    getMcpResources: (mcpId: string) => {
+      return ipcRenderer.invoke(GET_MCP_RESOURCES_CHANNEL, mcpId);
+    },
+
+    callMcpTool: (
       mcpId: string,
       name: string,
       args: Record<string, unknown>,
@@ -88,8 +98,8 @@ export function exposeMcpContext() {
       return ipcRenderer.invoke(DOWNLOAD_MCP_ZIP_CHANNEL, mcpId);
     },
 
-    showFileInFolder: (path: string) => {
-      return ipcRenderer.invoke(SHOW_FILE_IN_FOLDER_CHANNEL, path);
+    showFileInFolder: (filePath: string) => {
+      return ipcRenderer.invoke(SHOW_FILE_IN_FOLDER_CHANNEL, filePath);
     },
   });
 }

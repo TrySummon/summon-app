@@ -79,6 +79,14 @@ export const getMcpTools = async (id: string) => {
   return window.mcpApi.getMcpTools(id);
 };
 
+export const getMcpPrompts = async (id: string) => {
+  return window.mcpApi.getMcpPrompts(id);
+};
+
+export const getMcpResources = async (id: string) => {
+  return window.mcpApi.getMcpResources(id);
+};
+
 export const callMcpTool = async (
   mcpId: string,
   toolName: string,
