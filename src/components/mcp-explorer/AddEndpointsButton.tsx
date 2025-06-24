@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { PlusCircle } from "lucide-react";
 import { Button } from "../ui/button";
-import { OpenAPIV3 } from "openapi-types";
 import { useApis } from "@/hooks/useApis";
 import { ApiPickerDialog } from "@/components/mcp-builder/ApiPickerDialog";
 import { EndpointPickerDialog } from "@/components/mcp-builder/endpoint-picker";
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
+import { OpenAPIV3 } from "openapi-types";
 
 interface AddToolsButtonProps {
   onAddEndpoints: (apiId: string, tools: SelectedEndpoint[]) => void;

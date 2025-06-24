@@ -41,7 +41,6 @@ export function McpDropdownMenu({
         {/* Server control actions */}
         {status && onStart && onStop && onRestart && (
           <>
-            <DropdownMenuSeparator />
             {status === "stopped" || status === "error" ? (
               <DropdownMenuItem className="text-xs" onSelect={onStart}>
                 <Play className="text-muted-foreground mr-2 !size-3" />

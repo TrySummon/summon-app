@@ -27,7 +27,7 @@ export async function generateEnvExample(
       if (api) {
         try {
           const apiSpec = (await SwaggerParser.dereference(
-            api.originalFilePath,
+            api.api,
           )) as OpenAPIV3.Document;
 
           const securitySchemes = extractSecuritySchemes(

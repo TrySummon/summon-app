@@ -17,10 +17,7 @@ import type { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 interface EndpointPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  api: {
-    id: string;
-    api: OpenAPIV3.Document;
-  };
+  api: { id: string; api: OpenAPIV3.Document };
   onAddEndpoints?: (endpoints: SelectedEndpoint[]) => void;
   onBackClick?: () => void;
 }

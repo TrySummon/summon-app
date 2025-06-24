@@ -17,12 +17,14 @@ import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 interface ToolsListProps {
   tools: Tool[];
   onDeleteTool?: (toolName: string) => void;
+  onDeleteAllTools?: () => void;
   onAddEndpoints?: (apiId: string, tools: SelectedEndpoint[]) => void;
 }
 
 export const ToolsList: React.FC<ToolsListProps> = ({
   tools,
   onDeleteTool,
+  onDeleteAllTools,
   onAddEndpoints,
 }) => {
   if (tools.length === 0) {
@@ -45,6 +47,23 @@ export const ToolsList: React.FC<ToolsListProps> = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">MCP Tools</h2>
+        {onDeleteAllTools && tools.length > 0 && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => {
+              const confirmed = window.confirm(
+                `Are you sure you want to delete all ${tools.length} tools? This action cannot be undone.`,
+              );
+              if (confirmed) {
+                onDeleteAllTools();
+              }
+            }}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete All Tools
+          </Button>
+        )}
       </div>
 
       {onAddEndpoints ? (

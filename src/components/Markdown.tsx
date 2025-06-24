@@ -30,13 +30,16 @@ function omit<T extends object, K extends string>(
 interface Props {
   children: string;
   className?: string;
+  textSize?: "sm" | "base";
 }
 
-const Markdown = ({ className, children }: Props) => {
+const Markdown = ({ className, children, textSize = "sm" }: Props) => {
   const remarkPlugins = useMemo(() => {
     const remarkPlugins = [remarkGfm as any];
     return remarkPlugins;
   }, []);
+
+  const textSizeClass = textSize === "base" ? "text-base" : "text-sm";
 
   return (
     <div className={cn("prose", className)}>
@@ -47,7 +50,7 @@ const Markdown = ({ className, children }: Props) => {
             return (
               <code
                 {...omit(props, ["node"])}
-                className="bg-muted relative rounded px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold"
+                className={`bg-muted relative rounded px-[0.3rem] py-[0.2rem] font-mono ${textSizeClass} font-semibold`}
               />
             );
           },
@@ -150,7 +153,7 @@ const Markdown = ({ className, children }: Props) => {
             return (
               <div
                 {...omit(props, ["node"])}
-                className="text-sm leading-7 break-words whitespace-pre-wrap [&:not(:first-child)]:mt-4"
+                className={`${textSizeClass} leading-7 break-words whitespace-pre-wrap [&:not(:first-child)]:mt-4`}
                 role="article"
               />
             );

@@ -4,7 +4,6 @@ import { syncThemeWithLocal } from "@/lib/theme_helpers";
 import { router } from "./routes/router";
 import { RouterProvider } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { McpToolDefinition } from "@/lib/mcp/types";
 import { OpenAPIV3 } from "openapi-types";
 import type { McpData, McpSubmitData } from "@/lib/db/mcp-db";
 import { Tool } from "@modelcontextprotocol/sdk/types";
@@ -47,8 +46,6 @@ declare global {
           apis?: {
             id: string;
             api: OpenAPIV3.Document;
-            createdAt: string;
-            updatedAt: string;
           }[];
           message?: string;
         }>;
@@ -57,9 +54,6 @@ declare global {
           api?: {
             id: string;
             api: OpenAPIV3.Document;
-            tools: McpToolDefinition[];
-            createdAt: string;
-            updatedAt: string;
           };
           message?: string;
         }>;

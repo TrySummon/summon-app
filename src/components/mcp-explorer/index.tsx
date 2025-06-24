@@ -14,6 +14,7 @@ interface McpExplorerProps {
   mcpName: string;
   onAddEndpoints?: (apiId: string, endpoints: SelectedEndpoint[]) => void;
   onDeleteTool?: (toolName: string) => void;
+  onDeleteAllTools?: () => void;
   onUpdateApiConfigs?: (apiConfigs: ApiConfigs) => void;
   onEditName?: (newName: string) => void;
   isExternal?: boolean;
@@ -25,6 +26,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
   mcpName,
   onAddEndpoints,
   onDeleteTool,
+  onDeleteAllTools,
   onUpdateApiConfigs,
   onEditName,
   apiGroups,
@@ -51,10 +53,8 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
         console.error("Failed to fetch MCP tools:", err);
         setMcpTools([]);
       }
-    } else {
-      setMcpTools([]);
     }
-  }, [mcpId, state?.status, apiGroups]);
+  }, [mcpId, state?.status]);
 
   // Enhanced refresh function that refreshes both status and tools
   const handleRefreshStatus = useCallback(async () => {
@@ -67,7 +67,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
 
   useEffect(() => {
     fetchMcpTools();
-  }, [fetchMcpTools]);
+  }, [fetchMcpTools, apiGroups]);
 
   if (isLoading) return null;
 
@@ -93,6 +93,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
           tools={mcpTools}
           onAddEndpoints={onAddEndpoints}
           onDeleteTool={onDeleteTool}
+          onDeleteAllTools={onDeleteAllTools}
         />
       )}
     </div>

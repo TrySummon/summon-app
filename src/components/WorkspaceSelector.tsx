@@ -115,10 +115,28 @@ export function WorkspaceSelector() {
     }
 
     try {
+      const isCurrentWorkspace = workspaceToDelete.id === currentWorkspace?.id;
+
       await deleteWorkspace.mutateAsync(workspaceToDelete.id);
+
+      // If we deleted the current workspace, switch to another one
+      if (isCurrentWorkspace) {
+        const remainingWorkspaces = workspaces.filter(
+          (w) => w.id !== workspaceToDelete.id,
+        );
+        if (remainingWorkspaces.length > 0) {
+          const nextWorkspace = remainingWorkspaces[0];
+          await setCurrentWorkspace.mutateAsync(nextWorkspace.id);
+          toast.success(
+            `Workspace "${workspaceToDelete.name}" deleted. Switched to "${nextWorkspace.name}"`,
+          );
+        }
+      } else {
+        toast.success(`Workspace "${workspaceToDelete.name}" deleted`);
+      }
+
       setWorkspaceToDelete(null);
       setIsDeleteDialogOpen(false);
-      toast.success(`Workspace "${workspaceToDelete.name}" deleted`);
     } catch (error) {
       console.error("Failed to delete workspace:", error);
       toast.error("Failed to delete workspace");

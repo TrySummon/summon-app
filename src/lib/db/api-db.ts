@@ -1,18 +1,10 @@
 import path from "path";
 import fs from "fs/promises";
-import { generateApiId } from "./id-generator";
 import { OpenAPIV3 } from "openapi-types";
-import fsSync from "fs";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import log from "electron-log/main";
 import { workspaceDb } from "./workspace-db";
-
-// Define the API data structure that will be stored in files
-interface ApiData {
-  id: string;
-  originalFilePath: string;
-  api?: OpenAPIV3.Document; // Optional as we'll load it on demand
-}
+import { kebabCase } from "../mcp/generator/utils";
 
 // Define the directory where API data will be stored for a specific workspace
 const getApiDataDirForWorkspace = (workspaceId: string) => {
@@ -45,13 +37,6 @@ const getApiFilePath = (workspaceId: string, apiId: string) => {
   return path.join(getApiDataDirForWorkspace(workspaceId), `${apiId}.json`);
 };
 
-const getApiOriginalFilePath = (workspaceId: string, apiId: string) => {
-  return path.join(
-    getApiDataDirForWorkspace(workspaceId),
-    `${apiId}-original.json`,
-  );
-};
-
 // Check if an API exists in a workspace
 const apiExists = async (
   workspaceId: string,
@@ -71,32 +56,44 @@ const createApi = async (buffer: Buffer): Promise<string> => {
   await ensureApiDataDir(currentWorkspace.id);
 
   // Parse the API spec to extract the name
-  let apiName: string | undefined;
+  let apiSpec: OpenAPIV3.Document;
   try {
-    const apiSpec = JSON.parse(buffer.toString()) as OpenAPIV3.Document;
-    apiName = apiSpec.info?.title;
+    apiSpec = JSON.parse(buffer.toString()) as OpenAPIV3.Document;
   } catch (error) {
-    log.warn("Failed to parse API spec for name extraction:", error);
+    log.error("Failed to parse API spec:", error);
+    throw new Error("Invalid JSON format");
   }
 
-  // Generate a unique ID for the API
-  const apiId = generateApiId(apiName);
-  // Save the original file
-  const originalFilePath = getApiOriginalFilePath(currentWorkspace.id, apiId);
-  await fs.writeFile(originalFilePath, buffer);
+  const apiTitle = apiSpec.info?.title;
+  if (!apiTitle) {
+    throw new Error("OpenAPI spec must have a title in info.title");
+  }
 
-  // Create the API metadata file
-  const apiData: ApiData = { id: apiId, originalFilePath };
+  // Generate kebab-case filename from the title
+  const apiId = kebabCase(apiTitle);
+
+  if (!apiId) {
+    throw new Error("API title cannot be converted to a valid filename");
+  }
+
+  // Check if a file with this name already exists
+  if (await apiExists(currentWorkspace.id, apiId)) {
+    return apiId;
+  }
+
+  // Save the raw API spec directly to the file system
   await fs.writeFile(
     getApiFilePath(currentWorkspace.id, apiId),
-    JSON.stringify(apiData, null, 2),
+    JSON.stringify(apiSpec, null, 2),
   );
 
   return apiId;
 };
 
 // List all APIs in the current workspace
-const listApis = async (): Promise<ApiData[]> => {
+const listApis = async (): Promise<
+  { id: string; api: OpenAPIV3.Document }[]
+> => {
   const currentWorkspace = await workspaceDb.getCurrentWorkspace();
   await ensureApiDataDir(currentWorkspace.id);
 
@@ -104,37 +101,42 @@ const listApis = async (): Promise<ApiData[]> => {
     const files = await fs.readdir(
       getApiDataDirForWorkspace(currentWorkspace.id),
     );
-    // Filter only API metadata files (not the original spec files which end with -original.json)
-    const apiFiles = files.filter(
-      (file) => file.endsWith(".json") && !file.endsWith("-original.json"),
-    );
+    // Filter only JSON files
+    const apiFiles = files.filter((file) => file.endsWith(".json"));
 
-    const apis: ApiData[] = [];
+    const apis: { id: string; api: OpenAPIV3.Document }[] = [];
 
     for (const file of apiFiles) {
       try {
+        const apiId = path.basename(file, ".json");
         const filePath = path.join(
           getApiDataDirForWorkspace(currentWorkspace.id),
           file,
         );
         const fileContent = await fs.readFile(filePath, "utf-8");
-        const apiData = JSON.parse(fileContent) as ApiData;
+        const apiSpec = JSON.parse(fileContent) as OpenAPIV3.Document;
 
-        // Load the original file content if the path exists
-        if (
-          apiData.originalFilePath &&
-          fsSync.existsSync(apiData.originalFilePath)
-        ) {
-          try {
-            apiData.api = (await SwaggerParser.dereference(
-              apiData.originalFilePath,
-            )) as OpenAPIV3.Document;
-          } catch (specError) {
-            log.error(`Error loading API spec for file ${file}:`, specError);
-          }
+        // Dereference the API spec
+        try {
+          const dereferencedSpec = (await SwaggerParser.dereference(
+            apiSpec,
+          )) as OpenAPIV3.Document;
+
+          apis.push({
+            id: apiId,
+            api: dereferencedSpec,
+          });
+        } catch (specError) {
+          log.error(
+            `Error dereferencing API spec for file ${file}:`,
+            specError,
+          );
+          // Still add the API even if dereferencing fails
+          apis.push({
+            id: apiId,
+            api: apiSpec,
+          });
         }
-
-        apis.push(apiData);
       } catch (error) {
         log.error(`Error reading API file ${file}:`, error);
         // Continue with other files
@@ -151,8 +153,8 @@ const listApis = async (): Promise<ApiData[]> => {
 // Get an API by ID from the current workspace
 export const getApiById = async (
   id: string,
-  loadSpec: boolean = true,
-): Promise<ApiData | null> => {
+  dereference: boolean = true,
+): Promise<{ id: string; api: OpenAPIV3.Document } | null> => {
   const currentWorkspace = await workspaceDb.getCurrentWorkspace();
 
   if (!(await apiExists(currentWorkspace.id, id))) {
@@ -164,22 +166,33 @@ export const getApiById = async (
       getApiFilePath(currentWorkspace.id, id),
       "utf-8",
     );
-    const apiData = JSON.parse(fileContent) as ApiData;
+    const apiSpec = JSON.parse(fileContent) as OpenAPIV3.Document;
 
-    // Load and parse the spec if requested
-    if (loadSpec && apiData.originalFilePath) {
+    // Dereference the spec if requested
+    if (dereference) {
       try {
-        const originalContent = await fs.readFile(
-          apiData.originalFilePath,
-          "utf-8",
-        );
-        apiData.api = JSON.parse(originalContent) as OpenAPIV3.Document;
+        const dereferencedSpec = (await SwaggerParser.dereference(
+          apiSpec,
+        )) as OpenAPIV3.Document;
+
+        return {
+          id,
+          api: dereferencedSpec,
+        };
       } catch (specError) {
-        log.error(`Error loading API spec for ID ${id}:`, specError);
+        log.error(`Error dereferencing API spec for ID ${id}:`, specError);
+        // Return the original spec if dereferencing fails
+        return {
+          id,
+          api: apiSpec,
+        };
       }
     }
 
-    return apiData;
+    return {
+      id,
+      api: apiSpec,
+    };
   } catch (error) {
     log.error(`Error getting API with ID ${id}:`, error);
     return null;
@@ -188,24 +201,54 @@ export const getApiById = async (
 
 // Update an API in the current workspace
 const renameApi = async (id: string, newName: string): Promise<boolean> => {
-  // Get existing API data to keep the original file path
-  const existingApiData = await getApiById(id, true);
+  const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+
+  // Get existing API data
+  const existingApiData = await getApiById(id, false);
   if (!existingApiData) {
     throw new Error(`API with ID ${id} not found`);
   }
 
-  const updatedApiData = {
-    ...existingApiData.api!,
+  // Generate new ID from the new name
+  const newId = kebabCase(newName);
+
+  if (!newId) {
+    throw new Error("New name cannot be converted to a valid filename");
+  }
+
+  // Check if the new filename would conflict (only if it's different from current)
+  if (newId !== id && (await apiExists(currentWorkspace.id, newId))) {
+    throw new Error(
+      `An API with the title "${newName}" already exists. Please choose a different title.`,
+    );
+  }
+
+  // Update the API spec with the new title
+  const updatedApiSpec = {
+    ...existingApiData.api,
     info: {
-      ...existingApiData.api!.info,
+      ...existingApiData.api.info,
       title: newName,
     },
   };
 
-  const buffer = Buffer.from(JSON.stringify(updatedApiData, null, 2));
+  // If the ID changed, we need to rename the file
+  if (newId !== id) {
+    // Save with new filename
+    await fs.writeFile(
+      getApiFilePath(currentWorkspace.id, newId),
+      JSON.stringify(updatedApiSpec, null, 2),
+    );
 
-  // Update the original file
-  await fs.writeFile(existingApiData.originalFilePath, buffer);
+    // Delete old file
+    await fs.unlink(getApiFilePath(currentWorkspace.id, id));
+  } else {
+    // Just update the existing file
+    await fs.writeFile(
+      getApiFilePath(currentWorkspace.id, id),
+      JSON.stringify(updatedApiSpec, null, 2),
+    );
+  }
 
   return true;
 };
@@ -219,23 +262,7 @@ const deleteApi = async (id: string): Promise<boolean> => {
   }
 
   try {
-    // Get the API data to find the original file path
-    const apiData = await getApiById(id, false);
-    if (apiData && apiData.originalFilePath) {
-      try {
-        // Delete the original file
-        await fs.unlink(apiData.originalFilePath);
-      } catch (originalFileError) {
-        log.error(
-          `Error deleting original file for API ${id}:`,
-          originalFileError,
-        );
-      }
-    }
-
-    // Delete the API file
     await fs.unlink(getApiFilePath(currentWorkspace.id, id));
-
     return true;
   } catch (error) {
     log.error(`Error deleting API with ID ${id}:`, error);
@@ -246,14 +273,14 @@ const deleteApi = async (id: string): Promise<boolean> => {
 // Get the original file content for an API in the current workspace
 const getOriginalFileContent = async (id: string): Promise<Buffer | null> => {
   const apiData = await getApiById(id, false);
-  if (!apiData || !apiData.originalFilePath) {
+  if (!apiData) {
     return null;
   }
 
   try {
-    return await fs.readFile(apiData.originalFilePath);
+    return Buffer.from(JSON.stringify(apiData.api, null, 2));
   } catch (error) {
-    log.error(`Error reading original file for API ${id}:`, error);
+    log.error(`Error getting original file content for API ${id}:`, error);
     return null;
   }
 };

@@ -6,17 +6,12 @@ import React, {
   useState,
 } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { AutoButton } from "@/components/ui/AutoButton";
 import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import { Attachment, UIMessage } from "ai";
 import { v4 as uuidv4 } from "uuid";
 import { runPlaygroundAgent } from "@/lib/agent";
-import { ArrowUp, Square, Zap } from "lucide-react";
+import { ArrowUp, Square } from "lucide-react";
 import { MessageContent } from "../Message/Content";
 import ImageDialog from "@/components/ImageDialog";
 import { usePostHog } from "@/hooks/usePostHog";
@@ -170,25 +165,11 @@ export default function MessageComposer() {
 
   const autoExecuteToggle = useMemo(
     () => (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={autoExecuteTools ? "secondary" : "ghost"}
-              size="sm"
-              onClick={handleToggleAutoExecute}
-              disabled={running}
-              className="flex items-center gap-1.5"
-            >
-              <Zap className="h-3.5 w-3.5" />
-              Auto
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Auto-execute tools: {autoExecuteTools ? "ON" : "OFF"}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <AutoButton
+        isEnabled={autoExecuteTools}
+        onToggle={handleToggleAutoExecute}
+        disabled={running}
+      />
     ),
     [autoExecuteTools, handleToggleAutoExecute, running],
   );

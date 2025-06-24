@@ -18,7 +18,7 @@ export async function generateMcpTools(apiGroups: Record<string, McpApiGroup>) {
       }
       // The MCP generator needs a dereferenced API spec, else the tool description will be wrong
       const apiSpec = (await SwaggerParser.dereference(
-        api.originalFilePath,
+        api.api,
       )) as OpenAPIV3.Document;
 
       // Extract all security schemes from the OpenAPI spec

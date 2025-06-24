@@ -46,6 +46,7 @@ interface Props {
   className?: string;
   editorRef?: RefObject<EditorView | null>;
   defaultValue?: string;
+  value?: string;
   height?: string | number;
   maxHeight?: string | number;
   fontSize?: number;
@@ -55,6 +56,7 @@ interface Props {
   overflowHidden?: boolean;
   testId?: string;
   additionalExtensions?: Extension[];
+  regularFont?: boolean;
   onChange?: (value: string) => void;
   onFocusChange?: (focused: boolean, viewUpdate: ViewUpdate) => void;
   onMount?: (view: EditorView) => void;
@@ -65,6 +67,7 @@ function CodeMirrorEditor({
   className,
   editorRef,
   defaultValue,
+  value,
   height,
   maxHeight,
   fontSize,
@@ -74,6 +77,7 @@ function CodeMirrorEditor({
   testId,
   overflowHidden,
   additionalExtensions,
+  regularFont,
   onChange,
   onFocusChange,
   onMount,
@@ -99,6 +103,22 @@ function CodeMirrorEditor({
   }
 
   useEffect(() => {
+    if (
+      value !== undefined &&
+      actualEditorRef.current &&
+      value !== actualEditorRef.current.state.doc.toString()
+    ) {
+      actualEditorRef.current.dispatch({
+        changes: {
+          from: 0,
+          to: actualEditorRef.current.state.doc.length,
+          insert: value,
+        },
+      });
+    }
+  }, [value, actualEditorRef]);
+
+  useEffect(() => {
     if (!editorContainerRef.current) return;
 
     if (onPaste && editorContainerRef.current) {
@@ -108,12 +128,12 @@ function CodeMirrorEditor({
     const editorTheme = EditorView.theme({
       "&": {
         fontSize: `${fontSize || 14}px`,
-        fontFamily: "var(--font-mono)",
+        fontFamily: regularFont ? "var(--font-sans)" : "var(--font-mono)",
         height: "100%",
         backgroundColor: "transparent",
       },
       ".cm-content": {
-        fontFamily: "var(--font-mono)",
+        fontFamily: regularFont ? "var(--font-sans)" : "var(--font-mono)",
       },
       ".cm-scroller": {
         overflow: overflowHidden ? "hidden" : "auto",
@@ -132,6 +152,83 @@ function CodeMirrorEditor({
         {
           background: "hsl(var(--accent))",
         },
+      // Custom mention menu styling - Shadcn-inspired
+      ".cm-tooltip-autocomplete": {
+        background: "hsl(var(--popover))",
+        border: "1px solid hsl(var(--border))",
+        borderRadius: "6px",
+        boxShadow:
+          "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+        maxHeight: "400px !important",
+        minWidth: "240px",
+        fontFamily: "var(--font-sans)",
+        fontSize: "14px",
+        padding: "0",
+        overflow: "hidden",
+      },
+      ".cm-tooltip-autocomplete ul": {
+        margin: "0",
+        padding: "6px",
+        maxHeight: "380px !important",
+        overflowY: "auto",
+        listStyle: "none",
+      },
+      ".cm-tooltip-autocomplete li": {
+        margin: "0 0 2px 0",
+        padding: "10px 12px",
+        borderRadius: "5px",
+        cursor: "pointer",
+        color: "hsl(var(--foreground))",
+        fontSize: "14px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        transition: "all 0.15s ease",
+        lineHeight: "1.4",
+        minHeight: "36px",
+        position: "relative",
+      },
+      ".cm-tooltip-autocomplete li[aria-selected]": {
+        background: "hsl(var(--muted))",
+        color: "hsl(var(--foreground))",
+        transform: "translateY(-1px)",
+        boxShadow: "0 2px 4px -1px rgb(0 0 0 / 0.1)",
+      },
+      ".cm-tooltip-autocomplete li:hover": {
+        background: "hsl(var(--muted))",
+        color: "hsl(var(--foreground))",
+        transform: "translateY(-1px)",
+        boxShadow: "0 2px 4px -1px rgb(0 0 0 / 0.1)",
+      },
+      ".cm-tooltip-autocomplete li .cm-completionLabel": {
+        fontWeight: "500",
+        fontFamily: "var(--font-mono)",
+        fontSize: "13px",
+        flex: "1",
+      },
+      ".cm-tooltip-autocomplete li .cm-completionDetail": {
+        color: "hsl(var(--muted-foreground))",
+        fontSize: "11px",
+        fontWeight: "normal",
+        marginLeft: "auto",
+        padding: "2px 6px",
+        background: "hsl(var(--muted))",
+        borderRadius: "3px",
+        textTransform: "uppercase",
+        letterSpacing: "0.5px",
+      },
+      ".cm-tooltip-autocomplete li[aria-selected] .cm-completionDetail": {
+        background: "hsl(var(--primary))",
+        color: "hsl(var(--primary-foreground))",
+      },
+      ".cm-tooltip-autocomplete li:hover .cm-completionDetail": {
+        background: "hsl(var(--primary))",
+        color: "hsl(var(--primary-foreground))",
+      },
+      // Hide the type icons
+      ".cm-tooltip-autocomplete li::before": {
+        display: "none !important",
+      },
     });
 
     const themeExtension = isDarkTheme ? vscodeDark : vscodeLight;
@@ -186,7 +283,7 @@ function CodeMirrorEditor({
       view.destroy();
       actualEditorRef.current = null;
     };
-  }, [defaultValue, language, onPaste]);
+  }, [defaultValue, language, onPaste, additionalExtensions]);
 
   return (
     <div

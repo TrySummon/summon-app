@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { ApiConfigs } from "@/components/mcp-builder/api-config";
 
 export default function McpPage() {
-  const { apis } = useApis();
+  const { apis, refetch: refetchApis } = useApis();
   const { mcpId } = useParams({ from: "/mcp/$mcpId" });
   const { mcps, updateMcp } = useMcps();
   const mcp = mcps.find((m) => m.id === mcpId);
@@ -152,6 +152,19 @@ export default function McpPage() {
     [mcp, updateMcp],
   );
 
+  const onDeleteAllTools = useCallback(() => {
+    if (!mcp) return;
+
+    // Remove all API groups since deleting all tools would leave them empty
+    updateMcp({
+      mcpId: mcp.id,
+      mcpData: {
+        ...mcp,
+        apiGroups: {},
+      },
+    });
+  }, [mcp, updateMcp]);
+
   const onUpdateApiConfigs = useCallback(
     async (configData: ApiConfigs) => {
       if (!mcp) return;
@@ -218,7 +231,7 @@ export default function McpPage() {
       <SidebarProvider
         className="min-h-full"
         mobileBreakpoint={1}
-        defaultWidth="22rem"
+        defaultWidth="28rem"
       >
         <SidebarInset className="flex min-h-0 flex-1 flex-col">
           <Breadcrumb>
@@ -249,6 +262,7 @@ export default function McpPage() {
                 mcpName={mcp.name}
                 onAddEndpoints={onAddEndpoints}
                 onDeleteTool={onDeleteTool}
+                onDeleteAllTools={onDeleteAllTools}
                 onUpdateApiConfigs={onUpdateApiConfigs}
                 onEditName={onEditName}
                 apiGroups={mcp.apiGroups}
@@ -256,7 +270,7 @@ export default function McpPage() {
             </div>
           </div>
         </SidebarInset>
-        <AgentSidebar />
+        <AgentSidebar mcp={mcp} apis={apis} onRefreshApis={refetchApis} />
       </SidebarProvider>
     </div>
   );

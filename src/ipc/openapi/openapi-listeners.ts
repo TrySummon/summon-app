@@ -7,11 +7,6 @@ import {
   DELETE_API_CHANNEL,
 } from "./openapi-channels";
 import { apiDb } from "@/lib/db/api-db";
-import fs from "fs";
-import path from "path";
-import os from "os";
-import SwaggerParser from "@apidevtools/swagger-parser";
-import { OpenAPIV3 } from "openapi-types";
 import log from "electron-log/main";
 
 interface ImportApiRequest {
@@ -24,7 +19,9 @@ interface ImportApiRequest {
  * @param jsonObject The object to validate
  * @returns boolean indicating if the object is an OpenAPI spec with version >= 3
  */
-function isOpenAPISpecV3OrHigher(jsonObject: Record<string, unknown>): boolean {
+export function isOpenAPISpecV3OrHigher(
+  jsonObject: Record<string, unknown>,
+): boolean {
   // Check if the object has an 'openapi' property
   if (typeof jsonObject.openapi !== "string") {
     return false;
@@ -46,10 +43,6 @@ function isOpenAPISpecV3OrHigher(jsonObject: Record<string, unknown>): boolean {
 export function registerOpenApiListeners() {
   // Handle API import
   ipcMain.handle(IMPORT_API_CHANNEL, async (_, request: ImportApiRequest) => {
-    // Create a temporary file to store the OpenAPI spec
-    const tempDir = os.tmpdir();
-    const tempFilePath = path.join(tempDir, `openapi-spec-${Date.now()}.json`);
-
     try {
       const { buffer } = request;
       // Reconstruct Buffer from the array of integers that came through IPC
@@ -66,7 +59,7 @@ export function registerOpenApiListeners() {
         };
       }
 
-      // Store the original API file in the file system
+      // Store the API file directly
       const apiId = await apiDb.createApi(reconstructedBuffer);
 
       return {
@@ -81,15 +74,6 @@ export function registerOpenApiListeners() {
         message:
           error instanceof Error ? error.message : "Unknown error occurred",
       };
-    } finally {
-      // Clean up the temporary file
-      if (fs.existsSync(tempFilePath)) {
-        try {
-          fs.unlinkSync(tempFilePath);
-        } catch (cleanupError) {
-          log.error("Error cleaning up temporary file:", cleanupError);
-        }
-      }
     }
   });
 
@@ -115,12 +99,6 @@ export function registerOpenApiListeners() {
   ipcMain.handle(GET_API_CHANNEL, async (_, id: string) => {
     try {
       const apiData = await apiDb.getApiById(id, true);
-
-      if (apiData?.api) {
-        apiData.api = (await SwaggerParser.dereference(
-          apiData.api,
-        )) as OpenAPIV3.Document;
-      }
 
       if (!apiData) {
         return {

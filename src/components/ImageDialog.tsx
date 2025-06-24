@@ -122,7 +122,7 @@ export default function ImageDialog({ onAddImage, className }: Props) {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="text-muted-foreground"
+              className="text-muted-foreground h-6 w-6"
               onClick={() => setOpen(true)}
               variant="ghost"
               size="icon"
