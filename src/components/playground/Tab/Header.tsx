@@ -175,7 +175,7 @@ export default function TabHeader() {
             <ToolSidebarTrigger showOnlyOnOpen />
           </TooltipTrigger>
           <TooltipContent>
-            <p>Open tools</p>
+            <p>Open capabilities</p>
           </TooltipContent>
         </Tooltip>
       </div>

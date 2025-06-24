@@ -6,14 +6,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-
-interface Resource {
-  uri: string;
-  name: string;
-  description?: string;
-  mimeType?: string;
-  size?: number;
-}
+import { Resource } from "@/types/mcp";
 
 interface ResourcesListProps {
   resources: Resource[];

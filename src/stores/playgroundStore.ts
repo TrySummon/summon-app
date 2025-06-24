@@ -5,6 +5,7 @@ import { persist, createJSONStorage, PersistOptions } from "zustand/middleware";
 import { runPlaygroundAgent } from "@/lib/agent";
 import { Tool as McpTool } from "@modelcontextprotocol/sdk/types";
 import { LLMSettings, ModifiedTool } from "./types";
+import { Prompt, Resource } from "@/types/mcp";
 
 export type ToolMap = Record<string, { name: string; tools: McpTool[] }>;
 export type ModifiedToolMap = Record<string, Record<string, ModifiedTool>>;
@@ -17,6 +18,8 @@ export interface IPlaygroundTabState {
   systemPrompt?: string;
   messages: UIMessage[];
   enabledTools: Record<string, string[]>;
+  enabledPrompts: Record<string, string[]>;
+  enabledResources: Record<string, string[]>;
   // Tool modifications: mcpId -> toolName -> modified schema and name
   modifiedToolMap: ModifiedToolMap;
   running: boolean;
@@ -101,6 +104,8 @@ export interface PlaygroundStore {
   updateSettings: (settings: Partial<IPlaygroundTabState["settings"]>) => void;
   updateSystemPrompt: (systemPrompt: string) => void;
   updateEnabledTools: (toolProvider: string, toolIds: string[]) => void;
+  updateEnabledPrompts: (mcpId: string, promptIds: string[]) => void;
+  updateEnabledResources: (mcpId: string, resourceIds: string[]) => void;
   updateSelectedDatasetId: (datasetId: string | undefined) => void;
   modifyTool: (
     mcpId: string,
@@ -131,6 +136,8 @@ const createDefaultState = (): IPlaygroundTabState => ({
   },
   messages: [],
   enabledTools: {},
+  enabledPrompts: {},
+  enabledResources: {},
   running: false,
   maxSteps: 10,
   shouldScrollToDock: false,
@@ -177,7 +184,15 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
       getCurrentState: () => {
         const currentTab = get().getCurrentTab();
         if (!currentTab) return createDefaultState();
-        return currentTab.state;
+
+        // Ensure new properties exist with defaults for backward compatibility
+        const state = currentTab.state;
+        return {
+          ...state,
+          enabledTools: state.enabledTools || {},
+          enabledPrompts: state.enabledPrompts || {},
+          enabledResources: state.enabledResources || {},
+        };
       },
 
       createTab: (initialState, name = "New Tab") => {
@@ -225,6 +240,8 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
           messages: [...tabToDuplicate.state.messages],
           settings: { ...tabToDuplicate.state.settings },
           enabledTools: tabToDuplicate.state.enabledTools,
+          enabledPrompts: tabToDuplicate.state.enabledPrompts,
+          enabledResources: tabToDuplicate.state.enabledResources,
           modifiedToolMap: tabToDuplicate.state.modifiedToolMap,
           model: tabToDuplicate.state.model,
           credentialId: tabToDuplicate.state.credentialId,
@@ -545,6 +562,26 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
           enabledTools: {
             ...state.enabledTools,
             [toolProvider]: toolIds,
+          },
+        }));
+      },
+
+      updateEnabledPrompts: (mcpId, promptIds) => {
+        get().updateCurrentState((state) => ({
+          ...state,
+          enabledPrompts: {
+            ...state.enabledPrompts,
+            [mcpId]: promptIds,
+          },
+        }));
+      },
+
+      updateEnabledResources: (mcpId, resourceIds) => {
+        get().updateCurrentState((state) => ({
+          ...state,
+          enabledResources: {
+            ...state.enabledResources,
+            [mcpId]: resourceIds,
           },
         }));
       },

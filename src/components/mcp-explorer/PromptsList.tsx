@@ -6,16 +6,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-
-interface Prompt {
-  name: string;
-  description?: string;
-  arguments?: Array<{
-    name: string;
-    description?: string;
-    required?: boolean;
-  }>;
-}
+import { Prompt } from "@/types/mcp";
 
 interface PromptsListProps {
   prompts: Prompt[];

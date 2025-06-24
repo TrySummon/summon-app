@@ -11,24 +11,7 @@ import {
   getMcpPrompts,
   getMcpResources,
 } from "@/ipc/mcp/mcp-client";
-
-interface Prompt {
-  name: string;
-  description?: string;
-  arguments?: Array<{
-    name: string;
-    description?: string;
-    required?: boolean;
-  }>;
-}
-
-interface Resource {
-  uri: string;
-  name: string;
-  description?: string;
-  mimeType?: string;
-  size?: number;
-}
+import { Prompt, Resource } from "@/types/mcp";
 
 interface McpExplorerProps {
   mcpId: string;

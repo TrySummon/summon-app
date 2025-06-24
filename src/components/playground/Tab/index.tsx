@@ -5,7 +5,7 @@ import TabHeader from "./Header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import TabBody from "./Body";
 import { usePlaygroundStore } from "../../../stores/playgroundStore";
-import ToolSidebar from "./ToolSidebar";
+import CapabilitiesSidebar from "./CapabilitiesSidebar";
 
 export default function PlaygroundTab() {
   const cutMode = usePlaygroundStore(
@@ -19,7 +19,7 @@ export default function PlaygroundTab() {
         <TabBody />
         {cutMode ? <CutModeActionBar /> : <MessageComposer />}
       </SidebarInset>
-      <ToolSidebar />
+      <CapabilitiesSidebar />
     </SidebarProvider>
   );
 }

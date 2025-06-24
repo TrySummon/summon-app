@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage, PersistOptions } from "zustand/middleware";
-import useToolMap from "@/hooks/useToolMap";
+import useCapabilitiesMap from "@/hooks/useCapabilitiesMap";
 import type { Tool } from "@modelcontextprotocol/sdk/types";
 import { useEffect, useMemo } from "react";
 import { ModifiedTool } from "./types";
@@ -499,7 +499,7 @@ export const useEvaluationStore = create<EvaluationStore>()(
 
 // Hook that combines the store with the mcpToolMap from useToolMap
 export function useEvaluationToolSelection(datasetId: string) {
-  const { mcpToolMap } = useToolMap();
+  const { mcpToolMap } = useCapabilitiesMap();
   const initializeExpandedMcps = useEvaluationStore(
     (state) => state.initializeExpandedMcps,
   );
