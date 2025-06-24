@@ -11,8 +11,7 @@ import { EditorView } from "codemirror";
 import { Extension } from "@codemirror/state";
 import { placeholder, keymap } from "@codemirror/view";
 import { usePostHog } from "@/hooks/usePostHog";
-import { Message } from "ai";
-import { MentionPill } from "@/components/MentionPill";
+import { Attachment, JSONValue, Message } from "ai";
 import { AutoButton } from "@/components/ui/AutoButton";
 import { MentionData } from "./index";
 import {
@@ -22,20 +21,13 @@ import {
   createMentionDecorationPlugin,
   createMentionBackspaceHandler,
 } from "./mentionUtils";
-
-interface AttachedFile {
-  id: string;
-  name: string;
-  url: string;
-  type: string;
-  mimeType?: string; // For images
-}
+import { AttachmentsDisplay } from "./AttachmentsDisplay";
 
 interface MessageComposerProps {
   onSendMessage: (message: Message) => boolean;
   onStopAgent: () => void;
   isRunning?: boolean;
-  attachedFiles: AttachedFile[];
+  attachedFiles: Attachment[];
   onRemoveFile: (fileId: string) => void;
   onClearAttachments: () => void;
   mentionData: MentionData[];
@@ -109,15 +101,18 @@ export function MessageComposer({
       ? attachedFiles.map((file) => ({
           name: file.name,
           url: file.url,
-          mimeType: file.mimeType || file.type,
+          contentType: file.contentType,
         }))
       : [];
+
+    const mentions = extractMentions(trimmedMessage, mentionData);
 
     const aiMessage: Message = {
       id: Math.random().toString(36).substring(2, 11),
       role: "user",
-      content: trimmedMessage, // Send trimmed message
+      content: trimmedMessage,
       experimental_attachments: fileAttachments,
+      annotations: mentions as unknown as JSONValue[],
     };
 
     captureEvent("summon_agent_message_sent", {
@@ -141,7 +136,13 @@ export function MessageComposer({
       }
       onClearAttachments();
     }
-  }, [captureEvent, onSendMessage, onClearAttachments, attachedFiles]);
+  }, [
+    captureEvent,
+    onSendMessage,
+    onClearAttachments,
+    mentionData,
+    attachedFiles,
+  ]);
 
   const submitButton = useMemo(() => {
     if (isRunning) {
@@ -199,34 +200,15 @@ export function MessageComposer({
   );
 
   return (
-    <div className="bg-card flex min-h-[90px] flex-col gap-2 rounded-lg border p-3">
+    <div className="dark:bg-sidebar-accent/50 bg-card dark:sidebar-border flex min-h-[90px] flex-col gap-2 rounded-lg border p-3">
       {/* Attachments section: mentions and files */}
-      {(mentions.length > 0 || attachedFiles.length > 0) && (
-        <div className="flex flex-wrap items-center gap-2">
-          {mentions.map((mention) => (
-            <MentionPill
-              key={mention.text}
-              text={mention.text}
-              type={mention.type}
-              onDelete={() => handleRemoveMention(mention.text)}
-            />
-          ))}
-          {attachedFiles.map((file) => (
-            <MentionPill
-              key={file.id}
-              text={file.name}
-              type={
-                file.type.startsWith("image/")
-                  ? "image"
-                  : file.type === "api"
-                    ? "api"
-                    : "file"
-              }
-              onDelete={() => onRemoveFile(file.id)}
-            />
-          ))}
-        </div>
-      )}
+      <AttachmentsDisplay
+        mentions={mentions}
+        attachments={attachedFiles}
+        onRemoveMention={handleRemoveMention}
+        onRemoveFile={onRemoveFile}
+        editable={true}
+      />
 
       <CodeMirrorEditor
         className="-mt-1"

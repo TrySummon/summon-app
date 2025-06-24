@@ -21,15 +21,11 @@ import { McpData } from "@/lib/db/mcp-db";
 import { OpenAPIV3 } from "openapi-types";
 import { importApi } from "@/ipc/openapi/openapi-client";
 import { SignInDialog } from "@/components/SignInDialog";
-import { Message } from "ai";
-
-interface AttachedFile {
-  id: string;
-  name: string;
-  url: string;
-  type: string;
-  mimeType?: string; // For images
-}
+import { Attachment, Message } from "ai";
+import { useMcps } from "@/hooks/useMcps";
+import { capitalize } from "@/lib/string";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export interface MentionData {
   id: string;
@@ -45,13 +41,15 @@ interface Props {
 
 export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
   const { token, isAuthenticated } = useAuth();
-  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const { updateMcp } = useMcps();
+  const [attachedFiles, setAttachedFiles] = useState<Attachment[]>([]);
   const [showSignInDialog, setShowSignInDialog] = useState(false);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const [placeholderHeight, setPlaceholderHeight] = useState(0);
   const placeholderHeightRef = useRef(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const latestUserMessageRef = useRef<HTMLDivElement>(null);
+  const mcpVersionsRef = useRef<Record<string, McpData>>({});
 
   const mentionData = useMemo(() => {
     const data: MentionData[] = [];
@@ -73,11 +71,11 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
 
     // 2. APIs and their endpoints
     if (apis) {
-      apis.forEach(({ id: apiId, api }) => {
+      apis.forEach(({ id: apiId }) => {
         // Add API itself
         data.push({
           id: `api-${apiId}`,
-          name: api.info.title,
+          name: apiId,
           type: "api",
         });
       });
@@ -86,7 +84,7 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
     return data;
   }, [mcp, apis]);
 
-  const { messages, append, status, stop, setMessages } = useChat({
+  const { messages, append, status, error, stop, setMessages } = useChat({
     api: `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/agent`,
     headers: token
       ? {
@@ -216,11 +214,13 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
 
         // If successfully imported as API, create API attachment
         if (apiId) {
-          const newFile: AttachedFile = {
-            id: apiId,
+          const apiContent = `User uploaded OpenAPI spec for API with ID: ${apiId}`;
+          const dataUrl = `data:text/plain;base64,${btoa(apiContent)}`;
+
+          const newFile: Attachment = {
             name: apiId,
-            url: "", // Empty content for API
-            type: "api",
+            contentType: "application/x-summon-api",
+            url: dataUrl,
           };
           setAttachedFiles((prev) => [...prev, newFile]);
           return;
@@ -233,23 +233,16 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
         reader.onload = () => {
           const content = reader.result as string;
 
-          const newFile: AttachedFile = {
-            id: Math.random().toString(36).substring(2, 11),
+          const newFile: Attachment = {
             name: file.name,
+            contentType: file.type || "application/octet-stream",
             url: content,
-            type: file.type,
-            ...(file.type.startsWith("image/") && { mimeType: file.type }),
           };
 
           setAttachedFiles((prev) => [...prev, newFile]);
         };
 
-        // Only use dataURL for images, use text for other files
-        if (file.type.startsWith("image/")) {
-          reader.readAsDataURL(file);
-        } else {
-          reader.readAsText(file);
-        }
+        reader.readAsDataURL(file);
       });
     },
     [onRefreshApis],
@@ -261,6 +254,7 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
     noKeyboard: true,
     accept: {
       "application/json": [".json"],
+      "text/yaml": [".yaml"],
       "text/plain": [".txt"],
       "text/markdown": [".md"],
       "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
@@ -268,7 +262,7 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
   });
 
   const handleRemoveFile = useCallback((fileId: string) => {
-    setAttachedFiles((prev) => prev.filter((file) => file.id !== fileId));
+    setAttachedFiles((prev) => prev.filter((file) => file.name !== fileId));
   }, []);
 
   const clearAttachments = useCallback(() => {
@@ -301,6 +295,13 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
         return false;
       }
 
+      console.log("message", message);
+
+      // Store the current mcp state before sending the message
+      if (message.id) {
+        mcpVersionsRef.current[message.id] = mcp;
+      }
+
       append(message);
 
       // Disable auto-scroll temporarily and then scroll to show the new message at top
@@ -313,7 +314,78 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
 
       return true;
     },
-    [isAuthenticated, append, scrollToLatestUserMessage],
+    [isAuthenticated, append, scrollToLatestUserMessage, mcp],
+  );
+
+  const handleRevert = useCallback(
+    (messageId: string) => {
+      const storedMcp = mcpVersionsRef.current[messageId];
+      if (storedMcp) {
+        // Convert McpData to McpSubmitData by omitting id, createdAt, updatedAt
+        const mcpSubmitData = {
+          name: storedMcp.name,
+          transport: storedMcp.transport,
+          apiGroups: storedMcp.apiGroups,
+        };
+        updateMcp({
+          mcpId: storedMcp.id,
+          mcpData: mcpSubmitData,
+        });
+
+        // Remove all messages after the reverted message
+        setMessages((prevMessages) => {
+          const messageIndex = prevMessages.findIndex(
+            (msg) => msg.id === messageId,
+          );
+          if (messageIndex !== -1) {
+            return prevMessages.slice(0, messageIndex + 1);
+          }
+          return prevMessages;
+        });
+
+        // Clean up stored versions after revert
+        delete mcpVersionsRef.current[messageId];
+      }
+    },
+    [updateMcp, setMessages],
+  );
+
+  const handleUpdateMessage = useCallback(
+    (updatedMessage: Message) => {
+      // Remove the current message and all messages after it (since append will re-add the updated message)
+      setMessages((prevMessages) => {
+        const messageIndex = prevMessages.findIndex(
+          (msg) => msg.id === updatedMessage.id,
+        );
+        if (messageIndex !== -1) {
+          return prevMessages.slice(0, messageIndex);
+        }
+        return prevMessages;
+      });
+
+      // Store the current mcp state before sending the message
+      if (updatedMessage.id) {
+        mcpVersionsRef.current[updatedMessage.id] = mcp;
+      }
+
+      // Call the agent with the updated message
+      append(updatedMessage);
+
+      // Disable auto-scroll temporarily and then scroll to show the new message at top
+      setIsAutoScrollEnabled(false);
+
+      // Wait for the message to be rendered, then scroll
+      setTimeout(() => {
+        scrollToLatestUserMessage();
+      }, 0);
+    },
+    [
+      setMessages,
+      mcp,
+      append,
+      setIsAutoScrollEnabled,
+      scrollToLatestUserMessage,
+    ],
   );
 
   return (
@@ -347,7 +419,7 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
             <SidebarMenu>
               <SidebarMenuItem>
                 <Button className="h-8 px-2" variant="ghost">
-                  New Chat
+                  {capitalize(mcp.name)} Chat
                 </Button>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -365,6 +437,16 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
           onScroll={handleScroll}
         >
           <div className="flex flex-1 flex-col p-4 pb-0">
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  {error.message ||
+                    "An error occurred while processing your request. Please try again."}
+                </AlertDescription>
+              </Alert>
+            )}
             {messages.length === 0 ? (
               <ChatStarters onStarterClick={handleStarterClick} />
             ) : (
@@ -373,6 +455,10 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
                 isRunning={isRunning}
                 latestUserMessageRef={latestUserMessageRef}
                 placeholderHeight={placeholderHeight}
+                onStop={stop}
+                onRevert={handleRevert}
+                onUpdateMessage={handleUpdateMessage}
+                mentionData={mentionData}
               />
             )}
           </div>

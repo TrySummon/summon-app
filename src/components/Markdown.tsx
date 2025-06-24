@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/utils/tailwind";
 import { MarkdownCodeSnippet } from "./CodeSnippet";
+import { MentionData } from "./AgentSidebar";
 
 function omit<T extends object, K extends string>(
   obj: T,
@@ -31,15 +32,73 @@ interface Props {
   children: string;
   className?: string;
   textSize?: "sm" | "base";
+  mentionData?: MentionData[];
 }
 
-const Markdown = ({ className, children, textSize = "sm" }: Props) => {
+const Markdown = ({
+  className,
+  children,
+  textSize = "sm",
+  mentionData,
+}: Props) => {
   const remarkPlugins = useMemo(() => {
     const remarkPlugins = [remarkGfm as any];
     return remarkPlugins;
   }, []);
 
   const textSizeClass = textSize === "base" ? "text-base" : "text-sm";
+
+  // Create mention regex from mention data
+  const mentionRegex = useMemo(() => {
+    if (!mentionData || mentionData.length === 0) return null;
+
+    const mentionNames = mentionData
+      .map((item) => item.name.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&"))
+      .sort((a, b) => b.length - a.length);
+
+    return new RegExp(`@(${mentionNames.join("|")})`, "g");
+  }, [mentionData]);
+
+  // Function to render text with inline mentions
+  const renderTextWithMentions = (text: string) => {
+    // Early return if no mention data or regex
+    if (!mentionData || !mentionRegex || !text) {
+      return text;
+    }
+
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    // Reset regex to start from beginning
+    mentionRegex.lastIndex = 0;
+
+    while ((match = mentionRegex.exec(text)) !== null) {
+      // Add text before the mention
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+
+      // Add the mention with inline styling (matching CodeMirror editor style)
+      parts.push(
+        <span
+          key={`${match[1]}-${match.index}`}
+          className="bg-muted text-primary rounded-sm px-0.5 font-semibold"
+        >
+          {match[0]}
+        </span>,
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts.length > 1 ? parts : text;
+  };
 
   return (
     <div className={cn("prose", className)}>
@@ -150,13 +209,33 @@ const Markdown = ({ className, children, textSize = "sm" }: Props) => {
             );
           },
           p(props) {
+            // Handle mentions in paragraph text
+            const processedChildren = React.Children.map(
+              props.children,
+              (child) => {
+                if (typeof child === "string") {
+                  return renderTextWithMentions(child);
+                }
+                return child;
+              },
+            );
+
             return (
               <div
                 {...omit(props, ["node"])}
                 className={`${textSizeClass} leading-7 break-words whitespace-pre-wrap [&:not(:first-child)]:mt-4`}
                 role="article"
-              />
+              >
+                {processedChildren}
+              </div>
             );
+          },
+          // Add text renderer to handle inline mentions
+          text(props) {
+            if (typeof props.children === "string") {
+              return renderTextWithMentions(props.children);
+            }
+            return props.children;
           },
           table({ children, ...props }) {
             return (

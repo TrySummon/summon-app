@@ -11,6 +11,15 @@ export interface MentionPillProps {
   className?: string;
 }
 
+// Utility function to determine MentionPill type from contentType
+export function getFileTypeFromContentType(
+  contentType?: string,
+): "image" | "file" | "api" {
+  if (contentType === "application/x-summon-api") return "api";
+  if (contentType?.startsWith("image/")) return "image";
+  return "file";
+}
+
 const typeConfig = {
   image: {
     icon: Image,
@@ -46,7 +55,12 @@ export function MentionPill({
       )}
     >
       <div className="relative flex h-3 w-3 items-center justify-center">
-        <Icon className="h-3 w-3 transition-opacity group-hover/mention-pill:opacity-0" />
+        <Icon
+          className={cn(
+            "h-3 w-3 transition-opacity",
+            onDelete && "group-hover/mention-pill:opacity-0",
+          )}
+        />
         {onDelete && (
           <Button
             size="icon"

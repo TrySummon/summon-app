@@ -1,12 +1,17 @@
 import React from "react";
 import { Message } from "ai";
 import { MessageComponent } from "./Message";
+import { MentionData } from "./index";
 
 interface MessagesListProps {
   messages: Message[];
   isRunning?: boolean;
   latestUserMessageRef?: React.RefObject<HTMLDivElement | null>;
   placeholderHeight?: number;
+  onStop?: () => void;
+  onRevert?: (messageId: string) => void;
+  onUpdateMessage?: (message: Message) => void;
+  mentionData: MentionData[];
 }
 
 export function MessagesList({
@@ -14,6 +19,10 @@ export function MessagesList({
   isRunning,
   latestUserMessageRef,
   placeholderHeight = 0,
+  onStop,
+  onRevert,
+  onUpdateMessage,
+  mentionData,
 }: MessagesListProps) {
   if (messages.length === 0) {
     return null;
@@ -31,6 +40,11 @@ export function MessagesList({
           key={message.id || index}
           message={message}
           isRunning={isRunning}
+          isLatestUserMessage={index === latestUserMessageIndex}
+          onStop={onStop}
+          onRevert={onRevert}
+          onUpdateMessage={onUpdateMessage}
+          mentionData={mentionData}
           ref={
             index === latestUserMessageIndex ? latestUserMessageRef : undefined
           }
