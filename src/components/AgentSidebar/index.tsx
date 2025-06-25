@@ -44,16 +44,24 @@ export function AgentSidebar({ mcpId }: Props) {
   const { onAddEndpoints, onDeleteTool, onDeleteAllTools } =
     useMcpActions(mcpId);
 
-  const { messages, append, status, error, stop, setMessages, addToolResult } =
-    useChat({
-      api: `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/agent`,
-      headers: token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {},
-      maxSteps: 10,
-    });
+  const {
+    messages,
+    append,
+    status,
+    error,
+    stop,
+    setMessages,
+    addToolResult,
+    reload,
+  } = useChat({
+    api: `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/agent`,
+    headers: token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : {},
+    maxSteps: 10,
+  });
 
   const { updateMcp } = useMcps();
   const [attachedFiles, setAttachedFiles] = useState<Attachment[]>([]);
@@ -268,7 +276,7 @@ export function AgentSidebar({ mcpId }: Props) {
           (msg) => msg.id === updatedMessage.id,
         );
         if (messageIndex !== -1) {
-          return prevMessages.slice(0, messageIndex);
+          return [...prevMessages.slice(0, messageIndex), updatedMessage];
         }
         return prevMessages;
       });
@@ -277,16 +285,14 @@ export function AgentSidebar({ mcpId }: Props) {
       if (updatedMessage.id) {
         mcpVersionsRef.current[updatedMessage.id] = mcp;
       }
-
-      // Call the agent with the updated message
-      append(updatedMessage);
+      reload();
 
       // Scroll to show the updated message at top
       setTimeout(() => {
         scrollableContentRef.current?.scrollToLatestUserMessage();
       }, 0);
     },
-    [setMessages, mcp, append],
+    [setMessages, mcp, reload],
   );
 
   if (!mcp) {

@@ -104,6 +104,7 @@ export function EditableMessageEditor({
     const updatedMessage: Message = {
       ...message,
       content: trimmedMessage,
+      parts: [{ type: "text", text: trimmedMessage }],
       experimental_attachments: attachedFiles,
       annotations: extractedMentions as unknown as JSONValue[],
     };
