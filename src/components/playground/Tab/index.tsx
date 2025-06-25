@@ -13,8 +13,12 @@ export default function PlaygroundTab() {
   );
 
   return (
-    <SidebarProvider className="min-h-full" mobileBreakpoint={1200}>
-      <SidebarInset className="flex min-h-full flex-1 flex-col gap-4 overflow-y-auto py-2">
+    <SidebarProvider
+      className="flex min-h-0 flex-1"
+      mobileBreakpoint={1200}
+      defaultWidth="18rem"
+    >
+      <SidebarInset className="flex min-h-0 flex-1 flex-col gap-4 py-2">
         <TabHeader />
         <TabBody />
         {cutMode ? <CutModeActionBar /> : <MessageComposer />}
