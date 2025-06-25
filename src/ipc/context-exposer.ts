@@ -7,6 +7,7 @@ import { exposeMcpContext } from "./mcp/mcp-context-exposer";
 import { exposeExternalMcpContext } from "./external-mcp/external-mcp-context-exposer";
 import { exposeAIProvidersContext } from "./ai-providers/ai-providers-context-exposer";
 import { exposeWorkspaceAPI } from "./workspace/workspace-context-exposer";
+import { exposeAgentToolsContext } from "./agent-tools/agent-tools-context-exposer";
 
 export default function exposeContexts() {
   exposeWindowContext();
@@ -18,4 +19,5 @@ export default function exposeContexts() {
   exposeExternalMcpContext();
   exposeAIProvidersContext();
   exposeWorkspaceAPI();
+  exposeAgentToolsContext();
 }

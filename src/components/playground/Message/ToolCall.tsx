@@ -8,18 +8,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/utils/tailwind";
+
 import { ToolInvocation } from "ai";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { CodeSnippet } from "@/components/CodeSnippet";
 import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import { findOriginalToolInfo, makeExecuteFunction } from "@/lib/agent";
 import { Loader } from "@/components/Loader";
+import { PayloadDialog } from "@/components/ui/PayloadDialog";
 
 interface ToolCallProps {
   invocation: ToolInvocation;
@@ -142,11 +136,11 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
 
   return (
     <TooltipProvider>
-      <div className="bg-card rounded-md p-2">
+      <div className="bg-card flex flex-col gap-2 rounded-md p-2">
         {/* Header */}
         <div className="mb-2 flex items-center justify-between">
           <div className="flex w-full items-center justify-between">
-            <div className="text-foreground flex items-center gap-2 text-sm font-medium">
+            <div className="text-primary flex items-center gap-2 text-sm font-medium">
               <Wrench className="h-3.5 w-3.5" /> {invocation.toolName}
             </div>
             {renderStatusBadge()}
@@ -154,63 +148,20 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
         </div>
 
         {/* Content */}
-        <Accordion
-          type="single"
-          defaultValue={
-            invocation.state === "partial-call" ? "arguments" : undefined
-          }
-          collapsible
-          className="w-full"
-        >
-          {/* Arguments Section */}
-          <AccordionItem value="arguments" className="border-none">
-            <AccordionTrigger className="py-2">
-              <span className="text-muted-foreground text-xs font-medium">
-                Arguments
-              </span>
-            </AccordionTrigger>
-
-            <AccordionContent>
-              <div className="overflow-hidden rounded-md">
-                <CodeSnippet language="json">
-                  {JSON.stringify(invocation.args, null, 2)}
-                </CodeSnippet>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Result Section - Only show for result state */}
-          {invocation.state === "result" ? (
-            <AccordionItem value="result" className="border-none">
-              <AccordionTrigger className="py-2">
-                <span className="text-muted-foreground text-xs font-medium">
-                  Result
-                </span>
-              </AccordionTrigger>
-
-              <AccordionContent>
-                <div
-                  className={cn(
-                    "overflow-hidden rounded-md",
-                    typeof invocation.result === "object"
-                      ? ""
-                      : "bg-muted p-3 text-sm",
-                  )}
-                >
-                  {typeof invocation.result === "object" ? (
-                    <CodeSnippet language="json">
-                      {JSON.stringify(invocation.result, null, 2)}
-                    </CodeSnippet>
-                  ) : (
-                    <div className="font-mono text-sm whitespace-pre-wrap">
-                      {String(invocation.result)}
-                    </div>
-                  )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ) : null}
-        </Accordion>
+        <div className="flex items-center">
+          <PayloadDialog
+            title={`Arguments for ${invocation.toolName}`}
+            payload={invocation.args}
+            triggerText="View Arguments"
+          />
+          {invocation.state === "result" && (
+            <PayloadDialog
+              title={`Result for ${invocation.toolName}`}
+              payload={invocation.result}
+              triggerText="View Result"
+            />
+          )}
+        </div>
         {/* Approve/Reject buttons for tools without results */}
         {invocation.state === "partial-call" && (
           <div className="flex justify-end">

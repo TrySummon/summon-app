@@ -270,7 +270,14 @@ export default function McpPage() {
             </div>
           </div>
         </SidebarInset>
-        <AgentSidebar mcp={mcp} apis={apis} onRefreshApis={refetchApis} />
+        <AgentSidebar
+          mcp={mcp}
+          apis={apis}
+          onRefreshApis={refetchApis}
+          onAddEndpoints={onAddEndpoints}
+          onDeleteTool={onDeleteTool}
+          onDeleteAllTools={onDeleteAllTools}
+        />
       </SidebarProvider>
     </div>
   );

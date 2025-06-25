@@ -49,8 +49,9 @@ export const ToolsList: React.FC<ToolsListProps> = ({
         <h2 className="text-xl font-bold">MCP Tools</h2>
         {onDeleteAllTools && tools.length > 0 && (
           <Button
-            variant="destructive"
+            variant="ghost"
             size="sm"
+            className="text-destructive hover:text-destructive"
             onClick={() => {
               const confirmed = window.confirm(
                 `Are you sure you want to delete all ${tools.length} tools? This action cannot be undone.`,
@@ -60,7 +61,6 @@ export const ToolsList: React.FC<ToolsListProps> = ({
               }
             }}
           >
-            <Trash2 className="mr-2 h-4 w-4" />
             Delete All Tools
           </Button>
         )}

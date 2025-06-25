@@ -204,7 +204,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
           </div>
 
           {url ? (
-            <div className="flex items-center justify-between rounded-md border p-2">
+            <div className="flex items-center justify-between rounded-md border p-1.5">
               <div className="flex items-center gap-2">
                 <Badge className="border-green-500/20 bg-green-500/10 text-green-700 transition-colors hover:bg-green-500/20 dark:text-green-400">
                   <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-green-500"></span>

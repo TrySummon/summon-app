@@ -11,9 +11,8 @@ import { EditorView } from "codemirror";
 import { Extension } from "@codemirror/state";
 import { placeholder, keymap } from "@codemirror/view";
 import { usePostHog } from "@/hooks/usePostHog";
-import { Attachment, JSONValue, Message } from "ai";
+import { JSONValue, Message } from "ai";
 import { AutoButton } from "@/components/ui/AutoButton";
-import { MentionData } from "./index";
 import {
   extractMentions,
   createMentionRegex,
@@ -22,29 +21,22 @@ import {
   createMentionBackspaceHandler,
 } from "./mentionUtils";
 import { AttachmentsDisplay } from "./AttachmentsDisplay";
+import { useAgentContext } from "./AgentContext";
 
-interface MessageComposerProps {
-  onSendMessage: (message: Message) => boolean;
-  onStopAgent: () => void;
-  isRunning?: boolean;
-  attachedFiles: Attachment[];
-  onRemoveFile: (fileId: string) => void;
-  onClearAttachments: () => void;
-  mentionData: MentionData[];
-}
-
-export function MessageComposer({
-  onSendMessage,
-  onStopAgent,
-  isRunning = false,
-  attachedFiles,
-  onRemoveFile,
-  onClearAttachments,
-  mentionData,
-}: MessageComposerProps) {
+export function MessageComposer() {
+  const {
+    onSendMessage,
+    onStopAgent,
+    isRunning,
+    attachedFiles,
+    onRemoveFile,
+    onClearAttachments,
+    mentionData,
+    autoApprove,
+    setAutoApprove,
+  } = useAgentContext();
   const { captureEvent } = usePostHog();
   const [message, setMessage] = useState("");
-  const [autoApprove, setAutoApprove] = useState(false);
   const editorRef = useRef<EditorView | null>(null);
 
   const isEmpty = !message.trim() && attachedFiles.length === 0;

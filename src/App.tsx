@@ -275,6 +275,20 @@ declare global {
       ) => Promise<boolean>;
       deleteWorkspace: (id: string) => Promise<boolean>;
     };
+    agentTools: {
+      listApis: () => Promise<{
+        success: boolean;
+        data?: unknown;
+        message?: string;
+      }>;
+      listApiEndpoints: (
+        apiId: string,
+      ) => Promise<{ success: boolean; data?: unknown; message?: string }>;
+      readApiEndpoints: (
+        apiId: string,
+        endpoints: Array<{ path: string; method: string }>,
+      ) => Promise<{ success: boolean; data?: unknown; message?: string }>;
+    };
   }
 }
 

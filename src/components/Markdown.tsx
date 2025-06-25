@@ -46,7 +46,32 @@ const Markdown = ({
     return remarkPlugins;
   }, []);
 
-  const textSizeClass = textSize === "base" ? "text-base" : "text-sm";
+  // Create harmonized text size classes for different elements
+  const sizeClasses = useMemo(() => {
+    if (textSize === "base") {
+      return {
+        h1: "text-3xl",
+        h2: "text-2xl",
+        h3: "text-xl",
+        h4: "text-lg",
+        p: "text-base",
+        code: "text-base",
+        blockquote: "text-base",
+        list: "text-base",
+      };
+    } else {
+      return {
+        h1: "text-xl",
+        h2: "text-lg",
+        h3: "text-base",
+        h4: "text-sm",
+        p: "text-sm",
+        code: "text-sm",
+        blockquote: "text-sm",
+        list: "text-sm",
+      };
+    }
+  }, [textSize]);
 
   // Create mention regex from mention data
   const mentionRegex = useMemo(() => {
@@ -109,7 +134,7 @@ const Markdown = ({
             return (
               <code
                 {...omit(props, ["node"])}
-                className={`bg-muted relative rounded px-[0.3rem] py-[0.2rem] font-mono ${textSizeClass} font-semibold`}
+                className={`bg-muted relative rounded px-[0.3rem] py-[0.2rem] font-mono ${sizeClasses.code} font-semibold`}
               />
             );
           },
@@ -147,7 +172,7 @@ const Markdown = ({
             return (
               <blockquote
                 {...omit(props, ["node"])}
-                className="mt-6 border-l-2 pl-6 italic"
+                className={`mt-6 border-l-2 pl-6 italic ${sizeClasses.blockquote}`}
               />
             );
           },
@@ -164,7 +189,7 @@ const Markdown = ({
             return (
               <ul
                 {...omit(props, ["node"])}
-                className="my-3 ml-3 list-disc pl-2 [&>li]:mt-1"
+                className={`my-3 ml-3 list-disc pl-2 [&>li]:mt-1 ${sizeClasses.list}`}
               />
             );
           },
@@ -172,7 +197,7 @@ const Markdown = ({
             return (
               <ol
                 {...omit(props, ["node"])}
-                className="my-3 ml-3 list-decimal pl-2 [&>li]:mt-1"
+                className={`my-3 ml-3 list-decimal pl-2 [&>li]:mt-1 ${sizeClasses.list}`}
               />
             );
           },
@@ -180,7 +205,7 @@ const Markdown = ({
             return (
               <h1
                 {...omit(props, ["node"])}
-                className="mt-8 scroll-m-20 text-2xl font-extrabold tracking-tight first:mt-0"
+                className={`mt-8 scroll-m-20 font-extrabold tracking-tight first:mt-0 ${sizeClasses.h1}`}
               />
             );
           },
@@ -188,7 +213,7 @@ const Markdown = ({
             return (
               <h2
                 {...omit(props, ["node"])}
-                className="mt-8 scroll-m-20 border-b pb-2 text-xl font-semibold tracking-tight first:mt-0"
+                className={`mt-8 scroll-m-20 border-b pb-2 font-semibold tracking-tight first:mt-0 ${sizeClasses.h2}`}
               />
             );
           },
@@ -196,7 +221,7 @@ const Markdown = ({
             return (
               <h3
                 {...omit(props, ["node"])}
-                className="mt-6 scroll-m-20 text-lg font-semibold tracking-tight first:mt-0"
+                className={`mt-6 scroll-m-20 font-semibold tracking-tight first:mt-0 ${sizeClasses.h3}`}
               />
             );
           },
@@ -204,7 +229,7 @@ const Markdown = ({
             return (
               <h4
                 {...omit(props, ["node"])}
-                className="mt-6 scroll-m-20 text-base font-semibold tracking-tight first:mt-0"
+                className={`mt-6 scroll-m-20 font-semibold tracking-tight first:mt-0 ${sizeClasses.h4}`}
               />
             );
           },
@@ -223,7 +248,7 @@ const Markdown = ({
             return (
               <div
                 {...omit(props, ["node"])}
-                className={`${textSizeClass} leading-7 break-words whitespace-pre-wrap [&:not(:first-child)]:mt-4`}
+                className={`${sizeClasses.p} leading-7 break-words whitespace-pre-wrap [&:not(:first-child)]:mt-4`}
                 role="article"
               >
                 {processedChildren}

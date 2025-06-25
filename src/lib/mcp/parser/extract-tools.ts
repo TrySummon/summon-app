@@ -195,11 +195,13 @@ export function convertEndpointsToTools(
 
   for (const endpoint of endpoints) {
     const path = api.paths[endpoint.path];
-    const operation = path?.[endpoint.method as OpenAPIV3.HttpMethods] as
-      | OpenAPIV3.OperationObject
-      | undefined;
+    const operation = path?.[
+      endpoint.method.toLowerCase() as OpenAPIV3.HttpMethods
+    ] as OpenAPIV3.OperationObject | undefined;
     if (!operation) {
-      console.warn(`Operation not found for endpoint ${endpoint.path}`);
+      console.warn(
+        `Operation not found for endpoint ${endpoint.path} and method ${endpoint.method}`,
+      );
       continue;
     }
     operation.parameters = operation.parameters || [];

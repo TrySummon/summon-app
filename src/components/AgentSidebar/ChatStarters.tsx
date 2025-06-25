@@ -1,10 +1,7 @@
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Sparkles, Wrench, Workflow, FileText } from "lucide-react";
-
-interface ChatStartersProps {
-  onStarterClick: (prompt: string) => void;
-}
+import { useAgentContext } from "./AgentContext";
 
 const starters = [
   {
@@ -35,8 +32,9 @@ const starters = [
   },
 ];
 
-export function ChatStarters({ onStarterClick }: ChatStartersProps) {
+export function ChatStarters() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const { handleStarterClick: onStarterClick } = useAgentContext();
 
   return (
     <div className="flex flex-1 flex-col justify-center">

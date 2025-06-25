@@ -26,6 +26,8 @@ import { useMcps } from "@/hooks/useMcps";
 import { capitalize } from "@/lib/string";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { AgentProvider } from "./AgentContext";
+import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 
 export interface MentionData {
   id: string;
@@ -37,15 +39,38 @@ interface Props {
   mcp: McpData;
   apis: { id: string; api: OpenAPIV3.Document }[];
   onRefreshApis?: () => void;
+  onAddEndpoints: (apiId: string, endpoints: SelectedEndpoint[]) => void;
+  onDeleteTool: (toolName: string) => void;
+  onDeleteAllTools: () => void;
 }
 
-export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
+export function AgentSidebar({
+  mcp,
+  apis,
+  onRefreshApis,
+  onAddEndpoints,
+  onDeleteTool,
+  onDeleteAllTools,
+}: Props) {
   const { token, isAuthenticated } = useAuth();
+
+  const { messages, append, status, error, stop, setMessages, addToolResult } =
+    useChat({
+      api: `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/agent`,
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {},
+      maxSteps: 10,
+    });
+
   const { updateMcp } = useMcps();
   const [attachedFiles, setAttachedFiles] = useState<Attachment[]>([]);
   const [showSignInDialog, setShowSignInDialog] = useState(false);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const [placeholderHeight, setPlaceholderHeight] = useState(0);
+  const [autoApprove, setAutoApprove] = useState(false);
   const placeholderHeightRef = useRef(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const latestUserMessageRef = useRef<HTMLDivElement>(null);
@@ -83,15 +108,6 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
 
     return data;
   }, [mcp, apis]);
-
-  const { messages, append, status, error, stop, setMessages } = useChat({
-    api: `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/agent`,
-    headers: token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : {},
-  });
 
   const isRunning = status === "streaming" || status === "submitted";
 
@@ -295,8 +311,6 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
         return false;
       }
 
-      console.log("message", message);
-
       // Store the current mcp state before sending the message
       if (message.id) {
         mcpVersionsRef.current[message.id] = mcp;
@@ -389,100 +403,110 @@ export function AgentSidebar({ mcp, apis, onRefreshApis }: Props) {
   );
 
   return (
-    <div {...getRootProps()} className="relative h-full">
-      <input {...getInputProps()} />
-      {isDragActive && (
-        <div className="bg-background/60 absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="border-primary/60 bg-background/90 rounded-xl border-2 border-dashed p-8 shadow-lg">
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="flex items-center space-x-2">
-                <Upload className="text-primary h-8 w-8 animate-bounce" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-foreground text-lg font-semibold">
-                  Drop files to attach
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  Images, JSON, TXT, and Markdown files supported
-                </p>
+    <AgentProvider
+      mcp={mcp}
+      onRefreshApis={onRefreshApis}
+      onAddEndpoints={onAddEndpoints}
+      onDeleteTool={onDeleteTool}
+      onDeleteAllTools={onDeleteAllTools}
+      isRunning={isRunning}
+      attachedFiles={attachedFiles}
+      mentionData={mentionData}
+      autoApprove={autoApprove}
+      isAutoScrollEnabled={isAutoScrollEnabled}
+      addToolResult={addToolResult}
+      setAutoApprove={setAutoApprove}
+      onSendMessage={handleSendMessage}
+      onStopAgent={stop}
+      onRevert={handleRevert}
+      onUpdateMessage={handleUpdateMessage}
+      onRemoveFile={handleRemoveFile}
+      onClearAttachments={clearAttachments}
+      handleNewChat={handleNewChat}
+      handleStarterClick={handleStarterClick}
+    >
+      <div {...getRootProps()} className="relative h-full">
+        <input {...getInputProps()} />
+        {isDragActive && (
+          <div className="bg-background/60 absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+            <div className="border-primary/60 bg-background/90 rounded-xl border-2 border-dashed p-8 shadow-lg">
+              <div className="flex flex-col items-center space-y-4 text-center">
+                <div className="flex items-center space-x-2">
+                  <Upload className="text-primary h-8 w-8 animate-bounce" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-foreground text-lg font-semibold">
+                    Drop files to attach
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    Images, JSON, TXT, and Markdown files supported
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-      <Sidebar
-        side="right"
-        className="top-[var(--header-height)] flex !h-[calc(100svh-var(--header-height))] flex-col"
-      >
-        <SidebarHeader className="border-b">
-          <div className="flex items-center justify-between">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <Button className="h-8 px-2" variant="ghost">
-                  {capitalize(mcp.name)} Chat
-                </Button>
-              </SidebarMenuItem>
-            </SidebarMenu>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={handleNewChat}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </SidebarHeader>
-
-        <SidebarContent
-          className="flex min-h-0 flex-1 flex-col"
-          ref={scrollContainerRef}
-          onScroll={handleScroll}
+        )}
+        <Sidebar
+          side="right"
+          className="top-[var(--header-height)] flex !h-[calc(100svh-var(--header-height))] flex-col"
         >
-          <div className="flex flex-1 flex-col p-4 pb-0">
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>
-                  {error.message ||
-                    "An error occurred while processing your request. Please try again."}
-                </AlertDescription>
-              </Alert>
-            )}
-            {messages.length === 0 ? (
-              <ChatStarters onStarterClick={handleStarterClick} />
-            ) : (
-              <MessagesList
-                messages={messages}
-                isRunning={isRunning}
-                latestUserMessageRef={latestUserMessageRef}
-                placeholderHeight={placeholderHeight}
-                onStop={stop}
-                onRevert={handleRevert}
-                onUpdateMessage={handleUpdateMessage}
-                mentionData={mentionData}
-              />
-            )}
-          </div>
-        </SidebarContent>
+          <SidebarHeader className="border-b">
+            <div className="flex items-center justify-between">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <Button className="h-8 px-2" variant="ghost">
+                    Vibe Build {capitalize(mcp.name)}
+                  </Button>
+                </SidebarMenuItem>
+              </SidebarMenu>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={handleNewChat}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </SidebarHeader>
 
-        <SidebarFooter className="p-3 pt-0">
-          <MessageComposer
-            onSendMessage={handleSendMessage}
-            onStopAgent={stop}
-            isRunning={isRunning}
-            attachedFiles={attachedFiles}
-            onRemoveFile={handleRemoveFile}
-            onClearAttachments={clearAttachments}
-            mentionData={mentionData}
-          />
-        </SidebarFooter>
+          <SidebarContent
+            className="flex min-h-0 flex-1 flex-col"
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+          >
+            <div className="flex flex-1 flex-col p-4 pb-0">
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>
+                    {error.message ||
+                      "An error occurred while processing your request. Please try again."}
+                  </AlertDescription>
+                </Alert>
+              )}
+              {messages.length === 0 ? (
+                <ChatStarters />
+              ) : (
+                <MessagesList
+                  latestUserMessageRef={latestUserMessageRef}
+                  messages={messages}
+                  placeholderHeight={placeholderHeight}
+                />
+              )}
+            </div>
+          </SidebarContent>
 
-        <SidebarRail direction="left" />
-      </Sidebar>
+          <SidebarFooter className="p-3 pt-0">
+            <MessageComposer />
+          </SidebarFooter>
 
-      <SignInDialog
-        open={showSignInDialog}
-        onOpenChange={setShowSignInDialog}
-      />
-    </div>
+          <SidebarRail direction="left" />
+        </Sidebar>
+
+        <SignInDialog
+          open={showSignInDialog}
+          onOpenChange={setShowSignInDialog}
+        />
+      </div>
+    </AgentProvider>
   );
 }
