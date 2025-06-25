@@ -14,17 +14,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/button";
 import { AlertCircle, Plus, Upload } from "lucide-react";
 import { useDropzone } from "react-dropzone";
-import { useCallback, useState, useMemo, useRef } from "react";
+import { useCallback, useState, useMemo, useRef, useEffect } from "react";
 import { McpData } from "@/lib/db/mcp-db";
 import { importApi } from "@/ipc/openapi/openapi-client";
 import { SignInDialog } from "@/components/SignInDialog";
 import { Attachment, Message } from "ai";
 import { useMcps } from "@/hooks/useMcps";
-import { capitalize } from "@/lib/string";
 import { AgentProvider } from "./AgentContext";
 import { useApis } from "@/hooks/useApis";
 import { useMcpActions } from "@/hooks/useMcpActions";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { useAgentChats } from "@/stores/agentChatsStore";
 
 export interface MentionData {
   id: string;
@@ -34,15 +34,24 @@ export interface MentionData {
 
 interface Props {
   mcpId: string;
+  defaultChatId?: string;
+  onChatIdChange?: (chatId: string | undefined) => void;
 }
 
-export function AgentSidebar({ mcpId }: Props) {
+export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
   const { token, isAuthenticated } = useAuth();
   const { apis, refetch: refetchApis } = useApis();
   const { mcps } = useMcps();
   const mcp = mcps.find((m) => m.id === mcpId);
   const { onAddEndpoints, onDeleteTool, onDeleteAllTools } =
     useMcpActions(mcpId);
+
+  const { createChat, updateChat, getChat } = useAgentChats(mcpId);
+
+  // Local state for current chat ID
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(
+    defaultChatId,
+  );
 
   const {
     messages,
@@ -63,12 +72,67 @@ export function AgentSidebar({ mcpId }: Props) {
     maxSteps: 10,
   });
 
+  // Separate useChat hook for generating conversation names
+  const {
+    messages: nameMessages,
+    append: appendNameMessage,
+    setMessages: setNameMessages,
+  } = useChat({
+    api: `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/conversation-name`,
+    headers: token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : {},
+  });
+
   const { updateMcp } = useMcps();
   const [attachedFiles, setAttachedFiles] = useState<Attachment[]>([]);
   const [showSignInDialog, setShowSignInDialog] = useState(false);
   const [autoApprove, setAutoApprove] = useState(false);
   const scrollableContentRef = useRef<ScrollableContentRef>(null);
   const mcpVersionsRef = useRef<Record<string, McpData>>({});
+  const [currentChatName, setCurrentChatName] = useState<string | undefined>(
+    "New Chat",
+  );
+
+  // Load default chat on mount if provided
+  useEffect(() => {
+    if (defaultChatId) {
+      const chat = getChat(defaultChatId);
+      if (chat) {
+        setCurrentChatId(defaultChatId);
+        setMessages(chat.messages);
+        setCurrentChatName(chat.name);
+      }
+    }
+  }, [defaultChatId, getChat, setMessages]);
+
+  // Call onChatIdChange when currentChatId changes
+  useEffect(() => {
+    onChatIdChange?.(currentChatId);
+  }, [currentChatId, onChatIdChange]);
+
+  // Handle conversation name generation
+  useEffect(() => {
+    if (nameMessages.length > 0 && currentChatId) {
+      // Find the latest assistant message with the generated name
+      const latestAssistantMessage = nameMessages
+        .slice()
+        .reverse()
+        .find((msg) => msg.role === "assistant");
+
+      if (latestAssistantMessage?.content) {
+        // Extract the name from the content (trim any extra whitespace)
+        const generatedName = latestAssistantMessage.content.trim();
+        setCurrentChatName(generatedName);
+        // Update the chat name in the store
+        updateChat(currentChatId, {
+          name: generatedName,
+        });
+      }
+    }
+  }, [nameMessages, currentChatId, setCurrentChatName, updateChat]);
 
   const mentionData = useMemo(() => {
     const data: MentionData[] = [];
@@ -188,7 +252,22 @@ export function AgentSidebar({ mcpId }: Props) {
   const handleNewChat = useCallback(() => {
     setMessages([]);
     setAttachedFiles([]);
-  }, [setMessages]);
+    setCurrentChatId(undefined);
+    // Clear revert states when starting a new chat
+    mcpVersionsRef.current = {};
+    // Clear name generation messages
+    setNameMessages([]);
+    setCurrentChatName("New Chat");
+  }, [setMessages, setNameMessages]);
+
+  // Save messages to current chat when they change
+  useEffect(() => {
+    if (currentChatId && messages.length > 0) {
+      updateChat(currentChatId, {
+        messages,
+      });
+    }
+  }, [currentChatId, messages, updateChat]);
 
   // Authentication wrapper functions
   const handleStarterClick = useCallback(
@@ -214,12 +293,33 @@ export function AgentSidebar({ mcpId }: Props) {
         return false;
       }
 
+      // Check if this is the first message in a new conversation
+      const isFirstMessage = messages.length === 0;
+
+      // Create a new chat if one doesn't exist
+      let chatId = currentChatId;
+      if (!chatId) {
+        chatId = createChat();
+        setCurrentChatId(chatId);
+      }
+
       // Store the current mcp state before sending the message
       if (message.id) {
         mcpVersionsRef.current[message.id] = mcp;
       }
 
       append(message);
+
+      // Generate conversation name for first message
+      if (isFirstMessage && message.role === "user" && message.content) {
+        // Clear previous name generation messages
+        setNameMessages([]);
+        // Generate new conversation name
+        appendNameMessage({
+          role: "user",
+          content: message.content,
+        });
+      }
 
       // Scroll to show the new message at top
       setTimeout(() => {
@@ -228,7 +328,16 @@ export function AgentSidebar({ mcpId }: Props) {
 
       return true;
     },
-    [isAuthenticated, append, mcp],
+    [
+      isAuthenticated,
+      append,
+      mcp,
+      currentChatId,
+      createChat,
+      messages.length,
+      setNameMessages,
+      appendNameMessage,
+    ],
   );
 
   const handleRevert = useCallback(
@@ -295,6 +404,24 @@ export function AgentSidebar({ mcpId }: Props) {
     [setMessages, mcp, reload],
   );
 
+  const handleLoadChat = useCallback(
+    (chatId: string, chatMessages: Message[]) => {
+      setMessages(chatMessages);
+      setCurrentChatId(chatId);
+      // Clear revert states when loading a different chat
+      mcpVersionsRef.current = {};
+      // Clear name generation messages
+      setNameMessages([]);
+      setCurrentChatName(getChat(chatId)?.name || "New Chat");
+    },
+    [setMessages, setNameMessages],
+  );
+
+  // Function to check if a message has revert state available
+  const hasRevertState = useCallback((messageId: string): boolean => {
+    return messageId in mcpVersionsRef.current;
+  }, []);
+
   if (!mcp) {
     return null;
   }
@@ -320,6 +447,8 @@ export function AgentSidebar({ mcpId }: Props) {
       onClearAttachments={clearAttachments}
       handleNewChat={handleNewChat}
       handleStarterClick={handleStarterClick}
+      handleLoadChat={handleLoadChat}
+      hasRevertState={hasRevertState}
     >
       <div {...getRootProps()} className="relative h-full">
         <input {...getInputProps()} />
@@ -351,7 +480,7 @@ export function AgentSidebar({ mcpId }: Props) {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <Button className="h-8 px-2" variant="ghost">
-                    Vibe Build {capitalize(mcp.name)}
+                    {currentChatName}
                   </Button>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -365,6 +494,7 @@ export function AgentSidebar({ mcpId }: Props) {
 
           <ScrollableContent
             ref={scrollableContentRef}
+            mcpId={mcpId}
             messages={messages}
             isRunning={isRunning}
           />
@@ -383,7 +513,7 @@ export function AgentSidebar({ mcpId }: Props) {
           )}
 
           <SidebarFooter className="p-3 pt-0">
-            <MessageComposer />
+            {messages.length > 0 ? <MessageComposer /> : null}
           </SidebarFooter>
 
           <SidebarRail direction="left" />

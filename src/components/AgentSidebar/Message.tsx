@@ -41,8 +41,14 @@ export const MessageComponent = forwardRef<
   HTMLDivElement,
   MessageComponentProps
 >(({ message, isLatestUserMessage }, ref) => {
-  const { isRunning, onStopAgent, onRevert, onUpdateMessage, mentionData } =
-    useAgentContext();
+  const {
+    isRunning,
+    onStopAgent,
+    onRevert,
+    onUpdateMessage,
+    mentionData,
+    hasRevertState,
+  } = useAgentContext();
   const [showReasoning, setShowReasoning] = useState<Record<number, boolean>>(
     {},
   );
@@ -276,10 +282,15 @@ export const MessageComponent = forwardRef<
     const showStopButton = isLatestUserMessage && isRunning && onStopAgent;
 
     // Show revert button logic:
-    // - When running: only on non-latest messages (disabled)
-    // - When not running: on all messages (enabled)
-    const showRevertButton = message.id && (!isRunning || !isLatestUserMessage);
-    const isRevertDisabled = isRunning && !isLatestUserMessage;
+    // - Only show if we have revert state for this message
+    // - Don't show at all when running
+    const showRevertButton =
+      message.id && hasRevertState(message.id) && !isRunning;
+
+    // Don't render action bar if there's nothing to show
+    if (!showRunningStatus && !showStopButton && !showRevertButton) {
+      return null;
+    }
 
     return (
       <div className="flex items-center justify-between border-t px-3 py-1">
@@ -307,7 +318,6 @@ export const MessageComponent = forwardRef<
             <Button
               variant="ghost"
               size="sm"
-              disabled={isRevertDisabled}
               onClick={() => {
                 if (
                   confirm(

@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useParams } from "@tanstack/react-router";
 import { useMcps } from "@/hooks/useMcps";
 import {
@@ -26,6 +26,23 @@ export default function McpPage() {
   const mcp = mcps.find((m) => m.id === mcpId);
   const { onAddEndpoints, onDeleteTool, onDeleteAllTools } =
     useMcpActions(mcpId);
+
+  // State for storing the current chat ID
+  const [currentChatId] = useState<string | undefined>(
+    localStorage.getItem(`mcp-chat-${mcpId}`) || undefined,
+  );
+
+  // Save chat ID to localStorage and update state
+  const handleChatIdChange = useCallback(
+    (chatId: string | undefined) => {
+      if (chatId) {
+        localStorage.setItem(`mcp-chat-${mcpId}`, chatId);
+      } else {
+        localStorage.removeItem(`mcp-chat-${mcpId}`);
+      }
+    },
+    [mcpId],
+  );
 
   const onUpdateApiConfigs = useCallback(
     async (configData: ApiConfigs) => {
@@ -132,7 +149,11 @@ export default function McpPage() {
             </div>
           </div>
         </SidebarInset>
-        <AgentSidebar mcpId={mcpId} />
+        <AgentSidebar
+          mcpId={mcpId}
+          defaultChatId={currentChatId}
+          onChatIdChange={handleChatIdChange}
+        />
       </SidebarProvider>
     </div>
   );

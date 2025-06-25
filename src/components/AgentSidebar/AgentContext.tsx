@@ -34,6 +34,8 @@ interface AgentContextType {
   onClearAttachments: () => void;
   handleNewChat: () => void;
   handleStarterClick: (prompt: string) => void;
+  handleLoadChat: (chatId: string, messages: Message[]) => void;
+  hasRevertState: (messageId: string) => boolean;
 
   // Agent tool operations (mapped from MCP operations)
   addToolsToMcp: (
@@ -83,6 +85,8 @@ interface AgentProviderProps {
   onClearAttachments: () => void;
   handleNewChat: () => void;
   handleStarterClick: (prompt: string) => void;
+  handleLoadChat: (chatId: string, messages: Message[]) => void;
+  hasRevertState: (messageId: string) => boolean;
 }
 
 export const AgentProvider: React.FC<AgentProviderProps> = ({
@@ -106,6 +110,8 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
   onClearAttachments,
   handleNewChat,
   handleStarterClick,
+  handleLoadChat,
+  hasRevertState,
 }) => {
   // Map MCP operations to agent tool format
   const addToolsToMcp = useCallback(
@@ -263,6 +269,8 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
     onClearAttachments,
     handleNewChat,
     handleStarterClick,
+    handleLoadChat,
+    hasRevertState,
 
     // Agent tool operations
     addToolsToMcp,

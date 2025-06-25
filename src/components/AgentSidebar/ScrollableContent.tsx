@@ -9,12 +9,14 @@ import React, {
 import { SidebarContent } from "@/components/ui/sidebar";
 
 import { Message } from "ai";
-import { ChatStarters } from "./ChatStarters";
 import { MessagesList } from "./MessagesList";
+import { MessageComposer } from "./MessageComposer";
+import { PastChats } from "./PastChats";
 
 interface ScrollableContentProps {
   messages: Message[];
   isRunning: boolean;
+  mcpId: string;
 }
 
 export interface ScrollableContentRef {
@@ -24,7 +26,7 @@ export interface ScrollableContentRef {
 export const ScrollableContent = forwardRef<
   ScrollableContentRef,
   ScrollableContentProps
->(({ messages, isRunning }, ref) => {
+>(({ messages, isRunning, mcpId }, ref) => {
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const [placeholderHeight, setPlaceholderHeight] = useState(0);
   const placeholderHeightRef = useRef(0);
@@ -134,13 +136,16 @@ export const ScrollableContent = forwardRef<
 
   return (
     <SidebarContent
-      className="flex min-h-0 flex-1 flex-col"
+      className="flex min-h-[100px] flex-1 flex-col"
       ref={scrollContainerRef}
       onScroll={handleScroll}
     >
       <div className="flex flex-1 flex-col p-4 pb-0">
         {messages.length === 0 ? (
-          <ChatStarters />
+          <div className="flex flex-1 flex-col justify-between gap-4">
+            <MessageComposer />
+            <PastChats mcpId={mcpId} />
+          </div>
         ) : (
           <MessagesList
             latestUserMessageRef={latestUserMessageRef}

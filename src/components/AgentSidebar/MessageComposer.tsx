@@ -166,7 +166,7 @@ export function MessageComposer() {
 
   const extensions: Extension[] = useMemo(
     () => [
-      placeholder("Enter to send • Shift+Enter for new line"),
+      placeholder("Add, improve and manage your MCP tools."),
       mentionAutocompletion,
       mentionDecorationPlugin,
       keymap.of([
