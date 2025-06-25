@@ -40,7 +40,7 @@ export function ChatStarters() {
     <div className="flex flex-1 flex-col justify-center">
       <div className="space-y-2">
         <div className="mb-3 text-center">
-          <h3 className="text-foreground text-sm font-medium">
+          <h3 className="text-foreground font-medium">
             How can I help you today?
           </h3>
         </div>

@@ -221,7 +221,6 @@ export function MessageComposer() {
           <AutoButton
             isEnabled={autoApprove}
             onToggle={() => setAutoApprove(!autoApprove)}
-            disabled={isRunning}
             className="h-6"
           />
           <Tooltip>

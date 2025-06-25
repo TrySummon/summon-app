@@ -69,18 +69,89 @@ function extractApiEndpoints(api: OpenAPIV3.Document) {
 }
 
 /**
- * Get detailed definitions for specific endpoints
+ * Extract essential parameter information
+ */
+function extractParameterInfo(
+  parameters?: (OpenAPIV3.ParameterObject | OpenAPIV3.ReferenceObject)[],
+) {
+  if (!parameters) return [];
+
+  return parameters.map((param) => {
+    // Handle reference objects by resolving them (simplified for now)
+    if ("$ref" in param) {
+      return { name: "reference", description: `Reference: ${param.$ref}` };
+    }
+
+    const p = param as OpenAPIV3.ParameterObject;
+    return {
+      name: p.name,
+      in: p.in,
+      required: p.required || false,
+      type: (p.schema as OpenAPIV3.SchemaObject)?.type || "unknown",
+      description: p.description,
+    };
+  });
+}
+
+/**
+ * Extract simplified request body schema
+ */
+function extractRequestBodyInfo(
+  requestBody?: OpenAPIV3.RequestBodyObject | OpenAPIV3.ReferenceObject,
+) {
+  if (!requestBody) return null;
+
+  if ("$ref" in requestBody) {
+    return { description: `Reference: ${requestBody.$ref}` };
+  }
+
+  const body = requestBody as OpenAPIV3.RequestBodyObject;
+  const content = body.content;
+  const mediaTypes = Object.keys(content || {});
+
+  return {
+    required: body.required || false,
+    description: body.description,
+    mediaTypes,
+  };
+}
+
+/**
+ * Extract simplified response schema
+ */
+function extractResponseInfo(responses?: OpenAPIV3.ResponsesObject) {
+  if (!responses) return {};
+
+  const responseInfo: Record<
+    string,
+    {
+      description: string;
+      mediaTypes?: string[];
+    }
+  > = {};
+
+  for (const [status, response] of Object.entries(responses)) {
+    if ("$ref" in response) {
+      responseInfo[status] = { description: `Reference: ${response.$ref}` };
+    } else {
+      responseInfo[status] = {
+        description: response.description,
+        mediaTypes: Object.keys(response.content || {}),
+      };
+    }
+  }
+
+  return responseInfo;
+}
+
+/**
+ * Get detailed definitions for specific endpoints (LLM-optimized)
  */
 function readApiEndpointDetails(
   api: OpenAPIV3.Document,
   endpoints: Array<{ path: string; method: string }>,
 ) {
-  const endpointDetails: Array<{
-    path: string;
-    method: string;
-    operation: OpenAPIV3.OperationObject | null;
-    pathItem: OpenAPIV3.PathItemObject | null;
-  }> = [];
+  const endpointDetails = [];
 
   for (const endpoint of endpoints) {
     const pathItem = api.paths?.[endpoint.path];
@@ -88,11 +159,28 @@ function readApiEndpointDetails(
       endpoint.method.toLowerCase() as keyof OpenAPIV3.PathItemObject
     ] as OpenAPIV3.OperationObject | undefined;
 
+    if (!operation) {
+      endpointDetails.push({
+        path: endpoint.path,
+        method: endpoint.method,
+        error: "Operation not found",
+      });
+      continue;
+    }
+
+    // Extract only essential information
     endpointDetails.push({
       path: endpoint.path,
       method: endpoint.method,
-      operation: operation || null,
-      pathItem: pathItem || null,
+      summary: operation.summary,
+      description: operation.description,
+      operationId: operation.operationId,
+      tags: operation.tags,
+      parameters: extractParameterInfo(operation.parameters),
+      requestBody: extractRequestBodyInfo(operation.requestBody),
+      responses: extractResponseInfo(operation.responses),
+      security: operation.security,
+      deprecated: operation.deprecated,
     });
   }
 

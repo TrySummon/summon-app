@@ -40,29 +40,24 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
       : undefined;
 
   const fetchMcpTools = useCallback(async () => {
-    if (state?.status === "running") {
-      try {
-        const response = await getMcpTools(mcpId);
-        if (response.success && response.data) {
-          setMcpTools(response.data);
-        } else {
-          console.error("Failed to fetch MCP tools:", response.message);
-          setMcpTools([]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch MCP tools:", err);
+    try {
+      const response = await getMcpTools(mcpId);
+      if (response.success && response.data) {
+        setMcpTools(response.data);
+      } else {
+        console.error("Failed to fetch MCP tools:", response.message);
         setMcpTools([]);
       }
+    } catch (err) {
+      console.error("Failed to fetch MCP tools:", err);
+      setMcpTools([]);
     }
-  }, [mcpId, state?.status]);
+  }, [mcpId]);
 
   // Enhanced refresh function that refreshes both status and tools
   const handleRefreshStatus = useCallback(async () => {
-    refreshStatus();
-    // Also refresh tools after a short delay to ensure status is updated first
-    setTimeout(() => {
-      fetchMcpTools();
-    }, 100);
+    await refreshStatus();
+    await fetchMcpTools();
   }, [refreshStatus, fetchMcpTools]);
 
   useEffect(() => {

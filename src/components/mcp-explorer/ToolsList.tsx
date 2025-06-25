@@ -46,7 +46,7 @@ export const ToolsList: React.FC<ToolsListProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">MCP Tools</h2>
+        <h2 className="text-xl font-bold">MCP Tools ({tools.length})</h2>
         {onDeleteAllTools && tools.length > 0 && (
           <Button
             variant="ghost"

@@ -22,7 +22,6 @@ interface AgentContextType {
   attachedFiles: Attachment[];
   mentionData: MentionData[];
   autoApprove: boolean;
-  isAutoScrollEnabled: boolean;
 
   // Chat operations
   addToolResult: (params: { toolCallId: string; result: unknown }) => void;
@@ -74,7 +73,6 @@ interface AgentProviderProps {
   attachedFiles: Attachment[];
   mentionData: MentionData[];
   autoApprove: boolean;
-  isAutoScrollEnabled: boolean;
   addToolResult: (params: { toolCallId: string; result: unknown }) => void;
   setAutoApprove: (value: boolean) => void;
   onSendMessage: (message: Message) => boolean;
@@ -98,7 +96,6 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
   attachedFiles,
   mentionData,
   autoApprove,
-  isAutoScrollEnabled,
   addToolResult,
   setAutoApprove,
   onSendMessage,
@@ -132,7 +129,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
           // Convert to SelectedEndpoint format
           const selectedEndpoint: SelectedEndpoint = {
             path: endpointPath,
-            method: endpointMethod,
+            method: endpointMethod.toLowerCase(),
           };
 
           endpointsByApiId.get(apiId)!.push(selectedEndpoint);
@@ -255,7 +252,6 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
     attachedFiles,
     mentionData,
     autoApprove,
-    isAutoScrollEnabled,
 
     addToolResult,
     setAutoApprove,

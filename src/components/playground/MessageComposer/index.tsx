@@ -168,7 +168,6 @@ export default function MessageComposer() {
       <AutoButton
         isEnabled={autoExecuteTools}
         onToggle={handleToggleAutoExecute}
-        disabled={running}
       />
     ),
     [autoExecuteTools, handleToggleAutoExecute, running],

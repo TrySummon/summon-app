@@ -17,8 +17,8 @@ const toolClassifications: Record<string, ToolClassification> = {
   },
   listApiEndpoint: {
     type: "read",
-    runningText: "Loading API endpoints...",
-    doneText: "Retrieved endpoints",
+    runningText: "Search API endpoints...",
+    doneText: "Found API endpoints",
     errorText: "Failed to load endpoints",
   },
   readApiEndpoints: {

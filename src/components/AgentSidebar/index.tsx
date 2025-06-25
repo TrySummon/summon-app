@@ -1,7 +1,6 @@
 import React from "react";
 import {
   Sidebar,
-  SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
@@ -9,25 +8,23 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { MessageComposer } from "./MessageComposer";
-import { ChatStarters } from "./ChatStarters";
-import { MessagesList } from "./MessagesList";
+import { ScrollableContent, ScrollableContentRef } from "./ScrollableContent";
 import { useChat } from "@ai-sdk/react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/button";
-import { Plus, Upload } from "lucide-react";
+import { AlertCircle, Plus, Upload } from "lucide-react";
 import { useDropzone } from "react-dropzone";
-import { useCallback, useState, useMemo, useRef, useEffect } from "react";
+import { useCallback, useState, useMemo, useRef } from "react";
 import { McpData } from "@/lib/db/mcp-db";
-import { OpenAPIV3 } from "openapi-types";
 import { importApi } from "@/ipc/openapi/openapi-client";
 import { SignInDialog } from "@/components/SignInDialog";
 import { Attachment, Message } from "ai";
 import { useMcps } from "@/hooks/useMcps";
 import { capitalize } from "@/lib/string";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 import { AgentProvider } from "./AgentContext";
-import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
+import { useApis } from "@/hooks/useApis";
+import { useMcpActions } from "@/hooks/useMcpActions";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
 export interface MentionData {
   id: string;
@@ -36,23 +33,16 @@ export interface MentionData {
 }
 
 interface Props {
-  mcp: McpData;
-  apis: { id: string; api: OpenAPIV3.Document }[];
-  onRefreshApis?: () => void;
-  onAddEndpoints: (apiId: string, endpoints: SelectedEndpoint[]) => void;
-  onDeleteTool: (toolName: string) => void;
-  onDeleteAllTools: () => void;
+  mcpId: string;
 }
 
-export function AgentSidebar({
-  mcp,
-  apis,
-  onRefreshApis,
-  onAddEndpoints,
-  onDeleteTool,
-  onDeleteAllTools,
-}: Props) {
+export function AgentSidebar({ mcpId }: Props) {
   const { token, isAuthenticated } = useAuth();
+  const { apis, refetch: refetchApis } = useApis();
+  const { mcps } = useMcps();
+  const mcp = mcps.find((m) => m.id === mcpId);
+  const { onAddEndpoints, onDeleteTool, onDeleteAllTools } =
+    useMcpActions(mcpId);
 
   const { messages, append, status, error, stop, setMessages, addToolResult } =
     useChat({
@@ -68,19 +58,15 @@ export function AgentSidebar({
   const { updateMcp } = useMcps();
   const [attachedFiles, setAttachedFiles] = useState<Attachment[]>([]);
   const [showSignInDialog, setShowSignInDialog] = useState(false);
-  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
-  const [placeholderHeight, setPlaceholderHeight] = useState(0);
   const [autoApprove, setAutoApprove] = useState(false);
-  const placeholderHeightRef = useRef(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const latestUserMessageRef = useRef<HTMLDivElement>(null);
+  const scrollableContentRef = useRef<ScrollableContentRef>(null);
   const mcpVersionsRef = useRef<Record<string, McpData>>({});
 
   const mentionData = useMemo(() => {
     const data: MentionData[] = [];
 
     // 1. MCP Tools
-    if (mcp && mcp.apiGroups) {
+    if (mcp?.apiGroups) {
       for (const group of Object.values(mcp.apiGroups)) {
         if (group.tools) {
           for (const tool of group.tools) {
@@ -111,98 +97,6 @@ export function AgentSidebar({
 
   const isRunning = status === "streaming" || status === "submitted";
 
-  // Scroll to bottom function
-  const scrollToBottom = useCallback(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop =
-        scrollContainerRef.current.scrollHeight;
-    }
-  }, []);
-
-  // Check if user is near bottom
-  const isNearBottom = useCallback(() => {
-    if (!scrollContainerRef.current) return true;
-
-    const { scrollTop, scrollHeight, clientHeight } =
-      scrollContainerRef.current;
-    const threshold = 50; // pixels from bottom
-    return scrollHeight - scrollTop - clientHeight < threshold;
-  }, []);
-
-  // Handle scroll events to detect dock out/in
-  const handleScroll = useCallback(() => {
-    if (!scrollContainerRef.current) return;
-
-    const nearBottom = isNearBottom();
-
-    // If user scrolled up and we're not near bottom, disable auto-scroll
-    if (!nearBottom && isAutoScrollEnabled) {
-      setIsAutoScrollEnabled(false);
-    }
-    // If user scrolled back to bottom, re-enable auto-scroll
-    else if (nearBottom && !isAutoScrollEnabled) {
-      setIsAutoScrollEnabled(true);
-    }
-  }, [isAutoScrollEnabled, isNearBottom]);
-
-  // Auto-scroll when agent is running and auto-scroll is enabled
-  useEffect(() => {
-    if (isRunning && isAutoScrollEnabled && messages.length > 0) {
-      scrollToBottom();
-    }
-  }, [messages, isRunning, isAutoScrollEnabled, scrollToBottom]);
-
-  // Enable auto-scroll when agent starts running
-  useEffect(() => {
-    if (isRunning) {
-      setIsAutoScrollEnabled(true);
-    }
-  }, [isRunning]);
-
-  // Calculate placeholder height to ensure scroll space
-  const calculatePlaceholderHeight = useCallback(() => {
-    if (!scrollContainerRef.current || !latestUserMessageRef.current) {
-      return 0;
-    }
-
-    const containerScrollHeight = scrollContainerRef.current.scrollHeight;
-    const containerClientHeight = scrollContainerRef.current.clientHeight;
-    const messageElement = latestUserMessageRef.current;
-    const messageOffsetTop = messageElement.offsetTop;
-
-    const requiredTotalHeight = messageOffsetTop + containerClientHeight;
-    const currentContentHeight =
-      containerScrollHeight - placeholderHeightRef.current;
-    const requiredPlaceholder = Math.max(
-      0,
-      requiredTotalHeight - currentContentHeight - 100,
-    );
-    return requiredPlaceholder;
-  }, []); // No dependencies since we use ref instead of state
-
-  // Update placeholder height when messages change
-  useEffect(() => {
-    const newHeight = calculatePlaceholderHeight();
-    placeholderHeightRef.current = newHeight;
-    setPlaceholderHeight(newHeight);
-  }, [messages, calculatePlaceholderHeight]);
-
-  // Scroll to position the latest user message at the top
-  const scrollToLatestUserMessage = useCallback(() => {
-    if (!scrollContainerRef.current || !latestUserMessageRef.current) {
-      return;
-    }
-
-    const container = scrollContainerRef.current;
-    const messageElement = latestUserMessageRef.current;
-
-    // Get the message's position relative to the scrollable container
-    const messageOffsetTop = messageElement.offsetTop;
-
-    // Scroll to position the message at the top (with small offset for padding)
-    container.scrollTop = messageOffsetTop - 16; // 16px offset for padding
-  }, []);
-
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       acceptedFiles.forEach(async (file) => {
@@ -214,9 +108,7 @@ export function AgentSidebar({
             const result = await importApi(file);
             if (result.success) {
               // Refresh the APIs list to update mentions
-              if (onRefreshApis) {
-                onRefreshApis();
-              }
+              refetchApis();
               apiId = result.apiId ?? null;
             }
           } catch (error) {
@@ -261,7 +153,7 @@ export function AgentSidebar({
         reader.readAsDataURL(file);
       });
     },
-    [onRefreshApis],
+    [refetchApis],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -288,7 +180,6 @@ export function AgentSidebar({
   const handleNewChat = useCallback(() => {
     setMessages([]);
     setAttachedFiles([]);
-    setIsAutoScrollEnabled(true);
   }, [setMessages]);
 
   // Authentication wrapper functions
@@ -311,6 +202,10 @@ export function AgentSidebar({
         return false;
       }
 
+      if (!mcp) {
+        return false;
+      }
+
       // Store the current mcp state before sending the message
       if (message.id) {
         mcpVersionsRef.current[message.id] = mcp;
@@ -318,17 +213,14 @@ export function AgentSidebar({
 
       append(message);
 
-      // Disable auto-scroll temporarily and then scroll to show the new message at top
-      setIsAutoScrollEnabled(false);
-
-      // Wait for the message to be rendered, then scroll
+      // Scroll to show the new message at top
       setTimeout(() => {
-        scrollToLatestUserMessage();
+        scrollableContentRef.current?.scrollToLatestUserMessage();
       }, 0);
 
       return true;
     },
-    [isAuthenticated, append, scrollToLatestUserMessage, mcp],
+    [isAuthenticated, append, mcp],
   );
 
   const handleRevert = useCallback(
@@ -366,6 +258,10 @@ export function AgentSidebar({
 
   const handleUpdateMessage = useCallback(
     (updatedMessage: Message) => {
+      if (!mcp) {
+        return;
+      }
+
       // Remove the current message and all messages after it (since append will re-add the updated message)
       setMessages((prevMessages) => {
         const messageIndex = prevMessages.findIndex(
@@ -385,27 +281,22 @@ export function AgentSidebar({
       // Call the agent with the updated message
       append(updatedMessage);
 
-      // Disable auto-scroll temporarily and then scroll to show the new message at top
-      setIsAutoScrollEnabled(false);
-
-      // Wait for the message to be rendered, then scroll
+      // Scroll to show the updated message at top
       setTimeout(() => {
-        scrollToLatestUserMessage();
+        scrollableContentRef.current?.scrollToLatestUserMessage();
       }, 0);
     },
-    [
-      setMessages,
-      mcp,
-      append,
-      setIsAutoScrollEnabled,
-      scrollToLatestUserMessage,
-    ],
+    [setMessages, mcp, append],
   );
+
+  if (!mcp) {
+    return null;
+  }
 
   return (
     <AgentProvider
       mcp={mcp}
-      onRefreshApis={onRefreshApis}
+      onRefreshApis={refetchApis}
       onAddEndpoints={onAddEndpoints}
       onDeleteTool={onDeleteTool}
       onDeleteAllTools={onDeleteAllTools}
@@ -413,7 +304,6 @@ export function AgentSidebar({
       attachedFiles={attachedFiles}
       mentionData={mentionData}
       autoApprove={autoApprove}
-      isAutoScrollEnabled={isAutoScrollEnabled}
       addToolResult={addToolResult}
       setAutoApprove={setAutoApprove}
       onSendMessage={handleSendMessage}
@@ -467,33 +357,24 @@ export function AgentSidebar({
             </div>
           </SidebarHeader>
 
-          <SidebarContent
-            className="flex min-h-0 flex-1 flex-col"
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-          >
-            <div className="flex flex-1 flex-col p-4 pb-0">
-              {error && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>
-                    {error.message ||
-                      "An error occurred while processing your request. Please try again."}
-                  </AlertDescription>
-                </Alert>
-              )}
-              {messages.length === 0 ? (
-                <ChatStarters />
-              ) : (
-                <MessagesList
-                  latestUserMessageRef={latestUserMessageRef}
-                  messages={messages}
-                  placeholderHeight={placeholderHeight}
-                />
-              )}
+          <ScrollableContent
+            ref={scrollableContentRef}
+            messages={messages}
+            isRunning={isRunning}
+          />
+
+          {error && (
+            <div className="p-4">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  {error.message ||
+                    "An error occurred while processing your request. Please try again."}
+                </AlertDescription>
+              </Alert>
             </div>
-          </SidebarContent>
+          )}
 
           <SidebarFooter className="p-3 pt-0">
             <MessageComposer />
