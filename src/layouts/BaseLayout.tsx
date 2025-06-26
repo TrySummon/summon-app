@@ -21,7 +21,7 @@ export default function BaseLayout({
         <div className="flex flex-grow overflow-hidden">
           <AppSidebar />
           <SidebarInset className="min-h-full overflow-hidden">
-            <Toaster richColors />
+            <Toaster position="bottom-center" richColors />
             <main className="flex h-full flex-col overflow-hidden">
               {children}
             </main>

@@ -11,7 +11,6 @@ interface ParameterItemProps {
   schema: OpenAPIV3.SchemaObject;
   description?: string;
   required?: boolean;
-  openapiSpec?: OpenAPIV3.Document;
 }
 
 export const ParameterItem: React.FC<ParameterItemProps> = ({
@@ -19,10 +18,8 @@ export const ParameterItem: React.FC<ParameterItemProps> = ({
   schema,
   description,
   required,
-  openapiSpec,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
-
   const isObject =
     schema.type === "object" ||
     (schema.properties && Object.keys(schema.properties).length > 0);
@@ -32,20 +29,22 @@ export const ParameterItem: React.FC<ParameterItemProps> = ({
     (("type" in schema.items &&
       (schema.items as OpenAPIV3.SchemaObject).type === "object") ||
       "$ref" in schema.items);
+  const isOneOf = schema.oneOf && schema.oneOf.length > 0;
 
-  const canViewSchema = (isObject || hasComplexItems) && openapiSpec;
+  const canViewSchema = isObject || hasComplexItems || isOneOf;
+
   return (
     <div className="border-border border-b py-4 last:border-b-0">
       <div className="mb-1 flex flex-wrap items-center gap-2">
-        <span className="text-foreground font-mono text-xs font-semibold">
+        <span className="text-foreground font-mono text-sm font-semibold">
           {name}
         </span>
-        {schema.type && (
+        {(schema.type || isOneOf) && (
           <Badge
             variant="outline"
             className="bg-muted text-muted-foreground font-mono text-xs"
           >
-            {schema.type}
+            {isOneOf ? "oneOf" : schema.type}
             {isArray &&
               schema.items &&
               "type" in schema.items &&
@@ -84,7 +83,11 @@ export const ParameterItem: React.FC<ParameterItemProps> = ({
         </div>
       )}
 
-      {description && <Markdown className="text-sm">{description}</Markdown>}
+      {description && (
+        <Markdown className="text-muted-foreground text-sm">
+          {description}
+        </Markdown>
+      )}
 
       {schema.enum && (
         <div className="text-muted-foreground mt-2 text-xs">
@@ -101,7 +104,7 @@ export const ParameterItem: React.FC<ParameterItemProps> = ({
       )}
 
       {/* Schema Dialog */}
-      {canViewSchema && openapiSpec && (
+      {canViewSchema && (
         <JsonSchemaDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}

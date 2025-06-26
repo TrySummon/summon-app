@@ -6,7 +6,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { OpenAPIV3 } from "openapi-types";
 import type { McpData, McpSubmitData } from "@/lib/db/mcp-db";
-import { Tool } from "@modelcontextprotocol/sdk/types";
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { McpServerState } from "@/lib/mcp/state";
 import {
   AIProviderCredential,
@@ -18,6 +18,8 @@ import { initSentryRenderer } from "@/lib/sentry-renderer";
 import { SentryErrorBoundary } from "./components/SentryErrorBoundary";
 import { Dataset, DatasetItem } from "@/types/dataset";
 import type { UserInfo } from "./ipc/auth/auth-listeners";
+import { SelectedEndpoint } from "./lib/mcp/parser/extract-tools";
+import { McpToolDefinitionWithoutAuth } from "./lib/mcp/types";
 
 export default function App() {
   useEffect(() => {
@@ -69,6 +71,14 @@ declare global {
           message: string;
         }>;
       };
+      convertEndpointToTool: (
+        apiId: string,
+        endpoint: SelectedEndpoint,
+      ) => Promise<{
+        success: boolean;
+        data?: McpToolDefinitionWithoutAuth;
+        message?: string;
+      }>;
       import: (file: File) => Promise<{
         success: boolean;
         message: string;

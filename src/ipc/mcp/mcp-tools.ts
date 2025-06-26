@@ -1,4 +1,5 @@
 import { runningMcpServers } from "@/lib/mcp/state";
+import { calculateTokenCount } from "@/lib/tiktoken";
 
 /**
  * Fetches tools from an MCP server using the provided configuration
@@ -15,7 +16,14 @@ export async function getMcpTools(mcpId: string) {
     throw new Error(`MCP server with ID ${mcpId} is not running`);
   }
 
-  return (await serverState.client.listTools()).tools;
+  const response = await serverState.client.listTools();
+  const tools = response.tools;
+
+  tools.forEach((tool) => {
+    tool.annotations = { tokenCount: calculateTokenCount(tool) };
+  });
+
+  return tools;
 }
 
 export async function callMcpTool(

@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import { RotateCcw } from "lucide-react";
-import type { Tool } from "@modelcontextprotocol/sdk/types";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { JSONSchema7 } from "json-schema";
 import { ToolSchemaDiff } from "./ToolSchemaDiff";
 import { cn } from "@/utils/tailwind";

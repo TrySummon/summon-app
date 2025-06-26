@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage, PersistOptions } from "zustand/middleware";
 import useToolMap from "@/hooks/useToolMap";
-import type { Tool } from "@modelcontextprotocol/sdk/types";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { useEffect, useMemo } from "react";
 import { ModifiedTool } from "./types";
 import { IModelConfiguration } from "@/components/llm-picker/LLMPicker";

@@ -10,14 +10,12 @@ interface LeftColumnProps {
   operation: OpenAPIV3.OperationObject;
   path: string;
   method: string;
-  openapiSpec: OpenAPIV3.Document;
 }
 
 export const LeftColumn: React.FC<LeftColumnProps> = ({
   operation,
   path,
   method,
-  openapiSpec,
 }) => {
   const pathParams = operation.parameters?.filter(
     (p) => "in" in p && p.in === "path",
@@ -70,7 +68,6 @@ export const LeftColumn: React.FC<LeftColumnProps> = ({
           <ResponseTypeSection
             title="Response Types"
             responses={operation.responses}
-            openapiSpec={openapiSpec}
           />
         </>
       )}

@@ -9,7 +9,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Pencil } from "lucide-react";
-import type { Tool } from "@modelcontextprotocol/sdk/types";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolEditDialog } from "./ToolEdit";
 import { ModifiedTool } from "@/stores/types";
 
@@ -73,25 +73,23 @@ export default function ToolItem({
         <div className="p-2 py-4">
           <div className="flex items-start justify-between">
             <div
-              className="flex flex-1 cursor-pointer items-center gap-2"
+              className="flex min-w-0 flex-1 cursor-pointer items-center gap-2"
               onClick={(e) => {
                 e.stopPropagation();
                 onToggle();
               }}
             >
-              <Checkbox checked={isSelected} />
-              <div className="flex flex-1 items-center gap-2">
-                <Label
-                  title={tool.name}
-                  className={cn(
-                    "text-foreground cursor-pointer text-sm font-normal",
-                    hasModifications &&
-                      "text-primary dark:text-primary-foreground",
-                  )}
-                >
-                  {displayName}
-                </Label>
-              </div>
+              <Checkbox checked={isSelected} className="flex-shrink-0" />
+              <Label
+                title={tool.name}
+                className={cn(
+                  "text-foreground cursor-pointer truncate text-sm font-normal",
+                  hasModifications &&
+                    "text-primary dark:text-primary-foreground",
+                )}
+              >
+                {displayName}
+              </Label>
             </div>
             <Button
               variant="ghost"
@@ -101,7 +99,7 @@ export default function ToolItem({
                 setEditDialogOpen(true);
               }}
               className={cn(
-                "-mt-1 h-6 w-6 p-0 opacity-0 transition-opacity group-hover/tool:opacity-100",
+                "-mt-1 h-6 w-6 flex-shrink-0 p-0 opacity-0 transition-opacity group-hover/tool:opacity-100",
                 hasModifications &&
                   "bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20 dark:text-primary-foreground dark:hover:bg-primary/30",
               )}

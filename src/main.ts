@@ -7,6 +7,8 @@ if (started) {
   app.quit();
 }
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 // Register custom protocol schemes before app is ready
 const OAUTH_PROTOCOL = "summon";
 protocol.registerSchemesAsPrivileged([

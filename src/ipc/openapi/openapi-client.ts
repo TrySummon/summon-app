@@ -1,3 +1,4 @@
+import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { captureEvent } from "@/lib/posthog";
 
 // API operations with PostHog instrumentation
@@ -28,4 +29,11 @@ export const deleteApi = async (id: string) => {
 export const renameApi = async (apiId: string, newName: string) => {
   captureEvent("openapi_rename");
   return window.openapi.db.renameApi(apiId, newName);
+};
+
+export const convertEndpointToTool = async (
+  apiId: string,
+  endpoint: SelectedEndpoint,
+) => {
+  return window.openapi.convertEndpointToTool(apiId, endpoint);
 };

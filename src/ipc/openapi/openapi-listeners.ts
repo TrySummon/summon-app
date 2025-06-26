@@ -5,9 +5,14 @@ import {
   GET_API_CHANNEL,
   RENAME_API_CHANNEL,
   DELETE_API_CHANNEL,
+  CONVERT_ENDPOINT_TO_TOOL,
 } from "./openapi-channels";
 import { apiDb } from "@/lib/db/api-db";
 import log from "electron-log/main";
+import {
+  convertEndpointToTool,
+  SelectedEndpoint,
+} from "@/lib/mcp/parser/extract-tools";
 
 interface ImportApiRequest {
   filename: string;
@@ -170,4 +175,25 @@ export function registerOpenApiListeners() {
       };
     }
   });
+
+  ipcMain.handle(
+    CONVERT_ENDPOINT_TO_TOOL,
+    async (_, apiId: string, endpoint: SelectedEndpoint) => {
+      try {
+        const tool = await convertEndpointToTool(apiId, endpoint);
+
+        return {
+          success: true,
+          data: tool,
+        };
+      } catch (error) {
+        log.error(`Error converting endpoints to tools:`, error);
+        return {
+          success: false,
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        };
+      }
+    },
+  );
 }

@@ -102,6 +102,37 @@ export default function LLMPicker({
     }
   }, [model, credentialId, credentials, config, onChange]);
 
+  // Auto-select default model from first provider if no model is selected
+  useEffect(() => {
+    if (model || credentialId || !credentials?.length) return;
+
+    // Get the first available credential
+    const firstCredential = credentials[0];
+    const providerConfig = AI_PROVIDERS_CONFIG[firstCredential.provider];
+
+    if (providerConfig) {
+      // Get the first default model from the provider
+      const defaultModels = Object.keys(providerConfig.models);
+      if (defaultModels.length > 0) {
+        const defaultModel = defaultModels[0];
+        const modelConfig = providerConfig.models[defaultModel];
+
+        // Set appropriate default temperature for the model
+        const defaultTemperature = modelConfig.temperatureRange[0];
+
+        onChange({
+          ...config,
+          credentialId: firstCredential.id,
+          model: defaultModel,
+          settings: {
+            ...config.settings,
+            temperature: defaultTemperature,
+          },
+        });
+      }
+    }
+  }, [model, credentialId, credentials, config, onChange]);
+
   const currentProvider = useMemo(() => {
     if (!provider) return null;
 

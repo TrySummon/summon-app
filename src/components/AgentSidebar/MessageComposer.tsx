@@ -166,7 +166,7 @@ export function MessageComposer() {
 
   const extensions: Extension[] = useMemo(
     () => [
-      placeholder("Add, improve and manage your MCP tools."),
+      placeholder("Add, improve and manage MCP tools."),
       mentionAutocompletion,
       mentionDecorationPlugin,
       keymap.of([

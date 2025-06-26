@@ -5,7 +5,6 @@ import { ParameterItem } from "./ParameterItem";
 
 interface ResponseTypeSectionProps {
   responses: OpenAPIV3.ResponsesObject;
-  openapiSpec: OpenAPIV3.Document;
   title: string;
 }
 
@@ -23,7 +22,6 @@ interface ResponseTypeInfo {
 
 export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
   responses,
-  openapiSpec,
   title,
 }) => {
   const [responseTypes, setResponseTypes] = React.useState<ResponseTypeInfo[]>(
@@ -138,7 +136,7 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
     if (extractedTypes.length > 0) {
       setActiveTab("0");
     }
-  }, [responses, openapiSpec]);
+  }, [responses]);
 
   if (responseTypes.length === 0) {
     return null;
@@ -158,7 +156,6 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
               schema={prop.schema}
               description={prop.description}
               required={prop.required}
-              openapiSpec={openapiSpec}
             />
           ))}
           {responseType.properties.length === 0 && (
@@ -197,7 +194,6 @@ export const ResponseTypeSection: React.FC<ResponseTypeSectionProps> = ({
                   schema={prop.schema}
                   description={prop.description}
                   required={prop.required}
-                  openapiSpec={openapiSpec}
                 />
               ))}
               {type.properties.length === 0 && (

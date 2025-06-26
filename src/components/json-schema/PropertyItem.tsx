@@ -29,7 +29,8 @@ export const PropertyItem: React.FC<PropertyItemProps> = ({
     "items" in propSchema &&
     propSchema.items &&
     ("$ref" in propSchema.items ||
-      ("type" in propSchema.items && propSchema.items.type === "object"));
+      ("type" in propSchema.items && propSchema.items.type === "object") ||
+      "allOf" in propSchema.items);
 
   const canNavigate = isObject || hasArrayItemsRef;
 

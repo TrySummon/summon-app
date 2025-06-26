@@ -28,9 +28,9 @@ import {
   generateTsconfigJson,
   generateWebServerCode,
 } from "./generator";
-import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio";
+import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { stopExternalMcp } from "../external-mcp";
 
 /**

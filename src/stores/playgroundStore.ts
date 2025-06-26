@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { UIMessage } from "ai";
 import { persist, createJSONStorage, PersistOptions } from "zustand/middleware";
 import { runPlaygroundAgent } from "@/lib/agent";
-import { Tool as McpTool } from "@modelcontextprotocol/sdk/types";
+import { Tool as McpTool } from "@modelcontextprotocol/sdk/types.js";
 import { LLMSettings, ModifiedTool } from "./types";
 
 export type ToolMap = Record<string, { name: string; tools: McpTool[] }>;
@@ -34,6 +34,8 @@ export interface IPlaygroundTabState {
   selectedDatasetId?: string;
   cutMode?: boolean;
   cutPosition?: number;
+  // Track if tool selection is pristine (hasn't been modified yet)
+  toolSelectionPristine?: boolean;
 }
 
 interface HistoryEntry {
@@ -111,6 +113,7 @@ export interface PlaygroundStore {
   updateMcpToolMap: (mcpToolMap: ToolMap) => void;
   updateShouldScrollToDock: (shouldScrollToDock: boolean) => void;
   setShowToolSidebar: (show: boolean) => void;
+  setToolSelectionPristine: (pristine: boolean) => void;
   addToolResult: (
     toolCallId: string,
     result: { success: boolean; data?: unknown; message?: string },
@@ -136,6 +139,7 @@ const createDefaultState = (): IPlaygroundTabState => ({
   shouldScrollToDock: false,
   modifiedToolMap: {},
   autoExecuteTools: false,
+  toolSelectionPristine: true,
 });
 
 // Define the state that will be persisted to storage
@@ -546,6 +550,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
             ...state.enabledTools,
             [toolProvider]: toolIds,
           },
+          toolSelectionPristine: false,
         }));
       },
 
@@ -564,6 +569,13 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
         set((state) => ({
           ...state,
           showToolSidebar: show,
+        }));
+      },
+
+      setToolSelectionPristine: (pristine) => {
+        get().updateCurrentState((state) => ({
+          ...state,
+          toolSelectionPristine: pristine,
         }));
       },
 

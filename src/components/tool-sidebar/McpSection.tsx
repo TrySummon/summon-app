@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -9,10 +8,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/utils/tailwind";
 import ToolItem from "./ToolItem";
 import WaitlistButton from "./WaitlistButton";
-import type { Tool } from "@modelcontextprotocol/sdk/types";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ModifiedTool } from "@/stores/types";
 
 interface McpSectionProps {
@@ -49,7 +47,6 @@ export default function McpSection({
   name,
   tools,
   isExpanded,
-  selectedToolCount,
   areAllToolsSelected,
   modifiedToolMap,
   onToggleSection,
@@ -62,6 +59,13 @@ export default function McpSection({
   onToolRevert,
 }: McpSectionProps) {
   const hasModifiedTools = Object.keys(modifiedToolMap[mcpId] || {}).length > 0;
+  const totalTokenCount = useMemo(() => {
+    return tools.reduce((acc, tool) => {
+      const tokenCount = tool.annotations?.tokenCount as number | undefined;
+      const isSelected = isToolSelected(tool.name);
+      return acc + (isSelected && tokenCount ? tokenCount : 0);
+    }, 0);
+  }, [isToolSelected, tools]);
 
   return (
     <div key={mcpId}>
@@ -81,15 +85,11 @@ export default function McpSection({
             <span className="text-sm font-semibold">{name}</span>
           </div>
 
-          <Badge
-            variant="outline"
-            className={cn(
-              "text-xs select-none",
-              !selectedToolCount && "opacity-0",
-            )}
-          >
-            {selectedToolCount || 0}
-          </Badge>
+          {totalTokenCount ? (
+            <div className="text-muted-foreground font-mono text-xs">
+              {totalTokenCount} tks
+            </div>
+          ) : null}
         </div>
         {hasModifiedTools && (
           <TooltipProvider>

@@ -1,11 +1,9 @@
 import { useCallback } from "react";
 import { useMcps } from "./useMcps";
 import { useApis } from "./useApis";
-import {
-  convertEndpointsToTools,
-  SelectedEndpoint,
-} from "@/lib/mcp/parser/extract-tools";
+import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { toast } from "sonner";
+import { convertEndpointToTool } from "@/ipc/openapi/openapi-client";
 
 export function useMcpActions(mcpId: string) {
   const { mcps, updateMcp } = useMcps();
@@ -13,11 +11,22 @@ export function useMcpActions(mcpId: string) {
   const mcp = mcps.find((m) => m.id === mcpId);
 
   const onAddEndpoints = useCallback(
-    (apiId: string, endpoints: SelectedEndpoint[]) => {
+    async (apiId: string, endpoints: SelectedEndpoint[]) => {
       if (!mcp) return;
-      const api = apis.find((a) => a.id === apiId);
-      if (!api) return;
-      const tools = convertEndpointsToTools(api.api, endpoints);
+
+      const tools = await Promise.all(
+        endpoints.map((endpoint) => convertEndpointToTool(apiId, endpoint)),
+      );
+
+      const convertedTools = tools
+        .filter((tool) => !!tool.data)
+        .map((tool) => tool.data!);
+
+      tools
+        .filter((tool) => !tool.data)
+        .forEach((tool) => {
+          toast.error(tool.message);
+        });
 
       // Get all existing tool names across all API groups
       const existingToolNames = new Set<string>();
@@ -28,33 +37,22 @@ export function useMcpActions(mcpId: string) {
       });
 
       // Filter out duplicate tools and warn about them
-      const newTools = tools.filter((tool) => {
+      const newTools = convertedTools.filter((tool) => {
         if (existingToolNames.has(tool.name)) {
-          toast.info(
-            `Duplicate tool name found: "${tool.name}". Skipping this tool.`,
-          );
+          toast.info(`Skipped "${tool.name}": Duplicate tool name found.`);
           return false;
         }
         return true;
       });
 
-      // Only proceed if we have new tools to add
-      if (newTools.length === 0) {
-        toast.info("No new tools to add - all tools were duplicates.");
-        return;
-      }
-
       const nextApiGroups = { ...mcp.apiGroups };
 
       // Create default API group if it doesn't exist
       if (!nextApiGroups[apiId]) {
-        const apiName = api.api?.info?.title || "api";
-        const toolPrefix = apiName.trim().split(" ")[0].toLowerCase() + "-";
-
         nextApiGroups[apiId] = {
-          name: apiName,
+          name: apiId,
           useMockData: true,
-          toolPrefix,
+          toolPrefix: "",
           auth: { type: "noAuth" },
           tools: [],
         };

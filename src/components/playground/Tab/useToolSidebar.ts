@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import useToolMap from "@/hooks/useToolMap";
-import type { Tool } from "@modelcontextprotocol/sdk/types";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ModifiedTool } from "@/stores/types";
 
 export function useToolSidebar() {
@@ -9,6 +9,9 @@ export function useToolSidebar() {
 
   const enabledTools = usePlaygroundStore(
     (state) => state.getCurrentState().enabledTools,
+  );
+  const toolSelectionPristine = usePlaygroundStore(
+    (state) => state.getCurrentState().toolSelectionPristine,
   );
   const modifiedToolMap = usePlaygroundStore(
     (state) => state.getCurrentState().modifiedToolMap,
@@ -20,6 +23,9 @@ export function useToolSidebar() {
   const updateTab = usePlaygroundStore((state) => state.updateTab);
   const updateEnabledTools = usePlaygroundStore(
     (state) => state.updateEnabledTools,
+  );
+  const setToolSelectionPristine = usePlaygroundStore(
+    (state) => state.setToolSelectionPristine,
   );
   const modifyTool = usePlaygroundStore((state) => state.modifyTool);
   const revertTool = usePlaygroundStore((state) => state.revertTool);
@@ -110,6 +116,30 @@ export function useToolSidebar() {
       });
     }
   }, [mcpToolMap, updateMcpToolMap, getTabs, updateTab]);
+
+  // Auto-enable all tools if tool selection is pristine
+  useEffect(() => {
+    if (
+      toolSelectionPristine &&
+      mcpToolMap &&
+      Object.keys(mcpToolMap).length > 0
+    ) {
+      // Enable all available tools
+      Object.entries(mcpToolMap).forEach(([mcpId, mcpData]) => {
+        const tools = mcpData.tools as Tool[];
+        const allToolIds = tools.map((tool: Tool) => tool.name);
+        updateEnabledTools(mcpId, allToolIds);
+      });
+
+      // Set pristine to false after auto-enabling
+      setToolSelectionPristine(false);
+    }
+  }, [
+    toolSelectionPristine,
+    mcpToolMap,
+    updateEnabledTools,
+    setToolSelectionPristine,
+  ]);
 
   // Initialize all sections as expanded
   useEffect(() => {

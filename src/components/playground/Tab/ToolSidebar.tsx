@@ -1,7 +1,7 @@
 import React from "react";
 import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
 import { useToolSidebar } from "./useToolSidebar";
-import type { Tool } from "@modelcontextprotocol/sdk/types";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import ToolSidebarHeader from "@/components/tool-sidebar/SidebarHeader";
 import McpSection from "@/components/tool-sidebar/McpSection";
 

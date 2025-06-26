@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Tool } from "@modelcontextprotocol/sdk/types";
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ServerStatusSection } from "./ServerStatusSection";
 import { ToolsList } from "./ToolsList";
 import { getMcpTools } from "@/ipc/mcp/mcp-client";

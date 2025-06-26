@@ -114,8 +114,23 @@ export const JsonSchemaDialog: React.FC<JsonSchemaDialogProps> = ({
 
     return (
       <div className="space-y-4">
-        {/* If it's an object with properties, show them directly */}
-        {isObjectItem && "properties" in itemSchema && itemSchema.properties ? (
+        {/* Handle allOf schemas */}
+        {"allOf" in itemSchema && itemSchema.allOf ? (
+          <div className="divide-border divide-y">
+            {(itemSchema.allOf as OpenAPIV3.SchemaObject[]).map(
+              (allOfSchema, index) => (
+                <PropertyItem
+                  key={`allOf-${index}`}
+                  propName={allOfSchema.title || `Schema ${index + 1}`}
+                  propSchema={allOfSchema}
+                  isRequired={false}
+                  onNavigate={navigateToSchema}
+                />
+              ),
+            )}
+          </div>
+        ) : /* If it's an object with properties, show them directly */
+        isObjectItem && "properties" in itemSchema && itemSchema.properties ? (
           <div className="space-y-1">
             {Object.entries(itemSchema.properties).map(
               ([propName, propSchema]) => (
@@ -182,7 +197,22 @@ export const JsonSchemaDialog: React.FC<JsonSchemaDialogProps> = ({
 
         {/* Content area with scroll */}
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {"type" in currentSchema && currentSchema.type === "object" ? (
+          {/* Handle allOf schemas at root level */}
+          {"allOf" in currentSchema && currentSchema.allOf ? (
+            <div className="divide-border divide-y">
+              {(currentSchema.allOf as OpenAPIV3.SchemaObject[]).map(
+                (allOfSchema, index) => (
+                  <PropertyItem
+                    key={`allOf-${index}`}
+                    propName={allOfSchema.title || `Schema ${index + 1}`}
+                    propSchema={allOfSchema}
+                    isRequired={false}
+                    onNavigate={navigateToSchema}
+                  />
+                ),
+              )}
+            </div>
+          ) : "type" in currentSchema && currentSchema.type === "object" ? (
             renderObjectProperties()
           ) : "type" in currentSchema && currentSchema.type === "array" ? (
             renderArrayItems()

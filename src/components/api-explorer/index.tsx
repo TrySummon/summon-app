@@ -45,7 +45,6 @@ export const ApiExplorer: React.FC<ApiExplorerProps> = ({
               operation={operation}
               path={endpointPath}
               method={endpointMethod}
-              openapiSpec={openapiSpec}
             />
           </div>
 

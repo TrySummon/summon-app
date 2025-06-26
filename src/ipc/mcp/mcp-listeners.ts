@@ -112,10 +112,9 @@ export function registerMcpListeners() {
       try {
         const { id, data } = request;
         const success = await mcpDb.updateMcp(id, data);
-        await stopMcpServer(id);
         await deleteMcpImpl(id);
         await generateMcpImpl(id);
-        startMcpServer(id);
+        await restartMcpServer(id);
         if (!success) {
           return {
             success: false,

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "jsx": "react",
     "target": "ESNext",
-    "module": "CommonJS",
+    "module": "ESNext",
     "lib": ["dom", "ESNext"],
     "experimentalDecorators": true,
     "composite": true,
@@ -18,7 +18,7 @@
       "@/*": ["./src/*"]
     },
     "outDir": "dist",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "skipLibCheck": true,
     "resolveJsonModule": true
   },

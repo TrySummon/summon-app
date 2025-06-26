@@ -1,5 +1,5 @@
 import React from "react";
-import { Tool } from "@modelcontextprotocol/sdk/types";
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import {
   Accordion,
   AccordionContent,
@@ -13,6 +13,12 @@ import { extractToolParameters } from "./utils";
 import { JsonSchema } from "../json-schema";
 import { AddEndpointsButton } from "./AddEndpointsButton";
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
+
+const getTokenCountBadgeVariant = (count: number) => {
+  if (count < 500) return "text-green-600 dark:text-green-400";
+  if (count < 1000) return "text-orange-600 dark:text-orange-400";
+  return "text-red-600 dark:text-red-400";
+};
 
 interface ToolsListProps {
   tools: Tool[];
@@ -77,6 +83,13 @@ export const ToolsList: React.FC<ToolsListProps> = ({
               <div className="flex flex-col items-start gap-1 text-left">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{tool.name}</span>
+                  {tool.annotations?.tokenCount ? (
+                    <div
+                      className={`font-mono text-xs ${getTokenCountBadgeVariant(tool.annotations.tokenCount as number)}`}
+                    >
+                      ~{tool.annotations.tokenCount as number} tks
+                    </div>
+                  ) : null}
                   <div className="flex items-center gap-2">
                     {onDeleteTool && (
                       <Button
