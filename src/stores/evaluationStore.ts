@@ -6,6 +6,9 @@ import { useEffect, useMemo } from "react";
 import { ModifiedTool } from "./types";
 import { IModelConfiguration } from "@/components/llm-picker/LLMPicker";
 import { EvaluationSummary } from "@/lib/evaluation/runner";
+import { v4 as uuidv4 } from "uuid";
+import { toast } from "sonner";
+import { ToolMap } from "./playgroundStore";
 
 interface EvaluationProgressType {
   completed: number;
@@ -37,7 +40,7 @@ interface EvaluationStore {
   toggleAllMcpTools: (
     datasetId: string,
     mcpId: string,
-    mcpToolMap: Record<string, { name: string; tools: Tool[] }>,
+    mcpToolMap: ToolMap,
   ) => void;
   isToolSelected: (
     datasetId: string,
@@ -251,9 +254,10 @@ export const useEvaluationStore = create<EvaluationStore>()(
         const tools = mcpToolMap[mcpId].tools as Tool[];
         const allToolNames = tools.map((tool) => tool.name);
         const currentTools = datasetState.enabledTools[mcpId] || [];
-        const allSelected = allToolNames.every((name) =>
-          currentTools.includes(name),
-        );
+
+        const allSelected =
+          allToolNames.length > 0 &&
+          allToolNames.every((name) => currentTools.includes(name));
 
         set((state) => ({
           datasets: {
@@ -557,6 +561,28 @@ export function useEvaluationToolSelection(datasetId: string) {
     return allToolIds.every((id) => currentToolsForMcp.includes(id));
   };
 
+  const getMcpSelectionState = (
+    datasetId: string,
+    mcpId: string,
+    mcpToolMap: ToolMap,
+  ): boolean | "indeterminate" => {
+    if (!mcpToolMap?.[mcpId]) return false;
+
+    const datasetState = useEvaluationStore
+      .getState()
+      .getDatasetState(datasetId);
+    const tools = mcpToolMap[mcpId].tools as Tool[];
+    const allToolNames = tools.map((tool) => tool.name);
+    const currentTools = datasetState.enabledTools[mcpId] || [];
+    const numSelected = currentTools.length;
+    const totalTools = allToolNames.length;
+
+    if (totalTools === 0) return false;
+    if (numSelected === 0) return false;
+    if (numSelected === totalTools) return true;
+    return "indeterminate";
+  };
+
   return {
     mcpToolMap,
     enabledToolCount,
@@ -569,7 +595,8 @@ export function useEvaluationToolSelection(datasetId: string) {
       toggleTool(datasetId, mcpId, toolName),
     handleToggleAllTools: (mcpId: string) =>
       toggleAllMcpTools(datasetId, mcpId, mcpToolMap),
-    areAllToolsSelected,
+    getMcpSelectionState: (mcpId: string) =>
+      getMcpSelectionState(datasetId, mcpId, mcpToolMap),
     isToolSelected: (mcpId: string, toolName: string) =>
       isToolSelected(datasetId, mcpId, toolName),
     getModifiedName: (mcpId: string, toolName: string, originalName: string) =>

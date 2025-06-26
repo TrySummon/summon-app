@@ -46,6 +46,7 @@ export default function ToolItem({
   onToolRevert,
 }: ToolItemProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const checkboxId = React.useId();
 
   const modifiedTool = getModifiedTool(mcpId, tool.name);
   const hasModifications = !!modifiedTool;
@@ -72,21 +73,15 @@ export default function ToolItem({
       >
         <div className="p-2 py-4">
           <div className="flex items-start justify-between">
-            <div
-              className="flex flex-1 cursor-pointer items-center gap-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggle();
-              }}
-            >
+            <div className="flex flex-1 items-center gap-2">
               <Checkbox
+                id={checkboxId}
                 checked={isSelected}
-                onCheckedChange={() => {
-                  onToggle();
-                }}
+                onCheckedChange={onToggle}
               />
               <div className="flex flex-1 items-center gap-2">
                 <Label
+                  htmlFor={checkboxId}
                   title={tool.name}
                   className={cn(
                     "text-foreground cursor-pointer text-sm font-normal",

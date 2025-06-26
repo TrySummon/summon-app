@@ -21,7 +21,10 @@ interface McpSectionProps {
   tools: Tool[];
   isExpanded: boolean;
   selectedToolCount: number;
-  areAllToolsSelected: boolean;
+  getMcpSelectionState: (
+    mcpId: string,
+    tools: Tool[],
+  ) => boolean | "indeterminate";
   modifiedToolMap: Record<string, Record<string, ModifiedTool>>;
   onToggleSection: () => void;
   onToggleAllTools: () => void;
@@ -50,7 +53,7 @@ export default function McpSection({
   tools,
   isExpanded,
   selectedToolCount,
-  areAllToolsSelected,
+  getMcpSelectionState,
   modifiedToolMap,
   onToggleSection,
   onToggleAllTools,
@@ -62,6 +65,7 @@ export default function McpSection({
   onToolRevert,
 }: McpSectionProps) {
   const hasModifiedTools = Object.keys(modifiedToolMap[mcpId] || {}).length > 0;
+  const checkboxId = React.useId();
 
   return (
     <div key={mcpId}>
@@ -113,16 +117,17 @@ export default function McpSection({
 
       {isExpanded && (
         <div className="">
-          <div
-            className="flex cursor-pointer items-center p-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleAllTools();
-            }}
-          >
+          <div className="flex items-center p-2">
             <div className="flex w-full items-center gap-2">
-              <Checkbox checked={areAllToolsSelected} />
-              <Label className="text-foreground cursor-pointer text-sm font-medium">
+              <Checkbox
+                id={checkboxId}
+                checked={getMcpSelectionState(mcpId, tools)}
+                onCheckedChange={onToggleAllTools}
+              />
+              <Label
+                htmlFor={checkboxId}
+                className="text-foreground cursor-pointer text-sm font-medium"
+              >
                 Select All
               </Label>
             </div>

@@ -7,12 +7,11 @@ import { ModifiedTool } from "@/stores/types";
 export function useToolSidebar() {
   const { mcpToolMap } = useToolMap();
 
-  const enabledTools = usePlaygroundStore(
-    (state) => state.getCurrentState().enabledTools,
-  );
-  const modifiedToolMap = usePlaygroundStore(
-    (state) => state.getCurrentState().modifiedToolMap,
-  );
+  // Subscribe to the entire current state to ensure re-renders
+  const currentState = usePlaygroundStore((state) => state.getCurrentState());
+  const enabledTools = currentState.enabledTools || {};
+  const modifiedToolMap = currentState.modifiedToolMap || {};
+
   const updateMcpToolMap = usePlaygroundStore(
     (state) => state.updateMcpToolMap,
   );
@@ -40,7 +39,7 @@ export function useToolSidebar() {
       const tabs = getTabs();
       // For each tab, process its enabledTools
       Object.entries(tabs).forEach(([tabId, tab]) => {
-        // Case 1: enabledTools is undefined - enable all tools
+        // Case 1: enabledTools is undefined - enable all tools (only for brand new tabs)
         if (tab.state.enabledTools === undefined) {
           // Create a map of all available tools
           const allTools: Record<string, string[]> = {};
@@ -161,28 +160,30 @@ export function useToolSidebar() {
 
   // Handle toggling all tools for an MCP
   const handleToggleAllTools = (mcpId: string, tools: Tool[]) => {
-    const currentToolsForMcp = enabledTools[mcpId] || [];
     const allToolIds = tools.map((tool) => tool.name);
+    const currentToolsForMcp = enabledTools[mcpId] || [];
 
-    // If all tools are already selected, deselect all
-    // Otherwise, select all
-    const allSelected = allToolIds.every((id) =>
-      currentToolsForMcp.includes(id),
-    );
-
-    if (allSelected) {
-      updateEnabledTools(mcpId, []);
-    } else {
+    // If not all are selected, select all. Otherwise, deselect all.
+    if (currentToolsForMcp.length < allToolIds.length) {
       updateEnabledTools(mcpId, allToolIds);
+    } else {
+      updateEnabledTools(mcpId, []);
     }
   };
 
-  // Check if all tools for an MCP are selected
-  const areAllToolsSelected = (mcpId: string, tools: Tool[]) => {
+  // Check the selection state for an MCP's "Select All" checkbox
+  const getMcpSelectionState = (
+    mcpId: string,
+    tools: Tool[],
+  ): boolean | "indeterminate" => {
     const currentToolsForMcp = enabledTools[mcpId] || [];
-    const allToolIds = tools.map((tool) => tool.name);
+    const numSelected = currentToolsForMcp.length;
+    const totalTools = tools.length;
 
-    return allToolIds.every((id) => currentToolsForMcp.includes(id));
+    if (totalTools === 0) return false;
+    if (numSelected === 0) return false;
+    if (numSelected === totalTools) return true;
+    return "indeterminate";
   };
 
   // Check if a specific tool is selected
@@ -210,10 +211,12 @@ export function useToolSidebar() {
   };
 
   // Calculate total tool count
-  const toolCount = Object.values(enabledTools).reduce(
-    (acc, tools) => acc + tools.length,
-    0,
-  );
+  const toolCount = useMemo(() => {
+    return Object.values(enabledTools).reduce(
+      (acc, tools) => acc + tools.length,
+      0,
+    );
+  }, [enabledTools]);
 
   // Filter MCPs that have tools
   const mcps = mcpToolMap
@@ -233,7 +236,7 @@ export function useToolSidebar() {
     toggleSection,
     handleToggleTool,
     handleToggleAllTools,
-    areAllToolsSelected,
+    getMcpSelectionState,
     isToolSelected,
     getModifiedName,
     getModifiedTool,

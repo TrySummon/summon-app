@@ -25,6 +25,7 @@ export default function EvaluationToolSidebar({
     modifyTool,
     revertTool,
     mcpToolMap,
+    getMcpSelectionState,
   } = useEvaluationToolSelection(datasetId);
 
   const mcps = useMemo(() => Object.entries(mcpToolMap), [mcpToolMap]);
@@ -58,11 +59,13 @@ export default function EvaluationToolSidebar({
                 modifiedToolMap={modifiedToolMap}
                 isExpanded={expandedSections[mcpId]}
                 selectedToolCount={enabledToolCountByMcp[mcpId]}
-                areAllToolsSelected={areAllToolsSelected(mcpId, tools)}
+                getMcpSelectionState={(mcpId, tools) =>
+                  getMcpSelectionState(mcpId)
+                }
                 onToggleSection={() => toggleSection(mcpId)}
                 onToggleAllTools={() => handleToggleAllTools(mcpId)}
-                onToggleTool={(toolId) => handleToggleTool(mcpId, toolId)}
-                isToolSelected={(toolId) => isToolSelected(mcpId, toolId)}
+                onToggleTool={handleToggleTool}
+                isToolSelected={isToolSelected}
                 getModifiedName={getModifiedName}
                 getModifiedTool={getModifiedTool}
                 onToolModify={modifyTool}

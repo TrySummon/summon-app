@@ -22,6 +22,7 @@ export default function ToolSidebar() {
     modifyTool,
     revertTool,
     mcpToolMap,
+    getMcpSelectionState,
   } = useToolSidebar();
 
   if (!mcpToolMap || Object.keys(mcpToolMap).length === 0) {
@@ -53,11 +54,11 @@ export default function ToolSidebar() {
                 modifiedToolMap={modifiedToolMap}
                 isExpanded={expandedSections[mcpId]}
                 selectedToolCount={selectedToolCounts[mcpId]}
-                areAllToolsSelected={areAllToolsSelected(mcpId, tools)}
+                getMcpSelectionState={getMcpSelectionState}
                 onToggleSection={() => toggleSection(mcpId)}
                 onToggleAllTools={() => handleToggleAllTools(mcpId, tools)}
-                onToggleTool={(toolId) => handleToggleTool(mcpId, toolId)}
-                isToolSelected={(toolId) => isToolSelected(mcpId, toolId)}
+                onToggleTool={handleToggleTool}
+                isToolSelected={isToolSelected}
                 getModifiedName={getModifiedName}
                 getModifiedTool={getModifiedTool}
                 onToolModify={modifyTool}
