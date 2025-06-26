@@ -241,9 +241,9 @@ async function executeApiTool(toolName: string, definition: McpToolDefinition, a
     // Build URL with path parameters
     let url = baseUrl + definition.pathTemplate;
     const queryParams: Record<string, string> = {};
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-    };
+    const headers: Record<string, string> = { Accept: "application/json" };
+    let requestBodyData: unknown = undefined;
+
 
     // Apply authentication from available security schemes
     const authSchemas = definition.securityScheme.schemas || [];
@@ -298,21 +298,13 @@ async function executeApiTool(toolName: string, definition: McpToolDefinition, a
 
     const finalUrl = url;
 
-    // Prepare request body
-    let body: string | undefined;
-    if (definition.method.toUpperCase() !== 'GET' && definition.method.toUpperCase() !== 'HEAD') {
-        if (definition.requestBodyContentType === 'application/json') {
-            // For JSON requests, send remaining args as body
-            const bodyArgs = { ...validatedArgs };
-            definition.executionParameters.forEach((param: any) => {
-                if (param.in !== 'body') {
-                    delete bodyArgs[param.name];
-                }
-            });
-            if (Object.keys(bodyArgs).length > 0) {
-                body = JSON.stringify(bodyArgs);
-            }
-        }
+    // Handle request body if needed
+    if (
+      definition.requestBodyContentType &&
+      typeof args["requestBody"] !== "undefined"
+    ) {
+      requestBodyData = args["requestBody"];
+      headers["content-type"] = definition.requestBodyContentType;
     }
 
     const config: AxiosRequestConfig = {
@@ -320,7 +312,7 @@ async function executeApiTool(toolName: string, definition: McpToolDefinition, a
       url: finalUrl, 
       params: queryParams, 
       headers: headers,
-      ...(body !== undefined && { data: body }),
+      ...(requestBodyData !== undefined && { data: requestBodyData }),
     };
 
     // Log request info to stderr (doesn't affect MCP output)
