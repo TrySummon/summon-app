@@ -25,6 +25,7 @@ import { useApis } from "@/hooks/useApis";
 import { useMcpActions } from "@/hooks/useMcpActions";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { useAgentChats } from "@/stores/agentChatsStore";
+import { toast } from "sonner";
 
 export interface MentionData {
   id: string;
@@ -293,6 +294,13 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
         return false;
       }
 
+      if (isRunning) {
+        toast.info(
+          "Please wait for the agent to finish processing the previous message.",
+        );
+        return false;
+      }
+
       // Check if this is the first message in a new conversation
       const isFirstMessage = messages.length === 0;
 
@@ -331,6 +339,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
     [
       isAuthenticated,
       append,
+      isRunning,
       mcp,
       currentChatId,
       createChat,
@@ -516,7 +525,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
             {messages.length > 0 ? <MessageComposer /> : null}
           </SidebarFooter>
 
-          <SidebarRail direction="left" />
+          <SidebarRail direction="left" showIndicator />
         </Sidebar>
 
         <SignInDialog

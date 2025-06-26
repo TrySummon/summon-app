@@ -81,8 +81,8 @@ const MessageEditor = ({
   }, [value, handlePaste]);
 
   // Create placeholder extension
-  const placeholderExtension = React.useMemo(
-    () => placeholder(placeholderText || "Enter a message..."),
+  const additionalExtensions = React.useMemo(
+    () => [placeholder(placeholderText || "Enter a message...")],
     [placeholderText],
   );
 
@@ -96,7 +96,7 @@ const MessageEditor = ({
         onChange={handleEditorChange}
         maxHeight={maxHeight}
         onPaste={handlePaste}
-        additionalExtensions={[placeholderExtension]}
+        additionalExtensions={additionalExtensions}
       />
     </div>
   );

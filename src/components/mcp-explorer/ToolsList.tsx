@@ -87,7 +87,7 @@ export const ToolsList: React.FC<ToolsListProps> = ({
                     <div
                       className={`font-mono text-xs ${getTokenCountBadgeVariant(tool.annotations.tokenCount as number)}`}
                     >
-                      ~{tool.annotations.tokenCount as number} tks
+                      {tool.annotations.tokenCount as number} tks
                     </div>
                   ) : null}
                   <div className="flex items-center gap-2">

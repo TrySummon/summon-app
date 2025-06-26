@@ -350,55 +350,80 @@ const SidebarRail = React.forwardRef<
     //* new prop for enabling drag
     enableDrag?: boolean;
     direction?: "left" | "right";
+    showIndicator?: boolean;
   }
->(({ className, enableDrag = true, direction = "right", ...props }, ref) => {
-  const { toggleSidebar, setWidth, state, width, setIsDraggingRail } =
-    useSidebar();
+>(
+  (
+    {
+      className,
+      enableDrag = true,
+      direction = "right",
+      showIndicator = false,
+      ...props
+    },
+    ref,
+  ) => {
+    const { toggleSidebar, setWidth, state, width, setIsDraggingRail } =
+      useSidebar();
 
-  const { dragRef, handleMouseDown } = useSidebarResize({
-    direction,
-    enableDrag,
-    onResize: setWidth,
-    onToggle: toggleSidebar,
-    currentWidth: width,
-    isCollapsed: state === "collapsed",
-    minResizeWidth: MIN_SIDEBAR_WIDTH,
-    maxResizeWidth: MAX_SIDEBAR_WIDTH,
-    setIsDraggingRail,
-    widthCookieName: "sidebar:width",
-    widthCookieMaxAge: 60 * 60 * 24 * 7, // 1 week
-  });
+    const { dragRef, handleMouseDown } = useSidebarResize({
+      direction,
+      enableDrag,
+      onResize: setWidth,
+      onToggle: toggleSidebar,
+      currentWidth: width,
+      isCollapsed: state === "collapsed",
+      minResizeWidth: MIN_SIDEBAR_WIDTH,
+      maxResizeWidth: MAX_SIDEBAR_WIDTH,
+      setIsDraggingRail,
+      widthCookieName: "sidebar:width",
+      widthCookieMaxAge: 60 * 60 * 24 * 7, // 1 week
+    });
 
-  //* Merge external ref with our dragRef
-  const combinedRef = React.useMemo(
-    () => mergeButtonRefs([ref, dragRef]),
-    [ref, dragRef],
-  );
+    //* Merge external ref with our dragRef
+    const combinedRef = React.useMemo(
+      () => mergeButtonRefs([ref, dragRef]),
+      [ref, dragRef],
+    );
 
-  return (
-    <button
-      //* updated ref to use combinedRef
-      ref={combinedRef}
-      data-sidebar="rail"
-      aria-label="Toggle Sidebar"
-      tabIndex={-1}
-      // onClick={toggleSidebar}
-      //* replace onClick with onMouseDown
-      onMouseDown={handleMouseDown}
-      title="Toggle Sidebar"
-      className={cn(
-        "hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex",
-        "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
-        "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
-        "hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full",
-        "[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
-        "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
-        className,
-      )}
-      {...props}
-    />
-  );
-});
+    return (
+      <button
+        //* updated ref to use combinedRef
+        ref={combinedRef}
+        data-sidebar="rail"
+        aria-label="Toggle Sidebar"
+        tabIndex={-1}
+        // onClick={toggleSidebar}
+        //* replace onClick with onMouseDown
+        onMouseDown={handleMouseDown}
+        title="Toggle Sidebar"
+        className={cn(
+          "hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex",
+          "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
+          "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
+          "hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full",
+          "[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
+          "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
+          className,
+        )}
+        {...props}
+      >
+        {/* Apple-like mini rounded bar indicator when collapsed */}
+        {showIndicator && (
+          <div
+            className={cn(
+              "absolute top-1/2 left-1/2 h-20 w-2 -translate-y-1/2 rounded-full transition-all duration-200 ease-linear",
+              // Position based on sidebar direction
+              "bg-sidebar-accent group-data-[side=left]:translate-x-[200%] group-data-[side=right]:-translate-x-[200%] group-data-[state=expanded]:opacity-0",
+              // Only show when collapsed
+              "group-data-[state=collapsed]:opacity-100",
+            )}
+          />
+        )}
+      </button>
+    );
+  },
+);
 SidebarRail.displayName = "SidebarRail";
 
 const SidebarInset = React.forwardRef<

@@ -143,7 +143,7 @@ export const ScrollableContent = forwardRef<
       <div className="flex flex-1 flex-col p-4 pb-0">
         {messages.length === 0 ? (
           <div className="flex flex-1 flex-col justify-between gap-4">
-            <MessageComposer />
+            <MessageComposer className="min-h-[150px]" />
             <PastChats mcpId={mcpId} />
           </div>
         ) : (

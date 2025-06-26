@@ -91,7 +91,7 @@ export default function MessageComposer() {
   useEffect(() => {
     if (!ref.current) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Enter") {
+      if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
         event.stopPropagation();
         handleAddMessage();

@@ -22,8 +22,13 @@ import {
 } from "./mentionUtils";
 import { AttachmentsDisplay } from "./AttachmentsDisplay";
 import { useAgentContext } from "./AgentContext";
+import { cn } from "@/utils/tailwind";
 
-export function MessageComposer() {
+interface MessageComposerProps {
+  className?: string;
+}
+
+export function MessageComposer({ className }: MessageComposerProps) {
   const {
     onSendMessage,
     onStopAgent,
@@ -192,7 +197,12 @@ export function MessageComposer() {
   );
 
   return (
-    <div className="dark:bg-sidebar-accent/50 bg-card dark:sidebar-border flex min-h-[90px] flex-col gap-2 rounded-lg border p-3">
+    <div
+      className={cn(
+        "dark:bg-sidebar-accent/50 bg-card dark:sidebar-border flex min-h-[100px] flex-col gap-2 rounded-lg border p-3",
+        className,
+      )}
+    >
       {/* Attachments section: mentions and files */}
       <AttachmentsDisplay
         mentions={mentions}
@@ -205,8 +215,7 @@ export function MessageComposer() {
       <CodeMirrorEditor
         className="-mt-1"
         editorRef={editorRef}
-        defaultValue=""
-        value={message}
+        defaultValue={message}
         maxHeight="300px"
         language="markdown"
         additionalExtensions={extensions}

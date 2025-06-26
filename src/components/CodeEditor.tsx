@@ -283,7 +283,7 @@ function CodeMirrorEditor({
       view.destroy();
       actualEditorRef.current = null;
     };
-  }, [defaultValue, language, onPaste, additionalExtensions]);
+  }, [language, onPaste, additionalExtensions]);
 
   return (
     <div
