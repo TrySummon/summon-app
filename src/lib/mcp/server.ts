@@ -7,6 +7,8 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ListPromptsRequestSchema,
   CallToolRequest,
   CallToolResult,
   Tool,
@@ -240,7 +242,13 @@ export function createMcpServer(
   // Create the MCP SDK server
   const server = new Server(
     { name: serverName, version: SERVER_VERSION },
-    { capabilities: { tools: {} } },
+    {
+      capabilities: {
+        tools: {},
+        resources: {},
+        prompts: {},
+      },
+    },
   );
 
   // Set up MCP request handlers
@@ -251,6 +259,16 @@ export function createMcpServer(
       inputSchema: def.inputSchema as Tool["inputSchema"], // Cast to MCP Tool inputSchema type
     }));
     return { tools: toolsForClient };
+  });
+
+  // Resources handler - API-based MCPs typically don't expose resources
+  server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    return { resources: [] };
+  });
+
+  // Prompts handler - API-based MCPs typically don't expose prompts
+  server.setRequestHandler(ListPromptsRequestSchema, async () => {
+    return { prompts: [] };
   });
 
   server.setRequestHandler(

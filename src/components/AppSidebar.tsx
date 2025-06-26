@@ -10,7 +10,7 @@ import {
   SidebarMenu,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { SquareTerminal, Database } from "lucide-react";
+import { SquareTerminal, Database, PlayCircle } from "lucide-react";
 import { ApiNav } from "@/components/api-nav";
 import { McpNav } from "@/components/mcp-nav";
 import { ExternalMcpNav } from "@/components/external-mcp-nav";
@@ -53,6 +53,15 @@ export function AppSidebar() {
                     isActive={location.pathname === "/datasets"}
                   >
                     <Database className="h-4 w-4" /> Datasets
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link to="/evaluation">
+                  <SidebarMenuButton
+                    isActive={location.pathname === "/evaluation"}
+                  >
+                    <PlayCircle className="h-4 w-4" /> Evaluation
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>

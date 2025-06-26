@@ -6,7 +6,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { OpenAPIV3 } from "openapi-types";
 import type { McpData, McpSubmitData } from "@/lib/db/mcp-db";
-import { Tool } from "@modelcontextprotocol/sdk/types";
+import { Tool, Resource, Prompt } from "@modelcontextprotocol/sdk/types";
 import { McpServerState } from "@/lib/mcp/state";
 import {
   AIProviderCredential,
@@ -152,6 +152,12 @@ declare global {
       getMcpTools: (
         mcpId: string,
       ) => Promise<{ success: boolean; data?: Tool[]; message?: string }>;
+      getMcpResources: (
+        mcpId: string,
+      ) => Promise<{ success: boolean; data?: Resource[]; message?: string }>;
+      getMcpPrompts: (
+        mcpId: string,
+      ) => Promise<{ success: boolean; data?: Prompt[]; message?: string }>;
       callMcpTool: (
         mcpId: string,
         name: string,

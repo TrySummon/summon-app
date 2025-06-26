@@ -13,6 +13,8 @@ export const START_MCP_SERVER_CHANNEL = "start-mcp-server";
 export const STOP_MCP_SERVER_CHANNEL = "stop-mcp-server";
 export const RESTART_MCP_SERVER_CHANNEL = "restart-mcp-server";
 export const GET_MCP_TOOLS_CHANNEL = "get-mcp-tools";
+export const GET_MCP_RESOURCES_CHANNEL = "get-mcp-resources";
+export const GET_MCP_PROMPTS_CHANNEL = "get-mcp-prompts";
 export const CALL_MCP_TOOL_CHANNEL = "call-mcp-tool";
 export const OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL =
   "open-user-data-mcp-json-file";

@@ -1,5 +1,10 @@
-import React, { useState } from "react";
-import { useParams, Link } from "@tanstack/react-router";
+import React, { useState, useEffect } from "react";
+import {
+  useParams,
+  useSearch,
+  Link,
+  useNavigate,
+} from "@tanstack/react-router";
 import { useDatasets } from "@/hooks/useDatasets";
 import { DatasetItemsTable } from "@/components/DatasetItemsTable";
 import { DatasetItemDetailsSidebar } from "@/components/DatasetItemDetailsSidebar";
@@ -27,9 +32,18 @@ const DatasetDetailPage: React.FC = () => {
   const { datasetId } = useParams({
     from: "/datasets/$datasetId",
   });
+  const search = useSearch({ from: "/datasets/$datasetId" });
+  const navigate = useNavigate();
   const { getDataset, isLoading } = useDatasets();
   const [selectedItem, setSelectedItem] = useState<DatasetItem | null>(null);
   const [activeTab, setActiveTab] = useState("items");
+
+  // Set initial tab from URL search params
+  useEffect(() => {
+    if (search?.tab && (search.tab === "items" || search.tab === "eval")) {
+      setActiveTab(search.tab);
+    }
+  }, [search?.tab]);
 
   const dataset = getDataset(datasetId);
 
@@ -39,6 +53,16 @@ const DatasetDetailPage: React.FC = () => {
 
   const handleCloseSidebar = () => {
     setSelectedItem(null);
+  };
+
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    navigate({
+      to: "/datasets/$datasetId",
+      params: { datasetId },
+      search: { tab: newTab },
+      replace: true,
+    });
   };
 
   if (isLoading) return null;
@@ -117,7 +141,7 @@ const DatasetDetailPage: React.FC = () => {
           <SubNav
             items={navItems}
             value={activeTab}
-            onValueChange={setActiveTab}
+            onValueChange={handleTabChange}
           />
         </div>
       </div>

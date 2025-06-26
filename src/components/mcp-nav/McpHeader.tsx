@@ -1,5 +1,5 @@
 import React from "react";
-import { RefreshCw, Plus } from "lucide-react";
+import { RefreshCw, Sparkles } from "lucide-react";
 import { SidebarGroupLabel } from "@/components/ui/sidebar";
 import {
   Tooltip,
@@ -25,14 +25,14 @@ export function McpHeader({ isLoading, refetch, onCreateMcp }: McpHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <SidebarGroupLabel>My MCPs</SidebarGroupLabel>
-      <div className={`flex items-center`}>
+      <div className={`flex items-center gap-1`}>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="mr-1 h-5 w-5"
+                className="h-5 w-5"
                 onClick={handleRefresh}
                 disabled={isLoading}
               >
@@ -44,7 +44,6 @@ export function McpHeader({ isLoading, refetch, onCreateMcp }: McpHeaderProps) {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -54,11 +53,11 @@ export function McpHeader({ isLoading, refetch, onCreateMcp }: McpHeaderProps) {
                 className="h-5 w-5"
                 onClick={onCreateMcp}
               >
-                <Plus className="h-3 w-3" />
+                <Sparkles className="h-3 w-3" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Create new MCP</p>
+              <p>Build MCP with AI</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

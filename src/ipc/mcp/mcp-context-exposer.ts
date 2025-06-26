@@ -11,6 +11,8 @@ import {
   STOP_MCP_SERVER_CHANNEL,
   RESTART_MCP_SERVER_CHANNEL,
   GET_MCP_TOOLS_CHANNEL,
+  GET_MCP_RESOURCES_CHANNEL,
+  GET_MCP_PROMPTS_CHANNEL,
   CALL_MCP_TOOL_CHANNEL,
   OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL,
   DOWNLOAD_MCP_ZIP_CHANNEL,
@@ -66,6 +68,14 @@ export function exposeMcpContext() {
 
     getMcpTools: (mcpId: string) => {
       return ipcRenderer.invoke(GET_MCP_TOOLS_CHANNEL, mcpId);
+    },
+
+    getMcpResources: (mcpId: string) => {
+      return ipcRenderer.invoke(GET_MCP_RESOURCES_CHANNEL, mcpId);
+    },
+
+    getMcpPrompts: (mcpId: string) => {
+      return ipcRenderer.invoke(GET_MCP_PROMPTS_CHANNEL, mcpId);
     },
 
     callMcpTool: async (

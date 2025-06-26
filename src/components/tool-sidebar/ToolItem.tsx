@@ -64,7 +64,7 @@ export default function ToolItem({
   return (
     <>
       <div
-        key={mcpId + tool.name}
+        key={`${mcpId}:${tool.name}`}
         className={cn(
           `group/tool relative border-b`,
           hasModifications && "bg-primary/10 dark:bg-primary/20",
@@ -79,7 +79,12 @@ export default function ToolItem({
                 onToggle();
               }}
             >
-              <Checkbox checked={isSelected} />
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => {
+                  onToggle();
+                }}
+              />
               <div className="flex flex-1 items-center gap-2">
                 <Label
                   title={tool.name}

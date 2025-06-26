@@ -25,8 +25,8 @@ interface McpSectionProps {
   modifiedToolMap: Record<string, Record<string, ModifiedTool>>;
   onToggleSection: () => void;
   onToggleAllTools: () => void;
-  onToggleTool: (toolId: string) => void;
-  isToolSelected: (toolId: string) => boolean;
+  onToggleTool: (mcpId: string, toolId: string) => void;
+  isToolSelected: (mcpId: string, toolId: string) => boolean;
   getModifiedName: (
     mcpId: string,
     toolName: string,
@@ -130,11 +130,11 @@ export default function McpSection({
 
           {tools.map((tool) => (
             <ToolItem
-              key={mcpId + tool.name}
+              key={`${mcpId}:${tool.name}`}
               tool={tool}
               mcpId={mcpId}
-              isSelected={isToolSelected(tool.name)}
-              onToggle={() => onToggleTool(tool.name)}
+              isSelected={isToolSelected(mcpId, tool.name)}
+              onToggle={() => onToggleTool(mcpId, tool.name)}
               getModifiedName={getModifiedName}
               getModifiedTool={getModifiedTool}
               onToolModify={onToolModify}
