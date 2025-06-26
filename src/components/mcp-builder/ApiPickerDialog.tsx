@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ImportApiDialog } from "@/components/ImportApiDialog";
 import { OpenAPIV3 } from "openapi-types";
+import { extractTimestampFromApiId } from "@/utils/formatDate";
 
 interface ApiPickerDialogProps {
   open: boolean;
@@ -50,28 +51,38 @@ export function ApiPickerDialog({
                   </ImportApiDialog>
                 </div>
               ) : (
-                apis.map((api) => (
-                  <Card
-                    key={api.id}
-                    className="hover:bg-muted/20 flex cursor-pointer items-center gap-3 p-4"
-                    onClick={() => onApiSelect(api)}
-                  >
-                    <div className="bg-primary/10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full">
-                      <span className="text-primary text-xl font-bold">
-                        {api.api.info.title.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="font-medium">{api.api.info.title}</h3>
-                      <p className="text-muted-foreground flex items-center text-sm">
-                        By {api.api.info.contact?.name || "Unknown"}
-                        {api.api.info.contact?.name && (
-                          <BadgeCheck className="ml-1 size-3 text-blue-500" />
-                        )}
-                      </p>
-                    </div>
-                  </Card>
-                ))
+                apis.map((api) => {
+                  const timestampInfo = extractTimestampFromApiId(api.id);
+                  return (
+                    <Card
+                      key={api.id}
+                      className="hover:bg-muted/20 flex cursor-pointer items-center gap-3 p-4"
+                      onClick={() => onApiSelect(api)}
+                    >
+                      <div className="bg-primary/10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full">
+                        <span className="text-primary text-xl font-bold">
+                          {api.api.info.title.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-grow">
+                        <h3 className="font-medium">{api.api.info.title}</h3>
+                        <div className="flex flex-col gap-1">
+                          <p className="text-muted-foreground flex items-center text-sm">
+                            By {api.api.info.contact?.name || "Unknown"}
+                            {api.api.info.contact?.name && (
+                              <BadgeCheck className="ml-1 size-3 text-blue-500" />
+                            )}
+                          </p>
+                          {timestampInfo.hasTimestamp && timestampInfo.formattedTimestamp && (
+                            <p className="text-muted-foreground text-xs">
+                              Uploaded {timestampInfo.formattedTimestamp}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })
               )}
             </div>
           </div>

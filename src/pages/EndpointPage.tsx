@@ -13,6 +13,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ApiExplorer } from "@/components/api-explorer";
+import { extractTimestampFromApiId } from "@/utils/formatDate";
 
 // Define the search params interface
 interface EndpointSearchParams {
@@ -27,6 +28,9 @@ export default function EndpointPage() {
     from: "/api/$apiId/endpoint/$endpointId",
   }) as EndpointSearchParams;
   const { api, isLoading } = useApi(apiId);
+
+  // Extract timestamp information from API ID
+  const timestampInfo = extractTimestampFromApiId(apiId);
 
   const path = api?.api.paths?.[endpointId];
 
@@ -70,7 +74,17 @@ export default function EndpointPage() {
             <BreadcrumbLink asChild>
               <Link to="/api/$apiId" params={{ apiId: api.id }}>
                 <BreadcrumbPage>
-                  <Server className="mr-2 size-3" /> {api.api.info.title}
+                  <div className="flex items-center">
+                    <Server className="mr-2 size-3" />
+                    <div className="flex flex-col">
+                      <span>{api.api.info.title}</span>
+                      {timestampInfo.hasTimestamp && timestampInfo.formattedTimestamp && (
+                        <span className="text-muted-foreground text-xs">
+                          Uploaded {timestampInfo.formattedTimestamp}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </BreadcrumbPage>
               </Link>
             </BreadcrumbLink>

@@ -66,3 +66,71 @@ export function formatRelativeDate(
     return formatDate(dateObj);
   }
 }
+
+/**
+ * Extract and format timestamp from API ID
+ * Handles API IDs in format: baseId-YYYYMMDD-HHMMSS
+ * @param apiId - The API ID that might contain a timestamp
+ * @returns Object with hasTimestamp boolean and formatted timestamp string
+ */
+export function extractTimestampFromApiId(apiId: string): {
+  hasTimestamp: boolean;
+  timestamp: string | null;
+  formattedTimestamp: string | null;
+} {
+  // Pattern to match timestamp in format YYYYMMDD-HHMMSS at the end
+  const timestampPattern = /(\d{8}-\d{6})(?:-\d+)?$/;
+  const match = apiId.match(timestampPattern);
+  
+  if (!match) {
+    return {
+      hasTimestamp: false,
+      timestamp: null,
+      formattedTimestamp: null,
+    };
+  }
+
+  const timestamp = match[1]; // YYYYMMDD-HHMMSS
+  
+  try {
+    // Parse the timestamp: YYYYMMDD-HHMMSS
+    const year = timestamp.slice(0, 4);
+    const month = timestamp.slice(4, 6);
+    const day = timestamp.slice(6, 8);
+    const hour = timestamp.slice(9, 11);
+    const minute = timestamp.slice(11, 13);
+    const second = timestamp.slice(13, 15);
+    
+    const date = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
+    
+    if (isNaN(date.getTime())) {
+      return {
+        hasTimestamp: false,
+        timestamp: null,
+        formattedTimestamp: null,
+      };
+    }
+
+    // Format as "Dec 20, 2024 at 2:30 PM"
+    const formattedTimestamp = date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    return {
+      hasTimestamp: true,
+      timestamp,
+      formattedTimestamp,
+    };
+  } catch (error) {
+    return {
+      hasTimestamp: false,
+      timestamp: null,
+      formattedTimestamp: null,
+    };
+  }
+}

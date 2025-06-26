@@ -50,6 +50,35 @@ const apiExists = async (
   }
 };
 
+// Generate a unique API ID by appending a timestamp suffix if needed
+const generateUniqueApiId = async (
+  workspaceId: string,
+  baseApiId: string,
+): Promise<string> => {
+  // Check if the base ID already exists
+  if (!(await apiExists(workspaceId, baseApiId))) {
+    return baseApiId;
+  }
+
+  // Generate timestamp in YYYYMMDD-HHMMSS format
+  const now = new Date();
+  const timestamp = now.toISOString()
+    .replace(/[-:]/g, '')
+    .replace('T', '-')
+    .slice(0, 15); // YYYYMMDD-HHMMSS format
+
+  let uniqueApiId = `${baseApiId}-${timestamp}`;
+  let counter = 2;
+
+  // If somehow the timestamp version also exists, fall back to counter
+  while (await apiExists(workspaceId, uniqueApiId)) {
+    uniqueApiId = `${baseApiId}-${timestamp}-${counter}`;
+    counter++;
+  }
+
+  return uniqueApiId;
+};
+
 // Create a new API in the current workspace
 const createApi = async (buffer: Buffer): Promise<string> => {
   const currentWorkspace = await workspaceDb.getCurrentWorkspace();
@@ -70,24 +99,22 @@ const createApi = async (buffer: Buffer): Promise<string> => {
   }
 
   // Generate kebab-case filename from the title
-  const apiId = kebabCase(apiTitle);
+  const baseApiId = kebabCase(apiTitle);
 
-  if (!apiId) {
+  if (!baseApiId) {
     throw new Error("API title cannot be converted to a valid filename");
   }
 
-  // Check if a file with this name already exists
-  if (await apiExists(currentWorkspace.id, apiId)) {
-    return apiId;
-  }
+  // Generate a unique API ID to avoid overwriting existing APIs
+  const uniqueApiId = await generateUniqueApiId(currentWorkspace.id, baseApiId);
 
   // Save the raw API spec directly to the file system
   await fs.writeFile(
-    getApiFilePath(currentWorkspace.id, apiId),
+    getApiFilePath(currentWorkspace.id, uniqueApiId),
     JSON.stringify(apiSpec, null, 2),
   );
 
-  return apiId;
+  return uniqueApiId;
 };
 
 // List all APIs in the current workspace

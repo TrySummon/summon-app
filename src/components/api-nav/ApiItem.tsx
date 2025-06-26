@@ -16,6 +16,7 @@ import { ApiEndpointList } from "./ApiEndpointList";
 import { toast } from "sonner";
 import { useApis } from "@/hooks/useApis";
 import { OpenAPIV3 } from "openapi-types";
+import { extractTimestampFromApiId } from "@/utils/formatDate";
 
 interface ApiItemProps {
   apiItem: { id: string; api: OpenAPIV3.Document };
@@ -31,6 +32,9 @@ export function ApiItem({ apiItem, isOpen, isActive, onToggle }: ApiItemProps) {
 
   const editableNameRef = useRef<HTMLSpanElement>(null);
   const renameInitiatedRef = useRef<boolean>(false);
+
+  // Extract timestamp information from API ID
+  const timestampInfo = extractTimestampFromApiId(apiItem.id);
 
   useEffect(() => {
     if (editingApiId === apiItem.id && editableNameRef.current) {
@@ -149,9 +153,16 @@ export function ApiItem({ apiItem, isOpen, isActive, onToggle }: ApiItemProps) {
                     {apiItem.api.info.title}
                   </span>
                 ) : (
-                  <span className="hover:text-primary cursor-pointer transition-colors">
-                    {apiItem.api.info.title}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="hover:text-primary cursor-pointer transition-colors">
+                      {apiItem.api.info.title}
+                    </span>
+                    {timestampInfo.hasTimestamp && timestampInfo.formattedTimestamp && (
+                      <span className="text-muted-foreground text-[10px] leading-tight">
+                        {timestampInfo.formattedTimestamp}
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             </SidebarMenuButton>
