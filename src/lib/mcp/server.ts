@@ -67,9 +67,8 @@ export async function executeApiTool(
     // Build URL with path parameters
     let url = baseUrl + definition.pathTemplate;
     const queryParams: Record<string, string> = {};
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
+    const headers: Record<string, string> = { Accept: "application/json" };
+    let requestBodyData: unknown = undefined;
 
     // Apply authentication from available security schemes
     const authSchemas = definition.securityScheme.schemas || [];
@@ -129,24 +128,13 @@ export async function executeApiTool(
 
     const finalUrl = url;
 
-    // Prepare request body
-    let body: string | undefined;
+    // Handle request body if needed
     if (
-      definition.method.toUpperCase() !== "GET" &&
-      definition.method.toUpperCase() !== "HEAD"
+      definition.requestBodyContentType &&
+      typeof args["requestBody"] !== "undefined"
     ) {
-      if (definition.requestBodyContentType === "application/json") {
-        // For JSON requests, send remaining args as body
-        const bodyArgs = { ...args };
-        definition.executionParameters.forEach((param) => {
-          if (param.in !== "body") {
-            delete bodyArgs[param.name];
-          }
-        });
-        if (Object.keys(bodyArgs).length > 0) {
-          body = JSON.stringify(bodyArgs);
-        }
-      }
+      requestBodyData = args["requestBody"];
+      headers["content-type"] = definition.requestBodyContentType;
     }
 
     const config: AxiosRequestConfig = {
@@ -159,7 +147,7 @@ export async function executeApiTool(
       url: finalUrl,
       params: queryParams,
       headers: headers,
-      ...(body !== undefined && { data: body }),
+      ...(requestBodyData !== undefined && { data: requestBodyData }),
     };
 
     log.info(`Executing tool "${toolName}": ${config.method} ${config.url}`);

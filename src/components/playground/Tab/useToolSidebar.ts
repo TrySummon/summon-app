@@ -23,7 +23,7 @@ export function useToolSidebar() {
   const modifyTool = usePlaygroundStore((state) => state.modifyTool);
   const revertTool = usePlaygroundStore((state) => state.revertTool);
 
-  // State for expanded MCP sections - all expanded by default
+  // State for expanded MCP sections - all collapsed by default
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
   >({});
@@ -109,17 +109,6 @@ export function useToolSidebar() {
       });
     }
   }, [mcpToolMap, updateMcpToolMap, getTabs, updateTab]);
-
-  // Initialize all sections as expanded
-  useEffect(() => {
-    if (mcpToolMap && Object.keys(mcpToolMap).length > 0) {
-      const initialExpandedState: Record<string, boolean> = {};
-      Object.keys(mcpToolMap).forEach((mcpId) => {
-        initialExpandedState[mcpId] = true;
-      });
-      setExpandedSections(initialExpandedState);
-    }
-  }, [mcpToolMap]);
 
   // Toggle section expansion
   const toggleSection = (mcpId: string) => {
