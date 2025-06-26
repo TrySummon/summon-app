@@ -290,10 +290,18 @@ declare global {
         success: boolean;
         data?: unknown;
         message?: string;
+        tokenCount?: number;
       }>;
-      listApiEndpoints: (
-        apiId: string,
-      ) => Promise<{ success: boolean; data?: unknown; message?: string }>;
+      searchApiEndpoints: (args: {
+        apiId: string;
+        query?: string;
+        tags?: string[];
+      }) => Promise<{
+        success: boolean;
+        data?: unknown;
+        tokenCount?: number;
+        message?: string;
+      }>;
       readApiEndpoints: (
         apiId: string,
         endpoints: Array<{ path: string; method: string }>,

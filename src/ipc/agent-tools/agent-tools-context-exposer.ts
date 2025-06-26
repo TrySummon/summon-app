@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import {
   LIST_APIS_CHANNEL,
-  LIST_API_ENDPOINTS_CHANNEL,
+  SEARCH_API_ENDPOINTS_CHANNEL,
   READ_API_ENDPOINTS_CHANNEL,
 } from "./agent-tools-channels";
 
@@ -12,8 +12,12 @@ export function exposeAgentToolsContext() {
         return ipcRenderer.invoke(LIST_APIS_CHANNEL);
       },
 
-      listApiEndpoints: (apiId: string) => {
-        return ipcRenderer.invoke(LIST_API_ENDPOINTS_CHANNEL, { apiId });
+      searchApiEndpoints: (args: {
+        apiId: string;
+        query?: string;
+        tags?: string[];
+      }) => {
+        return ipcRenderer.invoke(SEARCH_API_ENDPOINTS_CHANNEL, args);
       },
 
       readApiEndpoints: (

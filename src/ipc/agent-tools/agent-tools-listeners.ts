@@ -1,16 +1,19 @@
 import { ipcMain } from "electron";
 import {
   LIST_APIS_CHANNEL,
-  LIST_API_ENDPOINTS_CHANNEL,
+  SEARCH_API_ENDPOINTS_CHANNEL,
   READ_API_ENDPOINTS_CHANNEL,
 } from "./agent-tools-channels";
 import { apiDb } from "@/lib/db/api-db";
 
 import { OpenAPIV3 } from "openapi-types";
 import log from "electron-log/main";
+import { calculateTokenCount } from "@/lib/tiktoken";
 
-interface ListApiEndpointsRequest {
+interface SearchApiEndpointsRequest {
   apiId: string;
+  query?: string;
+  tags?: string[];
 }
 
 interface ReadApiEndpointsRequest {
@@ -55,11 +58,8 @@ function extractApiEndpoints(api: OpenAPIV3.Document) {
       if (operation) {
         endpoints.push({
           path,
-          method: method.toUpperCase(),
-          summary: operation.summary,
+          method: method,
           description: operation.description,
-          operationId: operation.operationId,
-          tags: operation.tags,
         });
       }
     }
@@ -200,9 +200,11 @@ export function registerAgentToolsListeners() {
         description: api.info?.description || "",
         tags: api.tags?.map((tag) => tag.name) || [],
       }));
-
+      const data = JSON.stringify(formattedApis, null, 2);
+      const tokenCount = await calculateTokenCount(data);
       return {
         success: true,
+        tokenCount,
         data: JSON.stringify(formattedApis, null, 2),
       };
     } catch (error) {
@@ -217,10 +219,10 @@ export function registerAgentToolsListeners() {
 
   // List API endpoints
   ipcMain.handle(
-    LIST_API_ENDPOINTS_CHANNEL,
-    async (_, request: ListApiEndpointsRequest) => {
+    SEARCH_API_ENDPOINTS_CHANNEL,
+    async (_, request: SearchApiEndpointsRequest) => {
       try {
-        const { apiId } = request;
+        const { apiId, query, tags } = request;
         const apiData = await apiDb.getApiById(apiId, true);
 
         if (!apiData) {
@@ -231,10 +233,13 @@ export function registerAgentToolsListeners() {
         }
 
         const endpoints = extractApiEndpoints(apiData.api);
+        const data = JSON.stringify(endpoints, null, 2);
+        const tokenCount = await calculateTokenCount(data);
 
         return {
           success: true,
-          data: JSON.stringify(endpoints, null, 2),
+          tokenCount,
+          data,
         };
       } catch (error) {
         log.error(`Error listing endpoints for API ${request.apiId}:`, error);
@@ -248,37 +253,37 @@ export function registerAgentToolsListeners() {
   );
 
   // Read API endpoint details
-  ipcMain.handle(
-    READ_API_ENDPOINTS_CHANNEL,
-    async (_, request: ReadApiEndpointsRequest) => {
-      try {
-        const { apiId, endpoints } = request;
-        const apiData = await apiDb.getApiById(apiId, true);
+  // ipcMain.handle(
+  //   READ_API_ENDPOINTS_CHANNEL,
+  //   async (_, request: ReadApiEndpointsRequest) => {
+  //     try {
+  //       const { apiId, endpoints } = request;
+  //       const apiData = await apiDb.getApiById(apiId, true);
 
-        if (!apiData) {
-          return {
-            success: false,
-            message: `API with ID ${apiId} not found`,
-          };
-        }
+  //       if (!apiData) {
+  //         return {
+  //           success: false,
+  //           message: `API with ID ${apiId} not found`,
+  //         };
+  //       }
 
-        const endpointDetails = readApiEndpointDetails(apiData.api, endpoints);
+  //       const endpointDetails = readApiEndpointDetails(apiData.api, endpoints);
 
-        return {
-          success: true,
-          data: JSON.stringify(endpointDetails, null, 2),
-        };
-      } catch (error) {
-        log.error(
-          `Error reading endpoint details for API ${request.apiId}:`,
-          error,
-        );
-        return {
-          success: false,
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        };
-      }
-    },
-  );
+  //       return {
+  //         success: true,
+  //         data: JSON.stringify(endpointDetails, null, 2),
+  //       };
+  //     } catch (error) {
+  //       log.error(
+  //         `Error reading endpoint details for API ${request.apiId}:`,
+  //         error,
+  //       );
+  //       return {
+  //         success: false,
+  //         message:
+  //           error instanceof Error ? error.message : "Unknown error occurred",
+  //       };
+  //     }
+  //   },
+  // );
 }

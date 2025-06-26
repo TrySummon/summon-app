@@ -15,18 +15,18 @@ const toolClassifications: Record<string, ToolClassification> = {
     doneText: "Found APIs",
     errorText: "Failed to retrieve APIs",
   },
-  listApiEndpoint: {
+  searchApiEndpoints: {
     type: "read",
     runningText: "Search API endpoints...",
     doneText: "Found API endpoints",
     errorText: "Failed to load endpoints",
   },
-  readApiEndpoints: {
-    type: "read",
-    runningText: "Reading endpoint details...",
-    doneText: "Loaded endpoint details",
-    errorText: "Failed to read endpoint details",
-  },
+  // readApiEndpoints: {
+  //   type: "read",
+  //   runningText: "Reading endpoint details...",
+  //   doneText: "Loaded endpoint details",
+  //   errorText: "Failed to read endpoint details",
+  // },
   listMcpTools: {
     type: "read",
     runningText: "Listing MCP tools...",

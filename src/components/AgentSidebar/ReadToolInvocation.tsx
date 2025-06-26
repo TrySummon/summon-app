@@ -3,7 +3,7 @@ import { ToolInvocation as AIToolInvocation } from "ai";
 import { cn } from "@/utils/tailwind";
 import { Eye } from "lucide-react";
 import {
-  listApiEndpoints,
+  searchApiEndpoints,
   listApis,
   readApiEndpoints,
 } from "@/ipc/agent-tools/agent-tools-client";
@@ -31,6 +31,7 @@ export const ReadToolInvocation: React.FC<ReadToolInvocationProps> = ({
 }) => {
   const { listMcpTools, addToolResult } = useAgentContext();
   const [isError, setIsError] = useState(false);
+  const [tokenCount, setTokenCount] = useState(0);
 
   const executeReadTool = useCallback(async () => {
     try {
@@ -43,8 +44,8 @@ export const ReadToolInvocation: React.FC<ReadToolInvocationProps> = ({
           break;
         }
 
-        case "listApiEndpoint": {
-          result = await listApiEndpoints(toolInvocation.args.apiId);
+        case "searchApiEndpoints": {
+          result = await searchApiEndpoints(toolInvocation.args);
           break;
         }
 
@@ -83,6 +84,9 @@ export const ReadToolInvocation: React.FC<ReadToolInvocationProps> = ({
             toolCallId: toolInvocation.toolCallId,
             result: result,
           });
+          if (result.tokenCount) {
+            setTokenCount(result.tokenCount);
+          }
         })
         .catch((error) => {
           addToolResult({
@@ -116,7 +120,7 @@ export const ReadToolInvocation: React.FC<ReadToolInvocationProps> = ({
         ) {
           return errorText;
         }
-        return doneText;
+        return doneText + ` (${tokenCount} tks)`;
       default:
         return runningText;
     }

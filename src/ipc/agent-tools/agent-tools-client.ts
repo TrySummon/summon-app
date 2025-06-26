@@ -2,8 +2,12 @@ export const listApis = async () => {
   return window.agentTools.listApis();
 };
 
-export const listApiEndpoints = async (apiId: string) => {
-  return window.agentTools.listApiEndpoints(apiId);
+export const searchApiEndpoints = async (args: {
+  apiId: string;
+  query?: string;
+  tags?: string[];
+}) => {
+  return window.agentTools.searchApiEndpoints(args);
 };
 
 export const readApiEndpoints = async (

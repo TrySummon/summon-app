@@ -210,7 +210,8 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
           }
 
           const toolsWithApiId = tools.map((tool) => ({
-            ...tool,
+            name: tool.name,
+            description: tool.description,
             apiId,
           }));
 

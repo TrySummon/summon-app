@@ -20,7 +20,9 @@ export async function getMcpTools(mcpId: string) {
   const tools = response.tools;
 
   tools.forEach((tool) => {
-    tool.annotations = { tokenCount: calculateTokenCount(tool) };
+    tool.annotations = {
+      tokenCount: calculateTokenCount(JSON.stringify(tool)),
+    };
   });
 
   return tools;
