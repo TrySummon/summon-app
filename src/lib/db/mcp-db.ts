@@ -54,6 +54,16 @@ export const getMcpImplPath = async (mcpId: string) => {
   return getMcpImplDir(mcpId);
 };
 
+export const getMcpImplToolsDir = async (mcpId: string) => {
+  const mcpImplDir = await getMcpImplDir(mcpId);
+  return path.join(mcpImplDir, "src", "tools");
+};
+
+export const getMcpImplToolPath = async (mcpId: string, toolName: string) => {
+  const toolsDir = await getMcpImplToolsDir(mcpId);
+  return path.join(toolsDir, `${toolName}.json`);
+};
+
 // Credentials are shared across workspaces - stored in root credentials directory
 const getCredentialsDir = () => {
   const userDataPath = app.getPath("userData");

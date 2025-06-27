@@ -43,6 +43,9 @@
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-flash-green: flash-green 2s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-flash-red: flash-red 2s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-flash-blue: flash-blue 2s cubic-bezier(0.4, 0, 0.2, 1);
 
   @keyframes accordion-down {
     from {
@@ -58,6 +61,60 @@
     }
     to {
       height: 0;
+    }
+  }
+  @keyframes flash-green {
+    0% {
+      background-color: hsl(142 76% 36% / 0.06);
+      box-shadow:
+        0 0 0 1px hsl(142 76% 36% / 0.15),
+        0 2px 8px hsl(142 76% 36% / 0.08);
+      transform: scale(1.005);
+    }
+    50% {
+      background-color: hsl(142 76% 36% / 0.1);
+      box-shadow:
+        0 0 0 1px hsl(142 76% 36% / 0.2),
+        0 4px 12px hsl(142 76% 36% / 0.1);
+    }
+    100% {
+      background-color: transparent;
+      box-shadow: none;
+      transform: scale(1);
+    }
+  }
+  @keyframes flash-red {
+    0% {
+      background-color: hsl(0 84% 60% / 0.06);
+
+      transform: scale(1.005);
+    }
+    50% {
+      background-color: hsl(0 84% 60% / 0.1);
+    }
+    100% {
+      background-color: transparent;
+      transform: scale(1);
+    }
+  }
+  @keyframes flash-blue {
+    0% {
+      background-color: hsl(217 91% 60% / 0.06);
+      box-shadow:
+        0 0 0 1px hsl(217 91% 60% / 0.15),
+        0 2px 8px hsl(217 91% 60% / 0.08);
+      transform: scale(1.005);
+    }
+    50% {
+      background-color: hsl(217 91% 60% / 0.1);
+      box-shadow:
+        0 0 0 1px hsl(217 91% 60% / 0.2),
+        0 4px 12px hsl(217 91% 60% / 0.1);
+    }
+    100% {
+      background-color: transparent;
+      box-shadow: none;
+      transform: scale(1);
     }
   }
 }

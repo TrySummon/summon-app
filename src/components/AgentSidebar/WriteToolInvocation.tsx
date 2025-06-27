@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ToolInvocation as AIToolInvocation } from "ai";
-import { Wrench, Clock, Check, CheckCircle, XCircle } from "lucide-react";
+import { Wrench, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,6 +25,7 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
     removeMcpTool,
     removeAllMcpTools,
     addToolResult,
+    optimiseToolDefinition,
     autoApprove,
   } = useAgentContext();
 
@@ -41,6 +42,11 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
       switch (toolInvocation.toolName) {
         case "addTools": {
           result = await addToolsToMcp(toolInvocation.args.selectedEndpoints);
+          break;
+        }
+
+        case "optimiseToolDefinition": {
+          result = await optimiseToolDefinition(toolInvocation.args);
           break;
         }
 
@@ -99,109 +105,123 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
 
   const renderStatusBadge = () => {
     switch (toolInvocation.state) {
-      case "call":
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge
-                variant="outline"
-                className="border-yellow-300 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
-              >
-                <Clock className="mr-1 h-3 w-3" />
-                Pending
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Tool call is awaiting approval</p>
-            </TooltipContent>
-          </Tooltip>
-        );
-
       case "result":
+        // Check if the result indicates failure
+        if (
+          toolInvocation.result &&
+          typeof toolInvocation.result === "object" &&
+          "success" in toolInvocation.result &&
+          toolInvocation.result.success === false
+        ) {
+          return (
+            <Badge
+              variant="outline"
+              className="border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300"
+            >
+              Failed
+            </Badge>
+          );
+        }
+
         return (
           <Badge
             variant="outline"
-            className="border-green-300 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+            className="border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-300"
           >
-            <Check className="mr-1 h-3 w-3" />
             Completed
           </Badge>
         );
       default:
-        return null;
+        return (
+          <Badge
+            variant="outline"
+            className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300"
+          >
+            Pending
+          </Badge>
+        );
     }
   };
 
   return (
-    <div className="dark:bg-sidebar-accent/50 bg-card/50 rounded-md p-2">
+    <div className="group border-border/50 bg-card/30 hover:border-border hover:bg-card/50 relative rounded-lg border backdrop-blur-sm transition-all duration-200 hover:shadow-sm">
       {/* Header */}
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex w-full items-center justify-between">
-          <div className="text-primary flex items-center gap-2 text-sm font-medium">
-            <Wrench className="h-3.5 w-3.5" /> {toolInvocation.toolName}
+      <div className="border-border/30 flex items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-md">
+            <Wrench className="h-4 w-4" />
           </div>
-          {renderStatusBadge()}
+          <div className="flex flex-col">
+            <span className="text-foreground text-sm font-medium">
+              {toolInvocation.toolName}
+            </span>
+            <span className="text-muted-foreground text-xs">
+              Tool Invocation
+            </span>
+          </div>
         </div>
+        {renderStatusBadge()}
       </div>
 
       {/* Content */}
-      <div className="flex items-center">
-        <PayloadDialog
-          title={`Arguments for ${toolInvocation.toolName}`}
-          payload={toolInvocation.args}
-          triggerText="View Arguments"
-        />
-        {toolInvocation.state === "result" && (
+      <div className="space-y-3 px-4 py-3">
+        <div className="flex flex-wrap gap-2">
           <PayloadDialog
-            title={`Result for ${toolInvocation.toolName}`}
-            payload={toolInvocation.result}
-            triggerText="View Result"
+            title={`Arguments for ${toolInvocation.toolName}`}
+            payload={toolInvocation.args}
+            triggerText="View Arguments"
           />
+          {toolInvocation.state === "result" && (
+            <PayloadDialog
+              title={`Result for ${toolInvocation.toolName}`}
+              payload={toolInvocation.result}
+              triggerText="View Result"
+            />
+          )}
+        </div>
+
+        {/* Action buttons for pending tools */}
+        {toolInvocation.state === "call" && (
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleReject}
+                  size="sm"
+                  variant="outline"
+                  className="h-8 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+                >
+                  <XCircle className="mr-1.5 h-3 w-3" />
+                  Reject
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Reject and deny tool execution</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleApprove}
+                  size="sm"
+                  className="h-8 bg-green-600 text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader className="mr-1.5 h-3 w-3 text-white" />
+                  ) : (
+                    <CheckCircle className="mr-1.5 h-3 w-3" />
+                  )}
+                  Approve
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Approve and execute tool</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         )}
       </div>
-
-      {/* Approve/Reject buttons for tools without results */}
-      {toolInvocation.state === "call" && (
-        <div className="mt-2 flex justify-end gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleReject}
-                size="sm"
-                variant="ghost"
-                className="text-red-600 hover:text-red-500"
-              >
-                <XCircle className="mr-1 h-4 w-4" />
-                Reject
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Reject and deny tool execution</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleApprove}
-                size="sm"
-                variant="ghost"
-                className="text-green-600 hover:text-green-500"
-                disabled={loading}
-              >
-                {loading ? (
-                  <Loader className="mr-1 h-4 w-4" />
-                ) : (
-                  <CheckCircle className="mr-1 h-4 w-4" />
-                )}
-                Approve
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Approve and execute tool</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      )}
     </div>
   );
 };

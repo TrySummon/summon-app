@@ -2,6 +2,7 @@
  * Core type definitions for the openapi-to-mcp generator
  */
 import type { JSONSchema7 } from "json-schema";
+import { MappingConfig } from "../mapper";
 
 /**
  * Transport types supported by the MCP server
@@ -13,6 +14,20 @@ export type TransportType = "stdio" | "web" | "streamable-http";
  * for use in Model Context Protocol server
  */
 export interface McpToolDefinition {
+  /** Optimised tool definition */
+  optimised?: {
+    name: string;
+    description: string;
+    inputSchema: JSONSchema7 | boolean;
+  };
+  /** Token count of the optimised tool definition */
+  optimisedTokenCount?: number;
+  /** Mapping of the original tool definition to the optimised tool definition */
+  originalToOptimisedMapping?: MappingConfig;
+  /** Token count of the original tool definition */
+  originalTokenCount: number;
+  /** API ID of the tool */
+  apiId: string;
   /** Name of the tool, must be unique */
   name: string;
   /** Human-readable description of the tool */
@@ -47,11 +62,6 @@ export interface McpToolDefinition {
         }
     >;
   };
-  /** Improved input schema for the tool */
-  improvedInputSchema?: JSONSchema7 | boolean;
-  improvedExecutionParameters?: { name: string; in: string }[];
-  improvedName?: string;
-  improvedDescription?: string;
 }
 
 export type McpToolDefinitionWithoutAuth = Omit<

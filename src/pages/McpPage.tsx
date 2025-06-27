@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useParams } from "@tanstack/react-router";
 import { useMcps } from "@/hooks/useMcps";
 import {
@@ -28,20 +28,25 @@ export default function McpPage() {
     useMcpActions(mcpId);
 
   // State for storing the current chat ID
-  const [currentChatId] = useState<string | undefined>(
-    localStorage.getItem(`mcp-chat-${mcpId}`) || undefined,
-  );
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>();
+
+  // Load the last visited chat for this MCP when mcpId changes
+  useEffect(() => {
+    const savedChatId = localStorage.getItem(`mcp-chat-${mcpId}`);
+    setCurrentChatId(savedChatId || undefined);
+  }, [mcpId]);
 
   // Save chat ID to localStorage and update state
   const handleChatIdChange = useCallback(
-    (chatId: string | undefined) => {
+    (mcpId: string, chatId: string | undefined) => {
       if (chatId) {
         localStorage.setItem(`mcp-chat-${mcpId}`, chatId);
       } else {
         localStorage.removeItem(`mcp-chat-${mcpId}`);
       }
+      setCurrentChatId(chatId);
     },
-    [mcpId],
+    [],
   );
 
   const onUpdateApiConfigs = useCallback(

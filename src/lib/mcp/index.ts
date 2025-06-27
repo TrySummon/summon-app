@@ -1,10 +1,11 @@
 import { app } from "electron";
 import * as fs from "fs/promises";
 import * as path from "path";
+
 import log from "electron-log";
 import { mockApi } from "../mock";
 import { findFreePort } from "../port";
-import { getMcpImplPath, mcpDb } from "../db/mcp-db";
+import { getMcpImplPath, getMcpImplToolsDir, mcpDb } from "../db/mcp-db";
 import { getEnvVarName } from "./generator/utils/security";
 import { createMcpServer, loadToolsFromDirectory } from "./server";
 import { setupStreamableExpressServer } from "./streamable-express-server";
@@ -17,6 +18,7 @@ import {
   generateEslintConfig,
   generateGitignore,
   generateJestConfig,
+  generateMapperCode,
   generateMcpServerCode,
   generateMcpTools,
   generatePackageJson,
@@ -126,12 +128,17 @@ export async function generateMcpImpl(mcpId: string) {
   );
 
   log.info("Generating server code...");
-  const serverTsContent = await generateMcpServerCode(
+  const serverCode = await generateMcpServerCode(
     serverName,
     serverVersion,
     tags,
   );
-  await writeFileWithDir(serverFilePath, serverTsContent);
+  await writeFileWithDir(serverFilePath, serverCode);
+
+  log.info("Generating mapper code...");
+  const mapperCode = generateMapperCode();
+  const mapperFilePath = path.join(srcDir, "mapper.ts");
+  await writeFileWithDir(mapperFilePath, mapperCode);
 
   log.info("Generating package.json...");
   const packageJsonContent = generatePackageJson(
@@ -335,7 +342,7 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
     const port = await findFreePort();
 
     // Load tools from the generated tools directory
-    const toolsDir = path.join(implPath, "src", "tools");
+    const toolsDir = await getMcpImplToolsDir(mcpId);
     const tools = await loadToolsFromDirectory(toolsDir);
 
     log.info(`Loaded ${tools.size} tools from ${toolsDir}`);

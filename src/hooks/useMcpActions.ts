@@ -5,14 +5,35 @@ import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { toast } from "sonner";
 import { convertEndpointToTool } from "@/ipc/openapi/openapi-client";
 
+// Custom event types for tool animations
+export interface ToolAnimationEvent extends CustomEvent {
+  detail: {
+    toolName: string;
+    mcpId: string;
+    animationType: "added" | "deleted" | "updated";
+  };
+}
+
+// Helper function to dispatch tool animation events
+const dispatchToolAnimation = (
+  toolName: string,
+  mcpId: string,
+  animationType: "added" | "deleted" | "updated",
+) => {
+  const event = new CustomEvent("tool-animation", {
+    detail: { toolName, mcpId, animationType },
+  }) as ToolAnimationEvent;
+  window.dispatchEvent(event);
+};
+
 export function useMcpActions(mcpId: string) {
-  const { mcps, updateMcp } = useMcps();
+  const { mcps, updateMcp, invalidateMcps } = useMcps();
   const { apis } = useApis();
   const mcp = mcps.find((m) => m.id === mcpId);
 
   const onAddEndpoints = useCallback(
     async (apiId: string, endpoints: SelectedEndpoint[]) => {
-      if (!mcp) return;
+      if (!mcp) return { success: false, message: "MCP not found" };
 
       const tools = await Promise.all(
         endpoints.map((endpoint) => convertEndpointToTool(apiId, endpoint)),
@@ -63,20 +84,39 @@ export function useMcpActions(mcpId: string) {
         tools: [...(nextApiGroups[apiId]?.tools || []), ...newTools],
       };
 
-      updateMcp({
+      await updateMcp({
         mcpId: mcp.id,
         mcpData: {
           ...mcp,
           apiGroups: nextApiGroups,
         },
       });
+
+      // Dispatch animation events for new tools
+      newTools.forEach((tool) => {
+        dispatchToolAnimation(tool.name, mcpId, "added");
+      });
+
+      return {
+        success: true,
+        message: JSON.stringify(
+          newTools.map((tool) => ({
+            name: tool.name,
+            apiId: tool.apiId,
+            tokenCount: tool.originalTokenCount,
+          })),
+        ),
+      };
     },
-    [mcp, apis, updateMcp],
+    [mcp, apis, updateMcp, mcpId],
   );
 
   const onDeleteTool = useCallback(
-    (toolName: string) => {
-      if (!mcp) return;
+    async (toolName: string) => {
+      if (!mcp) return { success: false, message: "MCP not found" };
+
+      // Dispatch animation event before deleting (use the full tool name with prefix)
+      dispatchToolAnimation(toolName, mcpId, "deleted");
 
       // Find and remove the tool from all API groups
       let toolFound = false;
@@ -84,24 +124,28 @@ export function useMcpActions(mcpId: string) {
       Object.keys(nextApiGroups).forEach((apiId) => {
         const group = nextApiGroups[apiId];
         const prefix = group.toolPrefix || "";
-        toolName = toolName.startsWith(prefix)
+        const searchToolName = toolName.startsWith(prefix)
           ? toolName.replace(prefix, "")
           : toolName;
         if (group.tools) {
           // Check for both the exact tool name and the tool name with prefix removed
           const toolIndex = group.tools.findIndex((tool) => {
-            return tool.name === toolName;
+            return tool.name === searchToolName;
           });
 
           if (toolIndex !== -1) {
             toolFound = true;
+
             const updatedTools = group.tools.filter((tool) => {
               // Match against the original tool name (without prefix)
               const originalToolName =
                 prefix && tool.name.startsWith(prefix)
                   ? tool.name.substring(prefix.length)
                   : tool.name;
-              return originalToolName !== toolName && tool.name !== toolName;
+              return (
+                originalToolName !== searchToolName &&
+                tool.name !== searchToolName
+              );
             });
 
             // If no tools left after deletion, remove the entire API group
@@ -119,34 +163,67 @@ export function useMcpActions(mcpId: string) {
 
       if (!toolFound) {
         console.warn(`Tool "${toolName}" not found in any API group.`);
-        return;
+        return { success: false, message: `Tool "${toolName}" not found` };
       }
 
-      updateMcp({
+      await updateMcp({
         mcpId: mcp.id,
         mcpData: {
           ...mcp,
           apiGroups: nextApiGroups,
         },
       });
+
+      return {
+        success: true,
+        message: `Successfully deleted tool: ${toolName}`,
+      };
     },
-    [mcp, updateMcp],
+    [mcp, updateMcp, mcpId],
   );
 
-  const onDeleteAllTools = useCallback(() => {
-    if (!mcp) return;
+  const onDeleteAllTools = useCallback(async () => {
+    if (!mcp) return { success: false, message: "MCP not found" };
+
+    // Dispatch animation events for all tools before deleting
+    Object.values(mcp.apiGroups).forEach((group) => {
+      group.tools?.forEach((tool) => {
+        const prefix = group.toolPrefix || "";
+        dispatchToolAnimation(prefix + tool.name, mcpId, "deleted");
+      });
+    });
 
     // Remove all API groups since deleting all tools would leave them empty
-    updateMcp({
+    await updateMcp({
       mcpId: mcp.id,
       mcpData: {
         ...mcp,
         apiGroups: {},
       },
     });
-  }, [mcp, updateMcp]);
+
+    return {
+      success: true,
+      message: `Successfully deleted all tools`,
+    };
+  }, [mcp, updateMcp, mcpId]);
+
+  const optimiseToolDefinition = useCallback(
+    async (args: { apiId: string; toolName: string; goal: string }) => {
+      const result = await window.agentTools.optimiseToolDef({
+        mcpId,
+        ...args,
+      });
+      if (result.success) {
+        invalidateMcps();
+      }
+      return result;
+    },
+    [mcpId],
+  );
 
   return {
+    optimiseToolDefinition,
     onAddEndpoints,
     onDeleteTool,
     onDeleteAllTools,

@@ -15,23 +15,17 @@ const toolClassifications: Record<string, ToolClassification> = {
     doneText: "Found APIs",
     errorText: "Failed to retrieve APIs",
   },
-  searchApiEndpoints: {
-    type: "read",
-    runningText: "Search API endpoints...",
-    doneText: "Found API endpoints",
-    errorText: "Failed to load endpoints",
-  },
-  // readApiEndpoints: {
-  //   type: "read",
-  //   runningText: "Reading endpoint details...",
-  //   doneText: "Loaded endpoint details",
-  //   errorText: "Failed to read endpoint details",
-  // },
   listMcpTools: {
     type: "read",
     runningText: "Listing MCP tools...",
     doneText: "Found MCP tools",
     errorText: "Failed to list MCP tools",
+  },
+  searchApiEndpoints: {
+    type: "read",
+    runningText: "Searching API endpoints...",
+    doneText: "Found API endpoints",
+    errorText: "Failed to search API endpoints",
   },
 
   // Write tools (require approval)
@@ -40,6 +34,12 @@ const toolClassifications: Record<string, ToolClassification> = {
     runningText: "Adding MCP tools...",
     doneText: "Successfully added tools",
     errorText: "Failed to add tools",
+  },
+  optimiseToolDefinition: {
+    type: "write",
+    runningText: "Optimising tool definition...",
+    doneText: "Optimised tool definition",
+    errorText: "Failed to optimise tool definition",
   },
   removeMcpTool: {
     type: "write",

@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import {
   LIST_APIS_CHANNEL,
   SEARCH_API_ENDPOINTS_CHANNEL,
-  READ_API_ENDPOINTS_CHANNEL,
+  OPTIMISE_TOOL_DEF_CHANNEL,
 } from "./agent-tools-channels";
 
 export function exposeAgentToolsContext() {
@@ -20,14 +20,12 @@ export function exposeAgentToolsContext() {
         return ipcRenderer.invoke(SEARCH_API_ENDPOINTS_CHANNEL, args);
       },
 
-      readApiEndpoints: (
-        apiId: string,
-        endpoints: Array<{ path: string; method: string }>,
-      ) => {
-        return ipcRenderer.invoke(READ_API_ENDPOINTS_CHANNEL, {
-          apiId,
-          endpoints,
-        });
+      optimiseToolDef: (args: {
+        apiId: string;
+        mcpId: string;
+        toolName: string;
+      }) => {
+        return ipcRenderer.invoke(OPTIMISE_TOOL_DEF_CHANNEL, args);
       },
     });
   } catch (error) {

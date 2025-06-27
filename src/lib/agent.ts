@@ -512,7 +512,7 @@ export function findOriginalToolInfo(modifiedToolName: string): {
   return null;
 }
 
-export interface RunAgentConfig {
+export interface RunLocalAgentConfig {
   messages: UIMessage[];
   systemPrompt?: string;
   credentialId: string;
@@ -529,7 +529,9 @@ export interface RunAgentConfig {
  * Used for evaluations and other scenarios where we need to run the agent
  * with specific configuration without affecting the UI state.
  */
-export async function runAgent(config: RunAgentConfig): Promise<UIMessage[]> {
+export async function runLocalAgent(
+  config: RunLocalAgentConfig,
+): Promise<UIMessage[]> {
   const {
     messages,
     systemPrompt,

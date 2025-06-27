@@ -20,6 +20,7 @@ import { Dataset, DatasetItem } from "@/types/dataset";
 import type { UserInfo } from "./ipc/auth/auth-listeners";
 import { SelectedEndpoint } from "./lib/mcp/parser/extract-tools";
 import { McpToolDefinitionWithoutAuth } from "./lib/mcp/types";
+import { ToolResult } from "./components/AgentSidebar/AgentContext";
 
 export default function App() {
   useEffect(() => {
@@ -286,26 +287,18 @@ declare global {
       deleteWorkspace: (id: string) => Promise<boolean>;
     };
     agentTools: {
-      listApis: () => Promise<{
-        success: boolean;
-        data?: unknown;
-        message?: string;
-        tokenCount?: number;
-      }>;
+      listApis: () => Promise<ToolResult>;
       searchApiEndpoints: (args: {
         apiId: string;
         query?: string;
         tags?: string[];
-      }) => Promise<{
-        success: boolean;
-        data?: unknown;
-        tokenCount?: number;
-        message?: string;
-      }>;
-      readApiEndpoints: (
-        apiId: string,
-        endpoints: Array<{ path: string; method: string }>,
-      ) => Promise<{ success: boolean; data?: unknown; message?: string }>;
+      }) => Promise<ToolResult>;
+      optimiseToolDef: (args: {
+        apiId: string;
+        mcpId: string;
+        toolName: string;
+        goal: string;
+      }) => Promise<ToolResult>;
     };
   }
 }

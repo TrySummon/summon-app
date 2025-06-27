@@ -11,6 +11,7 @@ import {
   CallToolResult,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
+import { mapOptimizedToOriginal } from "./mapper";
 
 /**
  * Load tools from JSON files in the tools directory
@@ -100,6 +101,13 @@ export async function executeApiTool(
         default:
           break;
       }
+    }
+
+    if (definition.originalToOptimisedMapping) {
+      args = mapOptimizedToOriginal(
+        args,
+        definition.originalToOptimisedMapping,
+      );
     }
 
     // Process parameters
@@ -233,11 +241,22 @@ export function createMcpServer(
 
   // Set up MCP request handlers
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    const toolsForClient: Tool[] = Array.from(tools.values()).map((def) => ({
-      name: def.name,
-      description: def.description,
-      inputSchema: def.inputSchema as Tool["inputSchema"], // Cast to MCP Tool inputSchema type
-    }));
+    const toolsForClient: Tool[] = Array.from(tools.values()).map((def) => {
+      // Use optimised version if available, otherwise fall back to original
+      if (def.optimised) {
+        return {
+          name: def.optimised.name,
+          description: def.optimised.description,
+          inputSchema: def.optimised.inputSchema as Tool["inputSchema"],
+        };
+      }
+
+      return {
+        name: def.name,
+        description: def.description,
+        inputSchema: def.inputSchema as Tool["inputSchema"], // Cast to MCP Tool inputSchema type
+      };
+    });
     return { tools: toolsForClient };
   });
 

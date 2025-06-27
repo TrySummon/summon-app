@@ -9,10 +9,3 @@ export const searchApiEndpoints = async (args: {
 }) => {
   return window.agentTools.searchApiEndpoints(args);
 };
-
-export const readApiEndpoints = async (
-  apiId: string,
-  endpoints: Array<{ path: string; method: string }>,
-) => {
-  return window.agentTools.readApiEndpoints(apiId, endpoints);
-};

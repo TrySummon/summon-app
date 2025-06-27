@@ -8,6 +8,7 @@ import { McpToolDefinitionWithoutAuth } from "../types/index";
 import { generateOperationId, kebabCase } from "../generator/utils";
 import { apiDb } from "@/lib/db/api-db";
 import log from "electron-log/main";
+import { calculateTokenCount } from "@/lib/tiktoken";
 
 export interface SelectedEndpoint {
   path: string;
@@ -502,13 +503,13 @@ export async function convertEndpointToTool(
   const { inputSchema, parameters, requestBodyContentType } =
     generateInputSchemaAndDetails(operation, options);
 
-  // SIZE LIMIT 40KB - Check if the input schema exceeds the limit
+  // SIZE LIMIT 100KB - Check if the input schema exceeds the limit
   const schemaSize = JSON.stringify(inputSchema).length;
-  const maxSizeBytes = 40 * 1024;
+  const maxSizeBytes = 200 * 1024;
 
   if (schemaSize > maxSizeBytes) {
     throw new Error(
-      `Skipped ${name}: Tool schema too large: ${Math.round((schemaSize / 1024) * 100) / 100}KB exceeds the 40KB limit. `,
+      `Skipped ${name}: Tool schema too large: ${Math.round((schemaSize / 1024) * 200) / 100}KB exceeds the 200KB limit. `,
     );
   }
 
@@ -519,6 +520,7 @@ export async function convertEndpointToTool(
   }));
 
   return {
+    apiId,
     name,
     description,
     tags: operation.tags?.map((tag: string) => kebabCase(tag)) || [],
@@ -527,5 +529,8 @@ export async function convertEndpointToTool(
     pathTemplate: endpoint.path,
     executionParameters,
     requestBodyContentType,
+    originalTokenCount: calculateTokenCount(
+      JSON.stringify({ name, description, inputSchema }),
+    ),
   };
 }

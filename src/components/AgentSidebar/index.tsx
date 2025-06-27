@@ -22,7 +22,6 @@ import { Attachment, Message } from "ai";
 import { useMcps } from "@/hooks/useMcps";
 import { AgentProvider } from "./AgentContext";
 import { useApis } from "@/hooks/useApis";
-import { useMcpActions } from "@/hooks/useMcpActions";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { useAgentChats } from "@/stores/agentChatsStore";
 import { toast } from "sonner";
@@ -36,7 +35,7 @@ export interface MentionData {
 interface Props {
   mcpId: string;
   defaultChatId?: string;
-  onChatIdChange?: (chatId: string | undefined) => void;
+  onChatIdChange?: (mcpId: string, chatId: string | undefined) => void;
 }
 
 export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
@@ -44,8 +43,6 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
   const { apis, refetch: refetchApis } = useApis();
   const { mcps } = useMcps();
   const mcp = mcps.find((m) => m.id === mcpId);
-  const { onAddEndpoints, onDeleteTool, onDeleteAllTools } =
-    useMcpActions(mcpId);
 
   const { createChat, updateChat, getChat } = useAgentChats(mcpId);
 
@@ -70,7 +67,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
           Authorization: `Bearer ${token}`,
         }
       : {},
-    maxSteps: 10,
+    maxSteps: 25,
   });
 
   // Separate useChat hook for generating conversation names
@@ -97,7 +94,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
     "New Chat",
   );
 
-  // Load default chat on mount if provided
+  // Load default chat when defaultChatId changes (including MCP switches)
   useEffect(() => {
     if (defaultChatId) {
       const chat = getChat(defaultChatId);
@@ -106,13 +103,19 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
         setMessages(chat.messages);
         setCurrentChatName(chat.name);
       }
+    } else {
+      // No default chat, reset to new chat state
+      setCurrentChatId(undefined);
+      setMessages([]);
+      setCurrentChatName("New Chat");
+      // Clear attachments when switching MCPs
+      setAttachedFiles([]);
+      // Clear revert states
+      mcpVersionsRef.current = {};
+      // Clear name generation messages
+      setNameMessages([]);
     }
-  }, [defaultChatId, getChat, setMessages]);
-
-  // Call onChatIdChange when currentChatId changes
-  useEffect(() => {
-    onChatIdChange?.(currentChatId);
-  }, [currentChatId, onChatIdChange]);
+  }, [defaultChatId, getChat, setMessages, setNameMessages]);
 
   // Handle conversation name generation
   useEffect(() => {
@@ -259,7 +262,8 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
     // Clear name generation messages
     setNameMessages([]);
     setCurrentChatName("New Chat");
-  }, [setMessages, setNameMessages]);
+    onChatIdChange?.(mcpId, undefined);
+  }, [setMessages, setNameMessages, onChatIdChange, mcpId]);
 
   // Save messages to current chat when they change
   useEffect(() => {
@@ -309,6 +313,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
       if (!chatId) {
         chatId = createChat();
         setCurrentChatId(chatId);
+        onChatIdChange?.(mcpId, chatId);
       }
 
       // Store the current mcp state before sending the message
@@ -346,6 +351,8 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
       messages.length,
       setNameMessages,
       appendNameMessage,
+      onChatIdChange,
+      mcpId,
     ],
   );
 
@@ -422,8 +429,10 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
       // Clear name generation messages
       setNameMessages([]);
       setCurrentChatName(getChat(chatId)?.name || "New Chat");
+      // Notify parent about chat change
+      onChatIdChange?.(mcpId, chatId);
     },
-    [setMessages, setNameMessages],
+    [setMessages, setNameMessages, onChatIdChange, mcpId, getChat],
   );
 
   // Function to check if a message has revert state available
@@ -439,9 +448,6 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
     <AgentProvider
       mcp={mcp}
       onRefreshApis={refetchApis}
-      onAddEndpoints={onAddEndpoints}
-      onDeleteTool={onDeleteTool}
-      onDeleteAllTools={onDeleteAllTools}
       isRunning={isRunning}
       attachedFiles={attachedFiles}
       mentionData={mentionData}

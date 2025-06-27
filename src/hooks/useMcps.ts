@@ -13,6 +13,10 @@ export const MCP_QUERY_KEY = "mcps";
 export function useMcps() {
   const queryClient = useQueryClient();
 
+  const invalidateMcps = () => {
+    queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+  };
+
   // Fetch all MCPs
   const {
     data = { mcps: [] },
@@ -85,6 +89,7 @@ export function useMcps() {
     isLoading,
     isError,
     error,
+    invalidateMcps,
     refetch,
     createMcp: createMcpMutation.mutate,
     updateMcp: updateMcpMutation.mutate,

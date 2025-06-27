@@ -86,6 +86,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
       {state?.status === "running" && (
         <ToolsList
           tools={mcpTools}
+          mcpId={mcpId}
           onAddEndpoints={onAddEndpoints}
           onDeleteTool={onDeleteTool}
           onDeleteAllTools={onDeleteAllTools}

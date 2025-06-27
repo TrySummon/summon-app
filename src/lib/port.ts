@@ -3,8 +3,8 @@ import * as net from "net";
 // Cache to store recently returned ports with their timestamps
 const recentlyUsedPorts = new Map<number, number>();
 
-// Time in milliseconds to consider a port as recently used (60 seconds)
-const PORT_CACHE_DURATION = 60 * 1000;
+// Time in milliseconds to consider a port as recently used (5 seconds)
+const PORT_CACHE_DURATION = 5 * 1000;
 
 /**
  * Finds a free port by attempting to bind to it

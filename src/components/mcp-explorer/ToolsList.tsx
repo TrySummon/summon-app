@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import {
   Accordion,
@@ -8,11 +8,15 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Play } from "lucide-react";
 import { extractToolParameters } from "./utils";
 import { JsonSchema } from "../json-schema";
 import { AddEndpointsButton } from "./AddEndpointsButton";
+import { CallToolDialog } from "./CallToolDialog";
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
+import type { ToolAnimationEvent } from "@/hooks/useMcpActions";
+
+type AnimationType = "added" | "deleted" | "updated";
 
 const getTokenCountBadgeVariant = (count: number) => {
   if (count < 500) return "text-green-600 dark:text-green-400";
@@ -20,8 +24,34 @@ const getTokenCountBadgeVariant = (count: number) => {
   return "text-red-600 dark:text-red-400";
 };
 
+const formatTokenCount = (tool: Tool) => {
+  const originalCount = tool.annotations?.tokenCount as number | undefined;
+  const optimisedCount = tool.annotations?.optimisedTokenCount as
+    | number
+    | undefined;
+
+  if (!originalCount) return null;
+
+  if (optimisedCount && optimisedCount !== originalCount) {
+    const savings = originalCount - optimisedCount;
+    const savingsPercentage = Math.round((savings / originalCount) * 100);
+    return {
+      displayCount: optimisedCount,
+      text: `${optimisedCount} tks (-${savingsPercentage}%)`,
+      isOptimised: true,
+    };
+  }
+
+  return {
+    displayCount: originalCount,
+    text: `${originalCount} tks`,
+    isOptimised: false,
+  };
+};
+
 interface ToolsListProps {
   tools: Tool[];
+  mcpId: string;
   onDeleteTool?: (toolName: string) => void;
   onDeleteAllTools?: () => void;
   onAddEndpoints?: (apiId: string, tools: SelectedEndpoint[]) => void;
@@ -29,10 +59,65 @@ interface ToolsListProps {
 
 export const ToolsList: React.FC<ToolsListProps> = ({
   tools,
+  mcpId,
   onDeleteTool,
   onDeleteAllTools,
   onAddEndpoints,
 }) => {
+  const [animatingTools, setAnimatingTools] = useState<
+    Record<string, AnimationType>
+  >({});
+  const [callToolDialogOpen, setCallToolDialogOpen] = useState(false);
+  const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
+  // Listen for tool animation events
+  useEffect(() => {
+    const handleToolAnimation = (event: Event) => {
+      const toolEvent = event as ToolAnimationEvent;
+      const { toolName, mcpId: eventMcpId, animationType } = toolEvent.detail;
+
+      // Only handle events for this MCP
+      if (eventMcpId !== mcpId) return;
+
+      // Skip if already animating this tool
+      if (animatingTools[toolName]) return;
+
+      setAnimatingTools((prev) => ({
+        ...prev,
+        [toolName]: animationType,
+      }));
+
+      // Remove animation after duration
+      setTimeout(() => {
+        setAnimatingTools((prev) => {
+          const next = { ...prev };
+          delete next[toolName];
+          return next;
+        });
+      }, 2000); // 2 second animation duration
+    };
+
+    window.addEventListener("tool-animation", handleToolAnimation);
+
+    return () => {
+      window.removeEventListener("tool-animation", handleToolAnimation);
+    };
+  }, [mcpId, animatingTools]);
+
+  const getAnimationClasses = (toolName: string): string => {
+    const animationType = animatingTools[toolName];
+    if (!animationType) return "";
+
+    switch (animationType) {
+      case "added":
+        return "animate-flash-green";
+      case "deleted":
+        return "animate-flash-red";
+      case "updated":
+        return "animate-flash-blue";
+      default:
+        return "";
+    }
+  };
   if (tools.length === 0) {
     return (
       <div className="w-full py-6 text-center">
@@ -78,19 +163,52 @@ export const ToolsList: React.FC<ToolsListProps> = ({
 
       <Accordion type="single" collapsible className="w-full">
         {tools.map((tool, index) => (
-          <AccordionItem key={tool.name} value={`tool-${index}`}>
+          <AccordionItem
+            key={tool.name}
+            value={`tool-${index}`}
+            className={getAnimationClasses(tool.name)}
+          >
             <AccordionTrigger className="group hover:no-underline">
               <div className="flex flex-col items-start gap-1 text-left">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{tool.name}</span>
-                  {tool.annotations?.tokenCount ? (
-                    <div
-                      className={`font-mono text-xs ${getTokenCountBadgeVariant(tool.annotations.tokenCount as number)}`}
-                    >
-                      {tool.annotations.tokenCount as number} tks
-                    </div>
-                  ) : null}
+                  {(() => {
+                    const tokenInfo = formatTokenCount(tool);
+                    if (!tokenInfo) return null;
+
+                    if (tokenInfo.isOptimised) {
+                      return (
+                        <div
+                          className="rounded bg-blue-50 px-1.5 py-0.5 font-mono text-xs text-blue-600 dark:bg-blue-950/30 dark:text-blue-400"
+                          title={`Optimised from ${tool.annotations?.tokenCount} tokens`}
+                        >
+                          {tokenInfo.text}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        className={`font-mono text-xs ${getTokenCountBadgeVariant(tokenInfo.displayCount)}`}
+                      >
+                        {tokenInfo.text}
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedTool(tool);
+                        setCallToolDialogOpen(true);
+                      }}
+                      title="Call tool"
+                    >
+                      <Play className="h-3 w-3" />
+                    </Button>
                     {onDeleteTool && (
                       <Button
                         variant="ghost"
@@ -106,7 +224,7 @@ export const ToolsList: React.FC<ToolsListProps> = ({
                           }
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     )}
                   </div>
@@ -179,6 +297,13 @@ export const ToolsList: React.FC<ToolsListProps> = ({
           </AccordionItem>
         ))}
       </Accordion>
+
+      <CallToolDialog
+        tool={selectedTool}
+        mcpId={mcpId}
+        open={callToolDialogOpen}
+        onOpenChange={setCallToolDialogOpen}
+      />
     </div>
   );
 };

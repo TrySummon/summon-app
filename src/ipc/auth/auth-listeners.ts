@@ -383,7 +383,7 @@ class ElectronOAuth {
 }
 
 const oauthClient = new ElectronOAuth();
-const authStorage = new SecureAuthStorage();
+export const authStorage = new SecureAuthStorage();
 
 // Export function to handle protocol callbacks from main process
 export function handleOAuthProtocolCallback(url: string): void {

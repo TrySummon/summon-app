@@ -2,13 +2,19 @@ import { ipcMain } from "electron";
 import {
   LIST_APIS_CHANNEL,
   SEARCH_API_ENDPOINTS_CHANNEL,
-  READ_API_ENDPOINTS_CHANNEL,
+  OPTIMISE_TOOL_DEF_CHANNEL,
 } from "./agent-tools-channels";
 import { apiDb } from "@/lib/db/api-db";
 
 import { OpenAPIV3 } from "openapi-types";
 import log from "electron-log/main";
 import { calculateTokenCount } from "@/lib/tiktoken";
+import { authStorage } from "../auth/auth-listeners";
+import axios from "axios";
+import { mcpDb } from "@/lib/db/mcp-db";
+import { MappingConfig } from "@/lib/mcp/mapper";
+import { JSONSchema7 } from "json-schema";
+import { deleteMcpImpl, generateMcpImpl, restartMcpServer } from "@/lib/mcp";
 
 interface SearchApiEndpointsRequest {
   apiId: string;
@@ -16,18 +22,21 @@ interface SearchApiEndpointsRequest {
   tags?: string[];
 }
 
-interface ReadApiEndpointsRequest {
+interface OptimiseToolDefinitionRequest {
+  mcpId: string;
   apiId: string;
-  endpoints: Array<{
-    path: string;
-    method: string;
-  }>;
+  toolName: string;
+  goal: string;
 }
 
 /**
- * Extract a flat list of endpoints from an OpenAPI spec
+ * Search and filter endpoints from an OpenAPI spec based on query and tags
  */
-function extractApiEndpoints(api: OpenAPIV3.Document) {
+function searchEndpoints(
+  api: OpenAPIV3.Document,
+  query?: string,
+  tags?: string[],
+) {
   const endpoints: Array<{
     path: string;
     method: string;
@@ -56,135 +65,51 @@ function extractApiEndpoints(api: OpenAPIV3.Document) {
     for (const method of methods) {
       const operation = pathItem[method] as OpenAPIV3.OperationObject;
       if (operation) {
-        endpoints.push({
+        const endpoint = {
           path,
           method: method,
+          summary: operation.summary,
           description: operation.description,
-        });
+          operationId: operation.operationId,
+          tags: operation.tags,
+        };
+
+        // Apply filtering
+        let shouldInclude = true;
+
+        // Filter by query (search in summary, description, operationId, and path)
+        if (query && query.trim()) {
+          const searchText = [
+            endpoint.summary,
+            endpoint.description,
+            endpoint.operationId,
+            endpoint.path,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+          shouldInclude = searchText.includes(query.toLowerCase());
+        }
+
+        // Filter by tags
+        if (shouldInclude && tags && tags.length > 0) {
+          const endpointTags = endpoint.tags || [];
+          shouldInclude = tags.some((tag) =>
+            endpointTags.some((endpointTag) =>
+              endpointTag.toLowerCase().includes(tag.toLowerCase()),
+            ),
+          );
+        }
+
+        if (shouldInclude) {
+          endpoints.push(endpoint);
+        }
       }
     }
   }
 
   return endpoints;
-}
-
-/**
- * Extract essential parameter information
- */
-function extractParameterInfo(
-  parameters?: (OpenAPIV3.ParameterObject | OpenAPIV3.ReferenceObject)[],
-) {
-  if (!parameters) return [];
-
-  return parameters.map((param) => {
-    // Handle reference objects by resolving them (simplified for now)
-    if ("$ref" in param) {
-      return { name: "reference", description: `Reference: ${param.$ref}` };
-    }
-
-    const p = param as OpenAPIV3.ParameterObject;
-    return {
-      name: p.name,
-      in: p.in,
-      required: p.required || false,
-      type: (p.schema as OpenAPIV3.SchemaObject)?.type || "unknown",
-      description: p.description,
-    };
-  });
-}
-
-/**
- * Extract simplified request body schema
- */
-function extractRequestBodyInfo(
-  requestBody?: OpenAPIV3.RequestBodyObject | OpenAPIV3.ReferenceObject,
-) {
-  if (!requestBody) return null;
-
-  if ("$ref" in requestBody) {
-    return { description: `Reference: ${requestBody.$ref}` };
-  }
-
-  const body = requestBody as OpenAPIV3.RequestBodyObject;
-  const content = body.content;
-  const mediaTypes = Object.keys(content || {});
-
-  return {
-    required: body.required || false,
-    description: body.description,
-    mediaTypes,
-  };
-}
-
-/**
- * Extract simplified response schema
- */
-function extractResponseInfo(responses?: OpenAPIV3.ResponsesObject) {
-  if (!responses) return {};
-
-  const responseInfo: Record<
-    string,
-    {
-      description: string;
-      mediaTypes?: string[];
-    }
-  > = {};
-
-  for (const [status, response] of Object.entries(responses)) {
-    if ("$ref" in response) {
-      responseInfo[status] = { description: `Reference: ${response.$ref}` };
-    } else {
-      responseInfo[status] = {
-        description: response.description,
-        mediaTypes: Object.keys(response.content || {}),
-      };
-    }
-  }
-
-  return responseInfo;
-}
-
-/**
- * Get detailed definitions for specific endpoints (LLM-optimized)
- */
-function readApiEndpointDetails(
-  api: OpenAPIV3.Document,
-  endpoints: Array<{ path: string; method: string }>,
-) {
-  const endpointDetails = [];
-
-  for (const endpoint of endpoints) {
-    const pathItem = api.paths?.[endpoint.path];
-    const operation = pathItem?.[
-      endpoint.method.toLowerCase() as keyof OpenAPIV3.PathItemObject
-    ] as OpenAPIV3.OperationObject | undefined;
-
-    if (!operation) {
-      endpointDetails.push({
-        path: endpoint.path,
-        method: endpoint.method,
-        error: "Operation not found",
-      });
-      continue;
-    }
-
-    // Extract only essential information
-    endpointDetails.push({
-      path: endpoint.path,
-      method: endpoint.method,
-      summary: operation.summary,
-      description: operation.description,
-      operationId: operation.operationId,
-      tags: operation.tags,
-      parameters: extractParameterInfo(operation.parameters),
-      requestBody: extractRequestBodyInfo(operation.requestBody),
-      responses: extractResponseInfo(operation.responses),
-      security: operation.security,
-      deprecated: operation.deprecated,
-    });
-  }
-
-  return JSON.stringify(endpointDetails, null, 2);
 }
 
 export function registerAgentToolsListeners() {
@@ -217,7 +142,7 @@ export function registerAgentToolsListeners() {
     }
   });
 
-  // List API endpoints
+  // Search API endpoints
   ipcMain.handle(
     SEARCH_API_ENDPOINTS_CHANNEL,
     async (_, request: SearchApiEndpointsRequest) => {
@@ -232,7 +157,7 @@ export function registerAgentToolsListeners() {
           };
         }
 
-        const endpoints = extractApiEndpoints(apiData.api);
+        const endpoints = searchEndpoints(apiData.api, query, tags);
         const data = JSON.stringify(endpoints, null, 2);
         const tokenCount = await calculateTokenCount(data);
 
@@ -242,7 +167,7 @@ export function registerAgentToolsListeners() {
           data,
         };
       } catch (error) {
-        log.error(`Error listing endpoints for API ${request.apiId}:`, error);
+        log.error(`Error searching endpoints for API ${request.apiId}:`, error);
         return {
           success: false,
           message:
@@ -252,38 +177,154 @@ export function registerAgentToolsListeners() {
     },
   );
 
-  // Read API endpoint details
-  // ipcMain.handle(
-  //   READ_API_ENDPOINTS_CHANNEL,
-  //   async (_, request: ReadApiEndpointsRequest) => {
-  //     try {
-  //       const { apiId, endpoints } = request;
-  //       const apiData = await apiDb.getApiById(apiId, true);
+  // Optimise tool definition
+  ipcMain.handle(
+    OPTIMISE_TOOL_DEF_CHANNEL,
+    async (_, request: OptimiseToolDefinitionRequest) => {
+      try {
+        const { mcpId, apiId, toolName, goal } = request;
+        const authData = await authStorage.getAuthData();
+        if (!authData) {
+          return { success: false, message: "Not authenticated" };
+        }
 
-  //       if (!apiData) {
-  //         return {
-  //           success: false,
-  //           message: `API with ID ${apiId} not found`,
-  //         };
-  //       }
+        const mcpData = await mcpDb.getMcpById(mcpId);
+        if (!mcpData) {
+          return {
+            success: false,
+            message: `MCP with ID ${mcpId} not found`,
+          };
+        }
 
-  //       const endpointDetails = readApiEndpointDetails(apiData.api, endpoints);
+        const apiGroup = mcpData.apiGroups[apiId];
+        const tool = apiGroup?.tools?.find((tool) => tool.name === toolName);
 
-  //       return {
-  //         success: true,
-  //         data: JSON.stringify(endpointDetails, null, 2),
-  //       };
-  //     } catch (error) {
-  //       log.error(
-  //         `Error reading endpoint details for API ${request.apiId}:`,
-  //         error,
-  //       );
-  //       return {
-  //         success: false,
-  //         message:
-  //           error instanceof Error ? error.message : "Unknown error occurred",
-  //       };
-  //     }
-  //   },
-  // );
+        if (!tool) {
+          return {
+            success: false,
+            message: `Tool with name ${toolName} not found`,
+          };
+        }
+
+        const originalToolDefinition = {
+          name: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema,
+        };
+
+        // Make request to tool design optimization endpoint
+        const response = await axios.post(
+          `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/tool-design`,
+          {
+            originalToolDefinition,
+            additionalContext: goal,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${authData.token}`,
+              "Content-Type": "application/json",
+            },
+            timeout: 60000,
+          },
+        );
+
+        // Check if the optimization was successful
+        if (
+          !response.data?.improvedToolDefinition ||
+          !response.data?.mappingConfig
+        ) {
+          return {
+            success: false,
+            message:
+              "Failed to optimize tool definition - incomplete response from server",
+          };
+        }
+
+        // Parse the optimized tool definition and mapping config
+        let optimizedToolDefinition: {
+          name: string;
+          description: string;
+          inputSchema: JSONSchema7 | boolean;
+        };
+        let mappingConfig: MappingConfig;
+
+        try {
+          optimizedToolDefinition = JSON.parse(
+            response.data.improvedToolDefinition,
+          );
+          mappingConfig = JSON.parse(response.data.mappingConfig);
+        } catch (parseError) {
+          return {
+            success: false,
+            message: `Failed to parse optimization response: ${parseError instanceof Error ? parseError.message : "Unknown parsing error"}`,
+          };
+        }
+
+        // Calculate token count for the optimized definition
+        const optimisedTokenCount = await calculateTokenCount(
+          response.data.improvedToolDefinition,
+        );
+
+        // Update the tool with optimized fields
+        const updatedTool = {
+          ...tool,
+          optimised: optimizedToolDefinition,
+          optimisedTokenCount,
+          originalToOptimisedMapping: mappingConfig,
+        };
+
+        // Update the MCP data with the optimized tool
+        const updatedApiGroup = {
+          ...apiGroup,
+          tools: apiGroup.tools?.map((t) =>
+            t.name === toolName ? updatedTool : t,
+          ) || [updatedTool],
+        };
+
+        const updatedMcpData = {
+          ...mcpData,
+          apiGroups: {
+            ...mcpData.apiGroups,
+            [apiId]: updatedApiGroup,
+          },
+        };
+
+        // Update the MCP in the database
+        await mcpDb.updateMcp(mcpId, {
+          name: updatedMcpData.name,
+          transport: updatedMcpData.transport,
+          apiGroups: updatedMcpData.apiGroups,
+        });
+
+        await deleteMcpImpl(mcpId);
+        await generateMcpImpl(mcpId);
+        await restartMcpServer(mcpId);
+
+        return {
+          success: true,
+          message: `Tool "${toolName}" has been optimized successfully. New token count: ${optimisedTokenCount}`,
+          tokenCount: optimisedTokenCount,
+        };
+      } catch (error) {
+        log.error(
+          `Error optimising tool definition for API ${request.apiId}:`,
+          error,
+        );
+
+        // Handle axios errors
+        if (axios.isAxiosError(error)) {
+          return {
+            success: false,
+            message: error.response?.data?.message || error.message,
+          };
+        }
+
+        return {
+          success: false,
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        };
+      }
+    },
+  );
 }

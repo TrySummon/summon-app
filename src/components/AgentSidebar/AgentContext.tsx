@@ -4,17 +4,28 @@ import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { Message, Attachment } from "ai";
 import { MentionData } from "./index";
 import { McpData } from "@/lib/db/mcp-db";
+import { useMcpActions } from "@/hooks/useMcpActions";
 
-interface ToolResult {
+export interface ToolResult {
   success: boolean;
   message: string;
+  data?: unknown;
+  tokenCount?: number;
 }
 
 interface AgentContextType {
   onRefreshApis?: () => void;
-  onAddEndpoints: (apiId: string, endpoints: SelectedEndpoint[]) => void;
-  onDeleteTool: (toolName: string) => void;
-  onDeleteAllTools: () => void;
+  onAddEndpoints: (
+    apiId: string,
+    endpoints: SelectedEndpoint[],
+  ) => Promise<ToolResult>;
+  onDeleteTool: (toolName: string) => Promise<ToolResult>;
+  onDeleteAllTools: () => Promise<ToolResult>;
+  optimiseToolDefinition: (args: {
+    apiId: string;
+    toolName: string;
+    goal: string;
+  }) => Promise<ToolResult>;
 
   // Chat state and operations
   isRunning: boolean;
@@ -66,9 +77,6 @@ interface AgentProviderProps {
   mcp: McpData;
 
   onRefreshApis?: () => void;
-  onAddEndpoints: (apiId: string, endpoints: SelectedEndpoint[]) => void;
-  onDeleteTool: (toolName: string) => void;
-  onDeleteAllTools: () => void;
 
   // Chat state and operations from AgentSidebar
   isRunning: boolean;
@@ -93,9 +101,6 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
   children,
   mcp,
   onRefreshApis,
-  onAddEndpoints,
-  onDeleteTool,
-  onDeleteAllTools,
   isRunning,
   attachedFiles,
   mentionData,
@@ -113,6 +118,13 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
   handleLoadChat,
   hasRevertState,
 }) => {
+  const {
+    onAddEndpoints,
+    onDeleteTool,
+    onDeleteAllTools,
+    optimiseToolDefinition,
+  } = useMcpActions(mcp.id);
+
   // Map MCP operations to agent tool format
   const addToolsToMcp = useCallback(
     async (
@@ -121,7 +133,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
         endpointPath: string;
         endpointMethod: string;
       }[],
-    ): Promise<ToolResult> => {
+    ) => {
       try {
         // Group endpoints by apiId
         const endpointsByApiId = new Map<string, SelectedEndpoint[]>();
@@ -141,14 +153,15 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
           endpointsByApiId.get(apiId)!.push(selectedEndpoint);
         });
 
-        // Call onAddEndpoints for each group
-        for (const [apiId, endpoints] of endpointsByApiId) {
-          onAddEndpoints(apiId, endpoints);
-        }
+        const toolResults = await Promise.all(
+          endpointsByApiId
+            .entries()
+            .map(([apiId, endpoints]) => onAddEndpoints(apiId, endpoints)),
+        );
 
         return {
           success: true,
-          message: `Successfully added ${selectedEndpoints.length} tool(s)`,
+          message: JSON.stringify(toolResults),
         };
       } catch (error) {
         return {
@@ -200,34 +213,20 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
   const listMcpTools = useCallback(
     async (apiId?: string): Promise<ToolResult> => {
       try {
-        if (apiId) {
-          const tools = mcp.apiGroups[apiId]?.tools;
-          if (!tools) {
-            return {
-              success: false,
-              message: `No tools found for API ID: ${apiId}`,
-            };
-          }
-
-          const toolsWithApiId = tools.map((tool) => ({
-            name: tool.name,
-            description: tool.description,
-            apiId,
-          }));
-
-          return {
-            success: true,
-            message: JSON.stringify(toolsWithApiId),
-          };
-        }
-
         // Return all tools from all API groups
         const allTools: Array<{ apiId: string; [key: string]: unknown }> = [];
 
         Object.entries(mcp.apiGroups).forEach(([groupApiId, apiGroup]) => {
+          if (apiId && groupApiId !== apiId) {
+            return;
+          }
+
           if (apiGroup.tools) {
             const toolsWithApiId = apiGroup.tools.map((tool) => ({
-              ...tool,
+              name: tool.name,
+              description: tool.description,
+              originalTokenCount: tool.originalTokenCount,
+              isOptimised: !!tool.optimised,
               apiId: groupApiId,
             }));
             allTools.push(...toolsWithApiId);
@@ -253,6 +252,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
     onAddEndpoints,
     onDeleteTool,
     onDeleteAllTools,
+    optimiseToolDefinition,
     // Chat state and operations
     isRunning,
 
