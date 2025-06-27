@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   AlertCircle,
   RefreshCw,
@@ -15,6 +16,7 @@ import {
   FileJson,
   Rocket,
   Edit2,
+  Github,
 } from "lucide-react";
 import CopyButton from "@/components/CopyButton";
 import {
@@ -23,6 +25,9 @@ import {
   openUserDataMcpJsonFile,
 } from "@/ipc/mcp/mcp-client";
 import WaitlistButton from "../tool-sidebar/WaitlistButton";
+import { captureEvent } from "@/lib/posthog";
+import EmailPromptForm from "../EmailPromptForm";
+import { toast } from "sonner";
 
 interface ServerStatusSectionProps {
   status: "running" | "starting" | "error" | "stopped";
@@ -49,6 +54,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const editRef = useRef<HTMLDivElement>(null);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
 
   const handleDownload = async () => {
     setIsDownloading(true);
@@ -74,6 +80,31 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
     } finally {
       setIsDownloading(false);
     }
+  };
+
+  const doCommit = (email: string | null) => {
+    captureEvent("github_sync_click", {
+      mcp_id: mcpId,
+      server_name: serverName,
+      email,
+    });
+    // TODO: Implement commit functionality
+    console.log("Commit functionality to be implemented", { email });
+    toast.success("Thanks for your interest. We'll be in touch shortly.");
+  };
+
+  const handleCommit = async () => {
+    const email = localStorage.getItem("waitlist_email");
+    if (email) {
+      doCommit(email);
+    } else {
+      setIsEmailDialogOpen(true);
+    }
+  };
+
+  const handleCommitEmailSubmit = (email: string) => {
+    doCommit(email);
+    setIsEmailDialogOpen(false);
   };
 
   const handleEditStart = () => {
@@ -188,6 +219,15 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
                     <Download className="h-3 w-3" />
                     {isDownloading ? "Downloading..." : "Download"}
                   </Button>
+                  <Button
+                    onClick={handleCommit}
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Github className="h-3 w-3" />
+                    Commit
+                  </Button>
                 </>
               )}
               <Tooltip>
@@ -202,6 +242,18 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
               </Tooltip>
             </div>
           </div>
+
+          <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+            <DialogContent className="sm:max-w-lg">
+              <EmailPromptForm
+                featureName="Github Sync"
+                descriptionText="The Github Sync feature is not available yet, but we're working on it! Enter your email to get notified when it's ready."
+                submitButtonText="Notify Me"
+                onSubmit={handleCommitEmailSubmit}
+                onCancel={() => setIsEmailDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
 
           {url ? (
             <div className="flex items-center justify-between rounded-md border p-1.5">
