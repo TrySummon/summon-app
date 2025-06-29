@@ -66,7 +66,7 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
   const annotations = tool.annotations as ToolAnnotations | undefined;
 
   // Determine if this is an external tool based on annotations
-  const isExternal = annotations?.isExternal ?? true; // If no annotations, assume external
+  const isExternal = annotations?.isExternal ?? false;
 
   // Determine the original tool definition
   const originalToolDefinition = useMemo(
@@ -372,7 +372,7 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
         }}
         className="flex h-5/6 w-[70vw] flex-col overflow-hidden sm:max-w-none"
       >
-        <DialogHeader className="space-y-3">
+        <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               {editingName ? (
@@ -557,21 +557,23 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
           )}
         </div>
 
-        <DialogFooter className="flex gap-2">
-          <Button onClick={handleSave} disabled={isSaving}>
-            {hasUnsavedChanges ? (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                {isSaving ? "Saving..." : "Save Changes"}
-              </>
-            ) : (
-              <>
-                <RotateCcw className="mr-2 h-4 w-4" />
-                {isSaving ? "Reverting..." : "Revert to Original"}
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+        {hasUnsavedChanges || annotations?.originalDefinition ? (
+          <DialogFooter className="flex gap-2">
+            <Button onClick={handleSave} disabled={isSaving}>
+              {hasUnsavedChanges ? (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  {isSaving ? "Reverting..." : "Revert to Original"}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

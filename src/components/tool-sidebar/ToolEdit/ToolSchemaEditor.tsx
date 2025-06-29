@@ -229,7 +229,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                                 ? "hover:bg-muted/50 cursor-pointer rounded px-1 py-0.5 font-mono text-sm font-semibold transition-colors"
                                 : "rounded px-1 py-0.5 font-mono text-sm font-semibold",
                               (isNameModified || isNewProperty) &&
-                                "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground",
+                                "text-blue-600 dark:text-blue-400",
                             )}
                             onClick={
                               !isDisabledUi && allowNameEditing
@@ -369,7 +369,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                           className={cn(
                             "text-muted-foreground hover:bg-muted/50 min-h-[20px] flex-1 cursor-pointer rounded px-2 py-1 text-sm transition-colors",
                             isDescriptionModified &&
-                              "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground",
+                              "text-blue-600 dark:text-blue-400",
                           )}
                           onClick={
                             !isDisabledUi

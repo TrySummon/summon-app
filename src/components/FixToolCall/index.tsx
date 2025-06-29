@@ -20,6 +20,7 @@ import { LoadingState } from "./LoadingState";
 import { MergeView } from "./MergeView";
 import type { MentionedTool, OptimizedResult, DialogState } from "./types";
 import { SummonTool } from "@/lib/mcp/tool";
+import { updateMcpTool } from "@/ipc/mcp/mcp-client";
 
 interface FixToolCallButtonProps {
   invocation?: ToolInvocation;
@@ -113,11 +114,35 @@ export function FixToolCallButton({ invocation }: FixToolCallButtonProps) {
     }
   };
 
-  const handleApprove = () => {
-    // TODO: Implement approve logic here
-    toast.success("Tool optimization approved!");
-    setShowFixDialog(false);
-    resetState();
+  const handleApprove = async () => {
+    if (!optimizedResult) {
+      toast.error("No optimization result available");
+      return;
+    }
+
+    try {
+      // Update all optimized tools
+      const updatePromises = optimizedResult.optimised.map(async (tool) => {
+        const result = await updateMcpTool(tool);
+        if (!result.success) {
+          throw new Error(
+            `Failed to update tool ${tool.originalToolName}: ${result.message || "Unknown error"}`,
+          );
+        }
+        return result;
+      });
+
+      await Promise.all(updatePromises);
+
+      toast.success("Tool optimization applied!");
+      setShowFixDialog(false);
+      resetState();
+    } catch (error) {
+      console.error("Error updating tools:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update tools",
+      );
+    }
   };
 
   const handleReject = () => {
@@ -172,9 +197,9 @@ export function FixToolCallButton({ invocation }: FixToolCallButtonProps) {
               variant="ghost"
               size="icon"
               onClick={handleClick}
-              className="h-8 w-8"
+              className="h-6 w-6"
             >
-              <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-500" />
+              <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-500" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>

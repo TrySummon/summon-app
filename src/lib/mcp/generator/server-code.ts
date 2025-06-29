@@ -112,6 +112,8 @@ export interface McpToolDefinition {
   originalToOptimisedMapping?: MappingConfig;
   /** Token count of the original tool definition */
   originalTokenCount: number;
+  /** Prefix of the tool */
+  prefix?: string;
   /** API ID of the tool */
   apiId: string;
   /** Name of the tool, must be unique */

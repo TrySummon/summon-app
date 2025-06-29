@@ -28,6 +28,8 @@ export interface McpToolDefinition {
   originalTokenCount: number;
   /** API ID of the tool */
   apiId: string;
+  /** Prefix of the tool */
+  prefix?: string;
   /** Name of the tool, must be unique */
   name: string;
   /** Human-readable description of the tool */

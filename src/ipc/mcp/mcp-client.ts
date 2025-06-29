@@ -2,6 +2,8 @@ import { captureEvent } from "@/lib/posthog";
 import { McpData } from "@/lib/db/mcp-db";
 import { recurseCountKeys } from "@/lib/object";
 import { SummonTool, SummonToolRef } from "@/lib/mcp/tool";
+import { queryClient } from "@/queryClient";
+import { MCP_QUERY_KEY } from "@/hooks/useMcps";
 
 // MCP operations with PostHog instrumentation
 export const createMcp = async (
@@ -98,12 +100,21 @@ export const callMcpTool = async (
 
 export const updateMcpTool = async (tool: SummonTool) => {
   captureEvent("mcp_update_tool");
-  return window.mcpApi.updateMcpTool(tool);
+  const result = await window.mcpApi.updateMcpTool(tool);
+  if (result.success && !tool.isExternal) {
+    queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+  }
+  return result;
 };
 
 export const revertMcpTool = async (tool: SummonToolRef) => {
   captureEvent("mcp_revert_tool");
-  return window.mcpApi.revertMcpTool(tool);
+  const result = await window.mcpApi.revertMcpTool(tool);
+
+  if (result.success && !tool.isExternal) {
+    queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+  }
+  return result;
 };
 
 export const openUserDataMcpJsonFile = async () => {

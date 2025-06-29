@@ -31,11 +31,12 @@ const formatTokenCount = (tool: Tool) => {
   if (!originalCount) return null;
 
   if (optimisedCount && optimisedCount !== originalCount) {
-    const savings = originalCount - optimisedCount;
-    const savingsPercentage = Math.round((savings / originalCount) * 100);
+    const change = optimisedCount - originalCount;
+    const changePercentage = Math.round((change / originalCount) * 100);
+    const sign = change > 0 ? "+" : "";
     return {
       displayCount: optimisedCount,
-      text: `${optimisedCount} tks (-${savingsPercentage}%)`,
+      text: `${optimisedCount} tks (${sign}${changePercentage}%)`,
       isOptimised: true,
     };
   }

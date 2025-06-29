@@ -7,17 +7,19 @@ export function generateListToolsHandler(): string {
   return `
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   const toolsForClient: Tool[] = Array.from(tools.values()).map(def => {
+    const prefix = def.prefix || "";
+
     // Use optimised version if available, otherwise fall back to original
     if (def.optimised) {
       return {
-        name: def.optimised.name,
+        name: prefix+def.optimised.name,
         description: def.optimised.description,
         inputSchema: def.optimised.inputSchema
       };
     }
     
     return {
-      name: def.name,
+      name: prefix+def.name,
       description: def.description,
       inputSchema: def.inputSchema
     };
@@ -198,12 +200,14 @@ export function loadTools(toolOptions: { [key: string]: string } = {}) {
             const fileContent = fs.readFileSync(filePath, 'utf-8');
             const toolDefinition = JSON.parse(fileContent) as McpToolDefinition;
             
-            // Add the tool to the map using its name as the key
+            const prefix = toolDefinition.prefix || "";
+
             if (toolDefinition.optimised) {
-              tools.set(toolDefinition.optimised.name, toolDefinition);
+              tools.set(prefix + toolDefinition.optimised.name, toolDefinition);
             } else if (toolDefinition.name) {
-              tools.set(toolDefinition.name, toolDefinition);
+              tools.set(prefix + toolDefinition.name, toolDefinition);
             }
+
           } catch (error) {
             console.error("Error loading tool from file " + file + ":", error);
           }

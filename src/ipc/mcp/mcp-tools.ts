@@ -41,9 +41,10 @@ export async function getMcpTools(mcpId: string) {
       for (const apiGroup of Object.values(mcpData.apiGroups)) {
         const mcpTool = apiGroup.tools?.find((t) => {
           // Match by name, considering tool prefix
+          const rootName = t.optimised?.name || t.name;
           const toolNameWithPrefix = apiGroup.toolPrefix
-            ? `${apiGroup.toolPrefix}${t.name}`
-            : t.name;
+            ? `${apiGroup.toolPrefix}${rootName}`
+            : rootName;
           return toolNameWithPrefix === tool.name;
         });
         const annotations = {} as ToolAnnotations;

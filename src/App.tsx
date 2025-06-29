@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { syncThemeWithLocal } from "@/lib/theme_helpers";
 import { router } from "./routes/router";
 import { RouterProvider } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { OpenAPIV3 } from "openapi-types";
 import type { McpData, McpSubmitData } from "@/lib/db/mcp-db";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
@@ -27,6 +27,7 @@ import type {
   SearchApiEndpointsRequest,
 } from "./ipc/agent-tools/agent-tools-listeners";
 import { SummonTool, SummonToolRef } from "./lib/mcp/tool";
+import { queryClient } from "./queryClient";
 
 export default function App() {
   useEffect(() => {
@@ -41,8 +42,6 @@ export default function App() {
     </SentryErrorBoundary>
   );
 }
-
-const queryClient = new QueryClient();
 
 // Define the interface for the electron API
 declare global {

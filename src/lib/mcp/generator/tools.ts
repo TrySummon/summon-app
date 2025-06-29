@@ -26,10 +26,11 @@ export async function generateMcpTools(apiGroups: Record<string, McpApiGroup>) {
 
       // Add tools to the map
       apiGroup.tools?.forEach((tool) => {
-        const prefix = apiGroup.toolPrefix || "";
+        const prefix = apiGroup.toolPrefix;
         tools.push({
           ...tool,
-          name: `${prefix}${tool.name}`,
+          name: tool.name,
+          prefix,
           tags: tool.tags.map((tag) => kebabCase(`${prefix}-${tag}`)),
           securityScheme: {
             baseUrlEnvVar: getEnvVarName(apiGroup.name, "BASE_URL"),

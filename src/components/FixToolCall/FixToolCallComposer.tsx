@@ -23,7 +23,7 @@ import { cn } from "@/utils/tailwind";
 import { usePlaygroundStore } from "@/stores/playgroundStore";
 import { useMcps } from "@/hooks/useMcps";
 import { useExternalMcps } from "@/hooks/useExternalMcps";
-import { ToolDefinition } from "@/lib/mcp/tool";
+import { ToolAnnotations } from "@/lib/mcp/tool";
 import { MentionedTool } from "./types";
 
 interface FixToolCallComposerProps {
@@ -118,13 +118,13 @@ export function FixToolCallComposer({
             );
 
             if (tool) {
+              const annotations = tool.annotations as ToolAnnotations;
               return {
                 mcpId: mention.mcpId,
                 isExternal: true,
                 definition: tool,
-                originalToolName: (
-                  tool.annotations?.originalDefinition as ToolDefinition
-                ).name,
+                originalToolName:
+                  annotations.originalDefinition?.name || tool.name,
               };
             }
           } else {

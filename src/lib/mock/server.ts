@@ -258,7 +258,7 @@ export class OpenAPIMockServer {
   }
 
   /**
-   * Validate request parameters using Zod
+   * Validate request parameters - only check presence for path/query params
    */
   private validateRequest(
     req: Request,
@@ -268,71 +268,30 @@ export class OpenAPIMockServer {
       (operation.parameters as OpenAPIV3.ParameterObject[]) || [];
 
     try {
-      // Create Zod schemas for each parameter type
-      const pathParams: Record<string, z.ZodSchema> = {};
-      const queryParams: Record<string, z.ZodSchema> = {};
-      const headerParams: Record<string, z.ZodSchema> = {};
-
+      // Check required parameters
       for (const param of parameters) {
-        let zodSchema: z.ZodSchema = z.any();
-
-        if (param.schema) {
-          zodSchema = this.openApiSchemaToZod(
-            param.schema as OpenAPIV3.SchemaObject,
-          );
-        }
-
-        // Make schema optional if parameter is not required
         if (!param.required) {
-          zodSchema = zodSchema.optional();
+          continue; // Skip optional parameters
         }
 
+        let value: unknown;
         switch (param.in) {
           case "path":
-            pathParams[param.name] = zodSchema;
+            value = req.params[param.name];
             break;
           case "query":
-            queryParams[param.name] = zodSchema;
+            value = req.query[param.name];
             break;
           case "header":
-            headerParams[param.name] = zodSchema;
+            value = req.headers[param.name.toLowerCase()];
             break;
+          default:
+            continue;
         }
-      }
 
-      // Validate path parameters
-      if (Object.keys(pathParams).length > 0) {
-        const pathSchema = z.object(pathParams);
-        const pathResult = pathSchema.safeParse(req.params);
-        if (!pathResult.success) {
-          const error = pathResult.error.errors[0];
-          return `Path parameter validation failed: ${error.path.join(".")} - ${error.message}`;
-        }
-      }
-
-      // Validate query parameters
-      if (Object.keys(queryParams).length > 0) {
-        const querySchema = z.object(queryParams);
-        const queryResult = querySchema.safeParse(req.query);
-        if (!queryResult.success) {
-          const error = queryResult.error.errors[0];
-          return `Query parameter validation failed: ${error.path.join(".")} - ${error.message}`;
-        }
-      }
-
-      // Validate header parameters
-      if (Object.keys(headerParams).length > 0) {
-        // Convert header names to lowercase for validation
-        const normalizedHeaders: Record<string, unknown> = {};
-        Object.keys(headerParams).forEach((headerName) => {
-          normalizedHeaders[headerName] = req.headers[headerName.toLowerCase()];
-        });
-
-        const headerSchema = z.object(headerParams);
-        const headerResult = headerSchema.safeParse(normalizedHeaders);
-        if (!headerResult.success) {
-          const error = headerResult.error.errors[0];
-          return `Header parameter validation failed: ${error.path.join(".")} - ${error.message}`;
+        // Check if required parameter is missing
+        if (value === undefined || value === null || value === "") {
+          return `Required ${param.in} parameter '${param.name}' is missing`;
         }
       }
 

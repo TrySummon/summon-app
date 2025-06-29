@@ -30,11 +30,12 @@ export async function loadToolsFromDirectory(
           const filePath = path.join(toolsDir, file);
           const fileContent = await fs.readFile(filePath, "utf-8");
           const toolDefinition = JSON.parse(fileContent) as McpToolDefinition;
+          const prefix = toolDefinition.prefix || "";
 
           if (toolDefinition.optimised) {
-            tools.set(toolDefinition.optimised.name, toolDefinition);
+            tools.set(prefix + toolDefinition.optimised.name, toolDefinition);
           } else if (toolDefinition.name) {
-            tools.set(toolDefinition.name, toolDefinition);
+            tools.set(prefix + toolDefinition.name, toolDefinition);
           }
         } catch (error) {
           log.error(`Error loading tool from file ${file}:`, error);
@@ -244,17 +245,18 @@ export function createMcpServer(
   // Set up MCP request handlers
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const toolsForClient: Tool[] = Array.from(tools.values()).map((def) => {
+      const prefix = def.prefix || "";
       // Use optimised version if available, otherwise fall back to original
       if (def.optimised) {
         return {
-          name: def.optimised.name,
+          name: prefix + def.optimised.name,
           description: def.optimised.description,
           inputSchema: def.optimised.inputSchema as Tool["inputSchema"],
         };
       }
 
       return {
-        name: def.name,
+        name: prefix + def.name,
         description: def.description,
         inputSchema: def.inputSchema as Tool["inputSchema"], // Cast to MCP Tool inputSchema type
       };
