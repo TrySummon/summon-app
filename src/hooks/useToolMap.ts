@@ -40,10 +40,12 @@ export default function useToolMap() {
       }
     };
 
+    // Fetch external MCPs
     Object.keys(externalMcps.externalMcps).forEach((mcpId) => {
       fetchMcpTools(mcpId, mcpId);
     });
 
+    // Fetch internal MCPs
     mcps.mcps.forEach((mcp) => {
       fetchMcpTools(mcp.id, mcp.name);
     });

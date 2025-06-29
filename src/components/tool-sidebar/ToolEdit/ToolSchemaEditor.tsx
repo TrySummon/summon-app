@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/tooltip";
 import { ChevronRight, RotateCcw } from "lucide-react";
 import { formatTypeInfo, getOriginalProperty } from "./utils";
-import { toast } from "sonner";
 
 interface SchemaEditorProps {
   schemaPath: string[];
@@ -36,6 +35,7 @@ interface SchemaEditorProps {
   onRevertProperty: (pathPrefix: string[], propertyName: string) => void;
   originalRootSchema: JSONSchema7;
   currentPathToParentProperties: string[]; // Path to the object whose properties are being listed
+  allowNameEditing?: boolean; // New prop to control name editing
 }
 
 export const SchemaEditor: React.FC<SchemaEditorProps> = ({
@@ -48,6 +48,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
   onRevertProperty,
   originalRootSchema,
   currentPathToParentProperties,
+  allowNameEditing = true, // Default to true for backward compatibility
 }) => {
   const [editingPropertyDesc, setEditingPropertyDesc] = useState<string | null>(
     null,
@@ -69,12 +70,12 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
       onUpdateProperty(currentPathToParentProperties, editingPropertyDesc, {
         description: currentDescValue,
       });
-      toast.success("Property description updated");
     }
     setEditingPropertyDesc(null);
   };
 
   const handleStartEditName = (propName: string) => {
+    if (!allowNameEditing) return; // Don't allow name editing if disabled
     setEditingPropertyName(propName);
     setCurrentNameValue(propName);
   };
@@ -83,21 +84,19 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
     if (
       editingPropertyName &&
       currentNameValue &&
-      currentNameValue !== editingPropertyName
+      currentNameValue !== editingPropertyName &&
+      allowNameEditing
     ) {
+      // Only call with newName if name editing is allowed
       onUpdateProperty(currentPathToParentProperties, editingPropertyName, {
         newName: currentNameValue,
       });
-      if (currentNameValue !== editingPropertyName) {
-        toast.success("Property name updated");
-      }
     }
     setEditingPropertyName(null);
   };
 
   const handleRevertProperty = (propName: string) => {
     onRevertProperty(currentPathToParentProperties, propName);
-    toast.success("Property reverted to original");
   };
 
   const handleToggleProperty = (
@@ -107,9 +106,6 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
     onUpdateProperty(currentPathToParentProperties, propertyName, {
       disabled: !isCurrentlyDisabled,
     });
-    toast.success(
-      isCurrentlyDisabled ? "Property enabled" : "Property disabled",
-    );
   };
 
   const sortedProperties = useMemo(() => {
@@ -221,7 +217,7 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                       }}
                       className="h-7 w-40 font-mono text-sm font-semibold"
                       autoFocus
-                      disabled={isDisabledUi}
+                      disabled={isDisabledUi || !allowNameEditing}
                     />
                   ) : (
                     <div className="group/propname flex items-center gap-1">
@@ -229,12 +225,14 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                         <TooltipTrigger asChild>
                           <code
                             className={cn(
-                              "hover:bg-muted/50 cursor-pointer rounded px-1 py-0.5 font-mono text-sm font-semibold transition-colors",
+                              allowNameEditing
+                                ? "hover:bg-muted/50 cursor-pointer rounded px-1 py-0.5 font-mono text-sm font-semibold transition-colors"
+                                : "rounded px-1 py-0.5 font-mono text-sm font-semibold",
                               (isNameModified || isNewProperty) &&
                                 "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground",
                             )}
                             onClick={
-                              !isDisabledUi
+                              !isDisabledUi && allowNameEditing
                                 ? () => handleStartEditName(propertyName)
                                 : undefined
                             }
@@ -243,7 +241,11 @@ export const SchemaEditor: React.FC<SchemaEditorProps> = ({
                           </code>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Edit property name</p>
+                          <p>
+                            {allowNameEditing
+                              ? "Edit property name"
+                              : "Property name (read-only)"}
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </div>

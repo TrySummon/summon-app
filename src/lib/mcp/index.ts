@@ -59,7 +59,7 @@ JSONSchemaFaker.option({
  *
  * @param dir Directory path to create
  */
-async function ensureDirectoryExists(dir: string): Promise<void> {
+export async function ensureDirectoryExists(dir: string): Promise<void> {
   try {
     await fs.mkdir(dir, { recursive: true });
   } catch (error) {

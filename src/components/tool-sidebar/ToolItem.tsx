@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Pencil } from "lucide-react";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { ToolAnnotations } from "@/lib/mcp/tool";
 import { ToolEditDialog } from "./ToolEdit";
 
 interface ToolItemProps {
@@ -25,31 +26,17 @@ export default function ToolItem({
   isSelected,
   onToggle,
 }: ToolItemProps) {
-  // TODO: HANDLE MODIFY/REVERT
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  const modifiedTool = getModifiedTool(mcpId, tool.name);
-  const hasModifications = !!modifiedTool;
+  const annotations = tool.annotations as ToolAnnotations | undefined;
 
-  const displayName = getModifiedName(mcpId, tool.name, tool.name);
-  const displayDescription = modifiedTool?.description ?? tool.description;
-
-  const handleSave = (modified: ModifiedTool) => {
-    onToolModify(mcpId, tool.name, modified);
-  };
-
-  const handleRevert = () => {
-    onToolRevert(mcpId, tool.name);
-  };
+  const isModified = !!annotations?.originalDefinition;
 
   return (
     <>
       <div
         key={mcpId + tool.name}
-        className={cn(
-          `group/tool relative border-b`,
-          hasModifications && "bg-primary/10 dark:bg-primary/20",
-        )}
+        className={cn(`group/tool relative border-b`)}
       >
         <div className="p-2 py-4">
           <div className="flex items-start justify-between">
@@ -65,11 +52,10 @@ export default function ToolItem({
                 title={tool.name}
                 className={cn(
                   "text-foreground cursor-pointer truncate text-sm font-normal",
-                  hasModifications &&
-                    "text-primary dark:text-primary-foreground",
+                  isModified && "text-blue-600 dark:text-blue-500",
                 )}
               >
-                {displayName}
+                {tool.name}
               </Label>
             </div>
             <Button
@@ -81,19 +67,17 @@ export default function ToolItem({
               }}
               className={cn(
                 "-mt-1 h-6 w-6 flex-shrink-0 p-0 opacity-0 transition-opacity group-hover/tool:opacity-100",
-                hasModifications &&
-                  "bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20 dark:text-primary-foreground dark:hover:bg-primary/30",
               )}
               title="Edit tool"
             >
               <Pencil className="h-3 w-3" />
             </Button>
           </div>
-          {displayDescription && (
+          {tool.description && (
             <HoverCard openDelay={100} closeDelay={100}>
               <HoverCardTrigger asChild>
                 <p className="text-muted-foreground/80 mt-1 ml-6 line-clamp-2 text-xs leading-relaxed">
-                  {displayDescription}
+                  {tool.description}
                 </p>
               </HoverCardTrigger>
               <HoverCardContent
@@ -103,8 +87,8 @@ export default function ToolItem({
                 className="w-80 p-4"
               >
                 <div className="space-y-2">
-                  <h4 className="text-sm font-semibold">{displayName}</h4>
-                  <p className="text-xs">{displayDescription}</p>
+                  <h4 className="text-sm font-semibold">{tool.name}</h4>
+                  <p className="text-xs">{tool.description}</p>
                 </div>
               </HoverCardContent>
             </HoverCard>
@@ -116,9 +100,7 @@ export default function ToolItem({
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         tool={tool}
-        modifiedTool={modifiedTool}
-        onSave={handleSave}
-        onRevert={handleRevert}
+        mcpId={mcpId}
       />
     </>
   );

@@ -1,7 +1,8 @@
 import { runningMcpServers } from "@/lib/mcp/state";
 import { calculateTokenCount } from "@/lib/tiktoken";
 import { mcpDb } from "@/lib/db/mcp-db";
-import { getExternalMcpOverrides } from "@/lib/mcp/tool";
+import { getExternalMcpOverrides, ToolAnnotations } from "@/lib/mcp/tool";
+import type { JSONSchema7 } from "json-schema";
 
 /**
  * Fetches tools from an MCP server using the provided configuration
@@ -45,41 +46,51 @@ export async function getMcpTools(mcpId: string) {
             : t.name;
           return toolNameWithPrefix === tool.name;
         });
-
+        const annotations = {} as ToolAnnotations;
+        if (mcpTool) {
+          annotations.apiId = mcpTool.apiId;
+          annotations.tokenCount = mcpTool.originalTokenCount;
+        }
         if (mcpTool?.optimisedTokenCount) {
-          tool.annotations.tokenCount = mcpTool.originalTokenCount;
-          tool.annotations.optimisedTokenCount = mcpTool.optimisedTokenCount;
+          annotations.optimisedTokenCount = mcpTool.optimisedTokenCount;
         }
 
         if (mcpTool?.optimised) {
-          tool.annotations.originalDefinition = {
+          annotations.originalDefinition = {
             name: mcpTool.name,
             description: mcpTool.description,
-            inputSchema: mcpTool.inputSchema,
+            inputSchema: mcpTool.inputSchema as JSONSchema7,
           };
         }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tool.annotations = annotations as any;
 
         if (mcpTool) break;
       }
     } else {
+      const annotations = {} as ToolAnnotations;
       if (externalToolOverrides) {
         const override = externalToolOverrides[tool.name];
+
         if (override) {
+          annotations.isExternal = true;
+          annotations.originalDefinition = {
+            name: tool.name,
+            description: tool.description || "",
+            inputSchema: tool.inputSchema as JSONSchema7,
+          };
           tool.name = override.definition.name;
           tool.description = override.definition.description;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           tool.inputSchema = override.definition.inputSchema as any;
-          tool.annotations.isExternal = true;
-          tool.annotations.originalDefinition = {
-            name: tool.name,
-            description: tool.description,
-            inputSchema: tool.inputSchema,
-          };
         }
       }
-      if (tool.annotations.tokenCount === undefined) {
-        tool.annotations.tokenCount = calculateTokenCount(JSON.stringify(tool));
+      if (annotations.tokenCount === undefined) {
+        annotations.tokenCount = calculateTokenCount(JSON.stringify(tool));
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tool.annotations = annotations as any;
     }
   });
 

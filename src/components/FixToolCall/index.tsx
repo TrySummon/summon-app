@@ -115,7 +115,6 @@ export function FixToolCallButton({ invocation }: FixToolCallButtonProps) {
 
   const handleApprove = () => {
     // TODO: Implement approve logic here
-    console.log("Approved optimized tools:", optimizedResult);
     toast.success("Tool optimization approved!");
     setShowFixDialog(false);
     resetState();

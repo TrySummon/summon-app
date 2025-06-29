@@ -6,16 +6,28 @@ import fs from "fs/promises";
 import { mcpDb } from "../db/mcp-db";
 import { kebabCase } from "./generator/utils";
 import { calculateTokenCount } from "../tiktoken";
-import { deleteMcpImpl, generateMcpImpl, restartMcpServer } from ".";
+import {
+  deleteMcpImpl,
+  ensureDirectoryExists,
+  generateMcpImpl,
+  restartMcpServer,
+} from ".";
 import { BrowserWindow } from "electron";
 import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "@/ipc/external-mcp";
-import { runningMcpServers } from "./state";
+
+export interface ToolAnnotations {
+  tokenCount?: number;
+  optimisedTokenCount?: number;
+  isExternal?: boolean;
+  apiId?: string;
+  originalDefinition?: ToolDefinition;
+}
 
 export interface ToolDefinition {
   name: string;
   description: string;
   inputSchema: JSONSchema7;
-  annotations?: Record<string, unknown>;
+  annotations?: ToolAnnotations;
 }
 
 export interface ExternalToolOverride {
@@ -31,6 +43,13 @@ export interface SummonTool {
   isExternal: boolean;
   originalToolName: string;
   definition: ToolDefinition;
+}
+
+export interface SummonToolRef {
+  apiId?: string;
+  mcpId: string;
+  isExternal: boolean;
+  originalToolName: string;
 }
 
 export type ExternalMcpOverrides = Record<
@@ -71,23 +90,23 @@ export const overrideExternalMcpTool = async (
     override.mcpId,
     override.originalToolName,
   );
-  await fs.writeFile(toolPath, JSON.stringify(override.definition, null, 2));
+  await ensureDirectoryExists(path.dirname(toolPath));
+
+  delete override.definition.annotations;
+
+  await fs.writeFile(toolPath, JSON.stringify(override, null, 2));
 
   // Force a refresh of the external MCPs (relist tools)
   const mainWindow = BrowserWindow.getAllWindows()[0];
   if (mainWindow) {
-    mainWindow.webContents.send(
-      EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL,
-      runningMcpServers,
-    );
+    mainWindow.webContents.send(EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL, null);
   }
 
   return true;
 };
 
 export const updateSummonMcpTool = async (tool: SummonTool) => {
-  if (!tool.apiId || !tool.mappingConfig)
-    throw new Error("Tool has no apiId or mappingConfig");
+  if (!tool.apiId) throw new Error("Tool has no apiId");
 
   const mcpData = await mcpDb.getMcpById(tool.mcpId);
 
@@ -114,7 +133,8 @@ export const updateSummonMcpTool = async (tool: SummonTool) => {
 
               optimised: tool.definition,
               optimisedTokenCount,
-              originalToOptimisedMapping: tool.mappingConfig,
+              originalToOptimisedMapping:
+                tool.mappingConfig || t.originalToOptimisedMapping,
             }
           : t,
       ) || [],
@@ -144,7 +164,7 @@ export const updateMcpTool = async (tool: SummonTool) => {
   }
 };
 
-export const revertSummonMcpTool = async (tool: SummonTool) => {
+export const revertSummonMcpTool = async (tool: SummonToolRef) => {
   if (!tool.apiId) throw new Error("Tool has no apiId");
   const mcpData = await mcpDb.getMcpById(tool.mcpId);
   if (!mcpData) throw new Error("MCP not found");
@@ -192,7 +212,7 @@ export const revertSummonMcpTool = async (tool: SummonTool) => {
   await restartMcpServer(tool.mcpId);
 };
 
-export const revertExternalMcpTool = async (tool: SummonTool) => {
+export const revertExternalMcpTool = async (tool: SummonToolRef) => {
   const toolPath = await getExternalMcpToolOverridePath(
     tool.mcpId,
     tool.originalToolName,
@@ -202,14 +222,11 @@ export const revertExternalMcpTool = async (tool: SummonTool) => {
   // Force a refresh of the external MCPs (relist tools)
   const mainWindow = BrowserWindow.getAllWindows()[0];
   if (mainWindow) {
-    mainWindow.webContents.send(
-      EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL,
-      runningMcpServers,
-    );
+    mainWindow.webContents.send(EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL, null);
   }
 };
 
-export const revertMcpTool = async (tool: SummonTool) => {
+export const revertMcpTool = async (tool: SummonToolRef) => {
   if (tool.isExternal) {
     await revertExternalMcpTool(tool);
   } else {
@@ -224,12 +241,12 @@ export const getExternalMcpToolOverride = async (
   try {
     const toolPath = await getExternalMcpToolOverridePath(mcpId, toolName);
     const toolContent = await fs.readFile(toolPath, "utf-8");
-    const toolDefinition: ToolDefinition = JSON.parse(toolContent);
+    const override: ExternalToolOverride = JSON.parse(toolContent);
 
     return {
       mcpId,
-      originalToolName: toolName,
-      definition: toolDefinition,
+      originalToolName: override.originalToolName,
+      definition: override.definition,
     };
   } catch {
     // File doesn't exist or other error - return null
@@ -254,17 +271,10 @@ export const getExternalMcpOverrides = async (
       if (!toolFile.endsWith(".json")) continue;
 
       const toolPath = path.join(toolsDir, toolFile);
-      const toolContent = await fs.readFile(toolPath, "utf-8");
-      const toolDefinition: ToolDefinition = JSON.parse(toolContent);
+      const content = await fs.readFile(toolPath, "utf-8");
+      const override: ExternalToolOverride = JSON.parse(content);
 
-      // Create the override object
-      const override: ExternalToolOverride = {
-        mcpId,
-        originalToolName: toolDefinition.name,
-        definition: toolDefinition,
-      };
-
-      overrides[toolDefinition.name] = override;
+      overrides[override.originalToolName] = override;
     }
   } catch {
     // Tools directory doesn't exist or other error - return empty object

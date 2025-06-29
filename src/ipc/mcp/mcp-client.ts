@@ -1,7 +1,7 @@
 import { captureEvent } from "@/lib/posthog";
 import { McpData } from "@/lib/db/mcp-db";
 import { recurseCountKeys } from "@/lib/object";
-import { SummonTool } from "@/lib/mcp/tool";
+import { SummonTool, SummonToolRef } from "@/lib/mcp/tool";
 
 // MCP operations with PostHog instrumentation
 export const createMcp = async (
@@ -101,7 +101,7 @@ export const updateMcpTool = async (tool: SummonTool) => {
   return window.mcpApi.updateMcpTool(tool);
 };
 
-export const revertMcpTool = async (tool: SummonTool) => {
+export const revertMcpTool = async (tool: SummonToolRef) => {
   captureEvent("mcp_revert_tool");
   return window.mcpApi.revertMcpTool(tool);
 };

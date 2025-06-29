@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 
 import ToolItem from "./ToolItem";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { ToolAnnotations } from "@/lib/mcp/tool";
 
 interface McpSectionProps {
   mcpId: string;
@@ -32,7 +33,9 @@ export default function McpSection({
 }: McpSectionProps) {
   const totalTokenCount = useMemo(() => {
     return tools.reduce((acc, tool) => {
-      const tokenCount = tool.annotations?.tokenCount as number | undefined;
+      const annotations = tool.annotations as ToolAnnotations | undefined;
+      const tokenCount =
+        annotations?.optimisedTokenCount || annotations?.tokenCount;
       const isSelected = isToolSelected(tool.name);
       return acc + (isSelected && tokenCount ? tokenCount : 0);
     }, 0);

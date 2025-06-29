@@ -26,7 +26,7 @@ import type {
   OptimiseToolSizeRequest,
   SearchApiEndpointsRequest,
 } from "./ipc/agent-tools/agent-tools-listeners";
-import { SummonTool } from "./lib/mcp/tool";
+import { SummonTool, SummonToolRef } from "./lib/mcp/tool";
 
 export default function App() {
   useEffect(() => {
@@ -178,7 +178,7 @@ declare global {
         tool: SummonTool,
       ) => Promise<{ success: boolean; message?: string }>;
       revertMcpTool: (
-        tool: SummonTool,
+        tool: SummonToolRef,
       ) => Promise<{ success: boolean; message?: string }>;
       generateFakeData: (
         schema: unknown,
