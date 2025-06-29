@@ -70,12 +70,11 @@ export async function getMcpTools(mcpId: string) {
         if (mcpTool) break;
       }
     } else {
-      const annotations = {} as ToolAnnotations;
+      const annotations = { isExternal: true } as ToolAnnotations;
       if (externalToolOverrides) {
         const override = externalToolOverrides[tool.name];
 
         if (override) {
-          annotations.isExternal = true;
           annotations.originalDefinition = {
             name: tool.name,
             description: tool.description || "",

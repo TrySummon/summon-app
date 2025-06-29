@@ -1,6 +1,7 @@
-import { ipcMain } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import {
   CONNECT_EXTERNAL_MCP_SERVER_CHANNEL,
+  EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL,
   STOP_EXTERNAL_MCP_SERVER_CHANNEL,
 } from "./external-mcp-channels";
 import {
@@ -23,6 +24,15 @@ export function registerExternalMcpListeners() {
           serverConfig,
           force,
         );
+
+        // Force a refresh of the external MCPs (relist tools)
+        const mainWindow = BrowserWindow.getAllWindows()[0];
+        if (mainWindow) {
+          mainWindow.webContents.send(
+            EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL,
+            null,
+          );
+        }
 
         // Create a serializable version of the server state
         const serializableState = {

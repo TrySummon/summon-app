@@ -135,17 +135,6 @@ export function useToolSidebar() {
     setToolSelectionPristine,
   ]);
 
-  // Initialize all sections as expanded
-  useEffect(() => {
-    if (mcpToolMap && Object.keys(mcpToolMap).length > 0) {
-      const initialExpandedState: Record<string, boolean> = {};
-      Object.keys(mcpToolMap).forEach((mcpId) => {
-        initialExpandedState[mcpId] = true;
-      });
-      setExpandedSections(initialExpandedState);
-    }
-  }, [mcpToolMap]);
-
   // Toggle section expansion
   const toggleSection = (mcpId: string) => {
     setExpandedSections((prev) => ({

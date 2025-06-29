@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage, PersistOptions } from "zustand/middleware";
 import useToolMap from "@/hooks/useToolMap";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { IModelConfiguration } from "@/components/llm-picker/LLMPicker";
 import { EvaluationSummary } from "@/lib/evaluation/runner";
 
@@ -425,9 +425,6 @@ export const useEvaluationStore = create<EvaluationStore>()(
 // Hook that combines the store with the mcpToolMap from useToolMap
 export function useEvaluationToolSelection(datasetId: string) {
   const { mcpToolMap } = useToolMap();
-  const initializeExpandedMcps = useEvaluationStore(
-    (state) => state.initializeExpandedMcps,
-  );
 
   const toggleMcpExpanded = useEvaluationStore(
     (state) => state.toggleMcpExpanded,
@@ -440,13 +437,6 @@ export function useEvaluationToolSelection(datasetId: string) {
 
   // Subscribe to the full dataset state to ensure reactivity
   const datasetState = useEvaluationStore((state) => state.datasets[datasetId]);
-
-  // Initialize expanded state when mcps are available and store is empty
-  useEffect(() => {
-    if (mcpToolMap && Object.keys(mcpToolMap).length > 0) {
-      initializeExpandedMcps(datasetId, mcpToolMap);
-    }
-  }, [mcpToolMap, datasetId, initializeExpandedMcps]);
 
   const enabledTools = datasetState?.enabledTools;
 

@@ -16,7 +16,6 @@ export default function ToolSidebar() {
     handleToggleAllTools,
     areAllToolsSelected,
     isToolSelected,
-
     mcpToolMap,
   } = useToolSidebar();
 

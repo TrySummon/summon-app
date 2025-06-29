@@ -58,6 +58,7 @@ export function TabbedCodeSnippet({
         <CodeMirrorEditor
           maxHeight={maxHeight}
           defaultValue={activeTabData.code}
+          value={activeTabData.code}
           language={activeTabData.language}
           readOnly
         />

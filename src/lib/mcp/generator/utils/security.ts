@@ -215,14 +215,17 @@ export function generateExecuteApiToolFunction(): string {
  */
 async function executeApiTool(toolName: string, definition: McpToolDefinition, args: Record<string, any>): Promise<any> {
     try {
-    const baseUrl = process.env[definition.securityScheme.baseUrlEnvVar];
+    let baseUrl = process.env[definition.securityScheme.baseUrlEnvVar];
     if (!baseUrl) {
         throw new Error(\`Base URL environment variable \${definition.securityScheme.baseUrlEnvVar} is not set\`);
     }
 
+    // Remove trailing slash from baseUrl to avoid double slashes when concatenating with pathTemplate
+    baseUrl = baseUrl.replace(/\\/$/, '');
 
-      // --- Argument Validation using Zod ---
-      let validatedArgs: JsonObject;
+
+    // --- Argument Validation using Zod ---
+    let validatedArgs: JsonObject;
       try {
           const schema = definition.optimised?.inputSchema || definition.inputSchema;
           const zodSchema = getZodSchemaFromJsonSchema(schema, toolName);

@@ -203,9 +203,9 @@ export function loadTools(toolOptions: { [key: string]: string } = {}) {
             const prefix = toolDefinition.prefix || "";
 
             if (toolDefinition.optimised) {
-              tools.set(prefix + toolDefinition.optimised.name, toolDefinition);
+              toolDefinitionMap.set(prefix + toolDefinition.optimised.name, toolDefinition);
             } else if (toolDefinition.name) {
-              tools.set(prefix + toolDefinition.name, toolDefinition);
+              toolDefinitionMap.set(prefix + toolDefinition.name, toolDefinition);
             }
 
           } catch (error) {
