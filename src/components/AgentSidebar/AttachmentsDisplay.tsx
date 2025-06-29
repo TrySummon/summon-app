@@ -4,11 +4,11 @@ import {
   MentionPill,
   getFileTypeFromContentType,
 } from "@/components/MentionPill";
-import { ExtractedMention } from "./mentionUtils";
+import { ExtractedMention } from "../CodeEditor";
 
 interface AttachmentsDisplayProps {
   mentions: ExtractedMention[];
-  attachments: Attachment[];
+  attachments?: Attachment[];
   onRemoveMention?: (mentionText: string) => void;
   onRemoveFile?: (fileId: string) => void;
   editable?: boolean;
@@ -21,7 +21,7 @@ export function AttachmentsDisplay({
   onRemoveFile,
   editable = false,
 }: AttachmentsDisplayProps) {
-  if (mentions.length === 0 && attachments.length === 0) {
+  if (mentions.length === 0 && !attachments?.length) {
     return null;
   }
 
@@ -37,7 +37,7 @@ export function AttachmentsDisplay({
           }
         />
       ))}
-      {attachments.map((file) => (
+      {attachments?.map((file) => (
         <MentionPill
           key={file.name}
           text={file.name || "Unnamed file"}

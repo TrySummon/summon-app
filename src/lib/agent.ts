@@ -8,7 +8,6 @@ import {
 } from "ai";
 import { createLLMProvider } from "@/lib/llm";
 import {
-  ModifiedToolMap,
   ToolMap,
   usePlaygroundStore,
   type PlaygroundStore,
@@ -17,111 +16,13 @@ import { v4 as uuidv4 } from "uuid";
 import { UIMessage } from "ai";
 import type { JSONSchema7 } from "json-schema";
 import { captureEvent } from "@/lib/posthog";
-import { recurseCountKeys } from "@/lib/object";
 import { getCredentials } from "@/ipc/ai-providers/ai-providers-client";
 import { callMcpTool } from "@/ipc/mcp/mcp-client";
 import { LLMSettings } from "@/stores/types";
-/**
- * Remaps modified tool arguments back to their original names for API compatibility.
- * Handles both tool name changes and deep property name changes using x-original-name metadata.
- */
-export function remapArgsToOriginal(
-  modifiedArgs: Record<string, unknown>,
-  originalSchema: JSONSchema7,
-  modifiedSchema: JSONSchema7,
-): Record<string, unknown> {
-  if (!modifiedArgs || typeof modifiedArgs !== "object") {
-    return modifiedArgs;
-  }
-
-  const remappedArgs: Record<string, unknown> = {};
-
-  // Get properties from both schemas
-  const originalProps = originalSchema.properties || {};
-  const modifiedProps = modifiedSchema.properties || {};
-
-  // Process each argument in the modified args
-  for (const [modifiedPropName, value] of Object.entries(modifiedArgs)) {
-    const modifiedPropSchema = modifiedProps[
-      modifiedPropName
-    ] as JSONSchema7 & { "x-original-name"?: string };
-
-    if (!modifiedPropSchema) {
-      // Property doesn't exist in modified schema, skip it
-      continue;
-    }
-
-    // Get the original property name (check for x-original-name metadata)
-    const originalPropName =
-      modifiedPropSchema["x-original-name"] || modifiedPropName;
-    const originalPropSchema = originalProps[originalPropName] as JSONSchema7;
-
-    if (!originalPropSchema) {
-      // Original property doesn't exist, skip it
-      continue;
-    }
-
-    // Handle nested objects recursively
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      if (
-        modifiedPropSchema.type === "object" &&
-        originalPropSchema.type === "object"
-      ) {
-        // Recursively remap nested object properties
-        remappedArgs[originalPropName] = remapArgsToOriginal(
-          value as Record<string, unknown>,
-          originalPropSchema,
-          modifiedPropSchema,
-        );
-      } else {
-        // Not an object type, use value as-is
-        remappedArgs[originalPropName] = value;
-      }
-    } else if (Array.isArray(value)) {
-      // Handle arrays - check if array items are objects that need remapping
-      if (
-        modifiedPropSchema.type === "array" &&
-        originalPropSchema.type === "array"
-      ) {
-        const modifiedItemSchema = modifiedPropSchema.items as JSONSchema7;
-        const originalItemSchema = originalPropSchema.items as JSONSchema7;
-
-        if (
-          modifiedItemSchema &&
-          originalItemSchema &&
-          modifiedItemSchema.type === "object" &&
-          originalItemSchema.type === "object"
-        ) {
-          // Recursively remap each object in the array
-          remappedArgs[originalPropName] = value.map((item) => {
-            if (item && typeof item === "object") {
-              return remapArgsToOriginal(
-                item,
-                originalItemSchema,
-                modifiedItemSchema,
-              );
-            }
-            return item;
-          });
-        } else {
-          // Array of primitives or non-object items, use as-is
-          remappedArgs[originalPropName] = value;
-        }
-      } else {
-        remappedArgs[originalPropName] = value;
-      }
-    } else {
-      // Primitive value, use as-is with original property name
-      remappedArgs[originalPropName] = value;
-    }
-  }
-
-  return remappedArgs;
-}
+import { ToolDefinition } from "./mcp/tool";
 
 export function makeExecuteFunction(
   mcpToolMap: ToolMap,
-  modifiedToolMap: ModifiedToolMap,
   mcpId: string,
   toolName: string,
 ) {
@@ -137,25 +38,15 @@ export function makeExecuteFunction(
       throw new Error(`Tool ${toolName} not found for MCP ${mcpId}`);
     }
 
-    const modification = modifiedToolMap[mcpId]?.[toolName];
-
-    if (modification) {
-      // Remap modified args back to original args
-      args = remapArgsToOriginal(
-        args as Record<string, unknown>,
-        tool.inputSchema as unknown as JSONSchema7,
-        modification.schema,
-      );
-
-      // Track tool call event
-      captureEvent("playground_ai_agent_tool_remap_args", {
-        argsCount: Object.keys(args as Record<string, unknown>).length,
-        argsKeyCount: recurseCountKeys(args as Record<string, unknown>),
-      });
-    }
+    const originalDefinition = tool.isExternal
+      ? (tool.annotations?.originalDefinition as ToolDefinition)
+      : null;
+    const originalName = originalDefinition
+      ? originalDefinition.name
+      : tool.name;
 
     // Always call with the original tool name for API compatibility
-    return callMcpTool(mcpId, tool.name, args as Record<string, unknown>);
+    return callMcpTool(mcpId, originalName, args as Record<string, unknown>);
   };
 }
 
@@ -213,11 +104,10 @@ export async function runPlaygroundAgent() {
       tokenUsage: undefined,
     }));
 
-    // Get the current state to access enabledTools and modifiedToolMap
+    // Get the current state to access enabledTools
     const currentState = getCurrentState();
     const autoExecuteTools = currentState.autoExecuteTools;
     const enabledTools = currentState.enabledTools || {};
-    const modifiedToolMap = currentState.modifiedToolMap || {};
 
     // Create a filtered toolset based on selected tools
     const toolSet: ToolSet = {};
@@ -231,31 +121,18 @@ export async function runPlaygroundAgent() {
       mcp.tools.forEach((mcpTool) => {
         // Check if this tool is enabled for this MCP
         if (enabledToolIds.includes(mcpTool.name)) {
-          // Check if there are modifications for this tool
-          const modification = modifiedToolMap[mcpId]?.[mcpTool.name];
-
-          const finalName = modification?.name || mcpTool.name;
-          const finalDescription =
-            modification?.description || mcpTool.description;
-          const finalParameters = modification?.schema
-            ? jsonSchema(modification.schema)
-            : jsonSchema(mcpTool.inputSchema as unknown as JSONSchema7);
-
           const aiTool = makeTool({
-            description: finalDescription,
-            parameters: finalParameters,
+            description: mcpTool.description,
+            parameters: jsonSchema(
+              mcpTool.inputSchema as unknown as JSONSchema7,
+            ),
             // @ts-expect-error AI SDK typing issue.
             execute: autoExecuteTools
-              ? makeExecuteFunction(
-                  mcpToolMap,
-                  modifiedToolMap,
-                  mcpId,
-                  mcpTool.name,
-                )
+              ? makeExecuteFunction(mcpToolMap, mcpId, mcpTool.name)
               : undefined,
           });
 
-          toolSet[finalName] = aiTool;
+          toolSet[mcpTool.name] = aiTool;
         }
       });
     });
@@ -478,33 +355,17 @@ function handleAgentError(error: unknown, store: PlaygroundStore) {
 }
 
 /**
- * Finds the original tool name and MCP ID from a potentially modified tool name.
- * This function searches through the current tool modifications to find the original tool.
+ * Finds the original MCP ID from a tool name.
  */
-export function findOriginalToolInfo(modifiedToolName: string): {
-  mcpId: string;
-  originalToolName: string;
-} | null {
+export function findToolMcpId(toolName: string): string | null {
   const store = usePlaygroundStore.getState();
-  const { mcpToolMap, getCurrentState } = store;
-  const { modifiedToolMap } = getCurrentState();
-
-  // First, check if this is a modified tool name
-  for (const [mcpId, mcpModifications] of Object.entries(modifiedToolMap)) {
-    for (const [originalToolName, modification] of Object.entries(
-      mcpModifications,
-    )) {
-      if (modification.name === modifiedToolName) {
-        return { mcpId, originalToolName };
-      }
-    }
-  }
+  const { mcpToolMap } = store;
 
   // If not found in modifications, check if it's an original tool name
   for (const [mcpId, mcp] of Object.entries(mcpToolMap)) {
     for (const tool of mcp.tools) {
-      if (tool.name === modifiedToolName) {
-        return { mcpId, originalToolName: tool.name };
+      if (tool.name === toolName) {
+        return mcpId;
       }
     }
   }
@@ -520,7 +381,6 @@ export interface RunLocalAgentConfig {
   settings?: LLMSettings;
   maxSteps?: number;
   enabledTools?: Record<string, string[]>;
-  modifiedToolMap?: ModifiedToolMap;
   mcpToolMap: ToolMap;
 }
 
@@ -540,7 +400,6 @@ export async function runLocalAgent(
     settings = { temperature: 0, maxTokens: 4096 },
     maxSteps = 5,
     enabledTools = {},
-    modifiedToolMap = {},
     mcpToolMap,
   } = config;
 
@@ -558,28 +417,17 @@ export async function runLocalAgent(
         // Check if this tool is enabled for this MCP
         if (enabledToolIds.includes(mcpTool.name)) {
           // Check if there are modifications for this tool
-          const modification = modifiedToolMap[mcpId]?.[mcpTool.name];
-
-          const finalName = modification?.name || mcpTool.name;
-          const finalDescription =
-            modification?.description || mcpTool.description;
-          const finalParameters = modification?.schema
-            ? jsonSchema(modification.schema)
-            : jsonSchema(mcpTool.inputSchema as unknown as JSONSchema7);
 
           const aiTool = makeTool({
-            description: finalDescription,
-            parameters: finalParameters,
-            // Always auto-execute tools in standalone mode
-            execute: makeExecuteFunction(
-              mcpToolMap,
-              modifiedToolMap,
-              mcpId,
-              mcpTool.name,
+            description: mcpTool.description,
+            parameters: jsonSchema(
+              mcpTool.inputSchema as unknown as JSONSchema7,
             ),
+            // Always auto-execute tools in standalone mode
+            execute: makeExecuteFunction(mcpToolMap, mcpId, mcpTool.name),
           });
 
-          toolSet[finalName] = aiTool;
+          toolSet[mcpTool.name] = aiTool;
         }
       });
     });

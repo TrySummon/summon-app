@@ -1,6 +1,7 @@
 import { runningMcpServers } from "@/lib/mcp/state";
 import { calculateTokenCount } from "@/lib/tiktoken";
 import { mcpDb } from "@/lib/db/mcp-db";
+import { getExternalMcpOverrides } from "@/lib/mcp/tool";
 
 /**
  * Fetches tools from an MCP server using the provided configuration
@@ -19,8 +20,11 @@ export async function getMcpTools(mcpId: string) {
 
   // Get MCP data for non-external MCPs to check for optimized tools
   let mcpData = null;
+  let externalToolOverrides = null;
   if (!serverState.isExternal) {
     mcpData = await mcpDb.getMcpById(mcpId);
+  } else {
+    externalToolOverrides = await getExternalMcpOverrides(mcpId);
   }
 
   const response = await serverState.client.listTools();
@@ -45,12 +49,37 @@ export async function getMcpTools(mcpId: string) {
         if (mcpTool?.optimisedTokenCount) {
           tool.annotations.tokenCount = mcpTool.originalTokenCount;
           tool.annotations.optimisedTokenCount = mcpTool.optimisedTokenCount;
-          break; // Found the tool, no need to continue searching
+        }
+
+        if (mcpTool?.optimised) {
+          tool.annotations.originalDefinition = {
+            name: mcpTool.name,
+            description: mcpTool.description,
+            inputSchema: mcpTool.inputSchema,
+          };
+        }
+
+        if (mcpTool) break;
+      }
+    } else {
+      if (externalToolOverrides) {
+        const override = externalToolOverrides[tool.name];
+        if (override) {
+          tool.name = override.definition.name;
+          tool.description = override.definition.description;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          tool.inputSchema = override.definition.inputSchema as any;
+          tool.annotations.isExternal = true;
+          tool.annotations.originalDefinition = {
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+          };
         }
       }
-    }
-    if (tool.annotations.tokenCount === undefined) {
-      tool.annotations.tokenCount = calculateTokenCount(JSON.stringify(tool));
+      if (tool.annotations.tokenCount === undefined) {
+        tool.annotations.tokenCount = calculateTokenCount(JSON.stringify(tool));
+      }
     }
   });
 

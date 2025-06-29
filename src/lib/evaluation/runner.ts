@@ -2,7 +2,7 @@ import { DatasetItem } from "@/types/dataset";
 import { UIMessage } from "ai";
 import { runLocalAgent, RunLocalAgentConfig } from "@/lib/agent";
 import { AssertionScorer, Assertion, EvaluationResult } from "./index";
-import { ModifiedToolMap, ToolMap } from "@/stores/playgroundStore";
+import { ToolMap } from "@/stores/playgroundStore";
 
 export interface EvaluationConfig {
   agentCredentialId: string;
@@ -11,7 +11,6 @@ export interface EvaluationConfig {
   assertionModel: string;
   maxSteps?: number;
   enabledTools?: Record<string, string[]>;
-  modifiedToolMap?: ModifiedToolMap;
   mcpToolMap: ToolMap;
 }
 
@@ -103,7 +102,6 @@ async function evaluateDatasetItem(
       settings: item.settings,
       maxSteps: config.maxSteps || 5,
       enabledTools: config.enabledTools || {},
-      modifiedToolMap: config.modifiedToolMap || {},
       mcpToolMap: config.mcpToolMap,
     };
 

@@ -3,7 +3,6 @@ import { persist, createJSONStorage, PersistOptions } from "zustand/middleware";
 import useToolMap from "@/hooks/useToolMap";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { useEffect, useMemo } from "react";
-import { ModifiedTool } from "./types";
 import { IModelConfiguration } from "@/components/llm-picker/LLMPicker";
 import { EvaluationSummary } from "@/lib/evaluation/runner";
 
@@ -15,7 +14,6 @@ interface EvaluationProgressType {
 
 interface DatasetEvaluationState {
   enabledTools: Record<string, string[]>; // mcpId -> toolNames[]
-  modifiedToolMap: Record<string, Record<string, ModifiedTool>>; // mcpId -> toolName -> ModifiedTool
   expandedMcps: Record<string, boolean>; // mcpId -> boolean
   agentModelConfig: IModelConfiguration;
   assertionModelConfig: IModelConfiguration;
@@ -44,24 +42,7 @@ interface EvaluationStore {
     mcpId: string,
     toolName: string,
   ) => boolean;
-  modifyTool: (
-    datasetId: string,
-    mcpId: string,
-    toolName: string,
-    modifiedTool: ModifiedTool,
-  ) => void;
-  revertTool: (datasetId: string, mcpId: string, toolName: string) => void;
-  getModifiedTool: (
-    datasetId: string,
-    mcpId: string,
-    toolName: string,
-  ) => ModifiedTool | undefined;
-  getModifiedName: (
-    datasetId: string,
-    mcpId: string,
-    toolName: string,
-    originalName: string,
-  ) => string;
+
   initializeExpandedMcps: (
     datasetId: string,
     mcpToolMap: Record<string, { name: string; tools: Tool[] }>,
@@ -97,7 +78,6 @@ function createDefaultDatasetState(itemIds?: string[]): DatasetEvaluationState {
 
   return {
     enabledTools: {},
-    modifiedToolMap: {},
     expandedMcps: {},
     agentModelConfig: defaultModelConfig,
     assertionModelConfig: defaultModelConfig,
@@ -272,61 +252,6 @@ export const useEvaluationStore = create<EvaluationStore>()(
       isToolSelected: (datasetId, mcpId, toolName) => {
         const datasetState = get().getDatasetState(datasetId);
         return (datasetState.enabledTools[mcpId] || []).includes(toolName);
-      },
-
-      modifyTool: (datasetId, mcpId, toolName, modifiedTool) => {
-        const datasetState = get().getDatasetState(datasetId);
-        set((state) => ({
-          datasets: {
-            ...state.datasets,
-            [datasetId]: {
-              ...datasetState,
-              modifiedToolMap: {
-                ...datasetState.modifiedToolMap,
-                [mcpId]: {
-                  ...datasetState.modifiedToolMap[mcpId],
-                  [toolName]: modifiedTool,
-                },
-              },
-            },
-          },
-        }));
-      },
-
-      revertTool: (datasetId, mcpId, toolName) => {
-        const datasetState = get().getDatasetState(datasetId);
-        set((state) => {
-          const newMap = { ...datasetState.modifiedToolMap };
-          if (newMap[mcpId]) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { [toolName]: _, ...rest } = newMap[mcpId];
-            if (Object.keys(rest).length === 0) {
-              delete newMap[mcpId];
-            } else {
-              newMap[mcpId] = rest;
-            }
-          }
-          return {
-            datasets: {
-              ...state.datasets,
-              [datasetId]: {
-                ...datasetState,
-                modifiedToolMap: newMap,
-              },
-            },
-          };
-        });
-      },
-
-      getModifiedTool: (datasetId, mcpId, toolName) => {
-        const datasetState = get().getDatasetState(datasetId);
-        return datasetState.modifiedToolMap[mcpId]?.[toolName];
-      },
-
-      getModifiedName: (datasetId, mcpId, toolName, originalName) => {
-        const datasetState = get().getDatasetState(datasetId);
-        const modification = datasetState.modifiedToolMap[mcpId]?.[toolName];
-        return modification?.name || originalName;
       },
 
       setAgentModelConfig: (datasetId, config) => {
@@ -512,10 +437,6 @@ export function useEvaluationToolSelection(datasetId: string) {
     (state) => state.toggleAllMcpTools,
   );
   const isToolSelected = useEvaluationStore((state) => state.isToolSelected);
-  const getModifiedName = useEvaluationStore((state) => state.getModifiedName);
-  const getModifiedTool = useEvaluationStore((state) => state.getModifiedTool);
-  const modifyTool = useEvaluationStore((state) => state.modifyTool);
-  const revertTool = useEvaluationStore((state) => state.revertTool);
 
   // Subscribe to the full dataset state to ensure reactivity
   const datasetState = useEvaluationStore((state) => state.datasets[datasetId]);
@@ -562,7 +483,6 @@ export function useEvaluationToolSelection(datasetId: string) {
     enabledToolCount,
     expandedSections: datasetState?.expandedMcps,
     enabledToolCountByMcp,
-    modifiedToolMap: datasetState?.modifiedToolMap,
     enabledTools,
     toggleSection: (mcpId: string) => toggleMcpExpanded(datasetId, mcpId),
     handleToggleTool: (mcpId: string, toolName: string) =>
@@ -572,14 +492,6 @@ export function useEvaluationToolSelection(datasetId: string) {
     areAllToolsSelected,
     isToolSelected: (mcpId: string, toolName: string) =>
       isToolSelected(datasetId, mcpId, toolName),
-    getModifiedName: (mcpId: string, toolName: string, originalName: string) =>
-      getModifiedName(datasetId, mcpId, toolName, originalName),
-    getModifiedTool: (mcpId: string, toolName: string) =>
-      getModifiedTool(datasetId, mcpId, toolName),
-    modifyTool: (mcpId: string, toolName: string, modifiedTool: ModifiedTool) =>
-      modifyTool(datasetId, mcpId, toolName, modifiedTool),
-    revertTool: (mcpId: string, toolName: string) =>
-      revertTool(datasetId, mcpId, toolName),
   };
 }
 

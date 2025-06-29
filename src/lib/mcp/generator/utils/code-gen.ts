@@ -199,8 +199,10 @@ export function loadTools(toolOptions: { [key: string]: string } = {}) {
             const toolDefinition = JSON.parse(fileContent) as McpToolDefinition;
             
             // Add the tool to the map using its name as the key
-            if (toolDefinition.name) {
-              toolDefinitionMap.set(toolDefinition.name, toolDefinition);
+            if (toolDefinition.optimised) {
+              tools.set(toolDefinition.optimised.name, toolDefinition);
+            } else if (toolDefinition.name) {
+              tools.set(toolDefinition.name, toolDefinition);
             }
           } catch (error) {
             console.error("Error loading tool from file " + file + ":", error);

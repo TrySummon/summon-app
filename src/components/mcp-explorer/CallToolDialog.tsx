@@ -11,26 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Play, AlertCircle, CheckCircle, Shuffle } from "lucide-react";
 import CodeEditor from "@/components/CodeEditor";
-import { callMcpTool } from "@/ipc/mcp/mcp-client";
-import { faker } from "@faker-js/faker";
-import { JSONSchema7 } from "json-schema";
-import { JSONSchemaFaker } from "json-schema-faker";
+import { callMcpTool, generateFakeData } from "@/ipc/mcp/mcp-client";
 import { toast } from "sonner";
-
-// Configure JSON Schema Faker
-JSONSchemaFaker.extend("faker", () => faker);
-
-// Configure options for better compatibility
-JSONSchemaFaker.option({
-  // Don't fail on unknown formats, just use string
-  failOnInvalidFormat: false,
-  // Don't fail on unknown types, use string as fallback
-  failOnInvalidTypes: false,
-  // Use more realistic fake data
-  useDefaultValue: true,
-  // Handle edge cases gracefully
-  ignoreMissingRefs: true,
-});
+import { ToolDefinition } from "@/lib/mcp/tool";
 
 interface CallToolDialogProps {
   tool: Tool | null;
@@ -57,17 +40,19 @@ export const CallToolDialog: React.FC<CallToolDialogProps> = ({
   const [activeTab, setActiveTab] = useState("input");
 
   // Generate fake data based on tool schema
-  const generateFakeData = async (): Promise<void> => {
+  const handleFakeData = async (): Promise<void> => {
     if (!tool?.inputSchema) {
       setInputJson("{}");
       return;
     }
 
     try {
-      const fakeData = await JSONSchemaFaker.resolve(
-        tool.inputSchema as JSONSchema7,
-      );
-      setInputJson(JSON.stringify(fakeData, null, 2));
+      const result = await generateFakeData(tool.inputSchema);
+      if (result.success && result.data) {
+        setInputJson(JSON.stringify(result.data, null, 2));
+      } else {
+        toast.error(`Failed to generate fake data: ${result.message}`);
+      }
     } catch (error) {
       toast.error(`Failed to generate fake data: ${error}`);
     }
@@ -83,8 +68,15 @@ export const CallToolDialog: React.FC<CallToolDialogProps> = ({
       // Parse the JSON input
       const args = JSON.parse(inputJson);
 
+      const originalDefinition = tool.isExternal
+        ? (tool.annotations?.originalDefinition as ToolDefinition)
+        : null;
+      const originalName = originalDefinition
+        ? originalDefinition.name
+        : tool.name;
+
       // Call the tool
-      const result = await callMcpTool(mcpId, tool.name, args);
+      const result = await callMcpTool(mcpId, originalName, args);
 
       setResponse(result);
       // Switch to response tab to show the result
@@ -174,7 +166,7 @@ export const CallToolDialog: React.FC<CallToolDialogProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={generateFakeData}
+                    onClick={handleFakeData}
                     className="flex items-center gap-2 font-mono text-xs"
                   >
                     <Shuffle className="h-3 w-3" />

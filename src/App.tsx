@@ -21,6 +21,12 @@ import type { UserInfo } from "./ipc/auth/auth-listeners";
 import { SelectedEndpoint } from "./lib/mcp/parser/extract-tools";
 import { McpToolDefinitionWithoutAuth } from "./lib/mcp/types";
 import { ToolResult } from "./components/AgentSidebar/AgentContext";
+import type {
+  OptimiseToolSelectionRequest,
+  OptimiseToolSizeRequest,
+  SearchApiEndpointsRequest,
+} from "./ipc/agent-tools/agent-tools-listeners";
+import { SummonTool } from "./lib/mcp/tool";
 
 export default function App() {
   useEffect(() => {
@@ -168,6 +174,15 @@ declare global {
         name: string,
         args: Record<string, unknown>,
       ) => Promise<{ success: boolean; data?: unknown; message?: string }>;
+      updateMcpTool: (
+        tool: SummonTool,
+      ) => Promise<{ success: boolean; message?: string }>;
+      revertMcpTool: (
+        tool: SummonTool,
+      ) => Promise<{ success: boolean; message?: string }>;
+      generateFakeData: (
+        schema: unknown,
+      ) => Promise<{ success: boolean; data?: unknown; message?: string }>;
       openUserDataMcpJsonFile: () => Promise<{
         success: boolean;
         message?: string;
@@ -288,17 +303,15 @@ declare global {
     };
     agentTools: {
       listApis: () => Promise<ToolResult>;
-      searchApiEndpoints: (args: {
-        apiId: string;
-        query?: string;
-        tags?: string[];
-      }) => Promise<ToolResult>;
-      optimiseToolDef: (args: {
-        apiId: string;
-        mcpId: string;
-        toolName: string;
-        goal: string;
-      }) => Promise<ToolResult>;
+      searchApiEndpoints: (
+        args: SearchApiEndpointsRequest,
+      ) => Promise<ToolResult>;
+      optimiseToolSize: (args: OptimiseToolSizeRequest) => Promise<ToolResult>;
+      optimiseToolSelection: (
+        args: OptimiseToolSelectionRequest,
+      ) => Promise<
+        ToolResult<{ original: SummonTool[]; optimised: SummonTool[] }>
+      >;
     };
   }
 }

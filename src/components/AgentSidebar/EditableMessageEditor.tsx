@@ -17,14 +17,7 @@ import { EditorView } from "codemirror";
 import { Extension } from "@codemirror/state";
 import { placeholder, keymap } from "@codemirror/view";
 import { Attachment, JSONValue, Message } from "ai";
-import { MentionData } from "./index";
-import {
-  extractMentions,
-  createMentionRegex,
-  createMentionAutocompletion,
-  createMentionDecorationPlugin,
-  createMentionBackspaceHandler,
-} from "./mentionUtils";
+import { MentionData, extractMentions } from "@/components/CodeEditor";
 import { AttachmentsDisplay } from "./AttachmentsDisplay";
 
 interface EditableMessageEditorProps {
@@ -47,44 +40,6 @@ export function EditableMessageEditor({
   const editorRef = useRef<EditorView | null>(null);
 
   const isEmpty = !messageText.trim() && attachedFiles.length === 0;
-
-  const mentions = useMemo(
-    () => extractMentions(messageText, mentionData),
-    [messageText, mentionData],
-  );
-
-  const mentionRegex = useMemo(
-    () => createMentionRegex(mentionData),
-    [mentionData],
-  );
-
-  const mentionAutocompletion = useMemo(
-    () => createMentionAutocompletion(mentionData),
-    [mentionData],
-  );
-
-  const mentionDecorationPlugin = useMemo(
-    () => createMentionDecorationPlugin(mentionRegex),
-    [mentionRegex],
-  );
-
-  const mentionBackspaceHandler = useMemo(
-    () => createMentionBackspaceHandler(mentionData, mentionRegex),
-    [mentionData, mentionRegex],
-  );
-
-  const handleRemoveMention = useCallback((mentionText: string) => {
-    if (editorRef.current) {
-      const view = editorRef.current;
-      const currentDoc = view.state.doc.toString();
-      const newDoc = currentDoc
-        .replace(new RegExp(`\\${mentionText}\\b`, "g"), "")
-        .trim();
-      view.dispatch({
-        changes: { from: 0, to: currentDoc.length, insert: newDoc },
-      });
-    }
-  }, []);
 
   const handleRemoveFile = useCallback((fileId: string) => {
     setAttachedFiles((prev) => prev.filter((file) => file.name !== fileId));
@@ -115,8 +70,6 @@ export function EditableMessageEditor({
   const extensions: Extension[] = useMemo(
     () => [
       placeholder("Enter to save • Escape to cancel"),
-      mentionAutocompletion,
-      mentionDecorationPlugin,
       keymap.of([
         {
           key: "Enter",
@@ -132,19 +85,9 @@ export function EditableMessageEditor({
             return true;
           },
         },
-        {
-          key: "Backspace",
-          run: mentionBackspaceHandler,
-        },
       ]),
     ],
-    [
-      handleSaveMessage,
-      onCancel,
-      mentionAutocompletion,
-      mentionDecorationPlugin,
-      mentionBackspaceHandler,
-    ],
+    [handleSaveMessage, onCancel],
   );
 
   // Focus editor at the end when component mounts
@@ -161,14 +104,15 @@ export function EditableMessageEditor({
 
   return (
     <div className="bg-card flex min-h-[90px] flex-col gap-2 rounded-lg border p-3">
-      {/* Attachments section: mentions and files */}
-      <AttachmentsDisplay
-        mentions={mentions}
-        attachments={attachedFiles}
-        onRemoveMention={handleRemoveMention}
-        onRemoveFile={handleRemoveFile}
-        editable={true}
-      />
+      {/* Attachments section: files only (mentions are now handled directly in the editor) */}
+      {attachedFiles.length > 0 && (
+        <AttachmentsDisplay
+          mentions={[]}
+          attachments={attachedFiles}
+          onRemoveFile={handleRemoveFile}
+          editable={true}
+        />
+      )}
 
       <CodeMirrorEditor
         className="-mt-1"
@@ -177,6 +121,7 @@ export function EditableMessageEditor({
         maxHeight="300px"
         language="markdown"
         additionalExtensions={extensions}
+        mentionData={mentionData}
         fontSize={15}
         regularFont
         onChange={setMessageText}

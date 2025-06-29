@@ -25,7 +25,7 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
     removeMcpTool,
     removeAllMcpTools,
     addToolResult,
-    optimiseToolDefinition,
+    optimiseToolSize,
     autoApprove,
   } = useAgentContext();
 
@@ -45,8 +45,8 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
           break;
         }
 
-        case "optimiseToolDefinition": {
-          result = await optimiseToolDefinition(toolInvocation.args);
+        case "optimiseToolSize": {
+          result = await optimiseToolSize(toolInvocation.args);
           break;
         }
 

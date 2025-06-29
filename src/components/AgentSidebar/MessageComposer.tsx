@@ -13,13 +13,7 @@ import { placeholder, keymap } from "@codemirror/view";
 import { usePostHog } from "@/hooks/usePostHog";
 import { JSONValue, Message } from "ai";
 import { AutoButton } from "@/components/ui/AutoButton";
-import {
-  extractMentions,
-  createMentionRegex,
-  createMentionAutocompletion,
-  createMentionDecorationPlugin,
-  createMentionBackspaceHandler,
-} from "./mentionUtils";
+import { extractMentions } from "@/components/CodeEditor";
 import { AttachmentsDisplay } from "./AttachmentsDisplay";
 import { useAgentContext } from "./AgentContext";
 import { cn } from "@/utils/tailwind";
@@ -49,26 +43,6 @@ export function MessageComposer({ className }: MessageComposerProps) {
   const mentions = useMemo(
     () => extractMentions(message, mentionData),
     [message, mentionData],
-  );
-
-  const mentionRegex = useMemo(
-    () => createMentionRegex(mentionData),
-    [mentionData],
-  );
-
-  const mentionAutocompletion = useMemo(
-    () => createMentionAutocompletion(mentionData),
-    [mentionData],
-  );
-
-  const mentionDecorationPlugin = useMemo(
-    () => createMentionDecorationPlugin(mentionRegex),
-    [mentionRegex],
-  );
-
-  const mentionBackspaceHandler = useMemo(
-    () => createMentionBackspaceHandler(mentionData, mentionRegex),
-    [mentionData, mentionRegex],
   );
 
   const handleRemoveMention = useCallback((mentionText: string) => {
@@ -172,8 +146,6 @@ export function MessageComposer({ className }: MessageComposerProps) {
   const extensions: Extension[] = useMemo(
     () => [
       placeholder("Add, improve and manage MCP tools."),
-      mentionAutocompletion,
-      mentionDecorationPlugin,
       keymap.of([
         {
           key: "Enter",
@@ -182,18 +154,9 @@ export function MessageComposer({ className }: MessageComposerProps) {
             return true;
           },
         },
-        {
-          key: "Backspace",
-          run: mentionBackspaceHandler,
-        },
       ]),
     ],
-    [
-      handleAddMessage,
-      mentionAutocompletion,
-      mentionDecorationPlugin,
-      mentionBackspaceHandler,
-    ],
+    [handleAddMessage],
   );
 
   return (
@@ -219,6 +182,7 @@ export function MessageComposer({ className }: MessageComposerProps) {
         maxHeight="300px"
         language="markdown"
         additionalExtensions={extensions}
+        mentionData={mentionData}
         fontSize={15}
         regularFont
         onChange={setMessage}

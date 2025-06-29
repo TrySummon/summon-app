@@ -8,7 +8,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Loader } from "../Loader";
 import { AttachmentsDisplay } from "./AttachmentsDisplay";
 import { EditableMessageEditor } from "./EditableMessageEditor";
-import { extractMentions } from "./mentionUtils";
+import { extractMentions } from "@/components/CodeEditor";
 import { ToolInvocation } from "./ToolInvocation";
 import { useAgentContext } from "./AgentContext";
 

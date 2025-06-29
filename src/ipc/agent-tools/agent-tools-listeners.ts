@@ -2,7 +2,8 @@ import { ipcMain } from "electron";
 import {
   LIST_APIS_CHANNEL,
   SEARCH_API_ENDPOINTS_CHANNEL,
-  OPTIMISE_TOOL_DEF_CHANNEL,
+  OPTIMISE_TOOL_SIZE_CHANNEL,
+  OPTIMISE_TOOL_SELECTION_CHANNEL,
 } from "./agent-tools-channels";
 import { apiDb } from "@/lib/db/api-db";
 
@@ -13,20 +14,30 @@ import { authStorage } from "../auth/auth-listeners";
 import axios from "axios";
 import { mcpDb } from "@/lib/db/mcp-db";
 import { MappingConfig } from "@/lib/mcp/mapper";
-import { JSONSchema7 } from "json-schema";
-import { deleteMcpImpl, generateMcpImpl, restartMcpServer } from "@/lib/mcp";
+import { Message } from "ai";
+import {
+  updateMcpTool,
+  type SummonTool,
+  type ToolDefinition,
+} from "@/lib/mcp/tool";
 
-interface SearchApiEndpointsRequest {
+export interface SearchApiEndpointsRequest {
   apiId: string;
   query?: string;
   tags?: string[];
 }
 
-interface OptimiseToolDefinitionRequest {
+export interface OptimiseToolSizeRequest {
   mcpId: string;
   apiId: string;
   toolName: string;
-  goal: string;
+  additionalGoal?: string;
+}
+
+export interface OptimiseToolSelectionRequest {
+  context: string;
+  messagesPriorToToolCall: Message[];
+  tools: SummonTool[];
 }
 
 /**
@@ -177,12 +188,12 @@ export function registerAgentToolsListeners() {
     },
   );
 
-  // Optimise tool definition
+  // Optimise tool definition size
   ipcMain.handle(
-    OPTIMISE_TOOL_DEF_CHANNEL,
-    async (_, request: OptimiseToolDefinitionRequest) => {
+    OPTIMISE_TOOL_SIZE_CHANNEL,
+    async (_, request: OptimiseToolSizeRequest) => {
       try {
-        const { mcpId, apiId, toolName, goal } = request;
+        const { mcpId, apiId, toolName, additionalGoal } = request;
         const authData = await authStorage.getAuthData();
         if (!authData) {
           return { success: false, message: "Not authenticated" };
@@ -214,10 +225,10 @@ export function registerAgentToolsListeners() {
 
         // Make request to tool design optimization endpoint
         const response = await axios.post(
-          `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/tool-design`,
+          `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/optimise-tool-size`,
           {
             originalToolDefinition,
-            additionalContext: goal,
+            additionalGoal,
           },
           {
             headers: {
@@ -241,11 +252,7 @@ export function registerAgentToolsListeners() {
         }
 
         // Parse the optimized tool definition and mapping config
-        let optimizedToolDefinition: {
-          name: string;
-          description: string;
-          inputSchema: JSONSchema7 | boolean;
-        };
+        let optimizedToolDefinition: ToolDefinition;
         let mappingConfig: MappingConfig;
 
         try {
@@ -260,45 +267,18 @@ export function registerAgentToolsListeners() {
           };
         }
 
-        // Calculate token count for the optimized definition
-        const optimisedTokenCount = await calculateTokenCount(
-          response.data.improvedToolDefinition,
-        );
-
-        // Update the tool with optimized fields
-        const updatedTool = {
-          ...tool,
-          optimised: optimizedToolDefinition,
-          optimisedTokenCount,
-          originalToOptimisedMapping: mappingConfig,
-        };
-
-        // Update the MCP data with the optimized tool
-        const updatedApiGroup = {
-          ...apiGroup,
-          tools: apiGroup.tools?.map((t) =>
-            t.name === toolName ? updatedTool : t,
-          ) || [updatedTool],
-        };
-
-        const updatedMcpData = {
-          ...mcpData,
-          apiGroups: {
-            ...mcpData.apiGroups,
-            [apiId]: updatedApiGroup,
-          },
-        };
-
-        // Update the MCP in the database
-        await mcpDb.updateMcp(mcpId, {
-          name: updatedMcpData.name,
-          transport: updatedMcpData.transport,
-          apiGroups: updatedMcpData.apiGroups,
+        await updateMcpTool({
+          apiId: request.apiId,
+          mappingConfig: mappingConfig,
+          mcpId: request.mcpId,
+          isExternal: false,
+          originalToolName: tool.name,
+          definition: optimizedToolDefinition,
         });
 
-        await deleteMcpImpl(mcpId);
-        await generateMcpImpl(mcpId);
-        await restartMcpServer(mcpId);
+        const optimisedTokenCount = await calculateTokenCount(
+          JSON.stringify(optimizedToolDefinition, null, 2),
+        );
 
         return {
           success: true,
@@ -310,6 +290,111 @@ export function registerAgentToolsListeners() {
           `Error optimising tool definition for API ${request.apiId}:`,
           error,
         );
+
+        // Handle axios errors
+        if (axios.isAxiosError(error)) {
+          return {
+            success: false,
+            message: error.response?.data?.message || error.message,
+          };
+        }
+
+        return {
+          success: false,
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        };
+      }
+    },
+  );
+
+  // Optimise tool definition selection given context
+  ipcMain.handle(
+    OPTIMISE_TOOL_SELECTION_CHANNEL,
+    async (_, request: OptimiseToolSelectionRequest) => {
+      try {
+        const { context, messagesPriorToToolCall, tools } = request;
+
+        const authData = await authStorage.getAuthData();
+        if (!authData) {
+          return { success: false, message: "Not authenticated" };
+        }
+
+        const originalTools = tools.map((tool) => tool.definition);
+
+        // Make request to tool design optimization endpoint
+        const response = await axios.post(
+          `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/optimise-tool-selection`,
+          {
+            context,
+            originalTools,
+            messagesPriorToToolCall,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${authData.token}`,
+              "Content-Type": "application/json",
+            },
+            timeout: 60000,
+          },
+        );
+
+        // Check if the optimization was successful
+        if (response.data.success === false) {
+          return {
+            success: false,
+            message:
+              "Failed to optimize tool definition: " + response.data.message,
+          };
+        }
+
+        const result = response.data as {
+          originalToolName: string;
+          updatedTool: ToolDefinition;
+        }[];
+
+        try {
+          const optimised = result.map((tool) => {
+            const toolDefinition = tool.updatedTool;
+            const toolName = tool.originalToolName;
+            const toolIndex = tools.findIndex(
+              (t) => t.definition.name === toolName,
+            );
+            if (toolIndex !== -1) {
+              return {
+                ...tools[toolIndex],
+                definition: toolDefinition,
+              };
+            } else {
+              throw new Error(
+                `Tool ${toolName} does not exist in the original tools`,
+              );
+            }
+          });
+
+          request.tools.forEach((tool) => {
+            delete tool.definition.annotations;
+          });
+
+          optimised.forEach((tool) => {
+            delete tool.definition.annotations;
+          });
+
+          return {
+            success: true,
+            data: {
+              original: request.tools,
+              optimised,
+            },
+          };
+        } catch (parseError) {
+          return {
+            success: false,
+            message: `Failed to parse optimization response: ${parseError instanceof Error ? parseError.message : "Unknown parsing error"}`,
+          };
+        }
+      } catch (error) {
+        log.error(`Error optimising tool selection:`, error);
 
         // Handle axios errors
         if (axios.isAxiosError(error)) {

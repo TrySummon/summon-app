@@ -1,6 +1,7 @@
 import { captureEvent } from "@/lib/posthog";
 import { McpData } from "@/lib/db/mcp-db";
 import { recurseCountKeys } from "@/lib/object";
+import { SummonTool } from "@/lib/mcp/tool";
 
 // MCP operations with PostHog instrumentation
 export const createMcp = async (
@@ -95,6 +96,16 @@ export const callMcpTool = async (
   return result;
 };
 
+export const updateMcpTool = async (tool: SummonTool) => {
+  captureEvent("mcp_update_tool");
+  return window.mcpApi.updateMcpTool(tool);
+};
+
+export const revertMcpTool = async (tool: SummonTool) => {
+  captureEvent("mcp_revert_tool");
+  return window.mcpApi.revertMcpTool(tool);
+};
+
 export const openUserDataMcpJsonFile = async () => {
   captureEvent("mcp_open_user_data_mcp_json_file");
   return window.mcpApi.openUserDataMcpJsonFile();
@@ -107,4 +118,8 @@ export const downloadMcpZip = async (id: string) => {
 
 export const showFileInFolder = async (filePath: string) => {
   return window.mcpApi.showFileInFolder(filePath);
+};
+
+export const generateFakeData = async (schema: unknown) => {
+  return window.mcpApi.generateFakeData(schema);
 };

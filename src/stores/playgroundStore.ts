@@ -4,10 +4,9 @@ import { UIMessage } from "ai";
 import { persist, createJSONStorage, PersistOptions } from "zustand/middleware";
 import { runPlaygroundAgent } from "@/lib/agent";
 import { Tool as McpTool } from "@modelcontextprotocol/sdk/types.js";
-import { LLMSettings, ModifiedTool } from "./types";
+import { LLMSettings } from "./types";
 
 export type ToolMap = Record<string, { name: string; tools: McpTool[] }>;
-export type ModifiedToolMap = Record<string, Record<string, ModifiedTool>>;
 
 export interface IPlaygroundTabState {
   id: string;
@@ -17,8 +16,6 @@ export interface IPlaygroundTabState {
   systemPrompt?: string;
   messages: UIMessage[];
   enabledTools: Record<string, string[]>;
-  // Tool modifications: mcpId -> toolName -> modified schema and name
-  modifiedToolMap: ModifiedToolMap;
   running: boolean;
   maxSteps: number;
   shouldScrollToDock?: boolean;
@@ -104,12 +101,6 @@ export interface PlaygroundStore {
   updateSystemPrompt: (systemPrompt: string) => void;
   updateEnabledTools: (toolProvider: string, toolIds: string[]) => void;
   updateSelectedDatasetId: (datasetId: string | undefined) => void;
-  modifyTool: (
-    mcpId: string,
-    toolName: string,
-    modifiedTool: ModifiedTool,
-  ) => void;
-  revertTool: (mcpId: string, toolName: string) => void;
   updateMcpToolMap: (mcpToolMap: ToolMap) => void;
   updateShouldScrollToDock: (shouldScrollToDock: boolean) => void;
   setShowToolSidebar: (show: boolean) => void;
@@ -137,7 +128,6 @@ const createDefaultState = (): IPlaygroundTabState => ({
   running: false,
   maxSteps: 10,
   shouldScrollToDock: false,
-  modifiedToolMap: {},
   autoExecuteTools: false,
   toolSelectionPristine: true,
 });
@@ -229,7 +219,6 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
           messages: [...tabToDuplicate.state.messages],
           settings: { ...tabToDuplicate.state.settings },
           enabledTools: tabToDuplicate.state.enabledTools,
-          modifiedToolMap: tabToDuplicate.state.modifiedToolMap,
           model: tabToDuplicate.state.model,
           credentialId: tabToDuplicate.state.credentialId,
         };
@@ -579,49 +568,6 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
         }));
       },
 
-      modifyTool: (
-        mcpId: string,
-        toolName: string,
-        modifiedTool: ModifiedTool,
-      ) => {
-        get().updateCurrentState((state) => {
-          const modifiedToolMap = state.modifiedToolMap || {};
-
-          return {
-            ...state,
-            modifiedToolMap: {
-              ...modifiedToolMap,
-              [mcpId]: {
-                ...modifiedToolMap[mcpId],
-                [toolName]: modifiedTool,
-              },
-            },
-          };
-        });
-      },
-
-      revertTool: (mcpId: string, toolName: string) => {
-        get().updateCurrentState((state) => {
-          const modifiedToolMap = { ...state.modifiedToolMap };
-
-          if (modifiedToolMap[mcpId]) {
-            const mcpTools = { ...modifiedToolMap[mcpId] };
-            delete mcpTools[toolName];
-
-            if (Object.keys(mcpTools).length === 0) {
-              delete modifiedToolMap[mcpId];
-            } else {
-              modifiedToolMap[mcpId] = mcpTools;
-            }
-          }
-
-          return {
-            ...state,
-            modifiedToolMap,
-          };
-        });
-      },
-
       deleteMessage: (messageIndex) => {
         get().updateCurrentState(
           (state) => {
@@ -685,7 +631,6 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
           ...currentTab.state,
           id: uuidv4(),
           messages: [],
-          modifiedToolMap: {},
           tokenUsage: undefined,
           latency: undefined,
         };

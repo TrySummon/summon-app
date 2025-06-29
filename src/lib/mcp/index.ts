@@ -13,6 +13,7 @@ import { McpServerState, runningMcpServers } from "./state";
 import archiver from "archiver";
 import { shell } from "electron";
 import { createWriteStream } from "fs";
+import { JSONSchema7 } from "json-schema";
 import {
   generateEnvExample,
   generateEslintConfig,
@@ -34,6 +35,24 @@ import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { stopExternalMcp } from "../external-mcp";
+
+import { faker } from "@faker-js/faker";
+import { JSONSchemaFaker } from "json-schema-faker";
+
+// Configure JSON Schema Faker
+JSONSchemaFaker.extend("faker", () => faker);
+
+// Configure options for better compatibility
+JSONSchemaFaker.option({
+  // Don't fail on unknown formats, just use string
+  failOnInvalidFormat: false,
+  // Don't fail on unknown types, use string as fallback
+  failOnInvalidTypes: false,
+  // Use more realistic fake data
+  useDefaultValue: true,
+  // Handle edge cases gracefully
+  ignoreMissingRefs: true,
+});
 
 /**
  * Creates a directory if it doesn't exist
@@ -612,52 +631,52 @@ export async function stopAllMcpServers(
     removeFromState?: boolean;
   } = {},
 ): Promise<void> {
-  const { parallel = true, removeFromState = true } = options;
+  const serverIds = Object.keys(runningMcpServers);
 
-  try {
-    log.info("Stopping all MCP servers...");
-    const serverIds = Object.keys(runningMcpServers);
-
-    if (serverIds.length === 0) {
-      log.info("No MCP servers to stop");
-      return;
-    }
-
-    log.info(`Stopping ${serverIds.length} MCP servers...`);
-
-    const stopServer = async (serverId: string) => {
-      const serverState = runningMcpServers[serverId];
-      try {
-        if (serverState.isExternal) {
-          log.info(`Stopping external MCP server: ${serverId}`);
-          await stopExternalMcp(serverId);
-          if (removeFromState) {
-            delete runningMcpServers[serverId];
-          }
-        } else {
-          log.info(`Stopping internal MCP server: ${serverId}`);
-          await stopMcpServer(serverId, removeFromState);
-        }
-        log.info(`Successfully stopped MCP server: ${serverId}`);
-      } catch (error) {
-        log.error(`Failed to stop MCP server ${serverId}:`, error);
-      }
-    };
-
-    if (parallel) {
-      // Stop all servers in parallel for faster shutdown
-      const stopPromises = serverIds.map(stopServer);
-      await Promise.allSettled(stopPromises);
-    } else {
-      // Stop servers sequentially for more controlled shutdown
-      for (const serverId of serverIds) {
-        await stopServer(serverId);
-      }
-    }
-
-    log.info("All MCP servers stopped successfully");
-  } catch (error) {
-    log.error("Error stopping MCP servers:", error);
-    throw error;
+  if (serverIds.length === 0) {
+    log.info("No MCP servers to stop");
+    return;
   }
+
+  const { parallel = true, removeFromState = false } = options;
+
+  const stopServer = async (serverId: string) => {
+    try {
+      log.info(`Stopping MCP server: ${serverId}`);
+      // Also stop external MCP servers
+      const serverState = runningMcpServers[serverId];
+      if (serverState?.isExternal) {
+        await stopExternalMcp(serverId);
+      } else {
+        await stopMcpServer(serverId, removeFromState);
+      }
+      log.info(`Successfully stopped MCP server: ${serverId}`);
+    } catch (error) {
+      log.error(`Error stopping MCP server ${serverId}:`, error);
+    }
+  };
+
+  log.info(
+    `Stopping ${serverIds.length} MCP servers in ${parallel ? "parallel" : "sequential"} mode`,
+  );
+
+  if (parallel) {
+    await Promise.all(serverIds.map(stopServer));
+  } else {
+    for (const serverId of serverIds) {
+      await stopServer(serverId);
+    }
+  }
+
+  log.info("All MCP servers have been stopped");
+}
+
+/**
+ * Generate fake data from a JSON Schema using JSONSchemaFaker
+ *
+ * @param schema The JSON Schema to generate fake data from
+ * @returns A promise that resolves with the generated fake data
+ */
+export function generateFakeData(schema: unknown) {
+  return JSONSchemaFaker.generate(schema as JSONSchema7);
 }

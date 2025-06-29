@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import {
   Accordion,
@@ -14,9 +14,7 @@ import { JsonSchema } from "../json-schema";
 import { AddEndpointsButton } from "./AddEndpointsButton";
 import { CallToolDialog } from "./CallToolDialog";
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
-import type { ToolAnimationEvent } from "@/hooks/useMcpActions";
-
-type AnimationType = "added" | "deleted" | "updated";
+import { useToolAnimations } from "@/hooks/useToolAnimations";
 
 const getTokenCountBadgeVariant = (count: number) => {
   if (count < 500) return "text-green-600 dark:text-green-400";
@@ -64,60 +62,9 @@ export const ToolsList: React.FC<ToolsListProps> = ({
   onDeleteAllTools,
   onAddEndpoints,
 }) => {
-  const [animatingTools, setAnimatingTools] = useState<
-    Record<string, AnimationType>
-  >({});
   const [callToolDialogOpen, setCallToolDialogOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
-  // Listen for tool animation events
-  useEffect(() => {
-    const handleToolAnimation = (event: Event) => {
-      const toolEvent = event as ToolAnimationEvent;
-      const { toolName, mcpId: eventMcpId, animationType } = toolEvent.detail;
-
-      // Only handle events for this MCP
-      if (eventMcpId !== mcpId) return;
-
-      // Skip if already animating this tool
-      if (animatingTools[toolName]) return;
-
-      setAnimatingTools((prev) => ({
-        ...prev,
-        [toolName]: animationType,
-      }));
-
-      // Remove animation after duration
-      setTimeout(() => {
-        setAnimatingTools((prev) => {
-          const next = { ...prev };
-          delete next[toolName];
-          return next;
-        });
-      }, 2000); // 2 second animation duration
-    };
-
-    window.addEventListener("tool-animation", handleToolAnimation);
-
-    return () => {
-      window.removeEventListener("tool-animation", handleToolAnimation);
-    };
-  }, [mcpId, animatingTools]);
-
-  const getAnimationClasses = (toolName: string): string => {
-    const animationType = animatingTools[toolName];
-    if (!animationType) return "";
-
-    switch (animationType) {
-      case "added":
-        return "animate-flash-green";
-      case "deleted":
-        return "animate-flash-red";
-      case "updated":
-        return "animate-flash-blue";
-      default:
-        return "";
-    }
-  };
+  const { getAnimationClasses } = useToolAnimations({ mcpId });
   if (tools.length === 0) {
     return (
       <div className="w-full py-6 text-center">

@@ -11,28 +11,12 @@ import {
 import { Pencil } from "lucide-react";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolEditDialog } from "./ToolEdit";
-import { ModifiedTool } from "@/stores/types";
 
 interface ToolItemProps {
   tool: Tool;
   mcpId: string;
   isSelected: boolean;
   onToggle: () => void;
-  getModifiedName: (
-    mcpId: string,
-    toolName: string,
-    originalName: string,
-  ) => string;
-  getModifiedTool: (
-    mcpId: string,
-    toolName: string,
-  ) => ModifiedTool | undefined;
-  onToolModify: (
-    mcpId: string,
-    toolName: string,
-    modifiedTool: ModifiedTool,
-  ) => void;
-  onToolRevert: (mcpId: string, toolName: string) => void;
 }
 
 export default function ToolItem({
@@ -40,11 +24,8 @@ export default function ToolItem({
   mcpId,
   isSelected,
   onToggle,
-  getModifiedName,
-  getModifiedTool,
-  onToolModify,
-  onToolRevert,
 }: ToolItemProps) {
+  // TODO: HANDLE MODIFY/REVERT
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const modifiedTool = getModifiedTool(mcpId, tool.name);

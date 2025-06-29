@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from "react";
 import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import useToolMap from "@/hooks/useToolMap";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ModifiedTool } from "@/stores/types";
 
 export function useToolSidebar() {
   const { mcpToolMap } = useToolMap();
@@ -13,9 +12,7 @@ export function useToolSidebar() {
   const toolSelectionPristine = usePlaygroundStore(
     (state) => state.getCurrentState().toolSelectionPristine,
   );
-  const modifiedToolMap = usePlaygroundStore(
-    (state) => state.getCurrentState().modifiedToolMap,
-  );
+
   const updateMcpToolMap = usePlaygroundStore(
     (state) => state.updateMcpToolMap,
   );
@@ -27,9 +24,6 @@ export function useToolSidebar() {
   const setToolSelectionPristine = usePlaygroundStore(
     (state) => state.setToolSelectionPristine,
   );
-  const modifyTool = usePlaygroundStore((state) => state.modifyTool);
-  const revertTool = usePlaygroundStore((state) => state.revertTool);
-
   // State for expanded MCP sections - all expanded by default
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
@@ -221,24 +215,6 @@ export function useToolSidebar() {
     return currentToolsForMcp.includes(toolId);
   };
 
-  // Get modified name for a tool
-  const getModifiedName = (
-    mcpId: string,
-    toolName: string,
-    originalName: string,
-  ) => {
-    const modification = modifiedToolMap[mcpId]?.[toolName];
-    return modification?.name || originalName;
-  };
-
-  // Get modified tool
-  const getModifiedTool = (
-    mcpId: string,
-    toolName: string,
-  ): ModifiedTool | undefined => {
-    return modifiedToolMap[mcpId]?.[toolName];
-  };
-
   // Calculate total tool count
   const toolCount = Object.values(enabledTools).reduce(
     (acc, tools) => acc + tools.length,
@@ -259,16 +235,11 @@ export function useToolSidebar() {
     toolCount,
     expandedSections,
     selectedToolCounts,
-    modifiedToolMap,
     toggleSection,
     handleToggleTool,
     handleToggleAllTools,
     areAllToolsSelected,
     isToolSelected,
-    getModifiedName,
-    getModifiedTool,
-    revertTool,
-    modifyTool,
     mcpToolMap,
   };
 }

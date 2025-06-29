@@ -97,6 +97,7 @@ const MessageEditor = ({
         maxHeight={maxHeight}
         onPaste={handlePaste}
         additionalExtensions={additionalExtensions}
+        className="overflow-y-auto"
       />
     </div>
   );

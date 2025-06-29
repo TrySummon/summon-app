@@ -2,8 +2,14 @@ import { contextBridge, ipcRenderer } from "electron";
 import {
   LIST_APIS_CHANNEL,
   SEARCH_API_ENDPOINTS_CHANNEL,
-  OPTIMISE_TOOL_DEF_CHANNEL,
+  OPTIMISE_TOOL_SIZE_CHANNEL,
+  OPTIMISE_TOOL_SELECTION_CHANNEL,
 } from "./agent-tools-channels";
+import {
+  OptimiseToolSelectionRequest,
+  OptimiseToolSizeRequest,
+  SearchApiEndpointsRequest,
+} from "./agent-tools-listeners";
 
 export function exposeAgentToolsContext() {
   try {
@@ -12,20 +18,16 @@ export function exposeAgentToolsContext() {
         return ipcRenderer.invoke(LIST_APIS_CHANNEL);
       },
 
-      searchApiEndpoints: (args: {
-        apiId: string;
-        query?: string;
-        tags?: string[];
-      }) => {
+      searchApiEndpoints: (args: SearchApiEndpointsRequest) => {
         return ipcRenderer.invoke(SEARCH_API_ENDPOINTS_CHANNEL, args);
       },
 
-      optimiseToolDef: (args: {
-        apiId: string;
-        mcpId: string;
-        toolName: string;
-      }) => {
-        return ipcRenderer.invoke(OPTIMISE_TOOL_DEF_CHANNEL, args);
+      optimiseToolSize: (args: OptimiseToolSizeRequest) => {
+        return ipcRenderer.invoke(OPTIMISE_TOOL_SIZE_CHANNEL, args);
+      },
+
+      optimiseToolSelection: (args: OptimiseToolSelectionRequest) => {
+        return ipcRenderer.invoke(OPTIMISE_TOOL_SELECTION_CHANNEL, args);
       },
     });
   } catch (error) {

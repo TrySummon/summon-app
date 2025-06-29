@@ -29,14 +29,11 @@ export interface McpData {
 export type McpSubmitData = Omit<McpData, "id" | "createdAt" | "updatedAt">;
 
 // Get workspace-specific directories
-const getMcpDataDir = async () => {
+export const getMcpDataDir = async () => {
   const currentWorkspace = await workspaceDb.getCurrentWorkspace();
   const workspaceDataDir = workspaceDb.getWorkspaceDataDir(currentWorkspace.id);
   return path.join(workspaceDataDir, "mcp-data");
 };
-
-// Export for main.ts usage
-export { getMcpDataDir };
 
 export const getMcpImplDir = async (mcpId?: string) => {
   const currentWorkspace = await workspaceDb.getCurrentWorkspace();

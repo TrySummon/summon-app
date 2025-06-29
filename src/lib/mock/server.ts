@@ -6,24 +6,9 @@ import { Server } from "http";
 import log from "electron-log/main";
 import { z } from "zod";
 import { jsonSchemaToZod } from "json-schema-to-zod";
-import { JSONSchemaFaker } from "json-schema-faker";
-import { faker } from "@faker-js/faker";
+
 import { JSONSchema7 } from "json-schema";
-
-// Configure JSON Schema Faker
-JSONSchemaFaker.extend("faker", () => faker);
-
-// Configure options for better compatibility
-JSONSchemaFaker.option({
-  // Don't fail on unknown formats, just use string
-  failOnInvalidFormat: false,
-  // Don't fail on unknown types, use string as fallback
-  failOnInvalidTypes: false,
-  // Use more realistic fake data
-  useDefaultValue: true,
-  // Handle edge cases gracefully
-  ignoreMissingRefs: true,
-});
+import { generateFakeData } from "../mcp";
 
 interface MockServerOptions {
   port: number;
@@ -555,7 +540,7 @@ export class OpenAPIMockServer {
     }
 
     // Use JSON Schema Faker to generate realistic mock data synchronously
-    const mockData = JSONSchemaFaker.generate(schema as JSONSchema7);
+    const mockData = generateFakeData(schema as JSONSchema7);
     return mockData;
   }
 

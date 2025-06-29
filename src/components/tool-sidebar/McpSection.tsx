@@ -2,16 +2,9 @@ import React, { useMemo } from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+
 import ToolItem from "./ToolItem";
-import WaitlistButton from "./WaitlistButton";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ModifiedTool } from "@/stores/types";
 
 interface McpSectionProps {
   mcpId: string;
@@ -20,26 +13,10 @@ interface McpSectionProps {
   isExpanded: boolean;
   selectedToolCount: number;
   areAllToolsSelected: boolean;
-  modifiedToolMap: Record<string, Record<string, ModifiedTool>>;
   onToggleSection: () => void;
   onToggleAllTools: () => void;
   onToggleTool: (toolId: string) => void;
   isToolSelected: (toolId: string) => boolean;
-  getModifiedName: (
-    mcpId: string,
-    toolName: string,
-    originalName: string,
-  ) => string;
-  getModifiedTool: (
-    mcpId: string,
-    toolName: string,
-  ) => ModifiedTool | undefined;
-  onToolModify: (
-    mcpId: string,
-    toolName: string,
-    modifiedTool: ModifiedTool,
-  ) => void;
-  onToolRevert: (mcpId: string, toolName: string) => void;
 }
 
 export default function McpSection({
@@ -48,17 +25,11 @@ export default function McpSection({
   tools,
   isExpanded,
   areAllToolsSelected,
-  modifiedToolMap,
   onToggleSection,
   onToggleAllTools,
   onToggleTool,
   isToolSelected,
-  getModifiedName,
-  getModifiedTool,
-  onToolModify,
-  onToolRevert,
 }: McpSectionProps) {
-  const hasModifiedTools = Object.keys(modifiedToolMap[mcpId] || {}).length > 0;
   const totalTokenCount = useMemo(() => {
     return tools.reduce((acc, tool) => {
       const tokenCount = tool.annotations?.tokenCount as number | undefined;
@@ -91,24 +62,6 @@ export default function McpSection({
             </div>
           ) : null}
         </div>
-        {hasModifiedTools && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <WaitlistButton
-                  featureName="mcp-tool-save"
-                  className="ml-auto h-6 w-fit px-2 text-xs"
-                >
-                  Save
-                </WaitlistButton>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Your tool changes are active for this tab only.</p>
-                <p>Click to open a Pull Request.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
       </div>
 
       {isExpanded && (
@@ -135,10 +88,6 @@ export default function McpSection({
               mcpId={mcpId}
               isSelected={isToolSelected(tool.name)}
               onToggle={() => onToggleTool(tool.name)}
-              getModifiedName={getModifiedName}
-              getModifiedTool={getModifiedTool}
-              onToolModify={onToolModify}
-              onToolRevert={onToolRevert}
             />
           ))}
         </div>

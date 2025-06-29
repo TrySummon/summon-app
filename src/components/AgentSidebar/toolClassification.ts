@@ -35,7 +35,7 @@ const toolClassifications: Record<string, ToolClassification> = {
     doneText: "Successfully added tools",
     errorText: "Failed to add tools",
   },
-  optimiseToolDefinition: {
+  optimiseToolSize: {
     type: "write",
     runningText: "Optimising tool definition...",
     doneText: "Optimised tool definition",

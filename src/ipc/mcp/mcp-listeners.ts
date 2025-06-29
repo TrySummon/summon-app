@@ -13,12 +13,16 @@ import {
   RESTART_MCP_SERVER_CHANNEL,
   GET_MCP_TOOLS_CHANNEL,
   CALL_MCP_TOOL_CHANNEL,
+  GENERATE_FAKE_DATA_CHANNEL,
   OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL,
   DOWNLOAD_MCP_ZIP_CHANNEL,
   SHOW_FILE_IN_FOLDER_CHANNEL,
+  UPDATE_MCP_TOOL_CHANNEL,
+  REVERT_MCP_TOOL_CHANNEL,
 } from "./mcp-channels";
 import { callMcpTool, getMcpTools } from "./mcp-tools";
 import { mcpDb, McpSubmitData } from "@/lib/db/mcp-db";
+import { SummonTool, updateMcpTool, revertMcpTool } from "@/lib/mcp/tool";
 import {
   deleteMcpImpl,
   generateMcpImpl,
@@ -29,9 +33,11 @@ import {
   getAllMcpServerStatuses,
   downloadMcpZip,
   showFileInFolder,
+  generateFakeData,
 } from "@/lib/mcp";
 import { McpServerState } from "@/lib/mcp/state";
 import log from "electron-log/main";
+import { workspaceDb } from "@/lib/db/workspace-db";
 
 export function registerMcpListeners() {
   // Create a new MCP configuration
@@ -357,11 +363,46 @@ export function registerMcpListeners() {
     },
   );
 
+  // Update an MCP tool
+  ipcMain.handle(UPDATE_MCP_TOOL_CHANNEL, async (_, tool: SummonTool) => {
+    try {
+      await updateMcpTool(tool);
+      return {
+        success: true,
+        message: "MCP tool updated successfully",
+      };
+    } catch (error) {
+      log.error("Error updating MCP tool:", error);
+      return {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  });
+
+  // Revert an MCP tool
+  ipcMain.handle(REVERT_MCP_TOOL_CHANNEL, async (_, tool: SummonTool) => {
+    try {
+      await revertMcpTool(tool);
+      return {
+        success: true,
+        message: "MCP tool reverted successfully",
+      };
+    } catch (error) {
+      log.error("Error reverting MCP tool:", error);
+      return {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  });
+
   // Open the mcp.json file in the current workspace directory
   ipcMain.handle(OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL, async () => {
     try {
       // Get workspace-specific mcp.json path using the same function as main.ts
-      const { workspaceDb } = await import("@/lib/db/workspace-db");
       const currentWorkspace = await workspaceDb.getCurrentWorkspace();
       const workspaceDataDir = workspaceDb.getWorkspaceDataDir(
         currentWorkspace.id,
@@ -411,6 +452,24 @@ export function registerMcpListeners() {
       };
     } catch (error) {
       log.error(`Error showing file in folder:`, error);
+      return {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  });
+
+  // Generate fake data from JSON schema
+  ipcMain.handle(GENERATE_FAKE_DATA_CHANNEL, async (_, schema: unknown) => {
+    try {
+      const fakeData = await generateFakeData(schema);
+      return {
+        success: true,
+        data: fakeData,
+      };
+    } catch (error) {
+      log.error("Error generating fake data:", error);
       return {
         success: false,
         message:

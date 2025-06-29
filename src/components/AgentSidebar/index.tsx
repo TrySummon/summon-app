@@ -25,12 +25,7 @@ import { useApis } from "@/hooks/useApis";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { useAgentChats } from "@/stores/agentChatsStore";
 import { toast } from "sonner";
-
-export interface MentionData {
-  id: string;
-  name: string;
-  type: "tool" | "api" | "file";
-}
+import { MentionData } from "@/components/CodeEditor";
 
 interface Props {
   mcpId: string;

@@ -43,9 +43,6 @@
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
-  --animate-flash-green: flash-green 2s cubic-bezier(0.4, 0, 0.2, 1);
-  --animate-flash-red: flash-red 2s cubic-bezier(0.4, 0, 0.2, 1);
-  --animate-flash-blue: flash-blue 2s cubic-bezier(0.4, 0, 0.2, 1);
 
   @keyframes accordion-down {
     from {
@@ -61,60 +58,6 @@
     }
     to {
       height: 0;
-    }
-  }
-  @keyframes flash-green {
-    0% {
-      background-color: hsl(142 76% 36% / 0.06);
-      box-shadow:
-        0 0 0 1px hsl(142 76% 36% / 0.15),
-        0 2px 8px hsl(142 76% 36% / 0.08);
-      transform: scale(1.005);
-    }
-    50% {
-      background-color: hsl(142 76% 36% / 0.1);
-      box-shadow:
-        0 0 0 1px hsl(142 76% 36% / 0.2),
-        0 4px 12px hsl(142 76% 36% / 0.1);
-    }
-    100% {
-      background-color: transparent;
-      box-shadow: none;
-      transform: scale(1);
-    }
-  }
-  @keyframes flash-red {
-    0% {
-      background-color: hsl(0 84% 60% / 0.06);
-
-      transform: scale(1.005);
-    }
-    50% {
-      background-color: hsl(0 84% 60% / 0.1);
-    }
-    100% {
-      background-color: transparent;
-      transform: scale(1);
-    }
-  }
-  @keyframes flash-blue {
-    0% {
-      background-color: hsl(217 91% 60% / 0.06);
-      box-shadow:
-        0 0 0 1px hsl(217 91% 60% / 0.15),
-        0 2px 8px hsl(217 91% 60% / 0.08);
-      transform: scale(1.005);
-    }
-    50% {
-      background-color: hsl(217 91% 60% / 0.1);
-      box-shadow:
-        0 0 0 1px hsl(217 91% 60% / 0.2),
-        0 4px 12px hsl(217 91% 60% / 0.1);
-    }
-    100% {
-      background-color: transparent;
-      box-shadow: none;
-      transform: scale(1);
     }
   }
 }
@@ -235,6 +178,106 @@
   }
   button {
     @apply cursor-pointer;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position:
+        200% 0,
+        0 0;
+    }
+    100% {
+      background-position:
+        -100% 0,
+        0 0;
+    }
+  }
+
+  .shimmer {
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      -45deg,
+      transparent 25%,
+      hsl(var(--accent)) 50%,
+      transparent 75%,
+      transparent 100%
+    );
+    background-size:
+      250% 250%,
+      100% 100%;
+    background-position:
+      -100% 0,
+      0 0;
+    background-repeat: no-repeat;
+    animation: shimmer 2s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Red shimmer for removed items */
+  .shimmer-removed {
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      -45deg,
+      transparent 25%,
+      rgba(239, 68, 68, 0.2) 50%,
+      /* red-500 */ transparent 75%,
+      transparent 100%
+    );
+    background-size:
+      250% 250%,
+      100% 100%;
+    background-position:
+      -100% 0,
+      0 0;
+    background-repeat: no-repeat;
+    animation: shimmer 0.8s ease-out forwards;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Green shimmer for added items */
+  .shimmer-added {
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      -45deg,
+      transparent 25%,
+      rgba(34, 197, 94, 0.2) 50%,
+      /* green-500 */ transparent 75%,
+      transparent 100%
+    );
+    background-size:
+      250% 250%,
+      100% 100%;
+    background-position:
+      -100% 0,
+      0 0;
+    background-repeat: no-repeat;
+    animation: shimmer 0.8s ease-out forwards;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Blue shimmer for updating items */
+  .shimmer-updating {
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      -45deg,
+      transparent 25%,
+      rgba(59, 130, 246, 0.2) 50%,
+      /* blue-500 */ transparent 75%,
+      transparent 100%
+    );
+    background-size:
+      250% 250%,
+      100% 100%;
+    background-position:
+      -100% 0,
+      0 0;
+    background-repeat: no-repeat;
+    animation: var(--animate-shimmer);
+    position: relative;
+    overflow: hidden;
   }
 }
 

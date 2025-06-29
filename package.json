@@ -96,6 +96,7 @@
     "@codemirror/lang-yaml": "^6.1.2",
     "@codemirror/language": "^6.11.0",
     "@codemirror/language-data": "^6.5.1",
+    "@codemirror/merge": "^6.10.2",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.4",
     "@faker-js/faker": "^9.8.0",

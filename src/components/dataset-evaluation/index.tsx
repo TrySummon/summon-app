@@ -35,7 +35,7 @@ function DatasetEvaluation({ items, datasetId }: DatasetEvaluationProps) {
     setResults,
   } = useEvaluationState(datasetId);
 
-  const { modifiedToolMap, mcpToolMap, enabledTools, enabledToolCount } =
+  const { mcpToolMap, enabledTools, enabledToolCount } =
     useEvaluationToolSelection(datasetId);
 
   // Filter items that can be evaluated
@@ -84,7 +84,6 @@ function DatasetEvaluation({ items, datasetId }: DatasetEvaluationProps) {
         assertionModel: assertionModelConfig.model,
         maxSteps: 5,
         enabledTools,
-        modifiedToolMap,
         mcpToolMap,
       };
 

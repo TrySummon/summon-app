@@ -4,21 +4,32 @@ import { useApis } from "./useApis";
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { toast } from "sonner";
 import { convertEndpointToTool } from "@/ipc/openapi/openapi-client";
+import type { OptimiseToolSizeRequest } from "@/ipc/agent-tools/agent-tools-listeners";
 
 // Custom event types for tool animations
 export interface ToolAnimationEvent extends CustomEvent {
   detail: {
     toolName: string;
     mcpId: string;
-    animationType: "added" | "deleted" | "updated";
+    animationType:
+      | "added"
+      | "deleted"
+      | "updated"
+      | "start-update"
+      | "end-update";
   };
 }
 
 // Helper function to dispatch tool animation events
-const dispatchToolAnimation = (
+export const dispatchToolAnimation = (
   toolName: string,
   mcpId: string,
-  animationType: "added" | "deleted" | "updated",
+  animationType:
+    | "added"
+    | "deleted"
+    | "updated"
+    | "start-update"
+    | "end-update",
 ) => {
   const event = new CustomEvent("tool-animation", {
     detail: { toolName, mcpId, animationType },
@@ -84,17 +95,19 @@ export function useMcpActions(mcpId: string) {
         tools: [...(nextApiGroups[apiId]?.tools || []), ...newTools],
       };
 
+      // Dispatch animation events for new tools
+      newTools.forEach((tool) => {
+        dispatchToolAnimation(tool.name, mcpId, "added");
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       await updateMcp({
         mcpId: mcp.id,
         mcpData: {
           ...mcp,
           apiGroups: nextApiGroups,
         },
-      });
-
-      // Dispatch animation events for new tools
-      newTools.forEach((tool) => {
-        dispatchToolAnimation(tool.name, mcpId, "added");
       });
 
       return {
@@ -114,9 +127,6 @@ export function useMcpActions(mcpId: string) {
   const onDeleteTool = useCallback(
     async (toolName: string) => {
       if (!mcp) return { success: false, message: "MCP not found" };
-
-      // Dispatch animation event before deleting (use the full tool name with prefix)
-      dispatchToolAnimation(toolName, mcpId, "deleted");
 
       // Find and remove the tool from all API groups
       let toolFound = false;
@@ -166,6 +176,11 @@ export function useMcpActions(mcpId: string) {
         return { success: false, message: `Tool "${toolName}" not found` };
       }
 
+      // Dispatch animation event before deleting (use the full tool name with prefix)
+      dispatchToolAnimation(toolName, mcpId, "deleted");
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       await updateMcp({
         mcpId: mcp.id,
         mcpData: {
@@ -185,14 +200,6 @@ export function useMcpActions(mcpId: string) {
   const onDeleteAllTools = useCallback(async () => {
     if (!mcp) return { success: false, message: "MCP not found" };
 
-    // Dispatch animation events for all tools before deleting
-    Object.values(mcp.apiGroups).forEach((group) => {
-      group.tools?.forEach((tool) => {
-        const prefix = group.toolPrefix || "";
-        dispatchToolAnimation(prefix + tool.name, mcpId, "deleted");
-      });
-    });
-
     // Remove all API groups since deleting all tools would leave them empty
     await updateMcp({
       mcpId: mcp.id,
@@ -208,12 +215,14 @@ export function useMcpActions(mcpId: string) {
     };
   }, [mcp, updateMcp, mcpId]);
 
-  const optimiseToolDefinition = useCallback(
-    async (args: { apiId: string; toolName: string; goal: string }) => {
-      const result = await window.agentTools.optimiseToolDef({
+  const optimiseToolSize = useCallback(
+    async (args: Omit<OptimiseToolSizeRequest, "mcpId">) => {
+      dispatchToolAnimation(args.toolName, mcpId, "start-update");
+      const result = await window.agentTools.optimiseToolSize({
         mcpId,
         ...args,
       });
+      dispatchToolAnimation(args.toolName, mcpId, "end-update");
       if (result.success) {
         invalidateMcps();
       }
@@ -223,7 +232,7 @@ export function useMcpActions(mcpId: string) {
   );
 
   return {
-    optimiseToolDefinition,
+    optimiseToolSize,
     onAddEndpoints,
     onDeleteTool,
     onDeleteAllTools,

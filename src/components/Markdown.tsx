@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/utils/tailwind";
 import { MarkdownCodeSnippet } from "./CodeSnippet";
-import { MentionData } from "./AgentSidebar";
+import { MentionData } from "./CodeEditor";
 
 function omit<T extends object, K extends string>(
   obj: T,

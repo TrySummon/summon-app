@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ImportApiDialog } from "@/components/ImportApiDialog";
 import { CreateMcpDialog } from "@/components/CreateMcpDialog";
 import IconLogo from "@/components/IconLogo";
-import { Upload, Wrench, Plug, SquareTerminal, StarIcon } from "lucide-react";
+import { Wrench, Plug, MessageCircle, StarIcon } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -84,18 +83,6 @@ export default function HomePage() {
           <h3 className="mb-4 px-1 text-lg font-semibold">Get Started</h3>
           <div className="space-y-0 rounded-lg border">
             <GetStartedItem
-              icon={<Upload className="h-5 w-5" />}
-              title="Import an API Specification"
-              description="Upload an OpenAPI (v3) file to explore its endpoints and prepare them for your MCP server."
-              actionButton={
-                <ImportApiDialog>
-                  <Button variant="outline" size="sm">
-                    Import API
-                  </Button>
-                </ImportApiDialog>
-              }
-            />
-            <GetStartedItem
               icon={<Wrench className="h-5 w-5" />}
               title="Build an MCP Server"
               description="Create a new Model Context Protocol server by selecting endpoints from your imported APIs."
@@ -122,8 +109,8 @@ export default function HomePage() {
               }
             />
             <GetStartedItem
-              icon={<SquareTerminal className="h-5 w-5" />}
-              title="Try the AI Playground"
+              icon={<MessageCircle className="h-5 w-5" />}
+              title="Chat with your MCPs in the Playground"
               description="Experiment with AI models and your configured tools in an interactive chat environment."
               actionButton={
                 <Link to="/playground">

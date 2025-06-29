@@ -14,16 +14,11 @@ export default function EvaluationToolSidebar({
     enabledToolCount,
     expandedSections,
     enabledToolCountByMcp,
-    modifiedToolMap,
     toggleSection,
     handleToggleTool,
     handleToggleAllTools,
     areAllToolsSelected,
     isToolSelected,
-    getModifiedName,
-    getModifiedTool,
-    modifyTool,
-    revertTool,
     mcpToolMap,
   } = useEvaluationToolSelection(datasetId);
 
@@ -55,7 +50,6 @@ export default function EvaluationToolSidebar({
                 mcpId={mcpId}
                 name={name}
                 tools={tools}
-                modifiedToolMap={modifiedToolMap}
                 isExpanded={expandedSections[mcpId]}
                 selectedToolCount={enabledToolCountByMcp[mcpId]}
                 areAllToolsSelected={areAllToolsSelected(mcpId, tools)}
@@ -63,10 +57,6 @@ export default function EvaluationToolSidebar({
                 onToggleAllTools={() => handleToggleAllTools(mcpId)}
                 onToggleTool={(toolId) => handleToggleTool(mcpId, toolId)}
                 isToolSelected={(toolId) => isToolSelected(mcpId, toolId)}
-                getModifiedName={getModifiedName}
-                getModifiedTool={getModifiedTool}
-                onToolModify={modifyTool}
-                onToolRevert={revertTool}
               />
             );
           })}

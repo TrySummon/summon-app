@@ -33,6 +33,8 @@ import stringify from "json-stable-stringify";
 import { toast } from "sonner";
 import { ModifiedTool } from "@/stores/types";
 
+// TODO: HANDLE MODIFY/REVERT
+
 interface ToolEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

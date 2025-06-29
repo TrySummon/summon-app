@@ -2,14 +2,14 @@ import React, { createContext, useContext, useCallback } from "react";
 
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { Message, Attachment } from "ai";
-import { MentionData } from "./index";
+import { MentionData } from "@/components/CodeEditor";
 import { McpData } from "@/lib/db/mcp-db";
 import { useMcpActions } from "@/hooks/useMcpActions";
 
-export interface ToolResult {
+export interface ToolResult<T = unknown> {
   success: boolean;
   message: string;
-  data?: unknown;
+  data?: T;
   tokenCount?: number;
 }
 
@@ -21,7 +21,7 @@ interface AgentContextType {
   ) => Promise<ToolResult>;
   onDeleteTool: (toolName: string) => Promise<ToolResult>;
   onDeleteAllTools: () => Promise<ToolResult>;
-  optimiseToolDefinition: (args: {
+  optimiseToolSize: (args: {
     apiId: string;
     toolName: string;
     goal: string;
@@ -118,12 +118,8 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
   handleLoadChat,
   hasRevertState,
 }) => {
-  const {
-    onAddEndpoints,
-    onDeleteTool,
-    onDeleteAllTools,
-    optimiseToolDefinition,
-  } = useMcpActions(mcp.id);
+  const { onAddEndpoints, onDeleteTool, onDeleteAllTools, optimiseToolSize } =
+    useMcpActions(mcp.id);
 
   // Map MCP operations to agent tool format
   const addToolsToMcp = useCallback(
@@ -252,7 +248,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
     onAddEndpoints,
     onDeleteTool,
     onDeleteAllTools,
-    optimiseToolDefinition,
+    optimiseToolSize,
     // Chat state and operations
     isRunning,
 

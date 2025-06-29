@@ -31,7 +31,9 @@ export async function loadToolsFromDirectory(
           const fileContent = await fs.readFile(filePath, "utf-8");
           const toolDefinition = JSON.parse(fileContent) as McpToolDefinition;
 
-          if (toolDefinition.name) {
+          if (toolDefinition.optimised) {
+            tools.set(toolDefinition.optimised.name, toolDefinition);
+          } else if (toolDefinition.name) {
             tools.set(toolDefinition.name, toolDefinition);
           }
         } catch (error) {

@@ -11,9 +11,10 @@ import {
 
 import { ToolInvocation } from "ai";
 import { usePlaygroundStore } from "../../../stores/playgroundStore";
-import { findOriginalToolInfo, makeExecuteFunction } from "@/lib/agent";
+import { findToolMcpId, makeExecuteFunction } from "@/lib/agent";
 import { Loader } from "@/components/Loader";
 import { PayloadDialog } from "@/components/ui/PayloadDialog";
+import { FixToolCallButton } from "@/components/FixToolCall";
 
 interface ToolCallProps {
   invocation: ToolInvocation;
@@ -21,21 +22,15 @@ interface ToolCallProps {
 
 export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
   const toolMap = usePlaygroundStore((state) => state.mcpToolMap);
-  const modifiedToolMap = usePlaygroundStore(
-    (state) => state.getCurrentState().modifiedToolMap,
-  );
   const addToolResult = usePlaygroundStore((state) => state.addToolResult);
 
   const [loading, setLoading] = useState(false);
 
   const handleApprove = async () => {
     setLoading(true);
-    const toolInfo = findOriginalToolInfo(invocation.toolName);
-    if (!toolInfo) {
-      console.error(
-        "Could not find original tool info for:",
-        invocation.toolName,
-      );
+    const mcpId = findToolMcpId(invocation.toolName);
+    if (!mcpId) {
+      console.error("Could not find mcp id for:", invocation.toolName);
       addToolResult(invocation.toolCallId, {
         success: false,
         message: "Could not find original tool information",
@@ -47,9 +42,8 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
     try {
       const executeFunction = makeExecuteFunction(
         toolMap,
-        modifiedToolMap,
-        toolInfo.mcpId,
-        toolInfo.originalToolName,
+        mcpId,
+        invocation.toolName,
       );
       const result = await executeFunction(invocation.args);
       addToolResult(invocation.toolCallId, result);
@@ -141,9 +135,10 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
               <Wrench className="h-4 w-4" />
             </div>
             <div className="flex flex-col">
-              <span className="text-foreground text-sm font-medium">
+              <div className="text-foreground flex items-center gap-2 text-sm font-medium">
                 {invocation.toolName}
-              </span>
+                <FixToolCallButton invocation={invocation} />
+              </div>
               <span className="text-muted-foreground text-xs">
                 Tool Invocation
               </span>
