@@ -11,6 +11,7 @@ import { markdown } from "@codemirror/lang-markdown";
 import { python } from "@codemirror/lang-python";
 import { yaml } from "@codemirror/lang-yaml";
 import { languages } from "@codemirror/language-data";
+import { search, searchKeymap } from "@codemirror/search";
 import { EditorState, Extension } from "@codemirror/state";
 import { drawSelection, keymap, ViewUpdate } from "@codemirror/view";
 import { vscodeDark, vscodeLight } from "@uiw/codemirror-theme-vscode";
@@ -237,6 +238,7 @@ function CodeMirrorEditor({
       ...(additionalExtensions || []),
       drawSelection(),
       history(),
+      search(),
       EditorView.lineWrapping,
       EditorView.updateListener.of((viewUpdate) => {
         if (viewUpdate.docChanged) {
@@ -252,6 +254,7 @@ function CodeMirrorEditor({
       getLanguageExtension(language),
       EditorState.readOnly.of(!!readOnly),
       keymap.of([...defaultKeymap, ...historyKeymap]),
+      keymap.of(searchKeymap),
     ];
 
     // Initialize CodeMirror with extensions
