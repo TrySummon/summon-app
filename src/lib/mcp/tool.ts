@@ -124,7 +124,7 @@ export const overrideExternalMcpTool = async (
 export const updateSummonMcpTool = async (tool: SummonTool) => {
   if (!tool.apiId) throw new Error("Tool has no apiId");
 
-  const mcpData = await mcpDb.getMcpById(tool.mcpId);
+  const mcpData = await mcpDb.getMcpById(tool.mcpId, true);
 
   if (!mcpData) throw new Error("MCP not found");
 
@@ -197,7 +197,7 @@ export const updateMcpTool = async (tool: SummonTool) => {
 
 export const revertSummonMcpTool = async (tool: SummonToolRef) => {
   if (!tool.apiId) throw new Error("Tool has no apiId");
-  const mcpData = await mcpDb.getMcpById(tool.mcpId);
+  const mcpData = await mcpDb.getMcpById(tool.mcpId, true);
   if (!mcpData) throw new Error("MCP not found");
 
   const apiGroup = mcpData.apiGroups[tool.apiId];

@@ -15,6 +15,7 @@ import { AddEndpointsButton } from "./AddEndpointsButton";
 import { CallToolDialog } from "./CallToolDialog";
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { useToolAnimations } from "@/hooks/useToolAnimations";
+import { ToolAnnotations } from "@/lib/mcp/tool";
 
 const getTokenCountBadgeVariant = (count: number) => {
   if (count < 500) return "text-green-600 dark:text-green-400";
@@ -114,7 +115,9 @@ export const ToolsList: React.FC<ToolsListProps> = ({
           <AccordionItem
             key={tool.name}
             value={`tool-${index}`}
-            className={getAnimationClasses(tool.name)}
+            className={getAnimationClasses(
+              (tool.annotations as unknown as ToolAnnotations).id,
+            )}
           >
             <AccordionTrigger className="group hover:no-underline">
               <div className="flex flex-col items-start gap-1 text-left">
@@ -168,7 +171,10 @@ export const ToolsList: React.FC<ToolsListProps> = ({
                             `Are you sure you want to delete the tool "${tool.name}"? This action cannot be undone.`,
                           );
                           if (confirmed) {
-                            onDeleteTool(tool.name);
+                            onDeleteTool(
+                              (tool.annotations as unknown as ToolAnnotations)
+                                .id,
+                            );
                           }
                         }}
                       >

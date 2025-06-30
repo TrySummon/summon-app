@@ -15,6 +15,7 @@ import {
   FileJson,
   Rocket,
   Edit2,
+  MessageCircle,
 } from "lucide-react";
 import CopyButton from "@/components/CopyButton";
 import {
@@ -23,6 +24,7 @@ import {
   openUserDataMcpJsonFile,
 } from "@/ipc/mcp/mcp-client";
 import WaitlistButton from "../tool-sidebar/WaitlistButton";
+import { Link } from "@tanstack/react-router";
 
 interface ServerStatusSectionProps {
   status: "running" | "starting" | "error" | "stopped";
@@ -157,6 +159,12 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              <Link to="/playground">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <MessageCircle className="h-3 w-3" />
+                  Chat
+                </Button>
+              </Link>
               {isExternal ? (
                 <Button
                   onClick={() => openUserDataMcpJsonFile()}

@@ -179,6 +179,35 @@ export function ApiConfig({ apiGroups, onSave }: ApiConfigProps) {
     }),
   );
 
+  // Calculate mocked vs connected APIs
+  const apiCounts = Object.values(apiGroups || {}).reduce(
+    (acc, group) => {
+      if (group.useMockData !== false) {
+        acc.mocked++;
+      } else {
+        acc.connected++;
+      }
+      return acc;
+    },
+    { mocked: 0, connected: 0 },
+  );
+
+  // Generate button text based on counts
+  const getButtonText = () => {
+    const { mocked, connected } = apiCounts;
+    const total = mocked + connected;
+
+    if (total === 0) return "Configure APIs";
+
+    const parts = [];
+    if (mocked > 0)
+      parts.push(`${mocked} API${mocked === 1 ? "" : "s"} mocked`);
+    if (connected > 0)
+      parts.push(`${connected} API${connected === 1 ? "" : "s"} connected`);
+
+    return parts.join(", ");
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -188,7 +217,7 @@ export function ApiConfig({ apiGroups, onSave }: ApiConfigProps) {
           disabled={!apiGroups || Object.keys(apiGroups).length === 0}
         >
           <Settings className="mr-2 size-4" />
-          Configure APIs
+          {getButtonText()}
         </Button>
       </DialogTrigger>
       <DialogContent className="flex h-5/6 w-[90vw] flex-col sm:max-w-none">

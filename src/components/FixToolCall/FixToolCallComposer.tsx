@@ -60,6 +60,7 @@ export function FixToolCallComposer({
               name: tool.name,
               type: "tool",
               mcpId: mcpId,
+              apiId: (tool.annotations as unknown as ToolAnnotations).apiId,
             });
           }
         }
@@ -131,17 +132,17 @@ export function FixToolCallComposer({
           } else {
             // Find the corresponding regular MCP
             const mcp = mcps.find((m) => m.id === mention.mcpId);
-            if (mcp) {
-              // Find the API group that contains this tool
-              for (const [apiId, apiGroup] of Object.entries(mcp.apiGroups)) {
+            if (mcp && mention.apiId) {
+              const apiGroup = mcp.apiGroups[mention.apiId];
+              if (apiGroup) {
                 const toolPrefix = apiGroup.toolPrefix || "";
-
-                const tool = apiGroup.tools?.find(
-                  (tool) => mention.name === toolPrefix + tool.name,
-                );
+                const tool = apiGroup.tools?.find((tool) => {
+                  const toolName = tool.optimised?.name || tool.name;
+                  return mention.name === toolPrefix + toolName;
+                });
                 if (tool) {
                   return {
-                    apiId,
+                    apiId: mention.apiId,
                     mcpId: mention.mcpId,
                     isExternal: false,
                     originalToolName: tool.name,
@@ -156,9 +157,9 @@ export function FixToolCallComposer({
                 }
               }
             }
-
-            return null;
           }
+
+          return null;
         }
 
         return null;

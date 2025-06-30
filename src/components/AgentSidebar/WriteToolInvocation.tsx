@@ -165,17 +165,17 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
 
       {/* Content */}
       <div className="space-y-3 px-4 py-3">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
           <PayloadDialog
             title={`Arguments for ${toolInvocation.toolName}`}
             payload={toolInvocation.args}
-            triggerText="View Arguments"
+            triggerText="Arguments"
           />
           {toolInvocation.state === "result" && (
             <PayloadDialog
               title={`Result for ${toolInvocation.toolName}`}
               payload={toolInvocation.result}
-              triggerText="View Result"
+              triggerText="Result"
             />
           )}
         </div>

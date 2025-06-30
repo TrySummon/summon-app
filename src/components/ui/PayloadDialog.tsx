@@ -9,6 +9,7 @@ import {
 
 import { CodeSnippet } from "@/components/CodeSnippet";
 import { Button } from "./button";
+import { Eye } from "lucide-react";
 
 interface PayloadDialogProps {
   title: string;
@@ -26,7 +27,12 @@ export const PayloadDialog: React.FC<PayloadDialogProps> = ({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="text-muted-foreground">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-muted-foreground gap-2"
+        >
+          <Eye className="h-3.5 w-3.5" />
           {triggerText || "View"}
         </Button>
       </DialogTrigger>

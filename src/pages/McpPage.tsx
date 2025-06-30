@@ -115,7 +115,7 @@ export default function McpPage() {
       <SidebarProvider
         className="min-h-full"
         mobileBreakpoint={1}
-        defaultWidth="28rem"
+        defaultWidth="20rem"
       >
         <SidebarInset className="flex min-h-0 flex-1 flex-col">
           <Breadcrumb>

@@ -153,20 +153,20 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
             <PayloadDialog
               title={`Arguments for ${invocation.toolName}`}
               payload={invocation.args}
-              triggerText="View Arguments"
+              triggerText="Arguments"
             />
             {invocation.state === "result" && (
               <PayloadDialog
                 title={`Result for ${invocation.toolName}`}
                 payload={invocation.result}
-                triggerText="View Result"
+                triggerText="Result"
               />
             )}
           </div>
 
           {/* Action buttons for pending tools */}
           {invocation.state === "partial-call" && (
-            <div className="flex items-center justify-end gap-2 pt-1">
+            <div className="flex items-center justify-end gap-3 pt-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

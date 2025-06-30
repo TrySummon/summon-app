@@ -87,7 +87,12 @@ export default function ToolItem({
                 className="w-80 p-4"
               >
                 <div className="space-y-2">
-                  <h4 className="text-sm font-semibold">{tool.name}</h4>
+                  <h4
+                    className="truncate text-sm font-semibold"
+                    title={tool.name}
+                  >
+                    {tool.name}
+                  </h4>
                   <p className="text-xs">{tool.description}</p>
                 </div>
               </HoverCardContent>

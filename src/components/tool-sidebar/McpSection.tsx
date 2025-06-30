@@ -25,6 +25,7 @@ export default function McpSection({
   name,
   tools,
   isExpanded,
+  selectedToolCount,
   areAllToolsSelected,
   onToggleSection,
   onToggleAllTools,
@@ -56,7 +57,11 @@ export default function McpSection({
             ) : (
               <ChevronRight className="h-4 w-4" />
             )}
-            <span className="text-sm font-semibold">{name}</span>
+            <span
+              className={`text-sm font-semibold ${selectedToolCount > 0 ? "text-primary" : ""}`}
+            >
+              {name}
+            </span>
           </div>
 
           {totalTokenCount ? (

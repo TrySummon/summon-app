@@ -15,6 +15,7 @@ export default function BaseLayout({
         className="flex h-svh flex-col"
         open
         defaultOpen
+        defaultWidth="14rem"
         mobileBreakpoint={1}
       >
         <DragWindowRegion />
