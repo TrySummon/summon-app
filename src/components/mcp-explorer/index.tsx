@@ -90,6 +90,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
           onAddEndpoints={onAddEndpoints}
           onDeleteTool={onDeleteTool}
           onDeleteAllTools={onDeleteAllTools}
+          refreshStatus={handleRefreshStatus}
         />
       )}
     </div>

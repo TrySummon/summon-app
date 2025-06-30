@@ -15,7 +15,7 @@ export const MCP_QUERY_KEY = "mcp";
 export function useMcp(mcpId: string | undefined) {
   // Fetch a single MCP by ID
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: [MCP_QUERY_KEY],
+    queryKey: [MCP_QUERY_KEY, mcpId],
     queryFn: async () => {
       if (!mcpId) {
         throw new Error("MCP ID is required");

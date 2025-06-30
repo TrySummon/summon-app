@@ -16,10 +16,13 @@ import { mcpDb } from "@/lib/db/mcp-db";
 import { MappingConfig } from "@/lib/mcp/mapper";
 import { Message } from "ai";
 import {
+  ToolAnnotations,
   updateMcpTool,
   type SummonTool,
   type ToolDefinition,
 } from "@/lib/mcp/tool";
+import type { JSONSchema7 } from "json-schema";
+import { getMcpTools } from "../mcp/mcp-tools";
 
 export interface SearchApiEndpointsRequest {
   apiId: string;
@@ -29,7 +32,7 @@ export interface SearchApiEndpointsRequest {
 
 export interface OptimiseToolSizeRequest {
   mcpId: string;
-  apiId: string;
+  apiId?: string;
   toolName: string;
   additionalGoal?: string;
 }
@@ -192,13 +195,33 @@ export function registerAgentToolsListeners() {
   ipcMain.handle(
     OPTIMISE_TOOL_SIZE_CHANNEL,
     async (_, request: OptimiseToolSizeRequest) => {
-      try {
-        const { mcpId, apiId, toolName, additionalGoal } = request;
-        const authData = await authStorage.getAuthData();
-        if (!authData) {
-          return { success: false, message: "Not authenticated" };
+      const { mcpId, apiId, toolName, additionalGoal } = request;
+      const authData = await authStorage.getAuthData();
+      if (!authData) {
+        return { success: false, message: "Not authenticated" };
+      }
+
+      const isExternal = !apiId;
+      let originalToolDefinition: ToolDefinition;
+
+      if (isExternal) {
+        const tools = await getMcpTools(mcpId);
+        const tool = tools.find((tool) => tool.name === toolName);
+        if (!tool) {
+          return {
+            success: false,
+            message: `Tool with name ${toolName} not found`,
+          };
         }
 
+        const annotations = tool.annotations as unknown as ToolAnnotations;
+
+        originalToolDefinition = annotations.originalDefinition || {
+          name: tool.name,
+          description: tool.description || "",
+          inputSchema: tool.inputSchema as unknown as JSONSchema7,
+        };
+      } else {
         const mcpData = await mcpDb.getMcpById(mcpId);
         if (!mcpData) {
           return {
@@ -207,7 +230,7 @@ export function registerAgentToolsListeners() {
           };
         }
 
-        const apiGroup = mcpData.apiGroups[apiId];
+        const apiGroup = mcpData.apiGroups[apiId!];
         const tool = apiGroup?.tools?.find((tool) => tool.name === toolName);
 
         if (!tool) {
@@ -217,94 +240,75 @@ export function registerAgentToolsListeners() {
           };
         }
 
-        const originalToolDefinition = {
+        originalToolDefinition = {
           name: tool.name,
           description: tool.description,
-          inputSchema: tool.inputSchema,
+          inputSchema: tool.inputSchema as unknown as JSONSchema7,
         };
+      }
 
-        // Make request to tool design optimization endpoint
-        const response = await axios.post(
-          `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/optimise-tool-size`,
-          {
-            originalToolDefinition,
-            additionalGoal,
+      // Make request to tool design optimization endpoint
+      const response = await axios.post(
+        `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/optimise-tool-size`,
+        {
+          originalToolDefinition,
+          additionalGoal,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authData.token}`,
+            "Content-Type": "application/json",
           },
-          {
-            headers: {
-              Authorization: `Bearer ${authData.token}`,
-              "Content-Type": "application/json",
-            },
-            timeout: 60000,
-          },
-        );
+          timeout: 60000,
+        },
+      );
 
-        // Check if the optimization was successful
-        if (
-          !response.data?.improvedToolDefinition ||
-          !response.data?.mappingConfig
-        ) {
-          return {
-            success: false,
-            message:
-              "Failed to optimize tool definition - incomplete response from server",
-          };
-        }
-
-        // Parse the optimized tool definition and mapping config
-        let optimizedToolDefinition: ToolDefinition;
-        let mappingConfig: MappingConfig;
-
-        try {
-          optimizedToolDefinition = JSON.parse(
-            response.data.improvedToolDefinition,
-          );
-          mappingConfig = JSON.parse(response.data.mappingConfig);
-        } catch (parseError) {
-          return {
-            success: false,
-            message: `Failed to parse optimization response: ${parseError instanceof Error ? parseError.message : "Unknown parsing error"}`,
-          };
-        }
-
-        await updateMcpTool({
-          apiId: request.apiId,
-          mappingConfig: mappingConfig,
-          mcpId: request.mcpId,
-          isExternal: false,
-          originalToolName: tool.name,
-          definition: optimizedToolDefinition,
-        });
-
-        const optimisedTokenCount = await calculateTokenCount(
-          JSON.stringify(optimizedToolDefinition, null, 2),
-        );
-
-        return {
-          success: true,
-          message: `Tool "${toolName}" has been optimized successfully. New token count: ${optimisedTokenCount}`,
-          tokenCount: optimisedTokenCount,
-        };
-      } catch (error) {
-        log.error(
-          `Error optimising tool definition for API ${request.apiId}:`,
-          error,
-        );
-
-        // Handle axios errors
-        if (axios.isAxiosError(error)) {
-          return {
-            success: false,
-            message: error.response?.data?.message || error.message,
-          };
-        }
-
+      // Check if the optimization was successful
+      if (
+        !response.data?.improvedToolDefinition ||
+        !response.data?.mappingConfig
+      ) {
         return {
           success: false,
           message:
-            error instanceof Error ? error.message : "Unknown error occurred",
+            "Failed to optimize tool definition - incomplete response from server",
         };
       }
+
+      // Parse the optimized tool definition and mapping config
+      let optimizedToolDefinition: ToolDefinition;
+      let mappingConfig: MappingConfig;
+
+      try {
+        optimizedToolDefinition = JSON.parse(
+          response.data.improvedToolDefinition,
+        );
+        mappingConfig = JSON.parse(response.data.mappingConfig);
+      } catch (parseError) {
+        return {
+          success: false,
+          message: `Failed to parse optimization response: ${parseError instanceof Error ? parseError.message : "Unknown parsing error"}`,
+        };
+      }
+
+      await updateMcpTool({
+        apiId: request.apiId,
+        mappingConfig: mappingConfig,
+        mcpId: request.mcpId,
+        isExternal: isExternal,
+        originalToolName: originalToolDefinition.name,
+        definition: optimizedToolDefinition,
+      });
+
+      const optimisedTokenCount = await calculateTokenCount(
+        JSON.stringify(optimizedToolDefinition, null, 2),
+      );
+
+      return {
+        success: true,
+        message: `Tool "${toolName}" has been optimized successfully`,
+        tokenCount: optimisedTokenCount,
+      };
     },
   );
 

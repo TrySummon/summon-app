@@ -218,15 +218,18 @@ export function useMcpActions(mcpId: string) {
   const optimiseToolSize = useCallback(
     async (args: Omit<OptimiseToolSizeRequest, "mcpId">) => {
       dispatchToolAnimation(args.toolName, mcpId, "start-update");
-      const result = await window.agentTools.optimiseToolSize({
-        mcpId,
-        ...args,
-      });
-      dispatchToolAnimation(args.toolName, mcpId, "end-update");
-      if (result.success) {
-        invalidateMcps();
+      try {
+        const result = await window.agentTools.optimiseToolSize({
+          mcpId,
+          ...args,
+        });
+        if (result.success) {
+          invalidateMcps();
+        }
+        return result;
+      } finally {
+        dispatchToolAnimation(args.toolName, mcpId, "end-update");
       }
-      return result;
     },
     [mcpId],
   );

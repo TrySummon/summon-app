@@ -13,7 +13,6 @@ import { Play, AlertCircle, CheckCircle, Shuffle } from "lucide-react";
 import CodeEditor from "@/components/CodeEditor";
 import { callMcpTool, generateFakeData } from "@/ipc/mcp/mcp-client";
 import { toast } from "sonner";
-import { ToolDefinition } from "@/lib/mcp/tool";
 
 interface CallToolDialogProps {
   tool: Tool | null;
@@ -68,15 +67,8 @@ export const CallToolDialog: React.FC<CallToolDialogProps> = ({
       // Parse the JSON input
       const args = JSON.parse(inputJson);
 
-      const originalDefinition = tool.isExternal
-        ? (tool.annotations?.originalDefinition as ToolDefinition)
-        : null;
-      const originalName = originalDefinition
-        ? originalDefinition.name
-        : tool.name;
-
       // Call the tool
-      const result = await callMcpTool(mcpId, originalName, args);
+      const result = await callMcpTool(mcpId, tool.name, args);
 
       setResponse(result);
       // Switch to response tab to show the result
