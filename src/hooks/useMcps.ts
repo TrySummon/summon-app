@@ -3,18 +3,51 @@ import { McpData, McpSubmitData } from "@/lib/db/mcp-db";
 import {
   createMcp,
   deleteMcp,
+  getMcp,
   listMcps,
   updateMcp,
 } from "@/ipc/mcp/mcp-client";
 
 // Query key for MCPs
-export const MCP_QUERY_KEY = "mcps";
+export const MCP_LIST_QUERY_KEY = "mcps";
+export const MCP_QUERY_KEY = "mcp";
+
+export function useMcp(mcpId: string | undefined) {
+  // Fetch a single MCP by ID
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: [MCP_QUERY_KEY],
+    queryFn: async () => {
+      if (!mcpId) {
+        throw new Error("MCP ID is required");
+      }
+      const result = await getMcp(mcpId);
+      if (!result.success) {
+        throw new Error(result.message || "Failed to fetch MCP");
+      }
+      return result;
+    },
+    enabled: !!mcpId,
+  });
+
+  return {
+    mcp: data?.mcp as McpData | undefined,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  };
+}
 
 export function useMcps() {
   const queryClient = useQueryClient();
 
   const invalidateMcps = () => {
-    queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+    queryClient.invalidateQueries({
+      queryKey: [MCP_LIST_QUERY_KEY],
+    });
+    queryClient.invalidateQueries({
+      queryKey: [MCP_QUERY_KEY],
+    });
   };
 
   // Fetch all MCPs
@@ -25,7 +58,7 @@ export function useMcps() {
     error,
     refetch,
   } = useQuery({
-    queryKey: [MCP_QUERY_KEY],
+    queryKey: [MCP_LIST_QUERY_KEY],
     queryFn: async () => {
       const result = await listMcps();
       if (!result.success) {
@@ -45,7 +78,12 @@ export function useMcps() {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [MCP_LIST_QUERY_KEY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [MCP_QUERY_KEY],
+      });
     },
   });
 
@@ -66,7 +104,12 @@ export function useMcps() {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [MCP_LIST_QUERY_KEY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [MCP_QUERY_KEY],
+      });
     },
   });
 
@@ -80,7 +123,12 @@ export function useMcps() {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [MCP_LIST_QUERY_KEY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [MCP_QUERY_KEY],
+      });
     },
   });
 

@@ -118,7 +118,8 @@ export function FixToolCallComposer({
             );
 
             if (tool) {
-              const annotations = tool.annotations as ToolAnnotations;
+              const annotations =
+                tool.annotations as unknown as ToolAnnotations;
               return {
                 mcpId: mention.mcpId,
                 isExternal: true,

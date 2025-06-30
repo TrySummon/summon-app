@@ -59,54 +59,6 @@ export function useToolSidebar() {
             },
           });
         }
-        // Case 2: enabledTools is defined - check for tools that are no longer available
-        else if (tab.state.enabledTools) {
-          let needsUpdate = false;
-          const updatedEnabledTools: Record<string, string[]> = {};
-
-          // For each MCP in the tab's enabledTools
-          Object.entries(tab.state.enabledTools).forEach(
-            ([mcpId, enabledToolIds]) => {
-              // Check if this MCP still exists in origToolMap
-              if (mcpToolMap[mcpId]) {
-                // Get the available tool IDs for this MCP
-                const tools = mcpToolMap[mcpId].tools as Tool[];
-                const availableToolIds = tools.map((tool: Tool) => tool.name);
-
-                // Filter out tools that are no longer available
-                const validToolIds = enabledToolIds.filter((toolId) =>
-                  availableToolIds.includes(toolId),
-                );
-
-                // If some tools were removed, mark for update
-                if (validToolIds.length !== enabledToolIds.length) {
-                  needsUpdate = true;
-                }
-
-                // Only add this MCP if it has valid tools
-                if (validToolIds.length > 0) {
-                  updatedEnabledTools[mcpId] = validToolIds;
-                } else {
-                  needsUpdate = true; // MCP had tools but now has none valid
-                }
-              } else {
-                // MCP no longer exists, mark for update
-                needsUpdate = true;
-              }
-            },
-          );
-
-          // If we need to update the tab's enabledTools
-          if (needsUpdate) {
-            updateTab(tabId, {
-              ...tab,
-              state: {
-                ...tab.state,
-                enabledTools: updatedEnabledTools,
-              },
-            });
-          }
-        }
       });
     }
   }, [mcpToolMap, updateMcpToolMap, getTabs, updateTab]);

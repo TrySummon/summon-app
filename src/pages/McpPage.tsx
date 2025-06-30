@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useEffect } from "react";
 import { useParams } from "@tanstack/react-router";
-import { useMcps } from "@/hooks/useMcps";
+import { useMcp, useMcps } from "@/hooks/useMcps";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,8 +22,8 @@ import { useMcpActions } from "@/hooks/useMcpActions";
 export default function McpPage() {
   const { apis } = useApis();
   const { mcpId } = useParams({ from: "/mcp/$mcpId" });
-  const { mcps, updateMcp } = useMcps();
-  const mcp = mcps.find((m) => m.id === mcpId);
+  const { mcp } = useMcp(mcpId);
+  const { updateMcp } = useMcps();
   const { onAddEndpoints, onDeleteTool, onDeleteAllTools } =
     useMcpActions(mcpId);
 

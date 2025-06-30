@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { McpServerState } from "@/lib/mcp/state";
 import { useQueryClient } from "@tanstack/react-query";
-import { MCP_QUERY_KEY } from "./useMcps";
+import { MCP_LIST_QUERY_KEY, MCP_QUERY_KEY } from "./useMcps";
 import { EXTERNAL_MCPS_QUERY_KEY } from "./useExternalMcps";
 import {
   getMcpServerStatus,
@@ -88,7 +88,12 @@ export function useMcpServerState(
             queryKey: [EXTERNAL_MCPS_QUERY_KEY],
           });
         } else {
-          queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+          queryClient.invalidateQueries({
+            queryKey: [MCP_LIST_QUERY_KEY],
+          });
+          queryClient.invalidateQueries({
+            queryKey: [MCP_QUERY_KEY],
+          });
         }
       } else {
         setError(new Error(response.message || "Failed to start server"));
@@ -113,7 +118,12 @@ export function useMcpServerState(
             queryKey: [EXTERNAL_MCPS_QUERY_KEY],
           });
         } else {
-          queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+          queryClient.invalidateQueries({
+            queryKey: [MCP_LIST_QUERY_KEY],
+          });
+          queryClient.invalidateQueries({
+            queryKey: [MCP_QUERY_KEY],
+          });
         }
       } else {
         setError(new Error(response.message || "Failed to stop server"));

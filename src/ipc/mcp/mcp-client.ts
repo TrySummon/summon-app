@@ -3,7 +3,9 @@ import { McpData } from "@/lib/db/mcp-db";
 import { recurseCountKeys } from "@/lib/object";
 import { SummonTool, SummonToolRef } from "@/lib/mcp/tool";
 import { queryClient } from "@/queryClient";
-import { MCP_QUERY_KEY } from "@/hooks/useMcps";
+import { MCP_LIST_QUERY_KEY, MCP_QUERY_KEY } from "@/hooks/useMcps";
+import { usePlaygroundStore } from "@/stores/playgroundStore";
+import { useEvaluationStore } from "@/stores/evaluationStore";
 
 // MCP operations with PostHog instrumentation
 export const createMcp = async (
@@ -102,8 +104,85 @@ export const updateMcpTool = async (tool: SummonTool) => {
   captureEvent("mcp_update_tool");
   const result = await window.mcpApi.updateMcpTool(tool);
   if (result.success && !tool.isExternal) {
-    queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+    queryClient.invalidateQueries({
+      queryKey: [MCP_LIST_QUERY_KEY],
+    });
+    queryClient.invalidateQueries({
+      queryKey: [MCP_QUERY_KEY],
+    });
   }
+  return result;
+};
+
+// Wrapper function that also updates playground store when tool names change
+export const updateMcpToolWithStoreSync = async (
+  previousName: string,
+  tool: SummonTool,
+) => {
+  // Call the original updateMcpTool function
+  const result = await updateMcpTool(tool);
+
+  const newName = result.data;
+
+  // If successful and the tool name changed, update all playground tabs and evaluation datasets
+  if (result.success && previousName !== newName) {
+    const playgroundStore = usePlaygroundStore.getState();
+    const evaluationStore = useEvaluationStore.getState();
+
+    // Update all playground tabs to replace the old tool name with the new one
+    const tabs = playgroundStore.getTabs();
+    Object.entries(tabs).forEach(([tabId, tab]) => {
+      const enabledTools = tab.state.enabledTools;
+      const mcpId = tool.mcpId;
+
+      // Check if this MCP has the old tool name enabled
+      if (enabledTools[mcpId] && enabledTools[mcpId].includes(previousName)) {
+        const updatedToolIds = enabledTools[mcpId].map((toolName) =>
+          toolName === previousName ? newName : toolName,
+        );
+
+        // Update the tab with the new tool name
+        const updatedTab = {
+          ...tab,
+          state: {
+            ...tab.state,
+            enabledTools: {
+              ...enabledTools,
+              [mcpId]: updatedToolIds,
+            },
+          },
+        };
+        playgroundStore.updateTab(tabId, updatedTab);
+      }
+    });
+
+    // Update all evaluation datasets to replace the old tool name with the new one
+    const datasets = evaluationStore.datasets;
+    Object.entries(datasets).forEach(([datasetId, datasetState]) => {
+      const enabledTools = datasetState.enabledTools;
+      const mcpId = tool.mcpId;
+
+      // Check if this MCP has the old tool name enabled
+      if (enabledTools[mcpId] && enabledTools[mcpId].includes(previousName)) {
+        const updatedToolIds = enabledTools[mcpId].map((toolName) =>
+          toolName === previousName ? newName : toolName,
+        );
+
+        // Update the dataset with the new tool name
+        evaluationStore.datasets = {
+          ...datasets,
+          [datasetId]: {
+            ...datasetState,
+            enabledTools: {
+              ...enabledTools,
+              [mcpId]: updatedToolIds,
+            },
+          },
+        };
+      }
+    });
+  }
+
   return result;
 };
 
@@ -112,8 +191,86 @@ export const revertMcpTool = async (tool: SummonToolRef) => {
   const result = await window.mcpApi.revertMcpTool(tool);
 
   if (result.success && !tool.isExternal) {
-    queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+    queryClient.invalidateQueries({
+      queryKey: [MCP_LIST_QUERY_KEY],
+    });
+    queryClient.invalidateQueries({
+      queryKey: [MCP_QUERY_KEY],
+    });
   }
+  return result;
+};
+
+// Wrapper function that also updates playground store when tool names change during revert
+export const revertMcpToolWithStoreSync = async (
+  previousName: string,
+  tool: SummonToolRef,
+) => {
+  // Call the original revertMcpTool function
+  const result = await revertMcpTool(tool);
+
+  const newName = result.data;
+
+  // If successful and the tool name will change back to original, update all playground tabs and evaluation datasets
+  if (result.success && previousName !== newName) {
+    const playgroundStore = usePlaygroundStore.getState();
+    const evaluationStore = useEvaluationStore.getState();
+
+    // Update all playground tabs to replace the current tool name with the original name
+    const tabs = playgroundStore.getTabs();
+    Object.entries(tabs).forEach(([tabId, tab]) => {
+      const enabledTools = tab.state.enabledTools;
+      const mcpId = tool.mcpId;
+
+      // Check if this MCP has the current tool name enabled
+      if (enabledTools[mcpId] && enabledTools[mcpId].includes(previousName)) {
+        const updatedToolIds = enabledTools[mcpId].map((toolName) =>
+          toolName === previousName ? newName : toolName,
+        );
+
+        // Update the tab with the original tool name
+        const updatedTab = {
+          ...tab,
+          state: {
+            ...tab.state,
+            enabledTools: {
+              ...enabledTools,
+              [mcpId]: updatedToolIds,
+            },
+          },
+        };
+
+        playgroundStore.updateTab(tabId, updatedTab);
+      }
+    });
+
+    // Update all evaluation datasets to replace the current tool name with the original name
+    const datasets = evaluationStore.datasets;
+    Object.entries(datasets).forEach(([datasetId, datasetState]) => {
+      const enabledTools = datasetState.enabledTools;
+      const mcpId = tool.mcpId;
+
+      // Check if this MCP has the current tool name enabled
+      if (enabledTools[mcpId] && enabledTools[mcpId].includes(previousName)) {
+        const updatedToolIds = enabledTools[mcpId].map((toolName) =>
+          toolName === previousName ? newName : toolName,
+        );
+
+        // Update the dataset with the original tool name
+        evaluationStore.datasets = {
+          ...datasets,
+          [datasetId]: {
+            ...datasetState,
+            enabledTools: {
+              ...enabledTools,
+              [mcpId]: updatedToolIds,
+            },
+          },
+        };
+      }
+    });
+  }
+
   return result;
 };
 

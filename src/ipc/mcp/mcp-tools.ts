@@ -49,6 +49,8 @@ export async function getMcpTools(mcpId: string) {
         });
         const annotations = {} as ToolAnnotations;
         if (mcpTool) {
+          annotations.prefix = apiGroup.toolPrefix;
+          annotations.id = mcpTool.name;
           annotations.apiId = mcpTool.apiId;
           annotations.tokenCount = mcpTool.originalTokenCount;
         }
@@ -70,7 +72,10 @@ export async function getMcpTools(mcpId: string) {
         if (mcpTool) break;
       }
     } else {
-      const annotations = { isExternal: true } as ToolAnnotations;
+      const annotations = {
+        isExternal: true,
+        id: tool.name,
+      } as ToolAnnotations;
       if (externalToolOverrides) {
         const override = externalToolOverrides[tool.name];
 

@@ -19,7 +19,7 @@ import { McpData } from "@/lib/db/mcp-db";
 import { importApi } from "@/ipc/openapi/openapi-client";
 import { SignInDialog } from "@/components/SignInDialog";
 import { Attachment, Message } from "ai";
-import { useMcps } from "@/hooks/useMcps";
+import { useMcp, useMcps } from "@/hooks/useMcps";
 import { AgentProvider } from "./AgentContext";
 import { useApis } from "@/hooks/useApis";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
@@ -36,8 +36,7 @@ interface Props {
 export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
   const { token, isAuthenticated } = useAuth();
   const { apis, refetch: refetchApis } = useApis();
-  const { mcps } = useMcps();
-  const mcp = mcps.find((m) => m.id === mcpId);
+  const { mcp } = useMcp(mcpId);
 
   const { createChat, updateChat, getChat } = useAgentChats(mcpId);
 

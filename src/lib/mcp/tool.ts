@@ -18,6 +18,8 @@ import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "@/ipc/external-mcp";
 export interface ToolAnnotations {
   tokenCount?: number;
   optimisedTokenCount?: number;
+  id: string;
+  prefix?: string;
   isExternal?: boolean;
   apiId?: string;
   originalDefinition?: ToolDefinition;
@@ -86,6 +88,20 @@ export const getExternalMcpToolOverridePath = async (
 export const overrideExternalMcpTool = async (
   override: ExternalToolOverride,
 ) => {
+  // Check if there's already an override with the same tool name
+  const existingOverrides = await getExternalMcpOverrides(override.mcpId);
+  const duplicateOverride = Object.values(existingOverrides).find(
+    (existingOverride) =>
+      existingOverride.definition.name === override.definition.name &&
+      existingOverride.originalToolName !== override.originalToolName,
+  );
+
+  if (duplicateOverride) {
+    throw new Error(
+      `A tool with the name "${override.definition.name}" already exists in this MCP`,
+    );
+  }
+
   const toolPath = await getExternalMcpToolOverridePath(
     override.mcpId,
     override.originalToolName,
@@ -102,7 +118,7 @@ export const overrideExternalMcpTool = async (
     mainWindow.webContents.send(EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL, null);
   }
 
-  return true;
+  return override.definition.name;
 };
 
 export const updateSummonMcpTool = async (tool: SummonTool) => {
@@ -118,6 +134,20 @@ export const updateSummonMcpTool = async (tool: SummonTool) => {
 
   const toolName = tool.originalToolName;
 
+  // Check if there's already a tool with the same name (without prefix) in the same API group
+  const duplicateTool = apiGroup.tools?.find(
+    (existingTool) =>
+      existingTool.name !== toolName && // Exclude the tool being updated
+      (existingTool.optimised?.name === tool.definition.name ||
+        existingTool.name === tool.definition.name),
+  );
+
+  if (duplicateTool) {
+    throw new Error(
+      `A tool with the name "${tool.definition.name}" already exists in this API group`,
+    );
+  }
+
   // Calculate token count for the optimized definition
   const optimisedTokenCount = await calculateTokenCount(
     JSON.stringify(tool.definition),
@@ -130,7 +160,6 @@ export const updateSummonMcpTool = async (tool: SummonTool) => {
         t.name === toolName
           ? {
               ...t,
-
               optimised: tool.definition,
               optimisedTokenCount,
               originalToOptimisedMapping:
@@ -154,13 +183,15 @@ export const updateSummonMcpTool = async (tool: SummonTool) => {
   await deleteMcpImpl(tool.mcpId);
   await generateMcpImpl(tool.mcpId);
   await restartMcpServer(tool.mcpId);
+
+  return (apiGroup.toolPrefix || "") + tool.definition.name;
 };
 
 export const updateMcpTool = async (tool: SummonTool) => {
   if (tool.isExternal) {
-    await overrideExternalMcpTool(tool);
+    return overrideExternalMcpTool(tool);
   } else {
-    await updateSummonMcpTool(tool);
+    return updateSummonMcpTool(tool);
   }
 };
 
@@ -210,6 +241,8 @@ export const revertSummonMcpTool = async (tool: SummonToolRef) => {
   await deleteMcpImpl(tool.mcpId);
   await generateMcpImpl(tool.mcpId);
   await restartMcpServer(tool.mcpId);
+
+  return (apiGroup.toolPrefix || "") + tool.originalToolName;
 };
 
 export const revertExternalMcpTool = async (tool: SummonToolRef) => {
@@ -224,13 +257,15 @@ export const revertExternalMcpTool = async (tool: SummonToolRef) => {
   if (mainWindow) {
     mainWindow.webContents.send(EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL, null);
   }
+
+  return tool.originalToolName;
 };
 
 export const revertMcpTool = async (tool: SummonToolRef) => {
   if (tool.isExternal) {
-    await revertExternalMcpTool(tool);
+    return revertExternalMcpTool(tool);
   } else {
-    await revertSummonMcpTool(tool);
+    return revertSummonMcpTool(tool);
   }
 };
 

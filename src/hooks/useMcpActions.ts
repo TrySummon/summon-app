@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useMcps } from "./useMcps";
+import { useMcp, useMcps } from "./useMcps";
 import { useApis } from "./useApis";
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { toast } from "sonner";
@@ -38,9 +38,9 @@ export const dispatchToolAnimation = (
 };
 
 export function useMcpActions(mcpId: string) {
-  const { mcps, updateMcp, invalidateMcps } = useMcps();
+  const { mcp } = useMcp(mcpId);
+  const { updateMcp, invalidateMcps } = useMcps();
   const { apis } = useApis();
-  const mcp = mcps.find((m) => m.id === mcpId);
 
   const onAddEndpoints = useCallback(
     async (apiId: string, endpoints: SelectedEndpoint[]) => {

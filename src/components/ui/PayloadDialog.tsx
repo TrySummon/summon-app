@@ -26,7 +26,7 @@ export const PayloadDialog: React.FC<PayloadDialogProps> = ({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button size="sm" variant="ghost">
+        <Button size="sm" variant="ghost" className="text-muted-foreground">
           {triggerText || "View"}
         </Button>
       </DialogTrigger>

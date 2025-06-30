@@ -366,10 +366,11 @@ export function registerMcpListeners() {
   // Update an MCP tool
   ipcMain.handle(UPDATE_MCP_TOOL_CHANNEL, async (_, tool: SummonTool) => {
     try {
-      await updateMcpTool(tool);
+      const newName = await updateMcpTool(tool);
       return {
         success: true,
         message: "MCP tool updated successfully",
+        data: newName,
       };
     } catch (error) {
       log.error("Error updating MCP tool:", error);
@@ -384,10 +385,11 @@ export function registerMcpListeners() {
   // Revert an MCP tool
   ipcMain.handle(REVERT_MCP_TOOL_CHANNEL, async (_, tool: SummonTool) => {
     try {
-      await revertMcpTool(tool);
+      const newName = await revertMcpTool(tool);
       return {
         success: true,
         message: "MCP tool reverted successfully",
+        data: newName,
       };
     } catch (error) {
       log.error("Error reverting MCP tool:", error);

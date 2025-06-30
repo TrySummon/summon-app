@@ -20,7 +20,7 @@ import { LoadingState } from "./LoadingState";
 import { MergeView } from "./MergeView";
 import type { MentionedTool, OptimizedResult, DialogState } from "./types";
 import { SummonTool } from "@/lib/mcp/tool";
-import { updateMcpTool } from "@/ipc/mcp/mcp-client";
+import { updateMcpToolWithStoreSync } from "@/ipc/mcp/mcp-client";
 
 interface FixToolCallButtonProps {
   invocation?: ToolInvocation;
@@ -121,18 +121,22 @@ export function FixToolCallButton({ invocation }: FixToolCallButtonProps) {
     }
 
     try {
-      // Update all optimized tools
-      const updatePromises = optimizedResult.optimised.map(async (tool) => {
-        const result = await updateMcpTool(tool);
+      const original = optimizedResult.original;
+      const optimised = optimizedResult.optimised;
+      // Update all optimized tools sequentially to avoid file conflicts
+      for (let i = 0; i < original.length; i++) {
+        const originalTool = original[i];
+        const optimisedTool = optimised[i];
+        const result = await updateMcpToolWithStoreSync(
+          originalTool.definition.name,
+          optimisedTool,
+        );
         if (!result.success) {
           throw new Error(
-            `Failed to update tool ${tool.originalToolName}: ${result.message || "Unknown error"}`,
+            `Failed to update tool ${originalTool.definition.name}: ${result.message || "Unknown error"}`,
           );
         }
-        return result;
-      });
-
-      await Promise.all(updatePromises);
+      }
 
       toast.success("Tool optimization applied!");
       setShowFixDialog(false);

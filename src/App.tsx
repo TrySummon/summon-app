@@ -175,10 +175,10 @@ declare global {
       ) => Promise<{ success: boolean; data?: unknown; message?: string }>;
       updateMcpTool: (
         tool: SummonTool,
-      ) => Promise<{ success: boolean; message?: string }>;
+      ) => Promise<{ success: boolean; message?: string; data: string }>;
       revertMcpTool: (
         tool: SummonToolRef,
-      ) => Promise<{ success: boolean; message?: string }>;
+      ) => Promise<{ success: boolean; message?: string; data: string }>;
       generateFakeData: (
         schema: unknown,
       ) => Promise<{ success: boolean; data?: unknown; message?: string }>;

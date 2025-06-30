@@ -3,7 +3,7 @@ import { workspaceIpc } from "@/ipc/workspace/workspace-client";
 import { Workspace } from "@/lib/db/workspace-db";
 import { LIST_API_QUERY_KEY } from "./useApis";
 import { DATASET_QUERY_KEY } from "./useDatasets";
-import { MCP_QUERY_KEY } from "./useMcps";
+import { MCP_LIST_QUERY_KEY, MCP_QUERY_KEY } from "./useMcps";
 import { EXTERNAL_MCPS_QUERY_KEY } from "./useExternalMcps";
 
 export const useWorkspaces = () => {
@@ -72,7 +72,12 @@ export const useSetCurrentWorkspace = () => {
       // Invalidate all data queries since changing workspace affects all data
       queryClient.invalidateQueries({ queryKey: [LIST_API_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [DATASET_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [MCP_QUERY_KEY] });
+      queryClient.invalidateQueries({
+        queryKey: [MCP_LIST_QUERY_KEY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [MCP_QUERY_KEY],
+      });
       queryClient.invalidateQueries({ queryKey: [EXTERNAL_MCPS_QUERY_KEY] });
     },
   });

@@ -32,7 +32,10 @@ import { getNestedSchema, getOriginalProperty } from "./utils";
 import { SchemaEditor } from "./ToolSchemaEditor";
 import stringify from "json-stable-stringify";
 import { toast } from "sonner";
-import { updateMcpTool, revertMcpTool } from "@/ipc/mcp/mcp-client";
+import {
+  updateMcpToolWithStoreSync,
+  revertMcpToolWithStoreSync,
+} from "@/ipc/mcp/mcp-client";
 import type {
   ToolAnnotations,
   SummonTool,
@@ -64,7 +67,6 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
   const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const annotations = tool.annotations as ToolAnnotations | undefined;
-
   // Determine if this is an external tool based on annotations
   const isExternal = annotations?.isExternal ?? false;
 
@@ -72,16 +74,18 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
   const originalToolDefinition = useMemo(
     () =>
       annotations?.originalDefinition || {
-        name: tool.name,
+        name: annotations?.id || tool.name,
         description: tool.description || "",
         inputSchema: tool.inputSchema as JSONSchema7,
       },
     [tool, annotations],
   );
 
+  const originalToolName = annotations?.id || originalToolDefinition.name;
+
   // State for unsaved changes - initially set to current tool values
   const [unsavedChanges, setUnsavedChanges] = useState<UnsavedChanges>({
-    name: tool.name,
+    name: tool.name.replace(annotations?.prefix || "", ""),
     description: tool.description || "",
     inputSchema: tool.inputSchema as JSONSchema7,
   });
@@ -105,13 +109,13 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
   useEffect(() => {
     if (open) {
       setUnsavedChanges({
-        name: tool.name,
+        name: tool.name.replace(annotations?.prefix || "", ""),
         description: tool.description || "",
         inputSchema: tool.inputSchema as JSONSchema7,
       });
       setSchemaPath(["Root"]);
     }
-  }, [open, tool]);
+  }, [open, tool, annotations]);
 
   // Position cursor at end when editing description
   useEffect(() => {
@@ -255,24 +259,24 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
           apiId: annotations?.apiId,
           mcpId,
           isExternal,
-          originalToolName: originalToolDefinition.name,
+          originalToolName,
           definition: toolDefinition,
         };
 
-        const result = await updateMcpTool(summonTool);
+        const result = await updateMcpToolWithStoreSync(tool.name, summonTool);
         if (!result.success) {
-          toast.error("Failed to update tool");
+          toast.error("Failed to update tool: " + result.message);
           return;
         }
 
-        toast.success("Tool updated successfully");
+        toast.success("Tool updated!");
       } else {
         // No unsaved changes - revert to original tool definition
-        const result = await revertMcpTool({
+        const result = await revertMcpToolWithStoreSync(tool.name, {
           apiId: annotations?.apiId,
           mcpId,
           isExternal,
-          originalToolName: originalToolDefinition.name,
+          originalToolName,
         });
 
         if (!result.success) {
@@ -316,15 +320,15 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
   const handleRevertAllChanges = useCallback(async () => {
     setIsSaving(true);
     try {
-      const result = await revertMcpTool({
+      const result = await revertMcpToolWithStoreSync(tool.name, {
         apiId: annotations?.apiId,
         mcpId,
         isExternal,
-        originalToolName: originalToolDefinition.name,
+        originalToolName,
       });
 
       if (!result.success) {
-        toast.error("Failed to update tool");
+        toast.error("Failed to update tool: " + result.message);
         return;
       }
       setUnsavedChanges({
