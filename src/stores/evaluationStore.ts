@@ -440,25 +440,48 @@ export function useEvaluationToolSelection(datasetId: string) {
 
   const enabledTools = datasetState?.enabledTools;
 
-  const enabledToolCount = useMemo(
-    () =>
-      Object.values(enabledTools).reduce((acc, tools) => acc + tools.length, 0),
-    [enabledTools],
-  );
+  const enabledToolCount = useMemo(() => {
+    if (!enabledTools || !mcpToolMap) return 0;
 
-  const enabledToolCountByMcp = useMemo(
-    () =>
-      mcpToolMap
-        ? Object.keys(mcpToolMap).reduce(
-            (counts, mcpId) => {
-              counts[mcpId] = enabledTools[mcpId]?.length || 0;
-              return counts;
-            },
-            {} as Record<string, number>,
-          )
-        : {},
-    [mcpToolMap, enabledTools],
-  );
+    return Object.entries(enabledTools).reduce((acc, [mcpId, toolIds]) => {
+      // Get available tools for this MCP
+      const mcpData = mcpToolMap[mcpId];
+      if (mcpData) {
+        const availableTools = mcpData.tools as Tool[];
+        const availableToolIds = availableTools.map((tool) => tool.name);
+
+        // Only count tools that actually exist in the MCP
+        const validToolIds = toolIds.filter((toolId) =>
+          availableToolIds.includes(toolId),
+        );
+        return acc + validToolIds.length;
+      }
+      return acc;
+    }, 0);
+  }, [enabledTools, mcpToolMap]);
+
+  const enabledToolCountByMcp = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    Object.entries(enabledTools).forEach(([mcpId, toolIds]) => {
+      // Get available tools for this MCP
+      const mcpData = mcpToolMap?.[mcpId];
+      if (mcpData) {
+        const availableTools = mcpData.tools as Tool[];
+        const availableToolIds = availableTools.map((tool) => tool.name);
+
+        // Only count tools that actually exist in the MCP
+        const validToolIds = toolIds.filter((toolId) =>
+          availableToolIds.includes(toolId),
+        );
+        counts[mcpId] = validToolIds.length;
+      } else {
+        counts[mcpId] = 0;
+      }
+    });
+
+    return counts;
+  }, [enabledTools, mcpToolMap]);
 
   // Check if all tools for an MCP are selected
   const areAllToolsSelected = (mcpId: string, tools: Tool[]) => {
