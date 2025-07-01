@@ -21,13 +21,3 @@ export const OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL =
   "open-user-data-mcp-json-file";
 export const DOWNLOAD_MCP_ZIP_CHANNEL = "download-mcp-zip";
 export const SHOW_FILE_IN_FOLDER_CHANNEL = "show-file-in-folder";
-
-// Channel names for MCP prompts operations
-export const GET_MCP_PROMPTS_CHANNEL = "get-mcp-prompts";
-export const GET_MCP_PROMPT_CHANNEL = "get-mcp-prompt";
-
-// Channel names for MCP resources operations
-export const GET_MCP_RESOURCES_CHANNEL = "get-mcp-resources";
-export const READ_MCP_RESOURCE_CHANNEL = "read-mcp-resource";
-export const SUBSCRIBE_MCP_RESOURCE_CHANNEL = "subscribe-mcp-resource";
-export const UNSUBSCRIBE_MCP_RESOURCE_CHANNEL = "unsubscribe-mcp-resource";
