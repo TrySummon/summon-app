@@ -9,6 +9,10 @@ export const importApi = async (file: File) => {
     success: result.success,
   });
 
+  if (!result.success) {
+    throw new Error(result.message);
+  }
+
   return result;
 };
 

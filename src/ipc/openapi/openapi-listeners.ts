@@ -1,4 +1,5 @@
 import { ipcMain } from "electron";
+import axios from "axios";
 import {
   IMPORT_API_CHANNEL,
   LIST_APIS_CHANNEL,
@@ -19,30 +20,43 @@ interface ImportApiRequest {
   buffer: Buffer;
 }
 
-/**
- * Checks if a JSON object is an OpenAPI specification with version >= 3
- * @param jsonObject The object to validate
- * @returns boolean indicating if the object is an OpenAPI spec with version >= 3
- */
-export function isOpenAPISpecV3OrHigher(
+async function convertSwaggerToOpenAPI(
+  swaggerSpec: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  try {
+    const response = await axios.post(
+      "https://converter.swagger.io/api/convert",
+      swaggerSpec,
+      {
+        headers: { "Content-Type": "application/json" },
+        timeout: 30000, // 30 second timeout
+      },
+    );
+    return response.data as Record<string, unknown>;
+  } catch (error) {
+    log.error("Error converting Swagger to OpenAPI:", error);
+    throw new Error("Failed to convert Swagger 2.0 spec to OpenAPI format");
+  }
+}
+
+export function isOpenAPIOrSwaggerSpec(
   jsonObject: Record<string, unknown>,
 ): boolean {
-  // Check if the object has an 'openapi' property
-  if (typeof jsonObject.openapi !== "string") {
-    return false;
+  // Check for OpenAPI 3.x+
+  if (typeof jsonObject.openapi === "string") {
+    const versionMatch = jsonObject.openapi.match(/^(\d+)\.(\d+)\.(\d+)$/);
+    if (versionMatch) {
+      const majorVersion = parseInt(versionMatch[1], 10);
+      return majorVersion >= 3;
+    }
   }
 
-  // Check if the openapi version is 3.x.x or higher
-  const versionMatch = jsonObject.openapi.match(/^(\d+)\.(\d+)\.(\d+)$/);
-  if (!versionMatch) {
-    return false;
+  // Check for Swagger 2.0
+  if (jsonObject.swagger === "2.0") {
+    return true;
   }
 
-  // Extract the major version number
-  const majorVersion = parseInt(versionMatch[1], 10);
-
-  // Return true if major version is >= 3
-  return majorVersion >= 3;
+  return false;
 }
 
 export function registerOpenApiListeners() {
@@ -53,23 +67,53 @@ export function registerOpenApiListeners() {
       // Reconstruct Buffer from the array of integers that came through IPC
       const reconstructedBuffer = Buffer.from(buffer);
 
-      const valid = isOpenAPISpecV3OrHigher(
-        JSON.parse(reconstructedBuffer.toString()),
-      );
+      let jsonSpec: Record<string, unknown>;
+      try {
+        jsonSpec = JSON.parse(reconstructedBuffer.toString());
+      } catch {
+        return {
+          success: false,
+          message: "Invalid JSON format",
+        };
+      }
+
+      const valid = isOpenAPIOrSwaggerSpec(jsonSpec);
 
       if (!valid) {
         return {
           success: false,
-          message: "Invalid OpenAPI spec",
+          message: "Invalid OpenAPI or Swagger spec",
         };
       }
 
-      // Store the API file directly
-      const apiId = await apiDb.createApi(reconstructedBuffer);
+      let finalSpec = jsonSpec;
+
+      // If it's Swagger 2.0, convert it to OpenAPI 3.x
+      if (jsonSpec.swagger === "2.0") {
+        log.info("Detected Swagger 2.0 spec, converting to OpenAPI format...");
+        try {
+          finalSpec = await convertSwaggerToOpenAPI(jsonSpec);
+          log.info("Successfully converted Swagger 2.0 to OpenAPI format");
+        } catch (conversionError) {
+          log.error("Failed to convert Swagger 2.0 spec:", conversionError);
+          return {
+            success: false,
+            message:
+              "Failed to convert Swagger 2.0 spec to OpenAPI format. Please manually convert your spec or use an OpenAPI 3.x spec.",
+          };
+        }
+      }
+
+      // Store the API file (either original OpenAPI or converted spec)
+      const finalBuffer = Buffer.from(JSON.stringify(finalSpec, null, 2));
+      const apiId = await apiDb.createApi(finalBuffer);
 
       return {
         success: true,
-        message: "API imported successfully",
+        message:
+          jsonSpec.swagger === "2.0"
+            ? "Swagger 2.0 spec imported and converted to OpenAPI format successfully"
+            : "API imported successfully",
         apiId,
       };
     } catch (error) {
