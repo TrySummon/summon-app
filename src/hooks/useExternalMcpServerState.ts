@@ -55,11 +55,13 @@ export function useExternalMcpServerState(
     // Initial fetch
     fetchStatus();
 
-    // Set up polling interval
-    const intervalId = setInterval(fetchStatus, pollingInterval);
+    if (pollingInterval !== Infinity) {
+      // Set up polling interval
+      const intervalId = setInterval(fetchStatus, pollingInterval);
 
-    // Clean up on unmount
-    return () => clearInterval(intervalId);
+      // Clean up on unmount
+      return () => clearInterval(intervalId);
+    }
   }, [mcpId, pollingInterval]);
 
   // Function to connect to the server

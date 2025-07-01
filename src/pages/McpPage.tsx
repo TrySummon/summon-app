@@ -26,7 +26,6 @@ export default function McpPage() {
   const { updateMcp } = useMcps();
   const { onAddEndpoints, onDeleteTool, onDeleteAllTools } =
     useMcpActions(mcpId);
-
   // State for storing the current chat ID
   const [currentChatId, setCurrentChatId] = useState<string | undefined>();
 
@@ -115,7 +114,7 @@ export default function McpPage() {
       <SidebarProvider
         className="min-h-full"
         mobileBreakpoint={1}
-        defaultWidth="20rem"
+        defaultWidth="21rem"
       >
         <SidebarInset className="flex min-h-0 flex-1 flex-col">
           <Breadcrumb>

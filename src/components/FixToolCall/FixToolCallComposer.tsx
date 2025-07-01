@@ -25,6 +25,7 @@ import { useMcps } from "@/hooks/useMcps";
 import { useExternalMcps } from "@/hooks/useExternalMcps";
 import { ToolAnnotations } from "@/lib/mcp/tool";
 import { MentionedTool } from "./types";
+import { toast } from "sonner";
 
 interface FixToolCallComposerProps {
   className?: string;
@@ -106,6 +107,11 @@ export function FixToolCallComposer({
     }
 
     const extractedMentions = extractMentions(trimmedMessage, mentionData);
+
+    if (extractedMentions.length === 0) {
+      toast.error("Please mention at least one tool");
+      return;
+    }
 
     const mentionedTools = extractedMentions
       .map((mention) => {

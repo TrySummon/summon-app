@@ -19,7 +19,6 @@ import { captureEvent } from "@/lib/posthog";
 import { getCredentials } from "@/ipc/ai-providers/ai-providers-client";
 import { callMcpTool } from "@/ipc/mcp/mcp-client";
 import { LLMSettings } from "@/stores/types";
-import { ToolAnnotations } from "./mcp/tool";
 
 export function makeExecuteFunction(
   mcpToolMap: ToolMap,
@@ -38,17 +37,8 @@ export function makeExecuteFunction(
       throw new Error(`Tool ${toolName} not found for MCP ${mcpId}`);
     }
 
-    const annotations = tool.annotations as ToolAnnotations | undefined;
-
-    const isOverridden =
-      annotations?.isExternal && annotations?.originalDefinition;
-
-    const originalName = isOverridden
-      ? annotations!.originalDefinition!.name
-      : tool.name;
-
     // Always call with the original tool name for API compatibility
-    return callMcpTool(mcpId, originalName, args as Record<string, unknown>);
+    return callMcpTool(mcpId, tool.name, args as Record<string, unknown>);
   };
 }
 

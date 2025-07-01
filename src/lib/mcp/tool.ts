@@ -36,6 +36,7 @@ export interface ExternalToolOverride {
   mcpId: string;
   originalToolName: string;
   definition: ToolDefinition;
+  mappingConfig?: MappingConfig;
 }
 
 export interface SummonTool {
@@ -291,6 +292,7 @@ export const getExternalMcpToolOverride = async (
 
 export const getExternalMcpOverrides = async (
   mcpId: string,
+  indexWithOriginalToolName: boolean = true,
 ): Promise<Record<string, ExternalToolOverride>> => {
   const toolsDir = await getExternalMcpToolsOverrideDir(mcpId);
   const overrides: Record<string, ExternalToolOverride> = {};
@@ -309,7 +311,11 @@ export const getExternalMcpOverrides = async (
       const content = await fs.readFile(toolPath, "utf-8");
       const override: ExternalToolOverride = JSON.parse(content);
 
-      overrides[override.originalToolName] = override;
+      if (indexWithOriginalToolName) {
+        overrides[override.originalToolName] = override;
+      } else {
+        overrides[override.definition.name] = override;
+      }
     }
   } catch {
     // Tools directory doesn't exist or other error - return empty object

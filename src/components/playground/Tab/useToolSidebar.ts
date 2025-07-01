@@ -100,11 +100,24 @@ export function useToolSidebar() {
     const counts: Record<string, number> = {};
 
     Object.entries(enabledTools).forEach(([mcpId, toolIds]) => {
-      counts[mcpId] = toolIds.length;
+      // Get available tools for this MCP
+      const mcpData = mcpToolMap?.[mcpId];
+      if (mcpData) {
+        const availableTools = mcpData.tools as Tool[];
+        const availableToolIds = availableTools.map((tool) => tool.name);
+
+        // Only count tools that actually exist in the MCP
+        const validToolIds = toolIds.filter((toolId) =>
+          availableToolIds.includes(toolId),
+        );
+        counts[mcpId] = validToolIds.length;
+      } else {
+        counts[mcpId] = 0;
+      }
     });
 
     return counts;
-  }, [enabledTools]);
+  }, [enabledTools, mcpToolMap]);
 
   // Handle toggling a single tool
   const handleToggleTool = (mcpId: string, toolId: string) => {
@@ -156,11 +169,26 @@ export function useToolSidebar() {
     return currentToolsForMcp.includes(toolId);
   };
 
-  // Calculate total tool count
-  const toolCount = Object.values(enabledTools).reduce(
-    (acc, tools) => acc + tools.length,
-    0,
-  );
+  // Calculate total tool count (only count tools that exist in their MCPs)
+  const toolCount = useMemo(() => {
+    if (!enabledTools || !mcpToolMap) return 0;
+
+    return Object.entries(enabledTools).reduce((acc, [mcpId, toolIds]) => {
+      // Get available tools for this MCP
+      const mcpData = mcpToolMap[mcpId];
+      if (mcpData) {
+        const availableTools = mcpData.tools as Tool[];
+        const availableToolIds = availableTools.map((tool) => tool.name);
+
+        // Only count tools that actually exist in the MCP
+        const validToolIds = toolIds.filter((toolId) =>
+          availableToolIds.includes(toolId),
+        );
+        return acc + validToolIds.length;
+      }
+      return acc;
+    }, 0);
+  }, [enabledTools, mcpToolMap]);
 
   // Filter MCPs that have tools
   const mcps = mcpToolMap

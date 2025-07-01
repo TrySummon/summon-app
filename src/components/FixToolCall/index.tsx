@@ -223,7 +223,7 @@ export function FixToolCallButton({ invocation }: FixToolCallButtonProps) {
         <DialogContent
           className={cn(
             "flex w-[90vw] flex-col transition-all duration-300 ease-in-out sm:max-w-none",
-            dialogState === "merge" ? "h-5/6 max-h-5/6" : "h-auto max-h-[80vh]",
+            "h-5/6 max-h-5/6",
           )}
         >
           {dialogState === "loading" ? (

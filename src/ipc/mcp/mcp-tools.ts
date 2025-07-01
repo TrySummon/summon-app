@@ -3,6 +3,7 @@ import { calculateTokenCount } from "@/lib/tiktoken";
 import { mcpDb } from "@/lib/db/mcp-db";
 import { getExternalMcpOverrides, ToolAnnotations } from "@/lib/mcp/tool";
 import type { JSONSchema7 } from "json-schema";
+import { mapOptimizedToOriginal } from "@/lib/mcp/mapper";
 
 /**
  * Fetches tools from an MCP server using the provided configuration
@@ -76,23 +77,30 @@ export async function getMcpTools(mcpId: string) {
         isExternal: true,
         id: tool.name,
       } as ToolAnnotations;
+      const originalDefinition = {
+        name: tool.name,
+        description: tool.description || "",
+        inputSchema: tool.inputSchema as JSONSchema7,
+      };
       if (externalToolOverrides) {
         const override = externalToolOverrides[tool.name];
 
         if (override) {
-          annotations.originalDefinition = {
-            name: tool.name,
-            description: tool.description || "",
-            inputSchema: tool.inputSchema as JSONSchema7,
-          };
+          annotations.originalDefinition = originalDefinition;
           tool.name = override.definition.name;
           tool.description = override.definition.description;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           tool.inputSchema = override.definition.inputSchema as any;
+
+          annotations.optimisedTokenCount = calculateTokenCount(
+            JSON.stringify(override.definition),
+          );
         }
       }
       if (annotations.tokenCount === undefined) {
-        annotations.tokenCount = calculateTokenCount(JSON.stringify(tool));
+        annotations.tokenCount = calculateTokenCount(
+          JSON.stringify(originalDefinition),
+        );
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tool.annotations = annotations as any;
@@ -114,6 +122,18 @@ export async function callMcpTool(
 
   if (!serverState.client) {
     throw new Error(`MCP server with ID ${mcpId} is not running`);
+  }
+
+  // Proxy external MCP calls to the original tool name
+  if (serverState.isExternal) {
+    const overrides = await getExternalMcpOverrides(mcpId, false);
+    const override = overrides[name];
+    if (override) {
+      name = override.originalToolName;
+      if (override.mappingConfig) {
+        args = mapOptimizedToOriginal(args, override.mappingConfig);
+      }
+    }
   }
 
   const result = await serverState.client.callTool({
