@@ -606,7 +606,11 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
         const { getCurrentState, updateCurrentState } = get();
         const state = getCurrentState();
         // Abort the current request
-        state.abortController?.abort?.();
+        if (state.abortController) {
+          state.abortController.abort();
+        } else {
+          console.info("No abort controller found in state");
+        }
 
         // Reset the abort controller and running state
         updateCurrentState(

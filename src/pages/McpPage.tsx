@@ -22,7 +22,7 @@ import { useMcpActions } from "@/hooks/useMcpActions";
 export default function McpPage() {
   const { apis } = useApis();
   const { mcpId } = useParams({ from: "/mcp/$mcpId" });
-  const { mcp } = useMcp(mcpId);
+  const { mcp, isLoading } = useMcp(mcpId);
   const { updateMcp } = useMcps();
   const { onAddEndpoints, onDeleteTool, onDeleteAllTools } =
     useMcpActions(mcpId);
@@ -96,7 +96,7 @@ export default function McpPage() {
 
   if (!apis) return null;
 
-  if (!mcp) {
+  if (!mcp && !isLoading) {
     return (
       <NotFound
         title="MCP Not Found"
@@ -107,6 +107,10 @@ export default function McpPage() {
         ]}
       />
     );
+  }
+
+  if (!mcp) {
+    return null;
   }
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import {
   Accordion,
@@ -18,6 +18,8 @@ import { RevertToolButton } from "./RevertToolButton";
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { useToolAnimations } from "@/hooks/useToolAnimations";
 import { ToolAnnotations } from "@/lib/mcp/tool";
+import { ToolDefinitionDialog } from "@/components/ui/ToolDefinitionDialog";
+import { ToolDefinitionViewerItem } from "@/components/ui/ToolDefinitionViewer";
 
 const getTokenCountBadgeVariant = (count: number) => {
   if (count < 500) return "text-green-600 dark:text-green-400";
@@ -58,6 +60,7 @@ interface ToolItemProps {
   onDeleteTool?: (toolName: string) => void;
   refreshStatus: () => void;
   onCallTool: (tool: Tool) => void;
+  onViewToolDefinition: (tool: Tool) => void;
   getAnimationClasses: (id: string) => string;
 }
 
@@ -68,6 +71,7 @@ const ToolItem: React.FC<ToolItemProps> = ({
   onDeleteTool,
   refreshStatus,
   onCallTool,
+  onViewToolDefinition,
   getAnimationClasses,
 }) => {
   const annotations = tool.annotations as unknown as ToolAnnotations;
@@ -88,21 +92,30 @@ const ToolItem: React.FC<ToolItemProps> = ({
 
               if (tokenInfo.isOptimised) {
                 return (
-                  <div
-                    className="rounded bg-blue-50 px-1.5 py-0.5 font-mono text-xs text-blue-600 dark:bg-blue-950/30 dark:text-blue-400"
-                    title={`Optimised from ${tool.annotations?.tokenCount} tokens`}
+                  <button
+                    className="rounded bg-blue-50 px-1.5 py-0.5 font-mono text-xs text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-950/50"
+                    title={`Optimised from ${tool.annotations?.tokenCount} tokens - Click to view definition`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewToolDefinition(tool);
+                    }}
                   >
                     {tokenInfo.text}
-                  </div>
+                  </button>
                 );
               }
 
               return (
-                <div
-                  className={`font-mono text-xs ${getTokenCountBadgeVariant(tokenInfo.displayCount)}`}
+                <button
+                  className={`font-mono text-xs transition-colors hover:underline ${getTokenCountBadgeVariant(tokenInfo.displayCount)}`}
+                  title="Click to view tool definition"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewToolDefinition(tool);
+                  }}
                 >
                   {tokenInfo.text}
-                </div>
+                </button>
               );
             })()}
             <div className="flex items-center gap-2">
@@ -240,11 +253,48 @@ export const ToolsList: React.FC<ToolsListProps> = ({
 }) => {
   const [callToolDialogOpen, setCallToolDialogOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
+  const [toolDefinitionDialogOpen, setToolDefinitionDialogOpen] =
+    useState(false);
+  const [selectedToolForViewing, setSelectedToolForViewing] =
+    useState<Tool | null>(null);
   const { getAnimationClasses } = useToolAnimations({ mcpId });
+
   const handleCallTool = (tool: Tool) => {
     setSelectedTool(tool);
     setCallToolDialogOpen(true);
   };
+
+  const handleViewToolDefinition = (tool: Tool) => {
+    setSelectedToolForViewing(tool);
+    setToolDefinitionDialogOpen(true);
+  };
+
+  const toolDefinitionItems = useMemo(() => {
+    if (!selectedToolForViewing) return [];
+
+    const annotations =
+      selectedToolForViewing.annotations as unknown as ToolAnnotations;
+    const originalDefinition = annotations.originalDefinition;
+
+    const item: ToolDefinitionViewerItem = {
+      name: selectedToolForViewing.name,
+      current: {
+        name: selectedToolForViewing.name,
+        description: selectedToolForViewing.description || "",
+        inputSchema: selectedToolForViewing.inputSchema,
+      },
+    };
+
+    if (originalDefinition) {
+      item.original = {
+        name: originalDefinition.name,
+        description: originalDefinition.description,
+        inputSchema: originalDefinition.inputSchema,
+      };
+    }
+
+    return [item];
+  }, [selectedToolForViewing]);
 
   if (tools.length === 0) {
     return (
@@ -299,6 +349,7 @@ export const ToolsList: React.FC<ToolsListProps> = ({
             onDeleteTool={onDeleteTool}
             refreshStatus={refreshStatus}
             onCallTool={handleCallTool}
+            onViewToolDefinition={handleViewToolDefinition}
             getAnimationClasses={getAnimationClasses}
           />
         ))}
@@ -310,6 +361,16 @@ export const ToolsList: React.FC<ToolsListProps> = ({
         open={callToolDialogOpen}
         onOpenChange={setCallToolDialogOpen}
       />
+
+      {selectedToolForViewing && (
+        <ToolDefinitionDialog
+          open={toolDefinitionDialogOpen}
+          onOpenChange={setToolDefinitionDialogOpen}
+          items={toolDefinitionItems}
+          title={selectedToolForViewing.name}
+          description={selectedToolForViewing.description}
+        />
+      )}
     </div>
   );
 };

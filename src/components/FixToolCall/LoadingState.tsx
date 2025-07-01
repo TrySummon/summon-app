@@ -9,7 +9,7 @@ interface LoadingStateProps {
 
 export function LoadingState({ onCancel }: LoadingStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16">
+    <div className="flex flex-grow flex-col items-center justify-center">
       <Loader className="mb-4 h-8 w-8" />
       <p className="text-muted-foreground mb-6 text-lg">Figuring it out...</p>
       <Button variant="outline" onClick={onCancel} className="gap-2">

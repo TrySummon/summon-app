@@ -53,6 +53,10 @@ export async function runPlaygroundAgent() {
 
   const store = usePlaygroundStore.getState();
 
+  // Create a new AbortController for this run BEFORE any async operations
+  const abortController = new AbortController();
+  const abortSignal = abortController.signal;
+
   try {
     const {
       mcpToolMap,
@@ -77,14 +81,12 @@ export async function runPlaygroundAgent() {
       max_tokens: settings.maxTokens,
     });
 
-    // Create a new AbortController for this run
-    const abortController = new AbortController();
+    // Store the abort controller in state so stopAgent can access it
     updateCurrentState((state) => ({
       ...state,
       tokenUsage: undefined,
       abortController,
     }));
-    const abortSignal = abortController.signal;
 
     // Set shouldScrollToDock to true when agent starts running
     updateShouldScrollToDock(true);
@@ -328,7 +330,7 @@ function handleAgentError(error: unknown, store: PlaygroundStore) {
     parts: [
       {
         type: "text",
-        text: `Sorry, there was an error generating a response:\n\`\`\`\n${String(error)}\n\`\`\``,
+        text: `Sorry, there was an error generating a response:\n\`\`\`\n${typeof error === "string" ? error : JSON.stringify(error, null, 2)}\n\`\`\``,
       },
     ],
     createdAt: new Date(),
