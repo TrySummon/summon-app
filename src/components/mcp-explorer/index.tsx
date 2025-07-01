@@ -1,13 +1,16 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { Tool, Prompt, Resource } from "@modelcontextprotocol/sdk/types.js";
 import { ServerStatusSection } from "./ServerStatusSection";
 import { ToolsList } from "./ToolsList";
-import { getMcpTools } from "@/ipc/mcp/mcp-client";
+import { PromptsList } from "./PromptsList";
+import { ResourcesList } from "./ResourcesList";
+import { getMcpTools, getMcpPrompts, getMcpResources } from "@/ipc/mcp/mcp-client";
 import { McpApiGroup } from "@/lib/db/mcp-db";
 
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { useMcpServerState } from "@/hooks/useMcpServerState";
 import { ApiConfig, ApiConfigs } from "../mcp-builder/api-config";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface McpExplorerProps {
   mcpId: string;
@@ -34,6 +37,8 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
 }) => {
   const { state, isLoading, error, refreshStatus } = useMcpServerState(mcpId);
   const [mcpTools, setMcpTools] = useState<Tool[]>([]);
+  const [mcpPrompts, setMcpPrompts] = useState<Prompt[]>([]);
+  const [mcpResources, setMcpResources] = useState<Resource[]>([]);
   const url =
     state?.transport && "url" in state.transport
       ? state.transport.url
@@ -54,15 +59,53 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
     }
   }, [mcpId]);
 
-  // Enhanced refresh function that refreshes both status and tools
+  const fetchMcpPrompts = useCallback(async () => {
+    try {
+      const response = await getMcpPrompts(mcpId);
+      if (response.success && response.data) {
+        setMcpPrompts(response.data);
+      } else {
+        console.error("Failed to fetch MCP prompts:", response.message);
+        setMcpPrompts([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch MCP prompts:", err);
+      setMcpPrompts([]);
+    }
+  }, [mcpId]);
+
+  const fetchMcpResources = useCallback(async () => {
+    try {
+      const response = await getMcpResources(mcpId);
+      if (response.success && response.data) {
+        setMcpResources(response.data);
+      } else {
+        console.error("Failed to fetch MCP resources:", response.message);
+        setMcpResources([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch MCP resources:", err);
+      setMcpResources([]);
+    }
+  }, [mcpId]);
+
+  // Enhanced refresh function that refreshes status, tools, prompts, and resources
   const handleRefreshStatus = useCallback(async () => {
     await refreshStatus();
-    await fetchMcpTools();
-  }, [refreshStatus, fetchMcpTools]);
+    await Promise.all([
+      fetchMcpTools(),
+      fetchMcpPrompts(),
+      fetchMcpResources(),
+    ]);
+  }, [refreshStatus, fetchMcpTools, fetchMcpPrompts, fetchMcpResources]);
 
   useEffect(() => {
-    fetchMcpTools();
-  }, [fetchMcpTools, apiGroups]);
+    Promise.all([
+      fetchMcpTools(),
+      fetchMcpPrompts(),
+      fetchMcpResources(),
+    ]);
+  }, [fetchMcpTools, fetchMcpPrompts, fetchMcpResources, apiGroups]);
 
   if (isLoading) return null;
 
@@ -84,14 +127,33 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
       )}
 
       {state?.status === "running" && (
-        <ToolsList
-          tools={mcpTools}
-          mcpId={mcpId}
-          onAddEndpoints={onAddEndpoints}
-          onDeleteTool={onDeleteTool}
-          onDeleteAllTools={onDeleteAllTools}
-          refreshStatus={handleRefreshStatus}
-        />
+        <Tabs defaultValue="tools" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="tools">Tools ({mcpTools.length})</TabsTrigger>
+            <TabsTrigger value="prompts">
+              Prompts ({mcpPrompts.length})
+            </TabsTrigger>
+            <TabsTrigger value="resources">
+              Resources ({mcpResources.length})
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="tools" className="mt-4">
+            <ToolsList
+              tools={mcpTools}
+              mcpId={mcpId}
+              onAddEndpoints={onAddEndpoints}
+              onDeleteTool={onDeleteTool}
+              onDeleteAllTools={onDeleteAllTools}
+              refreshStatus={handleRefreshStatus}
+            />
+          </TabsContent>
+          <TabsContent value="prompts" className="mt-4">
+            <PromptsList prompts={mcpPrompts} mcpId={mcpId} />
+          </TabsContent>
+          <TabsContent value="resources" className="mt-4">
+            <ResourcesList resources={mcpResources} mcpId={mcpId} />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );
