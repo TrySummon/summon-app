@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import ToolItem from "./ToolItem";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { ToolAnnotations } from "@/lib/mcp/tool";
+import { cn } from "@/utils/tailwind";
 
 interface McpSectionProps {
   mcpId: string;
@@ -45,7 +46,10 @@ export default function McpSection({
   return (
     <div key={mcpId}>
       <div
-        className={`text-foreground bg-accent sticky top-0 z-10 flex flex-col gap-1 p-2`}
+        className={cn(
+          "text-foreground bg-sidebar sticky top-0 z-10 flex flex-col gap-1 p-2",
+          !isExpanded && "border-b",
+        )}
       >
         <div
           onClick={onToggleSection}
@@ -58,7 +62,7 @@ export default function McpSection({
               <ChevronRight className="h-4 w-4" />
             )}
             <span
-              className={`text-sm font-semibold ${selectedToolCount > 0 ? "text-primary" : ""}`}
+              className={`text-sm font-semibold ${selectedToolCount > 0 ? "text-primary" : "text-muted-foreground"}`}
             >
               {name}
             </span>

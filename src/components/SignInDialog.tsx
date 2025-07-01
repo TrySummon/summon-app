@@ -36,7 +36,7 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
             <img src="/images/icon.png" alt="Summon" className="h-16 w-16" />
           </div>
           <DialogTitle className="text-center text-xl font-semibold">
-            Sign in to use Summon's AI Agent
+            Sign in to use Summon's AI features
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-center text-sm">
             Get AI assistance to build, improve, and explore your MCP tools and

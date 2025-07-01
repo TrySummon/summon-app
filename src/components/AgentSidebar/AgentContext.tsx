@@ -219,7 +219,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
 
           if (apiGroup.tools) {
             const toolsWithApiId = apiGroup.tools.map((tool) => ({
-              name: tool.name,
+              name: tool.optimised?.name || tool.name,
               description: tool.description,
               originalTokenCount: tool.originalTokenCount,
               isOptimised: !!tool.optimised,

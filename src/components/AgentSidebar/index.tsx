@@ -142,7 +142,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
           for (const tool of group.tools) {
             data.push({
               id: `mcp-tool-${tool.name}`,
-              name: tool.name,
+              name: tool?.optimised?.name || tool.name,
               type: "tool",
             });
           }

@@ -144,7 +144,7 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
   };
 
   return (
-    <div className="group border-border/50 bg-card/30 hover:border-border hover:bg-card/50 relative rounded-lg border backdrop-blur-sm transition-all duration-200 hover:shadow-sm">
+    <div className="group border-border/50 bg-card/30 hover:border-border hover:bg-card/50 relative rounded-lg border backdrop-blur-sm transition-all duration-200">
       {/* Header */}
       <div className="border-border/30 flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-3">

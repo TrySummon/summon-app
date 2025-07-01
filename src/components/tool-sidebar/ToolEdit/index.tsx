@@ -41,6 +41,7 @@ import type {
   SummonTool,
   ToolDefinition,
 } from "@/lib/mcp/tool";
+import CopyButton from "@/components/CopyButton";
 
 interface ToolEditDialogProps {
   open: boolean;
@@ -92,6 +93,16 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
 
   // schemaPath stores names, e.g., ['Root', 'user', 'address']
   const [schemaPath, setSchemaPath] = useState<string[]>(["Root"]);
+
+  // Create current tool definition for copying
+  const currentToolDefinition = useMemo(
+    () => ({
+      name: unsavedChanges.name,
+      description: unsavedChanges.description,
+      inputSchema: unsavedChanges.inputSchema,
+    }),
+    [unsavedChanges],
+  );
 
   // Determine if there are unsaved changes - compare against original
   const hasUnsavedChanges = useMemo(() => {
@@ -318,6 +329,11 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
   }, [hasUnsavedChanges, onOpenChange]);
 
   const handleRevertAllChanges = useCallback(async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to revert all changes? This action cannot be undone.",
+    );
+    if (!confirmed) return;
+
     setIsSaving(true);
     try {
       const result = await revertMcpToolWithStoreSync(tool.name, {
@@ -507,14 +523,17 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
                   <TabsTrigger value="edit">Edit Schema</TabsTrigger>
                   <TabsTrigger value="diff">View Changes</TabsTrigger>
                 </TabsList>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={handleRevertAllChanges}
-                >
-                  Revert All Changes
-                </Button>
+                <div className="flex items-center gap-2">
+                  <CopyButton content={currentToolDefinition} />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={handleRevertAllChanges}
+                  >
+                    Revert All Changes
+                  </Button>
+                </div>
               </div>
               <TabsContent value="edit" className="flex-1 overflow-hidden">
                 <SchemaEditor
@@ -546,18 +565,25 @@ export const ToolEditDialog: React.FC<ToolEditDialogProps> = ({
               </TabsContent>
             </Tabs>
           ) : (
-            <SchemaEditor
-              schemaPath={schemaPath}
-              properties={properties}
-              required={required}
-              onNavigateToProperty={navigateToProperty}
-              onNavigateToPathIndex={navigateToPathIndex}
-              onUpdateProperty={updateSchemaProperty}
-              onRevertProperty={revertSchemaProperty}
-              originalRootSchema={originalToolDefinition.inputSchema}
-              currentPathToParentProperties={schemaPath}
-              allowNameEditing={false}
-            />
+            <div className="flex h-full flex-col">
+              <div className="mb-2 flex items-center justify-end">
+                <CopyButton content={currentToolDefinition} />
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <SchemaEditor
+                  schemaPath={schemaPath}
+                  properties={properties}
+                  required={required}
+                  onNavigateToProperty={navigateToProperty}
+                  onNavigateToPathIndex={navigateToPathIndex}
+                  onUpdateProperty={updateSchemaProperty}
+                  onRevertProperty={revertSchemaProperty}
+                  originalRootSchema={originalToolDefinition.inputSchema}
+                  currentPathToParentProperties={schemaPath}
+                  allowNameEditing={false}
+                />
+              </div>
+            </div>
           )}
         </div>
 

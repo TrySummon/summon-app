@@ -33,6 +33,15 @@ export function RevertToolButton({
     const toolAnnotations = tool.annotations as unknown as ToolAnnotations;
     const currentToolName = tool.name;
 
+    // Show native confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to revert "${currentToolName}" to its original state? This action cannot be undone.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     setIsReverting(true);
 
     await toast.promise(

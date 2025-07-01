@@ -231,7 +231,9 @@ export function registerAgentToolsListeners() {
         }
 
         const apiGroup = mcpData.apiGroups[apiId!];
-        const tool = apiGroup?.tools?.find((tool) => tool.name === toolName);
+        const tool = apiGroup?.tools?.find(
+          (tool) => tool.name === toolName || tool.optimised?.name === toolName,
+        );
 
         if (!tool) {
           return {

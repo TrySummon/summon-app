@@ -88,6 +88,8 @@ async function makeRequest(
 
 const PROTOCOL = "summon";
 const REDIRECT_URI = `${PROTOCOL}://auth-callback`;
+const AUTH_TIMEOUT = 60 * 1000; // 1 minute
+const TOKEN_EXCHANGE_TIMEOUT = 30 * 1000; // 30 seconds
 
 export interface UserInfo {
   id: string;
@@ -99,6 +101,13 @@ export interface UserInfo {
 interface AuthData {
   token: string;
   user: UserInfo;
+}
+
+interface AuthResult {
+  success: boolean;
+  token?: string;
+  user?: UserInfo;
+  message?: string;
 }
 
 // Secure storage functions
@@ -181,78 +190,137 @@ class SecureAuthStorage {
 class ElectronOAuth {
   private codeVerifier: string | null = null;
   private state: string | null = null;
-  private pendingAuthResolve:
-    | ((value: {
-        success: boolean;
-        token?: string;
-        user?: UserInfo;
-        message?: string;
-      }) => void)
-    | null = null;
+  private authTimeout: NodeJS.Timeout | null = null;
+  private pendingAuthResolve: ((value: AuthResult) => void) | null = null;
   private pendingAuthReject: ((reason?: Error) => void) | null = null;
 
-  generatePKCEParams(): { codeChallenge: string; state: string } {
-    this.codeVerifier = crypto.randomBytes(32).toString("base64url");
+  private generateSecureRandomString(length: number): string {
+    return crypto.randomBytes(length).toString("base64url");
+  }
+
+  private generatePKCEParams(): { codeChallenge: string; state: string } {
+    // Generate cryptographically secure random values
+    this.codeVerifier = this.generateSecureRandomString(32);
     const codeChallenge = crypto
       .createHash("sha256")
       .update(this.codeVerifier)
       .digest("base64url");
-    this.state = crypto.randomBytes(16).toString("base64url");
+    this.state = this.generateSecureRandomString(16);
+
+    log.info("Generated PKCE parameters", {
+      codeChallengeLength: codeChallenge.length,
+      stateLength: this.state.length,
+    });
 
     return { codeChallenge, state: this.state };
   }
 
-  async authenticate(): Promise<{
-    success: boolean;
-    token?: string;
-    user?: UserInfo;
-    message?: string;
-  }> {
+  private validateServerUrl(serverUrl: string): boolean {
+    try {
+      const url = new URL(serverUrl);
+      return url.protocol === "https:" || url.hostname === "localhost";
+    } catch {
+      return false;
+    }
+  }
+
+  private clearAuthTimeout(): void {
+    if (this.authTimeout) {
+      clearTimeout(this.authTimeout);
+      this.authTimeout = null;
+    }
+  }
+
+  private clearPendingAuth(): void {
+    this.clearAuthTimeout();
+    this.pendingAuthResolve = null;
+    this.pendingAuthReject = null;
+    this.codeVerifier = null;
+    this.state = null;
+  }
+
+  private setupAuthTimeout(): void {
+    this.authTimeout = setTimeout(() => {
+      log.warn("Authentication timeout reached");
+      if (this.pendingAuthResolve) {
+        this.pendingAuthResolve({
+          success: false,
+          message: "Authentication timed out. Please try again.",
+        });
+        this.clearPendingAuth();
+      }
+    }, AUTH_TIMEOUT);
+  }
+
+  async authenticate(): Promise<AuthResult> {
+    // Prevent multiple concurrent auth attempts
+    if (this.pendingAuthResolve) {
+      log.warn("Authentication already in progress");
+      return {
+        success: false,
+        message: "Authentication already in progress",
+      };
+    }
+
     try {
       const serverUrl = process.env.VITE_PUBLIC_SUMMON_HOST;
       if (!serverUrl) {
+        log.error("VITE_PUBLIC_SUMMON_HOST environment variable not set");
         return {
           success: false,
-          message: "SUMMON_SERVER_URL environment variable not set",
+          message: "Server configuration error. Please contact support.",
+        };
+      }
+
+      if (!this.validateServerUrl(serverUrl)) {
+        log.error("Invalid server URL:", serverUrl);
+        return {
+          success: false,
+          message: "Invalid server configuration. Please contact support.",
         };
       }
 
       return new Promise((resolve, reject) => {
-        const { codeChallenge, state } = this.generatePKCEParams();
+        try {
+          const { codeChallenge, state } = this.generatePKCEParams();
 
-        // Store the promise resolvers for the callback
-        this.pendingAuthResolve = resolve;
-        this.pendingAuthReject = reject;
+          // Store the promise resolvers for the callback
+          this.pendingAuthResolve = resolve;
+          this.pendingAuthReject = reject;
 
-        // Build authorization URL
-        const authUrl = new URL(`${serverUrl}/api/auth/electron/authorize`);
-        authUrl.searchParams.set("code_challenge", codeChallenge);
-        authUrl.searchParams.set("code_challenge_method", "S256");
-        authUrl.searchParams.set("state", state);
-        authUrl.searchParams.set("redirect_uri", REDIRECT_URI);
+          // Setup timeout
+          this.setupAuthTimeout();
 
-        // Open OAuth flow in the user's default browser
-        shell.openExternal(authUrl.toString()).catch((error) => {
-          log.error("Failed to open browser for OAuth:", error);
-          reject({
-            success: false,
-            message: "Failed to open browser for authentication",
+          // Build authorization URL
+          const authUrl = new URL(`${serverUrl}/api/auth/electron/authorize`);
+          authUrl.searchParams.set("code_challenge", codeChallenge);
+          authUrl.searchParams.set("code_challenge_method", "S256");
+          authUrl.searchParams.set("state", state);
+          authUrl.searchParams.set("redirect_uri", REDIRECT_URI);
+
+          log.info("Starting OAuth flow", {
+            serverUrl,
+            redirectUri: REDIRECT_URI,
           });
-        });
 
-        // Set a timeout for the authentication
-        setTimeout(
-          () => {
-            if (this.pendingAuthResolve) {
-              this.pendingAuthResolve({
-                success: false,
-                message: "Authentication timed out",
-              });
-              this.clearPendingAuth();
-            }
-          },
-          5 * 60 * 1000,
-        ); // 5 minute timeout
+          // Open OAuth flow in the user's default browser
+          shell.openExternal(authUrl.toString()).catch((error) => {
+            log.error("Failed to open browser for OAuth:", error);
+            this.clearPendingAuth();
+            resolve({
+              success: false,
+              message:
+                "Failed to open browser for authentication. Please check your default browser settings.",
+            });
+          });
+        } catch (error) {
+          log.error("Error setting up OAuth flow:", error);
+          this.clearPendingAuth();
+          resolve({
+            success: false,
+            message: "Failed to initialize authentication. Please try again.",
+          });
+        }
       });
     } catch (error) {
       log.error("Error during OAuth authentication:", error);
@@ -264,21 +332,19 @@ class ElectronOAuth {
   }
 
   async handleProtocolCallback(callbackUrl: string): Promise<void> {
-    log.info(`Protocol callback received: ${callbackUrl}`);
+    log.info("Protocol callback received", { callbackUrl });
 
     if (!this.pendingAuthResolve) {
       log.warn("Received OAuth callback but no pending authentication");
       return;
     }
 
-    log.info("Processing OAuth callback...");
     try {
-      const serverUrl =
-        process.env.SUMMON_SERVER_URL || process.env.VITE_PUBLIC_SUMMON_HOST;
+      const serverUrl = process.env.VITE_PUBLIC_SUMMON_HOST;
       if (!serverUrl) {
         this.pendingAuthResolve({
           success: false,
-          message: "SUMMON_SERVER_URL environment variable not set",
+          message: "Server configuration error. Please contact support.",
         });
         this.clearPendingAuth();
         return;
@@ -298,87 +364,216 @@ class ElectronOAuth {
     }
   }
 
-  private clearPendingAuth(): void {
-    this.pendingAuthResolve = null;
-    this.pendingAuthReject = null;
-  }
-
   private async handleCallback(
     callbackUrl: string,
     serverUrl: string,
-  ): Promise<{
-    success: boolean;
-    token?: string;
-    user?: UserInfo;
-    message?: string;
-  }> {
+  ): Promise<AuthResult> {
     try {
-      log.info(`Handling OAuth callback: ${callbackUrl}`);
+      log.info("Processing OAuth callback", { callbackUrl });
       const url = new URL(callbackUrl);
       const code = url.searchParams.get("code");
+      const state = url.searchParams.get("state");
       const error = url.searchParams.get("error");
+      const errorDescription = url.searchParams.get("error_description");
 
+      // Handle OAuth errors
       if (error) {
-        log.error(`OAuth error from server: ${error}`);
-        return { success: false, message: `OAuth error: ${error}` };
-      }
-
-      if (!code) {
-        log.error("Authorization code missing from callback");
-        return { success: false, message: "Missing authorization code" };
-      }
-
-      // Exchange code for token
-      log.info(
-        `Exchanging code for token at: ${serverUrl}/api/auth/electron/token`,
-      );
-      log.info(`Code verifier length: ${this.codeVerifier?.length}`);
-      log.info(`Redirect URI: ${REDIRECT_URI}`);
-
-      const tokenResponse = await fetch(
-        `${serverUrl}/api/auth/electron/token`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            code,
-            redirectUri: REDIRECT_URI,
-          }),
-        },
-      );
-
-      const tokenResponseJson = await tokenResponse.json();
-      log.info(`Token response status: ${tokenResponse.status}`);
-      captureEvent("signed_in", {
-        email: tokenResponseJson.user.email,
-        name: tokenResponseJson.user.name,
-      });
-
-      if (!tokenResponse.ok) {
-        const errorMessage =
-          tokenResponseJson.error ||
-          tokenResponseJson.message ||
-          JSON.stringify(tokenResponseJson);
+        log.error("OAuth error from server", { error, errorDescription });
+        const errorMessages: Record<string, string> = {
+          access_denied: "Authentication was cancelled by the user.",
+          invalid_request: "Invalid authentication request. Please try again.",
+          invalid_client: "Client configuration error. Please contact support.",
+          server_error: "Server error during authentication. Please try again.",
+          temporarily_unavailable:
+            "Authentication service temporarily unavailable. Please try again later.",
+        };
         return {
           success: false,
-          message: `Token exchange failed: ${errorMessage}`,
+          message: errorMessages[error] || `Authentication error: ${error}`,
         };
       }
 
-      const { user, token } = tokenResponseJson;
+      // Validate required parameters
+      if (!code) {
+        log.error("Authorization code missing from callback");
+        return {
+          success: false,
+          message: "Authentication failed: Missing authorization code.",
+        };
+      }
 
-      log.info(
-        `Authentication successful for user: ${user.name || user.email}`,
+      if (!state) {
+        log.error("State parameter missing from callback");
+        return {
+          success: false,
+          message: "Authentication failed: Missing state parameter.",
+        };
+      }
+
+      // Validate state matches what we sent
+      if (state !== this.state) {
+        log.error("State mismatch", { expected: this.state, received: state });
+        return {
+          success: false,
+          message: "Authentication failed: State validation error.",
+        };
+      }
+
+      if (!this.codeVerifier) {
+        log.error("Code verifier not available");
+        return {
+          success: false,
+          message: "Authentication failed: Missing code verifier.",
+        };
+      }
+
+      // Exchange code for token
+      log.info("Exchanging authorization code for token");
+      const tokenResult = await this.exchangeCodeForToken(
+        serverUrl,
+        code,
+        this.codeVerifier,
       );
+
+      if (tokenResult.success && tokenResult.token && tokenResult.user) {
+        captureEvent("signed_in", {
+          email: tokenResult.user.email,
+          name: tokenResult.user.name,
+        });
+      }
+
+      return tokenResult;
+    } catch (error) {
+      log.error("Error handling OAuth callback:", error);
+      return {
+        success: false,
+        message: "Authentication failed due to an unexpected error.",
+      };
+    }
+  }
+
+  private async exchangeCodeForToken(
+    serverUrl: string,
+    code: string,
+    codeVerifier: string,
+  ): Promise<AuthResult> {
+    try {
+      const tokenUrl = `${serverUrl}/api/auth/electron/token`;
+
+      log.info("Making token exchange request", {
+        tokenUrl,
+        codeLength: code.length,
+        codeVerifierLength: codeVerifier.length,
+        redirectUri: REDIRECT_URI,
+      });
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        TOKEN_EXCHANGE_TIMEOUT,
+      );
+
+      const response = await fetch(tokenUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "Summon-Electron/1.0.0",
+        },
+        body: JSON.stringify({
+          code,
+          codeVerifier,
+          redirectUri: REDIRECT_URI,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      const responseData = await response.json();
+
+      log.info("Token exchange response", {
+        status: response.status,
+        success: response.ok,
+      });
+
+      if (!response.ok) {
+        const errorMessage = this.getTokenExchangeErrorMessage(
+          responseData.error,
+          responseData.error_description,
+        );
+        log.error("Token exchange failed", {
+          status: response.status,
+          error: responseData.error,
+          description: responseData.error_description,
+        });
+        return {
+          success: false,
+          message: errorMessage,
+        };
+      }
+
+      const { user, access_token: token } = responseData;
+
+      if (!token || !user) {
+        log.error("Token exchange succeeded but missing required data", {
+          hasToken: !!token,
+          hasUser: !!user,
+        });
+        return {
+          success: false,
+          message: "Authentication completed but user data is incomplete.",
+        };
+      }
+
+      log.info("Authentication successful", {
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+      });
+
       return {
         success: true,
         token: token as string,
         user: user as UserInfo,
       };
     } catch (error) {
-      log.error("Error handling OAuth callback:", error);
-      return { success: false, message: `Callback error: ${String(error)}` };
+      if (error instanceof Error && error.name === "AbortError") {
+        log.error("Token exchange timed out");
+        return {
+          success: false,
+          message: "Authentication timed out. Please try again.",
+        };
+      }
+
+      log.error("Token exchange error:", error);
+      return {
+        success: false,
+        message: "Failed to complete authentication. Please try again.",
+      };
     }
+  }
+
+  private getTokenExchangeErrorMessage(
+    error?: string,
+    errorDescription?: string,
+  ): string {
+    const errorMessages: Record<string, string> = {
+      invalid_request: "Invalid authentication request. Please try again.",
+      invalid_grant: "Authentication code has expired. Please try again.",
+      invalid_client: "Client configuration error. Please contact support.",
+      server_error: "Server error during authentication. Please try again.",
+      insufficient_scope: "Unable to retrieve required user information.",
+    };
+
+    if (error && errorMessages[error]) {
+      return errorMessages[error];
+    }
+
+    if (errorDescription) {
+      return `Authentication failed: ${errorDescription}`;
+    }
+
+    return "Authentication failed. Please try again.";
   }
 }
 
@@ -387,7 +582,7 @@ export const authStorage = new SecureAuthStorage();
 
 // Export function to handle protocol callbacks from main process
 export function handleOAuthProtocolCallback(url: string): void {
-  log.info(`Main process received protocol callback: ${url}`);
+  log.info("Main process received protocol callback", { url });
   if (oauthClient) {
     oauthClient.handleProtocolCallback(url);
   } else {
@@ -399,16 +594,22 @@ export function registerAuthListeners() {
   // OAuth authentication
   ipcMain.handle(OAUTH_AUTHENTICATE_CHANNEL, async () => {
     try {
+      log.info("Starting OAuth authentication flow");
       const result = await oauthClient.authenticate();
+
       if (result.success && result.token && result.user) {
+        log.info("Authentication successful, storing auth data");
         await authStorage.storeAuthData(result.token, result.user);
+      } else {
+        log.warn("Authentication failed", { message: result.message });
       }
+
       return result;
     } catch (error) {
       log.error("OAuth authentication failed:", error);
       return {
         success: false,
-        message: `Authentication failed: ${String(error)}`,
+        message: "Authentication failed due to an unexpected error.",
       };
     }
   });
@@ -420,7 +621,17 @@ export function registerAuthListeners() {
       if (!authData) {
         return { success: false, message: "Not authenticated" };
       }
-      return { success: true, user: authData.user, token: authData.token };
+
+      log.info("Retrieved current user", {
+        userId: authData.user.id,
+        userEmail: authData.user.email,
+      });
+
+      return {
+        success: true,
+        user: authData.user,
+        token: authData.token,
+      };
     } catch (error) {
       log.error("Failed to get current user:", error);
       return {
@@ -433,11 +644,15 @@ export function registerAuthListeners() {
   // Logout
   ipcMain.handle(OAUTH_LOGOUT_CHANNEL, async () => {
     try {
+      log.info("Logging out user");
       await authStorage.clearAuthData();
       return { success: true };
     } catch (error) {
       log.error("Failed to logout:", error);
-      return { success: false, message: "Failed to clear authentication data" };
+      return {
+        success: false,
+        message: "Failed to clear authentication data",
+      };
     }
   });
 
@@ -446,6 +661,8 @@ export function registerAuthListeners() {
     AUTH_TEST_CREDENTIALS_CHANNEL,
     async (_, baseUrl: string, authData: McpAuth) => {
       try {
+        log.info("Testing credentials against base URL", { baseUrl });
+
         // Prepare headers based on auth type
         const headers: Record<string, string> = {};
 
@@ -471,6 +688,13 @@ export function registerAuthListeners() {
 
         // Make the request
         const result = await makeRequest(finalUrl, headers);
+
+        log.info("Credentials test result", {
+          baseUrl,
+          success: result.success,
+          status: result.status,
+        });
+
         return result;
       } catch (error: unknown) {
         log.error("Error testing credentials:", error);
