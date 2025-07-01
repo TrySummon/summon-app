@@ -127,7 +127,7 @@
     "@sentry/react": "^9.27.0",
     "@tailwindcss/vite": "^4.1.4",
     "@tanstack/react-query": "^5.74.7",
-    "@tanstack/react-router": "^1.121.16",
+    "@tanstack/react-router": "^1.123.2",
     "@types/archiver": "^6.0.3",
     "@uiw/codemirror-theme-vscode": "^4.23.12",
     "@vitejs/plugin-react": "^4.4.1",
