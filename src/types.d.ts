@@ -31,3 +31,9 @@ declare interface Window {
   electronWindow: ElectronWindow;
   updater: UpdaterContext;
 }
+
+// Asset module declarations for Vite
+declare module "*.png" {
+  const src: string;
+  export default src;
+}

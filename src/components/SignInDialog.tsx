@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Workflow, Sparkles, Wrench } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import iconPath from "@/assets/icon.png";
 
 interface SignInDialogProps {
   open: boolean;
@@ -33,7 +34,7 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-center">
           <div className="mx-auto mb-4">
-            <img src="/images/icon.png" alt="Summon" className="h-16 w-16" />
+            <img src={iconPath} alt="Summon" className="h-16 w-16" />
           </div>
           <DialogTitle className="text-center text-xl font-semibold">
             Sign in to use Summon's AI features
