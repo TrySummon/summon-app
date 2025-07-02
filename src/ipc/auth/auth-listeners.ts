@@ -263,9 +263,9 @@ class ElectronOAuth {
     }
 
     try {
-      const serverUrl = process.env.VITE_PUBLIC_SUMMON_HOST;
+      const serverUrl = process.env.PUBLIC_SUMMON_HOST;
       if (!serverUrl) {
-        log.error("VITE_PUBLIC_SUMMON_HOST environment variable not set");
+        log.error("PUBLIC_SUMMON_HOST environment variable not set");
         return {
           success: false,
           message: "Server configuration error. Please contact support.",
@@ -340,7 +340,7 @@ class ElectronOAuth {
     }
 
     try {
-      const serverUrl = process.env.VITE_PUBLIC_SUMMON_HOST;
+      const serverUrl = process.env.PUBLIC_SUMMON_HOST;
       if (!serverUrl) {
         this.pendingAuthResolve({
           success: false,

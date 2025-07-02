@@ -59,7 +59,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   loadUserData: async () => {
-    const isServerUrlAvailable = Boolean(process.env.VITE_PUBLIC_SUMMON_HOST);
+    const isServerUrlAvailable = Boolean(process.env.PUBLIC_SUMMON_HOST);
 
     if (!isServerUrlAvailable) {
       set({ isLoading: false });
@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   authenticate: async () => {
-    const isServerUrlAvailable = Boolean(process.env.VITE_PUBLIC_SUMMON_HOST);
+    const isServerUrlAvailable = Boolean(process.env.PUBLIC_SUMMON_HOST);
 
     if (!isServerUrlAvailable) {
       toast.error("Server URL not configured");

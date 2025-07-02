@@ -55,7 +55,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
     addToolResult,
     reload,
   } = useChat({
-    api: `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/agent`,
+    api: `${process.env.PUBLIC_SUMMON_HOST}/api/agent`,
     headers: token
       ? {
           Authorization: `Bearer ${token}`,
@@ -70,7 +70,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
     append: appendNameMessage,
     setMessages: setNameMessages,
   } = useChat({
-    api: `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/conversation-name`,
+    api: `${process.env.PUBLIC_SUMMON_HOST}/api/conversation-name`,
     headers: token
       ? {
           Authorization: `Bearer ${token}`,

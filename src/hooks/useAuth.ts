@@ -3,7 +3,7 @@ import { useEffect } from "react";
 
 export function useAuth() {
   const store = useAuthStore();
-  const isServerUrlAvailable = Boolean(process.env.VITE_PUBLIC_SUMMON_HOST);
+  const isServerUrlAvailable = Boolean(process.env.PUBLIC_SUMMON_HOST);
 
   // Load user data on mount
   useEffect(() => {

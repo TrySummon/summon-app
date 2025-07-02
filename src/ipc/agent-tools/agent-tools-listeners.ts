@@ -251,7 +251,7 @@ export function registerAgentToolsListeners() {
 
       // Make request to tool design optimization endpoint
       const response = await axios.post(
-        `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/optimise-tool-size`,
+        `${process.env.PUBLIC_SUMMON_HOST}/api/optimise-tool-size`,
         {
           originalToolDefinition,
           additionalGoal,
@@ -330,7 +330,7 @@ export function registerAgentToolsListeners() {
 
         // Make request to tool design optimization endpoint
         const response = await axios.post(
-          `${process.env.VITE_PUBLIC_SUMMON_HOST}/api/optimise-tool-selection`,
+          `${process.env.PUBLIC_SUMMON_HOST}/api/optimise-tool-selection`,
           {
             context,
             originalTools,
