@@ -40,7 +40,7 @@
     "@electron/fuses": "^1.8.0",
     "@eslint/compat": "^1.2.8",
     "@eslint/js": "^9.29.0",
-    "@playwright/test": "^1.52.0",
+    "@playwright/test": "^1.53.1",
     "@tanstack/router-devtools": "^1.117.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -66,13 +66,13 @@
     "jsdom": "^26.0.0",
     "lefthook": "^1.11.14",
     "prettier": "^3.5.3",
-    "prettier-plugin-tailwindcss": "^0.6.11",
+    "prettier-plugin-tailwindcss": "^0.6.13",
     "tailwindcss": "^4.1.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.31.0",
     "vite": "^6.3.3",
-    "vitest": "^3.1.2"
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.9",
