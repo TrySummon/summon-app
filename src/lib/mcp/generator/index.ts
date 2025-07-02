@@ -19,3 +19,4 @@ export * from "./readme";
 export * from "./web-server";
 export * from "./streamable-http";
 export * from "./tools";
+export * from "./mapper";

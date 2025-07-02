@@ -8,15 +8,16 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarMenu,
+  SidebarRail,
 } from "@/components/ui/sidebar";
-import { SquareTerminal, Settings, Database } from "lucide-react";
+import { MessageCircle, Database } from "lucide-react";
 import { ApiNav } from "@/components/api-nav";
 import { McpNav } from "@/components/mcp-nav";
 import { ExternalMcpNav } from "@/components/external-mcp-nav";
 import { WorkspaceSelector } from "@/components/WorkspaceSelector";
 import { Link, useLocation } from "@tanstack/react-router";
 import FeedbackButton from "@/components/FeedbackButton";
-import packageJson from "../../package.json";
+import { UserNav } from "./UserNav";
 
 export function AppSidebar() {
   const location = useLocation();
@@ -42,7 +43,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     isActive={location.pathname === "/playground"}
                   >
-                    <SquareTerminal className="h-4 w-4" /> Playground
+                    <MessageCircle className="h-4 w-4" /> Playground
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
@@ -62,21 +63,9 @@ export function AppSidebar() {
           <FeedbackButton className="w-full justify-start">
             Give Feedback
           </FeedbackButton>
-          <Link to="/settings">
-            <SidebarMenuButton
-              size="lg"
-              className="flex items-center justify-between"
-              isActive={location.pathname === "/settings"}
-            >
-              <span className="flex items-center gap-2">
-                <Settings className="h-4 w-4" /> Settings
-              </span>
-              <span className="text-muted-foreground font-mono text-xs">
-                v{packageJson.version}
-              </span>
-            </SidebarMenuButton>
-          </Link>
+          <UserNav />
         </SidebarFooter>
+        <SidebarRail />
       </Sidebar>
     </>
   );

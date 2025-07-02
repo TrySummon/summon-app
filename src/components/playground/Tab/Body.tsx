@@ -3,6 +3,7 @@ import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import LatencyStats from "./LatencyStats";
 import SystemPrompt from "../SystemPrompt";
 import Messages from "../Messages";
+import { Loader } from "@/components/Loader";
 
 export default function TabBody() {
   const isRunning = usePlaygroundStore(
@@ -77,6 +78,12 @@ export default function TabBody() {
             <SystemPrompt className="hover:bg-background/20" />
           </div>
           <Messages />
+          {isRunning ? (
+            <div className="flex items-center gap-2 px-3 py-2">
+              <Loader />
+              <span className="text-muted-foreground text-sm">Running...</span>
+            </div>
+          ) : null}
         </div>
       </div>
       <LatencyStats

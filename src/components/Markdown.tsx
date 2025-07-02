@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/utils/tailwind";
 import { MarkdownCodeSnippet } from "./CodeSnippet";
+import { MentionData } from "./CodeEditor";
 
 function omit<T extends object, K extends string>(
   obj: T,
@@ -30,13 +31,99 @@ function omit<T extends object, K extends string>(
 interface Props {
   children: string;
   className?: string;
+  textSize?: "sm" | "base";
+  mentionData?: MentionData[];
 }
 
-const Markdown = ({ className, children }: Props) => {
+const Markdown = ({
+  className,
+  children,
+  textSize = "sm",
+  mentionData,
+}: Props) => {
   const remarkPlugins = useMemo(() => {
     const remarkPlugins = [remarkGfm as any];
     return remarkPlugins;
   }, []);
+
+  // Create harmonized text size classes for different elements
+  const sizeClasses = useMemo(() => {
+    if (textSize === "base") {
+      return {
+        h1: "text-3xl",
+        h2: "text-2xl",
+        h3: "text-xl",
+        h4: "text-lg",
+        p: "text-base",
+        code: "text-base",
+        blockquote: "text-base",
+        list: "text-base",
+      };
+    } else {
+      return {
+        h1: "text-xl",
+        h2: "text-lg",
+        h3: "text-base",
+        h4: "text-sm",
+        p: "text-sm",
+        code: "text-sm",
+        blockquote: "text-sm",
+        list: "text-sm",
+      };
+    }
+  }, [textSize]);
+
+  // Create mention regex from mention data
+  const mentionRegex = useMemo(() => {
+    if (!mentionData || mentionData.length === 0) return null;
+
+    const mentionNames = mentionData
+      .map((item) => item.name.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&"))
+      .sort((a, b) => b.length - a.length);
+
+    return new RegExp(`@(${mentionNames.join("|")})`, "g");
+  }, [mentionData]);
+
+  // Function to render text with inline mentions
+  const renderTextWithMentions = (text: string) => {
+    // Early return if no mention data or regex
+    if (!mentionData || !mentionRegex || !text) {
+      return text;
+    }
+
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    // Reset regex to start from beginning
+    mentionRegex.lastIndex = 0;
+
+    while ((match = mentionRegex.exec(text)) !== null) {
+      // Add text before the mention
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+
+      // Add the mention with inline styling (matching CodeMirror editor style)
+      parts.push(
+        <span
+          key={`${match[1]}-${match.index}`}
+          className="bg-muted text-primary rounded-sm px-0.5 font-semibold"
+        >
+          {match[0]}
+        </span>,
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts.length > 1 ? parts : text;
+  };
 
   return (
     <div className={cn("prose", className)}>
@@ -47,7 +134,7 @@ const Markdown = ({ className, children }: Props) => {
             return (
               <code
                 {...omit(props, ["node"])}
-                className="bg-muted relative rounded px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold"
+                className={`bg-muted relative rounded px-[0.3rem] py-[0.2rem] font-mono ${sizeClasses.code} font-semibold`}
               />
             );
           },
@@ -85,7 +172,7 @@ const Markdown = ({ className, children }: Props) => {
             return (
               <blockquote
                 {...omit(props, ["node"])}
-                className="mt-6 border-l-2 pl-6 italic"
+                className={`mt-6 border-l-2 pl-6 italic ${sizeClasses.blockquote}`}
               />
             );
           },
@@ -102,7 +189,7 @@ const Markdown = ({ className, children }: Props) => {
             return (
               <ul
                 {...omit(props, ["node"])}
-                className="my-3 ml-3 list-disc pl-2 [&>li]:mt-1"
+                className={`my-3 ml-3 list-disc pl-2 [&>li]:mt-1 ${sizeClasses.list}`}
               />
             );
           },
@@ -110,7 +197,7 @@ const Markdown = ({ className, children }: Props) => {
             return (
               <ol
                 {...omit(props, ["node"])}
-                className="my-3 ml-3 list-decimal pl-2 [&>li]:mt-1"
+                className={`my-3 ml-3 list-decimal pl-2 [&>li]:mt-1 ${sizeClasses.list}`}
               />
             );
           },
@@ -118,7 +205,7 @@ const Markdown = ({ className, children }: Props) => {
             return (
               <h1
                 {...omit(props, ["node"])}
-                className="mt-8 scroll-m-20 text-2xl font-extrabold tracking-tight first:mt-0"
+                className={`mt-8 scroll-m-20 font-extrabold tracking-tight first:mt-0 ${sizeClasses.h1}`}
               />
             );
           },
@@ -126,7 +213,7 @@ const Markdown = ({ className, children }: Props) => {
             return (
               <h2
                 {...omit(props, ["node"])}
-                className="mt-8 scroll-m-20 border-b pb-2 text-xl font-semibold tracking-tight first:mt-0"
+                className={`mt-8 scroll-m-20 border-b pb-2 font-semibold tracking-tight first:mt-0 ${sizeClasses.h2}`}
               />
             );
           },
@@ -134,7 +221,7 @@ const Markdown = ({ className, children }: Props) => {
             return (
               <h3
                 {...omit(props, ["node"])}
-                className="mt-6 scroll-m-20 text-lg font-semibold tracking-tight first:mt-0"
+                className={`mt-6 scroll-m-20 font-semibold tracking-tight first:mt-0 ${sizeClasses.h3}`}
               />
             );
           },
@@ -142,18 +229,38 @@ const Markdown = ({ className, children }: Props) => {
             return (
               <h4
                 {...omit(props, ["node"])}
-                className="mt-6 scroll-m-20 text-base font-semibold tracking-tight first:mt-0"
+                className={`mt-6 scroll-m-20 font-semibold tracking-tight first:mt-0 ${sizeClasses.h4}`}
               />
             );
           },
           p(props) {
+            // Handle mentions in paragraph text
+            const processedChildren = React.Children.map(
+              props.children,
+              (child) => {
+                if (typeof child === "string") {
+                  return renderTextWithMentions(child);
+                }
+                return child;
+              },
+            );
+
             return (
               <div
                 {...omit(props, ["node"])}
-                className="text-sm leading-7 break-words whitespace-pre-wrap [&:not(:first-child)]:mt-4"
+                className={`${sizeClasses.p} leading-7 break-words whitespace-pre-wrap [&:not(:first-child)]:mt-4`}
                 role="article"
-              />
+              >
+                {processedChildren}
+              </div>
             );
+          },
+          // Add text renderer to handle inline mentions
+          text(props) {
+            if (typeof props.children === "string") {
+              return renderTextWithMentions(props.children);
+            }
+            return props.children;
           },
           table({ children, ...props }) {
             return (

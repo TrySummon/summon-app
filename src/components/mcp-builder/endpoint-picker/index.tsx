@@ -12,16 +12,13 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ApiExplorer } from "@/components/api-explorer";
 import { cn } from "@/utils/tailwind";
 import { usePlatform } from "@/hooks/usePlatform";
+import type { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 
 interface EndpointPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  api: {
-    id: string;
-    api: OpenAPIV3.Document;
-  };
-  onEndpointsUpdate?: (selectedEndpointIds: string[]) => void;
-  initialSelectedEndpoints?: string[];
+  api: { id: string; api: OpenAPIV3.Document };
+  onAddEndpoints?: (endpoints: SelectedEndpoint[]) => void;
   onBackClick?: () => void;
 }
 
@@ -29,15 +26,14 @@ export function EndpointPickerDialog({
   open,
   onOpenChange,
   api,
-  onEndpointsUpdate,
-  initialSelectedEndpoints = [],
+  onAddEndpoints,
   onBackClick,
 }: EndpointPickerDialogProps) {
   const { isMac } = usePlatform();
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>(
-    initialSelectedEndpoints,
-  );
+  const [newlySelectedEndpoints, setNewlySelectedEndpoints] = useState<
+    SelectedEndpoint[]
+  >([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
   const [selectedSearchFolders, setSelectedSearchFolders] = useState<string[]>(
@@ -50,10 +46,10 @@ export function EndpointPickerDialog({
   } | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset selected endpoints when API changes
+  // Reset newly selected endpoints when API changes
   React.useEffect(() => {
-    setSelectedEndpoints(initialSelectedEndpoints);
-  }, [api.id, initialSelectedEndpoints]);
+    setNewlySelectedEndpoints([]);
+  }, [api.id]);
 
   // Focus search input when dialog opens
   useEffect(() => {
@@ -140,15 +136,19 @@ export function EndpointPickerDialog({
     }
   }, [folders, selectedFolder]);
 
-  // Count selected endpoints per folder
+  // Count newly selected endpoints per folder
   const selectedCountByFolder = useMemo(() => {
     const result: Record<string, number> = {};
 
-    if (selectedEndpoints.length > 0 && endpointsByFolder) {
+    if (newlySelectedEndpoints.length > 0 && endpointsByFolder) {
       Object.keys(endpointsByFolder).forEach((folder) => {
         const folderEndpoints = endpointsByFolder[folder] || [];
         const selectedCount = folderEndpoints.filter((endpoint) =>
-          selectedEndpoints.includes(`${endpoint.method}-${endpoint.path}`),
+          newlySelectedEndpoints.some(
+            (selected) =>
+              selected.path === endpoint.path &&
+              selected.method === endpoint.method,
+          ),
         ).length;
 
         if (selectedCount > 0) {
@@ -158,7 +158,7 @@ export function EndpointPickerDialog({
     }
 
     return result;
-  }, [endpointsByFolder, selectedEndpoints]);
+  }, [endpointsByFolder, newlySelectedEndpoints]);
 
   // Smart search function with scoring
   const searchEndpoints = useMemo(() => {
@@ -253,7 +253,7 @@ export function EndpointPickerDialog({
     setSearchQuery("");
     setDebouncedSearchQuery("");
     setSelectedSearchFolders([]);
-    // Don't clear selectedEndpoints - preserve user selections
+    // Don't clear newlySelectedEndpoints - preserve user selections
   };
 
   // Toggle folder selection in search mode
@@ -275,30 +275,85 @@ export function EndpointPickerDialog({
     setSelectedFolder(folderName);
   };
 
-  const toggleEndpointSelection = (endpointId: string) => {
-    setSelectedEndpoints((prev) =>
-      prev.includes(endpointId)
-        ? prev.filter((id) => id !== endpointId)
-        : [...prev, endpointId],
+  const toggleEndpointSelection = (endpoint: Endpoint) => {
+    const isSelected = newlySelectedEndpoints.some(
+      (selected) =>
+        selected.path === endpoint.path && selected.method === endpoint.method,
     );
+
+    if (isSelected) {
+      // Remove endpoint
+      setNewlySelectedEndpoints((prev) =>
+        prev.filter(
+          (selected) =>
+            !(
+              selected.path === endpoint.path &&
+              selected.method === endpoint.method
+            ),
+        ),
+      );
+    } else {
+      // Add endpoint - need to get the operation from the API spec
+      const pathItem = api.api.paths?.[endpoint.path];
+      const operation = pathItem?.[
+        endpoint.method as keyof typeof pathItem
+      ] as OpenAPIV3.OperationObject;
+
+      if (operation) {
+        setNewlySelectedEndpoints((prev) => [
+          ...prev,
+          {
+            path: endpoint.path,
+            method: endpoint.method,
+            operation,
+          },
+        ]);
+      }
+    }
   };
 
   // Toggle all visible endpoints
   const toggleAllEndpoints = (checked: boolean) => {
-    const endpointIds = currentVisibleEndpoints.map(
-      (endpoint) => `${endpoint.method}-${endpoint.path}`,
+    const availableEndpoints = currentVisibleEndpoints.filter(
+      (endpoint) => !!endpoint.operationId,
     );
 
     if (checked) {
-      // Add all visible endpoints that aren't already selected
-      setSelectedEndpoints((prev) => {
-        const newEndpoints = endpointIds.filter((id) => !prev.includes(id));
-        return [...prev, ...newEndpoints];
-      });
+      // Add all available endpoints that aren't already selected
+      const newEndpoints = availableEndpoints
+        .filter(
+          (endpoint) =>
+            !newlySelectedEndpoints.some(
+              (selected) =>
+                selected.path === endpoint.path &&
+                selected.method === endpoint.method,
+            ),
+        )
+        .map((endpoint) => {
+          const pathItem = api.api.paths?.[endpoint.path];
+          const operation = pathItem?.[
+            endpoint.method as keyof typeof pathItem
+          ] as OpenAPIV3.OperationObject;
+          return {
+            path: endpoint.path,
+            method: endpoint.method,
+            operation,
+          };
+        })
+        .filter((item) => item.operation);
+
+      setNewlySelectedEndpoints((prev) => [...prev, ...newEndpoints]);
     } else {
-      // Remove only the currently visible endpoints, keep others
-      setSelectedEndpoints((prev) =>
-        prev.filter((id) => !endpointIds.includes(id)),
+      // Remove only the currently visible available endpoints, keep others
+      setNewlySelectedEndpoints((prev) =>
+        prev.filter(
+          (selected) =>
+            !availableEndpoints.some(
+              (endpoint) =>
+                endpoint.path === selected.path &&
+                endpoint.method === selected.method,
+            ),
+        ),
       );
     }
   };
@@ -329,9 +384,30 @@ export function EndpointPickerDialog({
     return isSearchMode ? filteredSearchEndpoints : filteredEndpoints;
   }, [isSearchMode, filteredSearchEndpoints, filteredEndpoints]);
 
+  // Convert selected endpoints to string IDs for EndpointList component
+  const selectedEndpointIds = useMemo(() => {
+    return newlySelectedEndpoints.map(
+      (selected) => `${selected.method}-${selected.path}`,
+    );
+  }, [newlySelectedEndpoints]);
+
+  // Wrapper function to convert endpoint ID back to Endpoint object
+  const handleToggleEndpoint = (endpointId: string) => {
+    const [method, ...pathParts] = endpointId.split("-");
+    const path = pathParts.join("-");
+
+    const endpoint = currentVisibleEndpoints.find(
+      (ep) => ep.method === method && ep.path === path,
+    );
+
+    if (endpoint) {
+      toggleEndpointSelection(endpoint);
+    }
+  };
+
   const handleConfirm = () => {
-    if (onEndpointsUpdate) {
-      onEndpointsUpdate(selectedEndpoints);
+    if (onAddEndpoints && newlySelectedEndpoints.length > 0) {
+      onAddEndpoints(newlySelectedEndpoints);
     }
     onOpenChange(false);
   };
@@ -384,8 +460,8 @@ export function EndpointPickerDialog({
                 <div className="w-3/4 overflow-y-auto">
                   <EndpointList
                     endpoints={currentVisibleEndpoints}
-                    selectedEndpoints={selectedEndpoints}
-                    onToggleEndpoint={toggleEndpointSelection}
+                    selectedEndpoints={selectedEndpointIds}
+                    onToggleEndpoint={handleToggleEndpoint}
                     onToggleAllEndpoints={toggleAllEndpoints}
                     title={`${selectedFolder === "root" ? "Root" : selectedFolder ? selectedFolder.charAt(0).toUpperCase() + selectedFolder.slice(1) : ""} Endpoints`}
                     subtitle="Select endpoints to include in your MCP server"
@@ -398,10 +474,10 @@ export function EndpointPickerDialog({
               <div className="flex-1 overflow-hidden">
                 <EndpointList
                   endpoints={currentVisibleEndpoints}
-                  selectedEndpoints={selectedEndpoints}
-                  onToggleEndpoint={toggleEndpointSelection}
+                  selectedEndpoints={selectedEndpointIds}
+                  onToggleEndpoint={handleToggleEndpoint}
                   onToggleAllEndpoints={toggleAllEndpoints}
-                  title={`Search Results${selectedEndpoints.length > 0 ? ` (${selectedEndpoints.length} selected)` : ""}`}
+                  title={`Search Results${newlySelectedEndpoints.length > 0 ? ` (${newlySelectedEndpoints.length} selected)` : ""}`}
                   subtitle={`${currentVisibleEndpoints.length} matching endpoints`}
                   apiId={api.id}
                   isSearchMode={true}
@@ -414,7 +490,7 @@ export function EndpointPickerDialog({
           </div>
 
           <DialogFooter
-            selectedCount={selectedEndpoints.length}
+            selectedCount={newlySelectedEndpoints.length}
             onCancel={() => onOpenChange(false)}
             onConfirm={handleConfirm}
           />

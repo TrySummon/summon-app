@@ -1,14 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   AlertCircle,
   RefreshCw,
   Download,
-  Edit,
   FileJson,
   Rocket,
+  Edit2,
+  MessageCircle,
 } from "lucide-react";
 import CopyButton from "@/components/CopyButton";
 import {
@@ -16,18 +23,18 @@ import {
   showFileInFolder,
   openUserDataMcpJsonFile,
 } from "@/ipc/mcp/mcp-client";
-import { Link } from "@tanstack/react-router";
 import WaitlistButton from "../tool-sidebar/WaitlistButton";
+import { Link } from "@tanstack/react-router";
 
 interface ServerStatusSectionProps {
   status: "running" | "starting" | "error" | "stopped";
   url?: string;
   error?: Error | string | null;
   serverName: string;
-  transport?: string;
   isExternal?: boolean;
   refreshStatus: () => void;
   mcpId: string;
+  onEditName?: (newName: string) => void;
 }
 
 export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
@@ -35,13 +42,15 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
   url,
   error,
   serverName,
-  transport,
   refreshStatus,
   mcpId,
   isExternal,
+  onEditName,
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const editRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = async () => {
     setIsDownloading(true);
@@ -69,171 +78,272 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
     }
   };
 
+  const handleEditStart = () => {
+    setIsEditing(true);
+    setTimeout(() => {
+      if (editRef.current) {
+        editRef.current.focus();
+        // Set cursor at the end
+        const selection = window.getSelection();
+        if (selection) {
+          const range = document.createRange();
+          range.selectNodeContents(editRef.current);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      }
+    }, 0);
+  };
+
+  const handleEditSave = (value: string) => {
+    const trimmedValue = value.trim();
+    if (trimmedValue && trimmedValue !== serverName && onEditName) {
+      onEditName(trimmedValue);
+    }
+    setIsEditing(false);
+  };
+
+  const handleEditCancel = () => {
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleEditSave(e.currentTarget.textContent || "");
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      handleEditCancel();
+    }
+  };
+
+  const canEdit = !isExternal && onEditName;
+
   if (status === "running") {
     return (
-      <div className="space-y-6">
-        {/* Server Status Section */}
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold">{serverName} MCP Server</h2>
-            <p className="text-muted-foreground text-sm">
-              Transport: {transport}
-            </p>
-          </div>
-          <Badge className="border-green-500/20 bg-green-500/10 text-green-700 transition-colors hover:bg-green-500/20 dark:text-green-400">
-            <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-green-500"></span>
-            Running
-          </Badge>
-        </div>
+      <TooltipProvider>
+        <div className="space-y-6">
+          {/* Server Status Section */}
 
-        {url ? (
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <code className="font-mono text-sm">{url}</code>
+          <div className="flex items-center justify-between">
+            <div className="group flex items-center gap-2">
+              {isEditing ? (
+                <div
+                  ref={editRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onKeyDown={handleKeyDown}
+                  onBlur={(e) =>
+                    handleEditSave(e.currentTarget.textContent || "")
+                  }
+                  className="border-b border-dashed text-xl font-bold outline-none"
+                >
+                  {serverName}
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-xl font-bold">{serverName}</h2>
+                  {canEdit && (
+                    <Button
+                      onClick={handleEditStart}
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-60 hover:opacity-100"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+
             <div className="flex items-center gap-2">
-              <CopyButton content={url || ""} />
+              <Link to="/playground">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <MessageCircle className="h-3 w-3" />
+                  Chat
+                </Button>
+              </Link>
+              {isExternal ? (
+                <Button
+                  onClick={() => openUserDataMcpJsonFile()}
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <FileJson className="h-3 w-3" />
+                  Edit
+                </Button>
+              ) : (
+                <>
+                  <WaitlistButton
+                    featureName="MCP Server Deployment"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Rocket className="h-3 w-3" />
+                    Deploy
+                  </WaitlistButton>
+                  <Button
+                    onClick={handleDownload}
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    disabled={isDownloading}
+                  >
+                    <Download className="h-3 w-3" />
+                    {isDownloading ? "Downloading..." : "Download"}
+                  </Button>
+                </>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={refreshStatus} variant="ghost" size="sm">
+                    <RefreshCw className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Refresh Status</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
-        ) : null}
 
-        {downloadError && (
-          <Alert variant="destructive" className="border-red-500">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Download Error</AlertTitle>
-            <AlertDescription>{downloadError}</AlertDescription>
-          </Alert>
-        )}
+          {url ? (
+            <div className="flex items-center justify-between rounded-md border p-1.5">
+              <div className="flex items-center gap-2">
+                <Badge className="border-green-500/20 bg-green-500/10 text-green-700 transition-colors hover:bg-green-500/20 dark:text-green-400">
+                  <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-green-500"></span>
+                  Running
+                </Badge>
+                <code className="font-mono text-sm">{url}</code>
+              </div>
+              <div className="flex items-center gap-2">
+                <CopyButton content={url || ""} />
+              </div>
+            </div>
+          ) : null}
 
-        <div className="mt-4 flex justify-end gap-2">
-          <Button
-            onClick={refreshStatus}
-            variant="outline"
-            size="sm"
-            className="gap-2"
-          >
-            <RefreshCw className="h-3 w-3" />
-            Refresh Status
-          </Button>
-          {isExternal ? (
-            <Button
-              onClick={() => openUserDataMcpJsonFile()}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <FileJson className="h-3 w-3" />
-              Edit
-            </Button>
-          ) : (
-            <>
-              <WaitlistButton
-                featureName="MCP Server Deployment"
-                variant="outline"
-                size="sm"
-                className="gap-2"
-              >
-                <Rocket className="h-3 w-3" />
-                Deploy
-              </WaitlistButton>
-              <Button asChild variant="outline" size="sm" className="gap-2">
-                <Link to="/build-mcp" search={{ edit: mcpId }}>
-                  <Edit className="h-3 w-3" />
-                  Edit
-                </Link>
-              </Button>
-              <Button
-                onClick={handleDownload}
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                disabled={isDownloading}
-              >
-                <Download className="h-3 w-3" />
-                {isDownloading ? "Downloading..." : "Download"}
-              </Button>
-            </>
+          {downloadError && (
+            <Alert variant="destructive" className="border-red-500">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Download Error</AlertTitle>
+              <AlertDescription>{downloadError}</AlertDescription>
+            </Alert>
           )}
         </div>
-      </div>
+      </TooltipProvider>
     );
   }
 
   if (status === "starting") {
     return (
-      <div>
-        <h2 className="mb-4 text-xl font-bold">MCP Server Status</h2>
-        <Alert className="border-yellow-500/30 bg-yellow-500/10 dark:bg-yellow-500/5">
-          <AlertCircle className="h-4 w-4 !text-yellow-600 dark:text-yellow-500" />
-          <AlertTitle className="text-yellow-800 dark:text-yellow-300">
-            Server is starting
-          </AlertTitle>
-          <AlertDescription className="text-yellow-700 dark:text-yellow-400">
-            Your MCP server is currently starting up. Please wait a moment...
-          </AlertDescription>
-        </Alert>
-        <div className="mt-4 flex justify-end">
-          <Button
-            onClick={refreshStatus}
-            variant="outline"
-            size="sm"
-            className="gap-1"
-          >
-            <RefreshCw className="h-3 w-3" />
-            Refresh Status
-          </Button>
+      <TooltipProvider>
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-bold">MCP Server Status</h2>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={refreshStatus}
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Refresh Status</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <Alert className="border-yellow-500/30 bg-yellow-500/10 dark:bg-yellow-500/5">
+            <AlertCircle className="h-4 w-4 !text-yellow-600 dark:text-yellow-500" />
+            <AlertTitle className="text-yellow-800 dark:text-yellow-300">
+              Server is starting
+            </AlertTitle>
+            <AlertDescription className="text-yellow-700 dark:text-yellow-400">
+              Your MCP server is currently starting up. Please wait a moment...
+            </AlertDescription>
+          </Alert>
         </div>
-      </div>
+      </TooltipProvider>
     );
   }
 
   if (status === "error") {
     return (
-      <div>
-        <h2 className="mb-4 text-xl font-bold">MCP Server Status</h2>
-        <Alert variant="destructive" className="border-red-500">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Server error</AlertTitle>
-          <AlertDescription>
-            {error instanceof Error
-              ? error.message
-              : error
-                ? String(error)
-                : "There was an error starting your MCP server."}
-          </AlertDescription>
-        </Alert>
-        <div className="mt-4 flex justify-end">
-          <Button onClick={refreshStatus} variant="outline" className="gap-1">
-            <RefreshCw className="h-3 w-3" />
-            Refresh Status
-          </Button>
+      <TooltipProvider>
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-bold">MCP Server Status</h2>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={refreshStatus}
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Refresh Status</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <Alert variant="destructive" className="border-red-500">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Server error</AlertTitle>
+            <AlertDescription>
+              {error instanceof Error
+                ? error.message
+                : error
+                  ? String(error)
+                  : "There was an error starting your MCP server."}
+            </AlertDescription>
+          </Alert>
         </div>
-      </div>
+      </TooltipProvider>
     );
   }
 
   // Default case: server is stopped
   return (
-    <div>
-      <h2 className="mb-4 text-xl font-bold">MCP Server Status</h2>
-      <Alert className="border-muted bg-muted/30">
-        <AlertCircle className="text-muted-foreground h-4 w-4" />
-        <AlertTitle className="text-foreground">
-          Server is not running
-        </AlertTitle>
-        <AlertDescription className="text-muted-foreground">
-          Your MCP server is currently stopped. Start the server to access it.
-        </AlertDescription>
-      </Alert>
-      <div className="mt-4 flex justify-end">
-        <Button
-          onClick={refreshStatus}
-          variant="outline"
-          size="sm"
-          className="gap-1"
-        >
-          <RefreshCw className="h-3 w-3" />
-          Refresh Status
-        </Button>
+    <TooltipProvider>
+      <div>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold">MCP Server Status</h2>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={refreshStatus}
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+              >
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Refresh Status</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <Alert className="border-muted bg-muted/30">
+          <AlertCircle className="text-muted-foreground h-4 w-4" />
+          <AlertTitle className="text-foreground">
+            Server is not running
+          </AlertTitle>
+          <AlertDescription className="text-muted-foreground">
+            Your MCP server is currently stopped. Start the server to access it.
+          </AlertDescription>
+        </Alert>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };

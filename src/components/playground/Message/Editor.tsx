@@ -1,7 +1,8 @@
 import CodeMirrorEditor from "../../CodeEditor";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { cn } from "@/utils/tailwind";
 import { EditorView } from "codemirror";
+import { placeholder } from "@codemirror/view";
 
 interface Props {
   className?: string;
@@ -18,14 +19,13 @@ const MessageEditor = ({
   maxHeight,
   onChange,
   onPasteImage,
-  placeholder,
+  placeholder: placeholderText,
   className,
   readOnly,
   autoFocus,
   value,
 }: Props) => {
   const editorRef = useRef<EditorView | null>(null);
-  const [isEditorEmpty, setIsEditorEmpty] = useState(!value);
   const isProgrammaticChangeRef = useRef(false);
 
   const handlePaste = useCallback(
@@ -52,7 +52,6 @@ const MessageEditor = ({
 
   const handleEditorChange = useCallback(
     (value: string) => {
-      setIsEditorEmpty(!value);
       // Only trigger onChange if the change wasn't programmatic
       if (!isProgrammaticChangeRef.current) {
         onChange?.(value);
@@ -81,15 +80,14 @@ const MessageEditor = ({
     }
   }, [value, handlePaste]);
 
-  const placeholderEl = isEditorEmpty ? (
-    <div className="text-muted-foreground pointer-events-none absolute top-[3px] left-[2px] z-10 text-[14px]">
-      {placeholder || "Enter a message..."}
-    </div>
-  ) : null;
+  // Create placeholder extension
+  const additionalExtensions = React.useMemo(
+    () => [placeholder(placeholderText || "Enter a message...")],
+    [placeholderText],
+  );
 
   return (
     <div className={cn("relative w-full", className)}>
-      {placeholderEl}
       <CodeMirrorEditor
         autoFocus={autoFocus}
         editorRef={editorRef}
@@ -98,6 +96,8 @@ const MessageEditor = ({
         onChange={handleEditorChange}
         maxHeight={maxHeight}
         onPaste={handlePaste}
+        additionalExtensions={additionalExtensions}
+        className="overflow-y-auto"
       />
     </div>
   );

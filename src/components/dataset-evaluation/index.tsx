@@ -35,7 +35,7 @@ function DatasetEvaluation({ items, datasetId }: DatasetEvaluationProps) {
     setResults,
   } = useEvaluationState(datasetId);
 
-  const { modifiedToolMap, mcpToolMap, enabledTools, enabledToolCount } =
+  const { mcpToolMap, enabledTools, enabledToolCount } =
     useEvaluationToolSelection(datasetId);
 
   // Filter items that can be evaluated
@@ -84,7 +84,6 @@ function DatasetEvaluation({ items, datasetId }: DatasetEvaluationProps) {
         assertionModel: assertionModelConfig.model,
         maxSteps: 5,
         enabledTools,
-        modifiedToolMap,
         mcpToolMap,
       };
 
@@ -115,8 +114,12 @@ function DatasetEvaluation({ items, datasetId }: DatasetEvaluationProps) {
   };
 
   return (
-    <SidebarProvider className="min-h-full" mobileBreakpoint={1200}>
-      <SidebarInset className="flex flex-1 flex-col gap-4 overflow-y-auto py-2">
+    <SidebarProvider
+      className="flex min-h-0 flex-1"
+      defaultWidth="18rem"
+      mobileBreakpoint={1200}
+    >
+      <SidebarInset className="container flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto py-4">
         {/* Tools Header */}
         <div className="flex items-center justify-end px-4">
           <div className="flex items-center gap-2">

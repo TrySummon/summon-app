@@ -1,27 +1,102 @@
-import React from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useParams } from "@tanstack/react-router";
-import { useMcps } from "@/hooks/useMcps";
+import { useMcp, useMcps } from "@/hooks/useMcps";
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Link } from "@tanstack/react-router";
 import { Server } from "lucide-react";
 import { NotFound } from "@/components/ui/NotFound";
 import { McpExplorer } from "@/components/mcp-explorer";
-import { useMcpServerState } from "@/hooks/useMcpServerState";
+import { AgentSidebar } from "@/components/AgentSidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useApis } from "@/hooks/useApis";
+import { ApiConfigs } from "@/components/mcp-builder/api-config";
+import { useMcpActions } from "@/hooks/useMcpActions";
 
 export default function McpPage() {
+  const { apis } = useApis();
   const { mcpId } = useParams({ from: "/mcp/$mcpId" });
-  const { mcps } = useMcps();
-  const { state, isLoading, error, refreshStatus } = useMcpServerState(mcpId);
+  const { mcp, isLoading } = useMcp(mcpId);
+  const { updateMcp } = useMcps();
+  const { onAddEndpoints, onDeleteTool, onDeleteAllTools } =
+    useMcpActions(mcpId);
+  // State for storing the current chat ID
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>();
 
-  const mcp = mcps.find((m) => m.id === mcpId);
+  // Load the last visited chat for this MCP when mcpId changes
+  useEffect(() => {
+    const savedChatId = localStorage.getItem(`mcp-chat-${mcpId}`);
+    setCurrentChatId(savedChatId || undefined);
+  }, [mcpId]);
 
-  if (!mcp) {
+  // Save chat ID to localStorage and update state
+  const handleChatIdChange = useCallback(
+    (mcpId: string, chatId: string | undefined) => {
+      if (chatId) {
+        localStorage.setItem(`mcp-chat-${mcpId}`, chatId);
+      } else {
+        localStorage.removeItem(`mcp-chat-${mcpId}`);
+      }
+      setCurrentChatId(chatId);
+    },
+    [],
+  );
+
+  const onUpdateApiConfigs = useCallback(
+    async (configData: ApiConfigs) => {
+      if (!mcp) return;
+
+      // Update MCP with new configuration
+      const nextApiGroups = { ...mcp.apiGroups };
+
+      // Update each API group with new auth and tool prefix configuration
+      Object.entries(configData).forEach(([apiId, config]) => {
+        if (nextApiGroups[apiId]) {
+          nextApiGroups[apiId] = {
+            ...nextApiGroups[apiId],
+            serverUrl: config.serverUrl,
+            useMockData: config.useMockData,
+            toolPrefix: config.toolPrefix,
+            auth: config.auth,
+          };
+        }
+      });
+
+      await updateMcp({
+        mcpId: mcp.id,
+        mcpData: {
+          ...mcp,
+          apiGroups: nextApiGroups,
+        },
+      });
+    },
+    [mcp, updateMcp],
+  );
+
+  const onEditName = useCallback(
+    async (newName: string) => {
+      if (!mcp) return;
+
+      await updateMcp({
+        mcpId: mcp.id,
+        mcpData: {
+          ...mcp,
+          name: newName,
+        },
+      });
+    },
+    [mcp, updateMcp],
+  );
+
+  if (!apis) return null;
+
+  if (!mcp && !isLoading) {
     return (
       <NotFound
         title="MCP Not Found"
@@ -34,35 +109,60 @@ export default function McpPage() {
     );
   }
 
+  if (!mcp) {
+    return null;
+  }
+
   return (
     <div className="flex h-full flex-col">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/mcp/$mcpId" params={{ mcpId: mcp.id }}>
-                <BreadcrumbPage>
-                  <Server className="mr-2 size-3" /> {mcp.name}
-                </BreadcrumbPage>
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <SidebarProvider
+        className="min-h-full"
+        mobileBreakpoint={1}
+        defaultWidth="21rem"
+      >
+        <SidebarInset className="flex min-h-0 flex-1 flex-col">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <BreadcrumbPage>
+                    <Server className="mr-2 size-3" />
+                    My MCPs
+                  </BreadcrumbPage>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/mcp/$mcpId" params={{ mcpId: mcp.id }}>
+                    <BreadcrumbPage>{mcp.name}</BreadcrumbPage>
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
 
-      <div className="flex flex-1 flex-col overflow-y-auto">
-        <div className="container mx-auto max-w-4xl py-6">
-          <McpExplorer
-            mcpId={mcpId}
-            mcpName={mcp.name}
-            transport={state?.transport}
-            status={state?.status}
-            error={error}
-            isLoading={isLoading}
-            refreshStatus={refreshStatus}
-          />
-        </div>
-      </div>
+          <div className="flex flex-1 flex-col overflow-y-auto">
+            <div className="container mx-auto max-w-4xl py-6">
+              <McpExplorer
+                mcpId={mcp.id}
+                mcpName={mcp.name}
+                onAddEndpoints={onAddEndpoints}
+                onDeleteTool={onDeleteTool}
+                onDeleteAllTools={onDeleteAllTools}
+                onUpdateApiConfigs={onUpdateApiConfigs}
+                onEditName={onEditName}
+                apiGroups={mcp.apiGroups}
+              />
+            </div>
+          </div>
+        </SidebarInset>
+        <AgentSidebar
+          mcpId={mcpId}
+          defaultChatId={currentChatId}
+          onChatIdChange={handleChatIdChange}
+        />
+      </SidebarProvider>
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import { app } from "electron";
 import * as fs from "fs/promises";
 import * as path from "path";
+
 import log from "electron-log";
 import { mockApi } from "../mock";
 import { findFreePort } from "../port";
-import { getMcpImplPath, mcpDb } from "../db/mcp-db";
+import { getMcpImplPath, getMcpImplToolsDir, mcpDb } from "../db/mcp-db";
 import { getEnvVarName } from "./generator/utils/security";
 import { createMcpServer, loadToolsFromDirectory } from "./server";
 import { setupStreamableExpressServer } from "./streamable-express-server";
@@ -12,11 +13,13 @@ import { McpServerState, runningMcpServers } from "./state";
 import archiver from "archiver";
 import { shell } from "electron";
 import { createWriteStream } from "fs";
+import { JSONSchema7 } from "json-schema";
 import {
   generateEnvExample,
   generateEslintConfig,
   generateGitignore,
   generateJestConfig,
+  generateMapperCode,
   generateMcpServerCode,
   generateMcpTools,
   generatePackageJson,
@@ -28,17 +31,35 @@ import {
   generateTsconfigJson,
   generateWebServerCode,
 } from "./generator";
-import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio";
+import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { stopExternalMcp } from "../external-mcp";
+
+import { faker } from "@faker-js/faker";
+import { JSONSchemaFaker } from "json-schema-faker";
+
+// Configure JSON Schema Faker
+JSONSchemaFaker.extend("faker", () => faker);
+
+// Configure options for better compatibility
+JSONSchemaFaker.option({
+  // Don't fail on unknown formats, just use string
+  failOnInvalidFormat: false,
+  // Don't fail on unknown types, use string as fallback
+  failOnInvalidTypes: false,
+  // Use more realistic fake data
+  useDefaultValue: true,
+  // Handle edge cases gracefully
+  ignoreMissingRefs: true,
+});
 
 /**
  * Creates a directory if it doesn't exist
  *
  * @param dir Directory path to create
  */
-async function ensureDirectoryExists(dir: string): Promise<void> {
+export async function ensureDirectoryExists(dir: string): Promise<void> {
   try {
     await fs.mkdir(dir, { recursive: true });
   } catch (error) {
@@ -126,12 +147,17 @@ export async function generateMcpImpl(mcpId: string) {
   );
 
   log.info("Generating server code...");
-  const serverTsContent = await generateMcpServerCode(
+  const serverCode = await generateMcpServerCode(
     serverName,
     serverVersion,
     tags,
   );
-  await writeFileWithDir(serverFilePath, serverTsContent);
+  await writeFileWithDir(serverFilePath, serverCode);
+
+  log.info("Generating mapper code...");
+  const mapperCode = generateMapperCode();
+  const mapperFilePath = path.join(srcDir, "mapper.ts");
+  await writeFileWithDir(mapperFilePath, mapperCode);
 
   log.info("Generating package.json...");
   const packageJsonContent = generatePackageJson(
@@ -301,18 +327,12 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
     };
 
     // Process each API group
-    for (const apiGroup of Object.values(mcp.apiGroups)) {
+    for (const [apiId, apiGroup] of Object.entries(mcp.apiGroups)) {
       // Set base URL environment variable
       const baseUrlEnvVar = getEnvVarName(apiGroup.name, "BASE_URL");
 
       // Check if this API should be mocked
-      if (
-        apiGroup.useMockData &&
-        apiGroup.endpoints &&
-        apiGroup.endpoints.length > 0
-      ) {
-        // Get the API ID from the first endpoint
-        const apiId = apiGroup.endpoints[0].apiId;
+      if (apiGroup.useMockData && apiGroup.tools && apiGroup.tools.length > 0) {
         log.info(`Mocking API: ${apiGroup.name}`);
         // Start the mock server and get the URL
         const mockResult = await mockApi(apiId);
@@ -341,7 +361,7 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
     const port = await findFreePort();
 
     // Load tools from the generated tools directory
-    const toolsDir = path.join(implPath, "src", "tools");
+    const toolsDir = await getMcpImplToolsDir(mcpId);
     const tools = await loadToolsFromDirectory(toolsDir);
 
     log.info(`Loaded ${tools.size} tools from ${toolsDir}`);
@@ -614,52 +634,52 @@ export async function stopAllMcpServers(
     removeFromState?: boolean;
   } = {},
 ): Promise<void> {
-  const { parallel = true, removeFromState = true } = options;
+  const serverIds = Object.keys(runningMcpServers);
 
-  try {
-    log.info("Stopping all MCP servers...");
-    const serverIds = Object.keys(runningMcpServers);
-
-    if (serverIds.length === 0) {
-      log.info("No MCP servers to stop");
-      return;
-    }
-
-    log.info(`Stopping ${serverIds.length} MCP servers...`);
-
-    const stopServer = async (serverId: string) => {
-      const serverState = runningMcpServers[serverId];
-      try {
-        if (serverState.isExternal) {
-          log.info(`Stopping external MCP server: ${serverId}`);
-          await stopExternalMcp(serverId);
-          if (removeFromState) {
-            delete runningMcpServers[serverId];
-          }
-        } else {
-          log.info(`Stopping internal MCP server: ${serverId}`);
-          await stopMcpServer(serverId, removeFromState);
-        }
-        log.info(`Successfully stopped MCP server: ${serverId}`);
-      } catch (error) {
-        log.error(`Failed to stop MCP server ${serverId}:`, error);
-      }
-    };
-
-    if (parallel) {
-      // Stop all servers in parallel for faster shutdown
-      const stopPromises = serverIds.map(stopServer);
-      await Promise.allSettled(stopPromises);
-    } else {
-      // Stop servers sequentially for more controlled shutdown
-      for (const serverId of serverIds) {
-        await stopServer(serverId);
-      }
-    }
-
-    log.info("All MCP servers stopped successfully");
-  } catch (error) {
-    log.error("Error stopping MCP servers:", error);
-    throw error;
+  if (serverIds.length === 0) {
+    log.info("No MCP servers to stop");
+    return;
   }
+
+  const { parallel = true, removeFromState = false } = options;
+
+  const stopServer = async (serverId: string) => {
+    try {
+      log.info(`Stopping MCP server: ${serverId}`);
+      // Also stop external MCP servers
+      const serverState = runningMcpServers[serverId];
+      if (serverState?.isExternal) {
+        await stopExternalMcp(serverId);
+      } else {
+        await stopMcpServer(serverId, removeFromState);
+      }
+      log.info(`Successfully stopped MCP server: ${serverId}`);
+    } catch (error) {
+      log.error(`Error stopping MCP server ${serverId}:`, error);
+    }
+  };
+
+  log.info(
+    `Stopping ${serverIds.length} MCP servers in ${parallel ? "parallel" : "sequential"} mode`,
+  );
+
+  if (parallel) {
+    await Promise.all(serverIds.map(stopServer));
+  } else {
+    for (const serverId of serverIds) {
+      await stopServer(serverId);
+    }
+  }
+
+  log.info("All MCP servers have been stopped");
+}
+
+/**
+ * Generate fake data from a JSON Schema using JSONSchemaFaker
+ *
+ * @param schema The JSON Schema to generate fake data from
+ * @returns A promise that resolves with the generated fake data
+ */
+export function generateFakeData(schema: unknown) {
+  return JSONSchemaFaker.generate(schema as JSONSchema7);
 }

@@ -40,7 +40,11 @@ export function useExternalMcps() {
     // This uses the exposed IPC event listener from external-mcp-context-exposer.ts
     const unsubscribe = onExternalMcpServersUpdated((updatedMcps) => {
       // Update the query cache with the new data
-      queryClient.setQueryData([EXTERNAL_MCPS_QUERY_KEY], updatedMcps);
+      if (updatedMcps) {
+        queryClient.setQueryData([EXTERNAL_MCPS_QUERY_KEY], updatedMcps);
+      } else {
+        queryClient.invalidateQueries({ queryKey: [EXTERNAL_MCPS_QUERY_KEY] });
+      }
     });
 
     // Clean up on unmount

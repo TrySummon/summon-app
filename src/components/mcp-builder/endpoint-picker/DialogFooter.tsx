@@ -26,7 +26,7 @@ export function DialogFooter({
           Cancel
         </Button>
         <Button onClick={onConfirm} disabled={selectedCount === 0}>
-          Update
+          Add
         </Button>
       </div>
     </div>

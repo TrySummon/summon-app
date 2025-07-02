@@ -2,8 +2,8 @@ import { app } from "electron";
 import path from "path";
 import fs from "fs/promises";
 import fsSync from "fs";
-import { v4 as uuidv4 } from "uuid";
 import log from "electron-log/main";
+import { generateReadableId } from "./id-generator";
 
 export interface Workspace {
   id: string;
@@ -323,7 +323,7 @@ const createWorkspace = async (
   }
 
   const workspace: Workspace = {
-    id: uuidv4(),
+    id: generateReadableId(name),
     name: name.trim(),
     isDefault,
     createdAt: new Date().toISOString(),
@@ -384,11 +384,6 @@ const deleteWorkspace = async (id: string): Promise<boolean> => {
 
   // Cannot delete if it's the only workspace
   if (workspaces.length === 1) {
-    return false;
-  }
-
-  // Cannot delete default workspace if there are others
-  if (workspace.isDefault && workspaces.length > 1) {
     return false;
   }
 

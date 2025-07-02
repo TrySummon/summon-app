@@ -28,7 +28,6 @@ export const ParametersSection: React.FC<ParametersSectionProps> = ({
 
   if (requestBody) {
     if (requestBody?.content) {
-      // Typically, we'd look for 'application/json' or other relevant content types
       const jsonContent = requestBody.content["application/json"];
       if (jsonContent?.schema) {
         const schema = jsonContent.schema as OpenAPIV3.SchemaObject;
@@ -49,6 +48,18 @@ export const ParametersSection: React.FC<ParametersSectionProps> = ({
               );
             },
           );
+        } else if (schema.oneOf) {
+          (schema.oneOf as OpenAPIV3.SchemaObject[]).forEach((oneOfSchema) => {
+            itemsToRender.push(
+              <ParameterItem
+                key={`oneOf-${schema.discriminator?.propertyName}-${oneOfSchema.title}`}
+                name={oneOfSchema.title || "body"}
+                schema={oneOfSchema as OpenAPIV3.SchemaObject}
+                description={"One of multiple possible schemas"}
+                required={requestBody.required}
+              />,
+            );
+          });
         } else if (schema.type) {
           // Handle non-object schema for request body (e.g. string, array)
           itemsToRender.push(

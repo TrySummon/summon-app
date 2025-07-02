@@ -5,7 +5,6 @@ import {
   generateParseToolArgsFunction,
 } from "./utils/code-gen";
 import { generateExecuteApiToolFunction } from "./utils/security";
-
 export async function generateMcpServerCode(
   serverName: string,
   serverVersion: string,
@@ -64,7 +63,7 @@ export async function generateMcpServerCode(
   }
 
   // Generate the full server code
-  return `#!/usr/bin/env node
+  const serverCode = `#!/usr/bin/env node
 /**
  * MCP Server generated from OpenAPI spec for ${serverName} v${serverVersion}
  * Generated on: ${new Date().toISOString()}
@@ -90,6 +89,7 @@ import { jsonSchemaToZod } from 'json-schema-to-zod';
 import axios, { type AxiosRequestConfig, type AxiosError } from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
+import { mapOptimizedToOriginal, type MappingConfig } from './mapper.js';
 
 /**
  * Type definition for JSON objects
@@ -100,6 +100,22 @@ type JsonObject = Record<string, any>;
  * Interface for MCP Tool Definition
  */
 export interface McpToolDefinition {
+  /** Optimised tool definition */
+  optimised?: {
+    name: string;
+    description: string;
+    inputSchema: any;
+  };
+  /** Token count of the optimised tool definition */
+  optimisedTokenCount?: number;
+  /** Mapping of the original tool definition to the optimised tool definition */
+  originalToOptimisedMapping?: MappingConfig;
+  /** Token count of the original tool definition */
+  originalTokenCount: number;
+  /** Prefix of the tool */
+  prefix?: string;
+  /** API ID of the tool */
+  apiId: string;
   /** Name of the tool, must be unique */
   name: string;
   /** Human-readable description of the tool */
@@ -253,4 +269,6 @@ function getZodSchemaFromJsonSchema(jsonSchema: any, toolName: string): z.ZodTyp
     }
 }
 `;
+
+  return serverCode;
 }

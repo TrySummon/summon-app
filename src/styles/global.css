@@ -179,6 +179,106 @@
   button {
     @apply cursor-pointer;
   }
+
+  @keyframes shimmer {
+    0% {
+      background-position:
+        200% 0,
+        0 0;
+    }
+    100% {
+      background-position:
+        -100% 0,
+        0 0;
+    }
+  }
+
+  .shimmer {
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      -45deg,
+      transparent 25%,
+      hsl(var(--accent)) 50%,
+      transparent 75%,
+      transparent 100%
+    );
+    background-size:
+      250% 250%,
+      100% 100%;
+    background-position:
+      -100% 0,
+      0 0;
+    background-repeat: no-repeat;
+    animation: shimmer 2s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Red shimmer for removed items */
+  .shimmer-removed {
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      -45deg,
+      transparent 25%,
+      rgba(239, 68, 68, 0.2) 50%,
+      /* red-500 */ transparent 75%,
+      transparent 100%
+    );
+    background-size:
+      250% 250%,
+      100% 100%;
+    background-position:
+      -100% 0,
+      0 0;
+    background-repeat: no-repeat;
+    animation: shimmer 0.8s ease-out forwards;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Green shimmer for added items */
+  .shimmer-added {
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      -45deg,
+      transparent 25%,
+      rgba(34, 197, 94, 0.2) 50%,
+      /* green-500 */ transparent 75%,
+      transparent 100%
+    );
+    background-size:
+      250% 250%,
+      100% 100%;
+    background-position:
+      -100% 0,
+      0 0;
+    background-repeat: no-repeat;
+    animation: shimmer 0.8s ease-out forwards;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Blue shimmer for updating items */
+  .shimmer-updating {
+    border-radius: var(--radius-md);
+    background: linear-gradient(
+      -45deg,
+      transparent 25%,
+      rgba(59, 130, 246, 0.2) 50%,
+      /* blue-500 */ transparent 75%,
+      transparent 100%
+    );
+    background-size:
+      250% 250%,
+      100% 100%;
+    background-position:
+      -100% 0,
+      0 0;
+    background-repeat: no-repeat;
+    animation: var(--animate-shimmer);
+    position: relative;
+    overflow: hidden;
+  }
 }
 
 @layer base {

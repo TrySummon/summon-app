@@ -1,7 +1,7 @@
 import React from "react";
 import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
 import { useToolSidebar } from "./useToolSidebar";
-import type { Tool } from "@modelcontextprotocol/sdk/types";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import ToolSidebarHeader from "@/components/tool-sidebar/SidebarHeader";
 import McpSection from "@/components/tool-sidebar/McpSection";
 
@@ -11,16 +11,11 @@ export default function ToolSidebar() {
     toolCount,
     expandedSections,
     selectedToolCounts,
-    modifiedToolMap,
     toggleSection,
     handleToggleTool,
     handleToggleAllTools,
     areAllToolsSelected,
     isToolSelected,
-    getModifiedName,
-    getModifiedTool,
-    modifyTool,
-    revertTool,
     mcpToolMap,
   } = useToolSidebar();
 
@@ -50,7 +45,6 @@ export default function ToolSidebar() {
                 mcpId={mcpId}
                 name={name}
                 tools={tools}
-                modifiedToolMap={modifiedToolMap}
                 isExpanded={expandedSections[mcpId]}
                 selectedToolCount={selectedToolCounts[mcpId]}
                 areAllToolsSelected={areAllToolsSelected(mcpId, tools)}
@@ -58,15 +52,11 @@ export default function ToolSidebar() {
                 onToggleAllTools={() => handleToggleAllTools(mcpId, tools)}
                 onToggleTool={(toolId) => handleToggleTool(mcpId, toolId)}
                 isToolSelected={(toolId) => isToolSelected(mcpId, toolId)}
-                getModifiedName={getModifiedName}
-                getModifiedTool={getModifiedTool}
-                onToolModify={modifyTool}
-                onToolRevert={revertTool}
               />
             );
           })}
       </SidebarContent>
-      <SidebarRail />
+      <SidebarRail direction="left" />
     </Sidebar>
   );
 }

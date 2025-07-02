@@ -6,6 +6,7 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Link } from "@tanstack/react-router";
 import { Plug } from "lucide-react";
@@ -16,8 +17,7 @@ import { ExternalMcpRoute } from "@/routes/routes";
 
 export default function ExternalMcpPage() {
   const { mcpId } = useParams({ from: ExternalMcpRoute.id });
-  const { state, isLoading, error, refreshStatus } =
-    useExternalMcpServerState(mcpId);
+  const { state, isLoading } = useExternalMcpServerState(mcpId);
 
   if (!state && !isLoading) {
     return (
@@ -38,10 +38,17 @@ export default function ExternalMcpPage() {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
+              <BreadcrumbPage>
+                <Plug className="mr-2 size-3" />
+                External MCPs
+              </BreadcrumbPage>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
               <Link to={ExternalMcpRoute.to} params={{ mcpId }}>
-                <BreadcrumbPage>
-                  <Plug className="mr-2 size-3" /> {mcpId}
-                </BreadcrumbPage>
+                <BreadcrumbPage>{mcpId}</BreadcrumbPage>
               </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
@@ -50,16 +57,7 @@ export default function ExternalMcpPage() {
 
       <div className="flex flex-1 flex-col overflow-y-auto">
         <div className="container mx-auto max-w-4xl py-6">
-          <McpExplorer
-            mcpId={mcpId}
-            mcpName={mcpId}
-            transport={state?.transport}
-            status={state?.status}
-            error={error}
-            isLoading={isLoading}
-            refreshStatus={refreshStatus}
-            isExternal
-          />
+          <McpExplorer mcpId={mcpId} mcpName={mcpId} isExternal />
         </div>
       </div>
     </div>

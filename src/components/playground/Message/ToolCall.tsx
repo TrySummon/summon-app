@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Clock, Check, Wrench, CheckCircle, XCircle } from "lucide-react";
+import { Wrench, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,18 +8,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/utils/tailwind";
+
 import { ToolInvocation } from "ai";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { CodeSnippet } from "@/components/CodeSnippet";
 import { usePlaygroundStore } from "../../../stores/playgroundStore";
-import { findOriginalToolInfo, makeExecuteFunction } from "@/lib/agent";
+import { findToolMcpId, makeExecuteFunction } from "@/lib/agent";
 import { Loader } from "@/components/Loader";
+import { PayloadDialog } from "@/components/ui/PayloadDialog";
+import { FixToolCallButton } from "@/components/FixToolCall";
 
 interface ToolCallProps {
   invocation: ToolInvocation;
@@ -27,21 +22,15 @@ interface ToolCallProps {
 
 export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
   const toolMap = usePlaygroundStore((state) => state.mcpToolMap);
-  const modifiedToolMap = usePlaygroundStore(
-    (state) => state.getCurrentState().modifiedToolMap,
-  );
   const addToolResult = usePlaygroundStore((state) => state.addToolResult);
 
   const [loading, setLoading] = useState(false);
 
   const handleApprove = async () => {
     setLoading(true);
-    const toolInfo = findOriginalToolInfo(invocation.toolName);
-    if (!toolInfo) {
-      console.error(
-        "Could not find original tool info for:",
-        invocation.toolName,
-      );
+    const mcpId = findToolMcpId(invocation.toolName);
+    if (!mcpId) {
+      console.error("Could not find mcp id for:", invocation.toolName);
       addToolResult(invocation.toolCallId, {
         success: false,
         message: "Could not find original tool information",
@@ -53,9 +42,8 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
     try {
       const executeFunction = makeExecuteFunction(
         toolMap,
-        modifiedToolMap,
-        toolInfo.mcpId,
-        toolInfo.originalToolName,
+        mcpId,
+        invocation.toolName,
       );
       const result = await executeFunction(invocation.args);
       addToolResult(invocation.toolCallId, result);
@@ -86,9 +74,8 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
             <TooltipTrigger asChild>
               <Badge
                 variant="outline"
-                className="border-yellow-300 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+                className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300"
               >
-                <Clock className="mr-1 h-3 w-3" />
                 Pending
               </Badge>
             </TooltipTrigger>
@@ -101,9 +88,8 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
         return (
           <Badge
             variant="outline"
-            className="border-blue-300 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+            className="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
           >
-            <Clock className="mr-1 h-3 w-3" />
             Processing
           </Badge>
         );
@@ -112,9 +98,8 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
           return (
             <Badge
               variant="outline"
-              className="border-green-300 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+              className="border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-300"
             >
-              <Check className="mr-1 h-3 w-3" />
               Completed
             </Badge>
           );
@@ -124,7 +109,7 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
               <TooltipTrigger asChild>
                 <Badge
                   variant="outline"
-                  className="border-red-300 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                  className="border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300"
                 >
                   Failed
                 </Badge>
@@ -142,115 +127,85 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
 
   return (
     <TooltipProvider>
-      <div className="bg-card rounded-md p-2">
+      <div className="group bg-card/30 hover:border-border hover:bg-card/50 relative rounded-lg backdrop-blur-sm transition-all duration-200">
         {/* Header */}
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex w-full items-center justify-between">
-            <div className="text-foreground flex items-center gap-2 text-sm font-medium">
-              <Wrench className="h-3.5 w-3.5" /> {invocation.toolName}
+        <div className="border-border/30 flex items-center justify-between border-b px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-md">
+              <Wrench className="h-4 w-4" />
             </div>
-            {renderStatusBadge()}
+            <div className="flex flex-col">
+              <div className="text-foreground flex items-center gap-2 text-sm font-medium">
+                {invocation.toolName}
+                <FixToolCallButton invocation={invocation} />
+              </div>
+              <span className="text-muted-foreground text-xs">
+                Tool Invocation
+              </span>
+            </div>
           </div>
+          {renderStatusBadge()}
         </div>
 
         {/* Content */}
-        <Accordion
-          type="single"
-          defaultValue={
-            invocation.state === "partial-call" ? "arguments" : undefined
-          }
-          collapsible
-          className="w-full"
-        >
-          {/* Arguments Section */}
-          <AccordionItem value="arguments" className="border-none">
-            <AccordionTrigger className="py-2">
-              <span className="text-muted-foreground text-xs font-medium">
-                Arguments
-              </span>
-            </AccordionTrigger>
-
-            <AccordionContent>
-              <div className="overflow-hidden rounded-md">
-                <CodeSnippet language="json">
-                  {JSON.stringify(invocation.args, null, 2)}
-                </CodeSnippet>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Result Section - Only show for result state */}
-          {invocation.state === "result" ? (
-            <AccordionItem value="result" className="border-none">
-              <AccordionTrigger className="py-2">
-                <span className="text-muted-foreground text-xs font-medium">
-                  Result
-                </span>
-              </AccordionTrigger>
-
-              <AccordionContent>
-                <div
-                  className={cn(
-                    "overflow-hidden rounded-md",
-                    typeof invocation.result === "object"
-                      ? ""
-                      : "bg-muted p-3 text-sm",
-                  )}
-                >
-                  {typeof invocation.result === "object" ? (
-                    <CodeSnippet language="json">
-                      {JSON.stringify(invocation.result, null, 2)}
-                    </CodeSnippet>
-                  ) : (
-                    <div className="font-mono text-sm whitespace-pre-wrap">
-                      {String(invocation.result)}
-                    </div>
-                  )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ) : null}
-        </Accordion>
-        {/* Approve/Reject buttons for tools without results */}
-        {invocation.state === "partial-call" && (
-          <div className="flex justify-end">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={handleReject}
-                  size="icon"
-                  variant="ghost"
-                  className="text-red-600 hover:text-red-500"
-                >
-                  <XCircle className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Reject and deny tool execution</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={handleApprove}
-                  size="icon"
-                  variant="ghost"
-                  className="text-green-600 hover:text-green-500"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader className="h-4 w-4" />
-                  ) : (
-                    <CheckCircle className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Approve and execute tool</p>
-              </TooltipContent>
-            </Tooltip>
+        <div className="space-y-3 px-4 py-3">
+          <div className="flex flex-wrap gap-2">
+            <PayloadDialog
+              title={`Arguments for ${invocation.toolName}`}
+              payload={invocation.args}
+              triggerText="Arguments"
+            />
+            {invocation.state === "result" && (
+              <PayloadDialog
+                title={`Result for ${invocation.toolName}`}
+                payload={invocation.result}
+                triggerText="Result"
+              />
+            )}
           </div>
-        )}
+
+          {/* Action buttons for pending tools */}
+          {invocation.state === "partial-call" && (
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleReject}
+                    size="sm"
+                    variant="outline"
+                    className="h-8 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+                  >
+                    <XCircle className="mr-1.5 h-3 w-3" />
+                    Reject
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reject and deny tool execution</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleApprove}
+                    size="sm"
+                    className="h-8 bg-green-600 text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <Loader className="mr-1.5 h-3 w-3 text-white" />
+                    ) : (
+                      <CheckCircle className="mr-1.5 h-3 w-3" />
+                    )}
+                    Approve
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Approve and execute tool</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+        </div>
       </div>
     </TooltipProvider>
   );

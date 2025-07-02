@@ -17,9 +17,7 @@ export default function ToolSidebarHeader({
           <SidebarTrigger showOnlyOnDesktop className="-ml-1.5" />
           <div className="text-sm font-medium">Enabled Tools</div>
         </div>
-        <Badge className="select-none" variant="outline">
-          {toolCount}
-        </Badge>
+        <Badge className="select-none">{toolCount}</Badge>
       </div>
     </UISidebarHeader>
   );

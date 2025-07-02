@@ -3,11 +3,10 @@ import { v4 as uuidv4 } from "uuid";
 import { UIMessage } from "ai";
 import { persist, createJSONStorage, PersistOptions } from "zustand/middleware";
 import { runPlaygroundAgent } from "@/lib/agent";
-import { Tool as McpTool } from "@modelcontextprotocol/sdk/types";
-import { LLMSettings, ModifiedTool } from "./types";
+import { Tool as McpTool } from "@modelcontextprotocol/sdk/types.js";
+import { LLMSettings } from "./types";
 
 export type ToolMap = Record<string, { name: string; tools: McpTool[] }>;
-export type ModifiedToolMap = Record<string, Record<string, ModifiedTool>>;
 
 export interface IPlaygroundTabState {
   id: string;
@@ -17,8 +16,6 @@ export interface IPlaygroundTabState {
   systemPrompt?: string;
   messages: UIMessage[];
   enabledTools: Record<string, string[]>;
-  // Tool modifications: mcpId -> toolName -> modified schema and name
-  modifiedToolMap: ModifiedToolMap;
   running: boolean;
   maxSteps: number;
   shouldScrollToDock?: boolean;
@@ -34,6 +31,8 @@ export interface IPlaygroundTabState {
   selectedDatasetId?: string;
   cutMode?: boolean;
   cutPosition?: number;
+  // Track if tool selection is pristine (hasn't been modified yet)
+  toolSelectionPristine?: boolean;
 }
 
 interface HistoryEntry {
@@ -102,15 +101,10 @@ export interface PlaygroundStore {
   updateSystemPrompt: (systemPrompt: string) => void;
   updateEnabledTools: (toolProvider: string, toolIds: string[]) => void;
   updateSelectedDatasetId: (datasetId: string | undefined) => void;
-  modifyTool: (
-    mcpId: string,
-    toolName: string,
-    modifiedTool: ModifiedTool,
-  ) => void;
-  revertTool: (mcpId: string, toolName: string) => void;
   updateMcpToolMap: (mcpToolMap: ToolMap) => void;
   updateShouldScrollToDock: (shouldScrollToDock: boolean) => void;
   setShowToolSidebar: (show: boolean) => void;
+  setToolSelectionPristine: (pristine: boolean) => void;
   addToolResult: (
     toolCallId: string,
     result: { success: boolean; data?: unknown; message?: string },
@@ -134,8 +128,8 @@ const createDefaultState = (): IPlaygroundTabState => ({
   running: false,
   maxSteps: 10,
   shouldScrollToDock: false,
-  modifiedToolMap: {},
   autoExecuteTools: false,
+  toolSelectionPristine: true,
 });
 
 // Define the state that will be persisted to storage
@@ -225,7 +219,6 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
           messages: [...tabToDuplicate.state.messages],
           settings: { ...tabToDuplicate.state.settings },
           enabledTools: tabToDuplicate.state.enabledTools,
-          modifiedToolMap: tabToDuplicate.state.modifiedToolMap,
           model: tabToDuplicate.state.model,
           credentialId: tabToDuplicate.state.credentialId,
         };
@@ -546,6 +539,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
             ...state.enabledTools,
             [toolProvider]: toolIds,
           },
+          toolSelectionPristine: false,
         }));
       },
 
@@ -567,47 +561,11 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
         }));
       },
 
-      modifyTool: (
-        mcpId: string,
-        toolName: string,
-        modifiedTool: ModifiedTool,
-      ) => {
-        get().updateCurrentState((state) => {
-          const modifiedToolMap = state.modifiedToolMap || {};
-
-          return {
-            ...state,
-            modifiedToolMap: {
-              ...modifiedToolMap,
-              [mcpId]: {
-                ...modifiedToolMap[mcpId],
-                [toolName]: modifiedTool,
-              },
-            },
-          };
-        });
-      },
-
-      revertTool: (mcpId: string, toolName: string) => {
-        get().updateCurrentState((state) => {
-          const modifiedToolMap = { ...state.modifiedToolMap };
-
-          if (modifiedToolMap[mcpId]) {
-            const mcpTools = { ...modifiedToolMap[mcpId] };
-            delete mcpTools[toolName];
-
-            if (Object.keys(mcpTools).length === 0) {
-              delete modifiedToolMap[mcpId];
-            } else {
-              modifiedToolMap[mcpId] = mcpTools;
-            }
-          }
-
-          return {
-            ...state,
-            modifiedToolMap,
-          };
-        });
+      setToolSelectionPristine: (pristine) => {
+        get().updateCurrentState((state) => ({
+          ...state,
+          toolSelectionPristine: pristine,
+        }));
       },
 
       deleteMessage: (messageIndex) => {
@@ -648,7 +606,11 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
         const { getCurrentState, updateCurrentState } = get();
         const state = getCurrentState();
         // Abort the current request
-        state.abortController?.abort?.();
+        if (state.abortController) {
+          state.abortController.abort();
+        } else {
+          console.info("No abort controller found in state");
+        }
 
         // Reset the abort controller and running state
         updateCurrentState(
@@ -673,7 +635,6 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
           ...currentTab.state,
           id: uuidv4(),
           messages: [],
-          modifiedToolMap: {},
           tokenUsage: undefined,
           latency: undefined,
         };

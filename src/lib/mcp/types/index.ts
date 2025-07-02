@@ -2,7 +2,7 @@
  * Core type definitions for the openapi-to-mcp generator
  */
 import type { JSONSchema7 } from "json-schema";
-import type { OpenAPIV3 } from "openapi-types";
+import { MappingConfig } from "../mapper";
 
 /**
  * Transport types supported by the MCP server
@@ -14,6 +14,22 @@ export type TransportType = "stdio" | "web" | "streamable-http";
  * for use in Model Context Protocol server
  */
 export interface McpToolDefinition {
+  /** Optimised tool definition */
+  optimised?: {
+    name: string;
+    description: string;
+    inputSchema: JSONSchema7 | boolean;
+  };
+  /** Token count of the optimised tool definition */
+  optimisedTokenCount?: number;
+  /** Mapping of the original tool definition to the optimised tool definition */
+  originalToOptimisedMapping?: MappingConfig;
+  /** Token count of the original tool definition */
+  originalTokenCount: number;
+  /** API ID of the tool */
+  apiId: string;
+  /** Prefix of the tool */
+  prefix?: string;
   /** Name of the tool, must be unique */
   name: string;
   /** Human-readable description of the tool */
@@ -26,14 +42,11 @@ export interface McpToolDefinition {
   tags: string[];
   /** URL path template with parameter placeholders */
   pathTemplate: string;
-  /** OpenAPI parameter objects for this operation */
-  parameters: OpenAPIV3.ParameterObject[];
   /** Parameter names and locations for execution */
   executionParameters: { name: string; in: string }[];
   /** Content type for request body, if applicable */
   requestBodyContentType?: string;
   /** Original operation ID from the OpenAPI spec */
-  operationId: string;
   securityScheme: {
     baseUrlEnvVar: string;
     schemas: Array<
@@ -52,6 +65,11 @@ export interface McpToolDefinition {
     >;
   };
 }
+
+export type McpToolDefinitionWithoutAuth = Omit<
+  McpToolDefinition,
+  "securityScheme"
+>;
 
 /**
  * Helper type for JSON objects

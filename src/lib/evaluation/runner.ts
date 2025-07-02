@@ -1,8 +1,8 @@
 import { DatasetItem } from "@/types/dataset";
 import { UIMessage } from "ai";
-import { runAgent, RunAgentConfig } from "@/lib/agent";
+import { runLocalAgent, RunLocalAgentConfig } from "@/lib/agent";
 import { AssertionScorer, Assertion, EvaluationResult } from "./index";
-import { ModifiedToolMap, ToolMap } from "@/stores/playgroundStore";
+import { ToolMap } from "@/stores/playgroundStore";
 
 export interface EvaluationConfig {
   agentCredentialId: string;
@@ -11,7 +11,6 @@ export interface EvaluationConfig {
   assertionModel: string;
   maxSteps?: number;
   enabledTools?: Record<string, string[]>;
-  modifiedToolMap?: ModifiedToolMap;
   mcpToolMap: ToolMap;
 }
 
@@ -95,7 +94,7 @@ async function evaluateDatasetItem(
     const inputMessages = prepareInputMessages(item);
 
     // Configure the agent run
-    const agentConfig: RunAgentConfig = {
+    const agentConfig: RunLocalAgentConfig = {
       messages: inputMessages,
       systemPrompt: item.systemPrompt || "",
       credentialId: config.agentCredentialId,
@@ -103,12 +102,11 @@ async function evaluateDatasetItem(
       settings: item.settings,
       maxSteps: config.maxSteps || 5,
       enabledTools: config.enabledTools || {},
-      modifiedToolMap: config.modifiedToolMap || {},
       mcpToolMap: config.mcpToolMap,
     };
 
     // Run the agent
-    const outputMessages = await runAgent(agentConfig);
+    const outputMessages = await runLocalAgent(agentConfig);
 
     // Run assertions against the output
     const assertionResults = await AssertionScorer({

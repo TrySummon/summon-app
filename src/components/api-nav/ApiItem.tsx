@@ -18,10 +18,7 @@ import { useApis } from "@/hooks/useApis";
 import { OpenAPIV3 } from "openapi-types";
 
 interface ApiItemProps {
-  apiItem: {
-    id: string;
-    api: OpenAPIV3.Document;
-  };
+  apiItem: { id: string; api: OpenAPIV3.Document };
   isOpen: boolean;
   isActive: boolean;
   onToggle: (apiId: string) => void;

@@ -12,11 +12,15 @@ import {
   RESTART_MCP_SERVER_CHANNEL,
   GET_MCP_TOOLS_CHANNEL,
   CALL_MCP_TOOL_CHANNEL,
+  UPDATE_MCP_TOOL_CHANNEL,
+  REVERT_MCP_TOOL_CHANNEL,
+  GENERATE_FAKE_DATA_CHANNEL,
   OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL,
   DOWNLOAD_MCP_ZIP_CHANNEL,
   SHOW_FILE_IN_FOLDER_CHANNEL,
 } from "./mcp-channels";
 import { McpData } from "@/lib/db/mcp-db";
+import { SummonTool } from "@/lib/mcp/tool";
 
 export function exposeMcpContext() {
   contextBridge.exposeInMainWorld("mcpApi", {
@@ -78,6 +82,18 @@ export function exposeMcpContext() {
         name,
         args,
       });
+    },
+
+    updateMcpTool: (tool: SummonTool) => {
+      return ipcRenderer.invoke(UPDATE_MCP_TOOL_CHANNEL, tool);
+    },
+
+    revertMcpTool: (tool: SummonTool) => {
+      return ipcRenderer.invoke(REVERT_MCP_TOOL_CHANNEL, tool);
+    },
+
+    generateFakeData: async (schema: unknown) => {
+      return ipcRenderer.invoke(GENERATE_FAKE_DATA_CHANNEL, schema);
     },
 
     openUserDataMcpJsonFile: () => {

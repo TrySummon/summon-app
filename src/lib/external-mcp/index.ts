@@ -162,7 +162,7 @@ export const connectExternalMcp = async (
       params.env = {
         ...(params.env || {}),
         ...getDefaultEnvironment(),
-        "ELE  CTRON_RUN_AS_NODE": "1",
+        ELECTRON_RUN_AS_NODE: "1",
       };
       const transport = new StdioClientTransport(params);
 
@@ -231,6 +231,7 @@ export const stopExternalMcp = async (
     // Close client if it exists
     if (serverState.client) {
       await serverState.client.close();
+      delete serverState.client;
     }
 
     // Update server status

@@ -60,12 +60,7 @@ const DatasetDetailPage: React.FC = () => {
     switch (activeTab) {
       case "eval":
         return (
-          <div className="container flex flex-1 flex-col overflow-y-auto py-4">
-            <SafeDatasetEvaluation
-              items={dataset.items}
-              datasetId={datasetId}
-            />
-          </div>
+          <SafeDatasetEvaluation items={dataset.items} datasetId={datasetId} />
         );
       case "items":
       default:
@@ -81,7 +76,7 @@ const DatasetDetailPage: React.FC = () => {
               } as React.CSSProperties
             }
           >
-            <SidebarInset className="container flex flex-1 flex-col gap-4 overflow-y-auto py-4">
+            <SidebarInset className="container flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto py-4">
               <DatasetItemsTable
                 items={dataset.items}
                 isLoading={false}
@@ -127,9 +122,7 @@ const DatasetDetailPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        {renderTabContent()}
-      </div>
+      <div className="flex min-h-0 flex-1 flex-col">{renderTabContent()}</div>
     </div>
   );
 };

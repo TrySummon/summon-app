@@ -4,6 +4,11 @@ import SwaggerParser from "@apidevtools/swagger-parser";
 import { OpenAPIV3 } from "openapi-types";
 import { Server } from "http";
 import log from "electron-log/main";
+import { z } from "zod";
+import { jsonSchemaToZod } from "json-schema-to-zod";
+
+import { JSONSchema7 } from "json-schema";
+import { generateFakeData } from "../mcp";
 
 interface MockServerOptions {
   port: number;
@@ -214,7 +219,46 @@ export class OpenAPIMockServer {
   }
 
   /**
-   * Basic request validation
+   * Convert OpenAPI schema to Zod schema
+   */
+  private openApiSchemaToZod(schema: OpenAPIV3.SchemaObject): z.ZodSchema {
+    try {
+      // Convert OpenAPI schema to JSON Schema first, then to Zod
+      const jsonSchema = this.openApiToJsonSchema(schema);
+      const zodSchemaString = jsonSchemaToZod(jsonSchema);
+
+      // Evaluate the generated Zod schema string
+      const zodSchema = new Function("z", `return ${zodSchemaString}`)(z);
+      return zodSchema;
+    } catch (error) {
+      log.warn("Failed to convert schema to Zod, using fallback:", error);
+      // Fallback to a basic schema
+      return z.any();
+    }
+  }
+
+  /**
+   * Convert OpenAPI schema to JSON Schema format
+   */
+  private openApiToJsonSchema(
+    schema: OpenAPIV3.SchemaObject,
+  ): Record<string, unknown> {
+    // Convert OpenAPI 3.0 schema to JSON Schema Draft 7
+    const jsonSchema: Record<string, unknown> = { ...schema };
+
+    // Handle OpenAPI specific fields
+    if (schema.nullable) {
+      // For nullable types, use anyOf with null
+      jsonSchema.anyOf = [{ type: schema.type }, { type: "null" }];
+      delete jsonSchema.type;
+      delete jsonSchema.nullable;
+    }
+
+    return jsonSchema;
+  }
+
+  /**
+   * Validate request parameters - only check presence for path/query params
    */
   private validateRequest(
     req: Request,
@@ -223,10 +267,14 @@ export class OpenAPIMockServer {
     const parameters =
       (operation.parameters as OpenAPIV3.ParameterObject[]) || [];
 
-    for (const param of parameters) {
-      if (param.required) {
-        let value: unknown;
+    try {
+      // Check required parameters
+      for (const param of parameters) {
+        if (!param.required) {
+          continue; // Skip optional parameters
+        }
 
+        let value: unknown;
         switch (param.in) {
           case "path":
             value = req.params[param.name];
@@ -237,15 +285,108 @@ export class OpenAPIMockServer {
           case "header":
             value = req.headers[param.name.toLowerCase()];
             break;
+          default:
+            continue;
         }
 
+        // Check if required parameter is missing
         if (value === undefined || value === null || value === "") {
-          return `Missing required parameter: ${param.name}`;
+          return `Required ${param.in} parameter '${param.name}' is missing`;
         }
       }
+
+      return null;
+    } catch (error) {
+      log.error("Parameter validation error:", error);
+      return "Parameter validation failed due to internal error";
+    }
+  }
+
+  /**
+   * Validate request body using Zod
+   */
+  private validateRequestBody(
+    req: Request,
+    operation: OpenAPIV3.OperationObject,
+  ): string | null {
+    const requestBody = operation.requestBody as OpenAPIV3.RequestBodyObject;
+
+    if (!requestBody) {
+      return null; // No request body expected
     }
 
-    return null;
+    // Check if request body is required
+    if (
+      requestBody.required &&
+      (!req.body || Object.keys(req.body).length === 0)
+    ) {
+      return "Request body is required";
+    }
+
+    // Skip validation if no body provided and not required
+    if (!req.body && !requestBody.required) {
+      return null;
+    }
+
+    const content = requestBody.content || {};
+
+    // Find the appropriate content type
+    const contentType = req.get("content-type") || "application/json";
+    const mediaTypeKey = this.findMatchingMediaType(content, contentType);
+
+    if (!mediaTypeKey) {
+      const supportedTypes = Object.keys(content);
+      return `Unsupported content type '${contentType}'. Supported types: ${supportedTypes.join(", ")}`;
+    }
+
+    const mediaType = content[mediaTypeKey];
+    if (!mediaType?.schema) {
+      return null; // No schema to validate against
+    }
+
+    try {
+      // Convert schema to Zod and validate
+      const schema = mediaType.schema as OpenAPIV3.SchemaObject;
+      const zodSchema = this.openApiSchemaToZod(schema);
+
+      const result = zodSchema.safeParse(req.body);
+      if (!result.success) {
+        const error = result.error.errors[0];
+        return `Request body validation failed: ${error.path.join(".")} - ${error.message}`;
+      }
+
+      return null;
+    } catch (error) {
+      log.error("Request body validation error:", error);
+      return "Request body validation failed due to internal error";
+    }
+  }
+
+  /**
+   * Find matching media type from content object
+   */
+  private findMatchingMediaType(
+    content: Record<string, OpenAPIV3.MediaTypeObject>,
+    contentType: string,
+  ): string | null {
+    // Exact match first
+    if (content[contentType]) {
+      return contentType;
+    }
+
+    // Check for wildcard matches
+    const baseType = contentType.split(";")[0].trim(); // Remove charset etc.
+    if (content[baseType]) {
+      return baseType;
+    }
+
+    // Check for application/json variants
+    if (baseType.includes("json") && content["application/json"]) {
+      return "application/json";
+    }
+
+    // Default to first available if no match
+    return Object.keys(content)[0] || null;
   }
 
   /**
@@ -253,8 +394,42 @@ export class OpenAPIMockServer {
    */
   private createDefaultHandler(operation: OpenAPIV3.OperationObject) {
     return (req: Request, res: Response): void => {
-      const { status, mock } = this.generateMockResponse(operation, req);
-      res.status(status).json(mock);
+      try {
+        // Validate request parameters
+        const validationError = this.validateRequest(req, operation);
+        if (validationError) {
+          res.status(400).json({
+            error: "Parameter validation failed",
+            message: validationError,
+            operationId: operation.operationId,
+            timestamp: new Date().toISOString(),
+          });
+          return;
+        }
+
+        // Request body validation
+        const bodyValidationError = this.validateRequestBody(req, operation);
+        if (bodyValidationError) {
+          res.status(400).json({
+            error: "Request body validation failed",
+            message: bodyValidationError,
+            operationId: operation.operationId,
+            timestamp: new Date().toISOString(),
+          });
+          return;
+        }
+
+        // Generate and return mock response
+        const { status, mock } = this.generateMockResponse(operation);
+        res.status(status).json(mock);
+      } catch (error) {
+        log.error("Error in default handler:", error);
+        res.status(500).json({
+          error: "Internal server error",
+          operationId: operation.operationId,
+          timestamp: new Date().toISOString(),
+        });
+      }
     };
   }
 
@@ -263,7 +438,6 @@ export class OpenAPIMockServer {
    */
   private generateMockResponse(
     operation: OpenAPIV3.OperationObject,
-    req: Request = {} as Request,
   ): MockResponse {
     const responses = operation.responses || {};
 
@@ -298,7 +472,6 @@ export class OpenAPIMockServer {
         status: parseInt(successStatus) || 200,
         mock: this.generateMockFromSchema(
           jsonContent.schema as OpenAPIV3.SchemaObject,
-          req,
         ),
       };
     }
@@ -315,79 +488,19 @@ export class OpenAPIMockServer {
   }
 
   /**
-   * Generate mock data from JSON schema
+   * Generate mock data from JSON schema using JSON Schema Faker
    */
-  private generateMockFromSchema(
-    schema: OpenAPIV3.SchemaObject,
-    req: Request = {} as Request,
-  ): unknown {
+  private generateMockFromSchema(schema: OpenAPIV3.SchemaObject): unknown {
     if (!schema) return null;
 
-    // Handle examples
+    // Handle examples first - if provided, use them
     if (schema.example !== undefined) {
       return schema.example;
     }
 
-    const obj: Record<string, unknown> = {};
-
-    // Handle different types
-    switch (schema.type) {
-      case "object":
-        if (schema.properties) {
-          Object.entries(schema.properties).forEach(([key, propertySchema]) => {
-            obj[key] = this.generateMockFromSchema(
-              propertySchema as OpenAPIV3.SchemaObject,
-              req,
-            );
-          });
-        }
-        return obj;
-
-      case "array":
-        if (schema.items) {
-          const items = this.generateMockFromSchema(
-            schema.items as OpenAPIV3.SchemaObject,
-            req,
-          );
-          const length = schema.minItems || 1;
-          return Array(length)
-            .fill(null)
-            .map((_, i) =>
-              typeof items === "object" && items !== null
-                ? { ...items, id: i + 1 }
-                : items,
-            );
-        }
-        return ["item"];
-
-      case "string":
-        if (schema.enum) return schema.enum[0];
-        if (schema.format === "email") return "test@example.com";
-        if (schema.format === "date") return "2023-01-01";
-        if (schema.format === "date-time") return new Date().toISOString();
-        if (schema.format === "uuid")
-          return "123e4567-e89b-12d3-a456-426614174000";
-        if (schema.format === "uri") return "https://example.com";
-        return (schema.default as string) || "example string";
-
-      case "number":
-        return schema.default !== undefined
-          ? (schema.default as number)
-          : schema.minimum || 42;
-
-      case "integer":
-        return schema.default !== undefined
-          ? (schema.default as number)
-          : schema.minimum || 1;
-
-      case "boolean":
-        return schema.default !== undefined
-          ? (schema.default as boolean)
-          : true;
-
-      default:
-        return schema.default || null;
-    }
+    // Use JSON Schema Faker to generate realistic mock data synchronously
+    const mockData = generateFakeData(schema as JSONSchema7);
+    return mockData;
   }
 
   /**

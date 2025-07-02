@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Tool } from "@modelcontextprotocol/sdk/types";
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 // Helper function to extract parameters from a tool's inputSchema
 export const extractToolParameters = (tool: Tool) => {

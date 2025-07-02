@@ -11,12 +11,18 @@ export default function BaseLayout({
 }) {
   return (
     <>
-      <SidebarProvider className="flex h-svh flex-col">
+      <SidebarProvider
+        className="flex h-svh flex-col"
+        open
+        defaultOpen
+        defaultWidth="14rem"
+        mobileBreakpoint={1}
+      >
         <DragWindowRegion />
         <div className="flex flex-grow overflow-hidden">
           <AppSidebar />
-          <SidebarInset className="overflow-hidden">
-            <Toaster richColors />
+          <SidebarInset className="min-h-full overflow-hidden">
+            <Toaster position="bottom-center" richColors />
             <main className="flex h-full flex-col overflow-hidden">
               {children}
             </main>

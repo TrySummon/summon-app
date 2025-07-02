@@ -1,82 +1,98 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Tool } from "@modelcontextprotocol/sdk/types";
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ServerStatusSection } from "./ServerStatusSection";
 import { ToolsList } from "./ToolsList";
-import { McpServerStatus, McpTransport } from "@/lib/mcp/state";
 import { getMcpTools } from "@/ipc/mcp/mcp-client";
+import { McpApiGroup } from "@/lib/db/mcp-db";
+
+import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
+import { useMcpServerState } from "@/hooks/useMcpServerState";
+import { ApiConfig, ApiConfigs } from "../mcp-builder/api-config";
 
 interface McpExplorerProps {
   mcpId: string;
   mcpName: string;
-  transport?: McpTransport;
-  status?: McpServerStatus;
-  error?: Error | string | null;
-  isLoading: boolean;
+  onAddEndpoints?: (apiId: string, endpoints: SelectedEndpoint[]) => void;
+  onDeleteTool?: (toolName: string) => void;
+  onDeleteAllTools?: () => void;
+  onUpdateApiConfigs?: (apiConfigs: ApiConfigs) => void;
+  onEditName?: (newName: string) => void;
   isExternal?: boolean;
-  refreshStatus: () => void;
+  apiGroups?: Record<string, McpApiGroup>;
 }
 
 export const McpExplorer: React.FC<McpExplorerProps> = ({
   mcpId,
   mcpName,
-  transport,
-  status,
-  error,
-  isLoading,
+  onAddEndpoints,
+  onDeleteTool,
+  onDeleteAllTools,
+  onUpdateApiConfigs,
+  onEditName,
+  apiGroups,
   isExternal,
-  refreshStatus,
 }) => {
+  const { state, isLoading, error, refreshStatus } = useMcpServerState(mcpId);
   const [mcpTools, setMcpTools] = useState<Tool[]>([]);
-  const url = transport && "url" in transport ? transport.url : undefined;
+  const url =
+    state?.transport && "url" in state.transport
+      ? state.transport.url
+      : undefined;
 
   const fetchMcpTools = useCallback(async () => {
-    if (status === "running") {
-      try {
-        const response = await getMcpTools(mcpId);
-        if (response.success && response.data) {
-          setMcpTools(response.data);
-        } else {
-          console.error("Failed to fetch MCP tools:", response.message);
-          setMcpTools([]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch MCP tools:", err);
+    try {
+      const response = await getMcpTools(mcpId);
+      if (response.success && response.data) {
+        setMcpTools(response.data);
+      } else {
+        console.error("Failed to fetch MCP tools:", response.message);
         setMcpTools([]);
       }
-    } else {
+    } catch (err) {
+      console.error("Failed to fetch MCP tools:", err);
       setMcpTools([]);
     }
-  }, [mcpId, status]);
+  }, [mcpId]);
 
   // Enhanced refresh function that refreshes both status and tools
   const handleRefreshStatus = useCallback(async () => {
-    refreshStatus();
-    // Also refresh tools after a short delay to ensure status is updated first
-    setTimeout(() => {
-      fetchMcpTools();
-    }, 100);
+    await refreshStatus();
+    await fetchMcpTools();
   }, [refreshStatus, fetchMcpTools]);
 
   useEffect(() => {
     fetchMcpTools();
-  }, [fetchMcpTools]);
+  }, [fetchMcpTools, apiGroups]);
 
   if (isLoading) return null;
 
   return (
     <div className="space-y-6">
       <ServerStatusSection
-        status={status || "stopped"}
+        status={state?.status || "stopped"}
         url={url || undefined}
         error={error}
         serverName={mcpName}
-        transport={transport?.type}
         refreshStatus={handleRefreshStatus}
         mcpId={mcpId}
         isExternal={isExternal}
+        onEditName={onEditName}
       />
 
-      {status === "running" && <ToolsList tools={mcpTools} />}
+      {onUpdateApiConfigs && (
+        <ApiConfig apiGroups={apiGroups} onSave={onUpdateApiConfigs} />
+      )}
+
+      {state?.status === "running" && (
+        <ToolsList
+          tools={mcpTools}
+          mcpId={mcpId}
+          onAddEndpoints={onAddEndpoints}
+          onDeleteTool={onDeleteTool}
+          onDeleteAllTools={onDeleteAllTools}
+          refreshStatus={handleRefreshStatus}
+        />
+      )}
     </div>
   );
 };

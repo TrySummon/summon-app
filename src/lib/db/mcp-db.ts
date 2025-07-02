@@ -1,29 +1,20 @@
 import { safeStorage, app } from "electron";
 import path from "path";
 import fs from "fs/promises";
-import {
-  McpAuth,
-  McpSubmitData,
-} from "@/components/mcp-builder/start-mcp-dialog";
+import { McpAuth } from "@/components/mcp-builder/api-config";
 import { generateMcpId } from "./id-generator";
 import log from "electron-log/main";
 import { workspaceDb } from "./workspace-db";
-
-// Define endpoint data structure
-export interface McpEndpoint {
-  apiId: string;
-  apiName: string;
-  method: string;
-  path: string;
-}
+import { McpToolDefinitionWithoutAuth } from "../mcp/types";
 
 // Define the MCP data structure that will be stored in files
 export interface McpApiGroup {
   name: string;
   serverUrl?: string;
+  toolPrefix?: string;
   useMockData?: boolean;
   auth: McpAuth;
-  endpoints?: McpEndpoint[];
+  tools?: McpToolDefinitionWithoutAuth[];
 }
 
 export interface McpData {
@@ -35,15 +26,14 @@ export interface McpData {
   updatedAt: string;
 }
 
+export type McpSubmitData = Omit<McpData, "id" | "createdAt" | "updatedAt">;
+
 // Get workspace-specific directories
-const getMcpDataDir = async () => {
+export const getMcpDataDir = async () => {
   const currentWorkspace = await workspaceDb.getCurrentWorkspace();
   const workspaceDataDir = workspaceDb.getWorkspaceDataDir(currentWorkspace.id);
   return path.join(workspaceDataDir, "mcp-data");
 };
-
-// Export for main.ts usage
-export { getMcpDataDir };
 
 export const getMcpImplDir = async (mcpId?: string) => {
   const currentWorkspace = await workspaceDb.getCurrentWorkspace();
@@ -59,6 +49,16 @@ export const getMcpImplDir = async (mcpId?: string) => {
 // Alias for backward compatibility
 export const getMcpImplPath = async (mcpId: string) => {
   return getMcpImplDir(mcpId);
+};
+
+export const getMcpImplToolsDir = async (mcpId: string) => {
+  const mcpImplDir = await getMcpImplDir(mcpId);
+  return path.join(mcpImplDir, "src", "tools");
+};
+
+export const getMcpImplToolPath = async (mcpId: string, toolName: string) => {
+  const toolsDir = await getMcpImplToolsDir(mcpId);
+  return path.join(toolsDir, `${toolName}.json`);
 };
 
 // Credentials are shared across workspaces - stored in root credentials directory

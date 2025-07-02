@@ -9,14 +9,14 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Link } from "@tanstack/react-router";
 
 interface McpHeaderProps {
   isLoading: boolean;
   refetch: () => void;
+  onCreateMcp: () => void;
 }
 
-export function McpHeader({ isLoading, refetch }: McpHeaderProps) {
+export function McpHeader({ isLoading, refetch, onCreateMcp }: McpHeaderProps) {
   const handleRefresh = () => {
     refetch();
     toast.success("MCP list refreshed");
@@ -48,11 +48,14 @@ export function McpHeader({ isLoading, refetch }: McpHeaderProps) {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link to="/build-mcp" search={{ edit: undefined }}>
-                <Button variant="ghost" size="icon" className="h-5 w-5">
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                onClick={onCreateMcp}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <p>Create new MCP</p>

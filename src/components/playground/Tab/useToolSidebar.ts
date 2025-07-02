@@ -1,8 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { usePlaygroundStore } from "../../../stores/playgroundStore";
 import useToolMap from "@/hooks/useToolMap";
-import type { Tool } from "@modelcontextprotocol/sdk/types";
-import { ModifiedTool } from "@/stores/types";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 export function useToolSidebar() {
   const { mcpToolMap } = useToolMap();
@@ -10,9 +9,10 @@ export function useToolSidebar() {
   const enabledTools = usePlaygroundStore(
     (state) => state.getCurrentState().enabledTools,
   );
-  const modifiedToolMap = usePlaygroundStore(
-    (state) => state.getCurrentState().modifiedToolMap,
+  const toolSelectionPristine = usePlaygroundStore(
+    (state) => state.getCurrentState().toolSelectionPristine,
   );
+
   const updateMcpToolMap = usePlaygroundStore(
     (state) => state.updateMcpToolMap,
   );
@@ -21,9 +21,9 @@ export function useToolSidebar() {
   const updateEnabledTools = usePlaygroundStore(
     (state) => state.updateEnabledTools,
   );
-  const modifyTool = usePlaygroundStore((state) => state.modifyTool);
-  const revertTool = usePlaygroundStore((state) => state.revertTool);
-
+  const setToolSelectionPristine = usePlaygroundStore(
+    (state) => state.setToolSelectionPristine,
+  );
   // State for expanded MCP sections - all expanded by default
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
@@ -59,68 +59,33 @@ export function useToolSidebar() {
             },
           });
         }
-        // Case 2: enabledTools is defined - check for tools that are no longer available
-        else if (tab.state.enabledTools) {
-          let needsUpdate = false;
-          const updatedEnabledTools: Record<string, string[]> = {};
-
-          // For each MCP in the tab's enabledTools
-          Object.entries(tab.state.enabledTools).forEach(
-            ([mcpId, enabledToolIds]) => {
-              // Check if this MCP still exists in origToolMap
-              if (mcpToolMap[mcpId]) {
-                // Get the available tool IDs for this MCP
-                const tools = mcpToolMap[mcpId].tools as Tool[];
-                const availableToolIds = tools.map((tool: Tool) => tool.name);
-
-                // Filter out tools that are no longer available
-                const validToolIds = enabledToolIds.filter((toolId) =>
-                  availableToolIds.includes(toolId),
-                );
-
-                // If some tools were removed, mark for update
-                if (validToolIds.length !== enabledToolIds.length) {
-                  needsUpdate = true;
-                }
-
-                // Only add this MCP if it has valid tools
-                if (validToolIds.length > 0) {
-                  updatedEnabledTools[mcpId] = validToolIds;
-                } else {
-                  needsUpdate = true; // MCP had tools but now has none valid
-                }
-              } else {
-                // MCP no longer exists, mark for update
-                needsUpdate = true;
-              }
-            },
-          );
-
-          // If we need to update the tab's enabledTools
-          if (needsUpdate) {
-            updateTab(tabId, {
-              ...tab,
-              state: {
-                ...tab.state,
-                enabledTools: updatedEnabledTools,
-              },
-            });
-          }
-        }
       });
     }
   }, [mcpToolMap, updateMcpToolMap, getTabs, updateTab]);
 
-  // Initialize all sections as expanded
+  // Auto-enable all tools if tool selection is pristine
   useEffect(() => {
-    if (mcpToolMap && Object.keys(mcpToolMap).length > 0) {
-      const initialExpandedState: Record<string, boolean> = {};
-      Object.keys(mcpToolMap).forEach((mcpId) => {
-        initialExpandedState[mcpId] = true;
+    if (
+      toolSelectionPristine &&
+      mcpToolMap &&
+      Object.keys(mcpToolMap).length > 0
+    ) {
+      // Enable all available tools
+      Object.entries(mcpToolMap).forEach(([mcpId, mcpData]) => {
+        const tools = mcpData.tools as Tool[];
+        const allToolIds = tools.map((tool: Tool) => tool.name);
+        updateEnabledTools(mcpId, allToolIds);
       });
-      setExpandedSections(initialExpandedState);
+
+      // Set pristine to false after auto-enabling
+      setToolSelectionPristine(false);
     }
-  }, [mcpToolMap]);
+  }, [
+    toolSelectionPristine,
+    mcpToolMap,
+    updateEnabledTools,
+    setToolSelectionPristine,
+  ]);
 
   // Toggle section expansion
   const toggleSection = (mcpId: string) => {
@@ -135,11 +100,24 @@ export function useToolSidebar() {
     const counts: Record<string, number> = {};
 
     Object.entries(enabledTools).forEach(([mcpId, toolIds]) => {
-      counts[mcpId] = toolIds.length;
+      // Get available tools for this MCP
+      const mcpData = mcpToolMap?.[mcpId];
+      if (mcpData) {
+        const availableTools = mcpData.tools as Tool[];
+        const availableToolIds = availableTools.map((tool) => tool.name);
+
+        // Only count tools that actually exist in the MCP
+        const validToolIds = toolIds.filter((toolId) =>
+          availableToolIds.includes(toolId),
+        );
+        counts[mcpId] = validToolIds.length;
+      } else {
+        counts[mcpId] = 0;
+      }
     });
 
     return counts;
-  }, [enabledTools]);
+  }, [enabledTools, mcpToolMap]);
 
   // Handle toggling a single tool
   const handleToggleTool = (mcpId: string, toolId: string) => {
@@ -191,29 +169,26 @@ export function useToolSidebar() {
     return currentToolsForMcp.includes(toolId);
   };
 
-  // Get modified name for a tool
-  const getModifiedName = (
-    mcpId: string,
-    toolName: string,
-    originalName: string,
-  ) => {
-    const modification = modifiedToolMap[mcpId]?.[toolName];
-    return modification?.name || originalName;
-  };
+  // Calculate total tool count (only count tools that exist in their MCPs)
+  const toolCount = useMemo(() => {
+    if (!enabledTools || !mcpToolMap) return 0;
 
-  // Get modified tool
-  const getModifiedTool = (
-    mcpId: string,
-    toolName: string,
-  ): ModifiedTool | undefined => {
-    return modifiedToolMap[mcpId]?.[toolName];
-  };
+    return Object.entries(enabledTools).reduce((acc, [mcpId, toolIds]) => {
+      // Get available tools for this MCP
+      const mcpData = mcpToolMap[mcpId];
+      if (mcpData) {
+        const availableTools = mcpData.tools as Tool[];
+        const availableToolIds = availableTools.map((tool) => tool.name);
 
-  // Calculate total tool count
-  const toolCount = Object.values(enabledTools).reduce(
-    (acc, tools) => acc + tools.length,
-    0,
-  );
+        // Only count tools that actually exist in the MCP
+        const validToolIds = toolIds.filter((toolId) =>
+          availableToolIds.includes(toolId),
+        );
+        return acc + validToolIds.length;
+      }
+      return acc;
+    }, 0);
+  }, [enabledTools, mcpToolMap]);
 
   // Filter MCPs that have tools
   const mcps = mcpToolMap
@@ -229,16 +204,11 @@ export function useToolSidebar() {
     toolCount,
     expandedSections,
     selectedToolCounts,
-    modifiedToolMap,
     toggleSection,
     handleToggleTool,
     handleToggleAllTools,
     areAllToolsSelected,
     isToolSelected,
-    getModifiedName,
-    getModifiedTool,
-    revertTool,
-    modifyTool,
     mcpToolMap,
   };
 }

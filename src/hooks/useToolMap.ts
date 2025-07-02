@@ -10,7 +10,7 @@ type ToolMapEntry = {
 };
 
 export default function useToolMap() {
-  const mcps = useMcps();
+  const { mcps } = useMcps();
   const externalMcps = useExternalMcps();
   const [mcpToolMap, setMcpToolMap] = useState<Record<string, ToolMapEntry>>(
     {},
@@ -40,11 +40,30 @@ export default function useToolMap() {
       }
     };
 
+    // Get current MCP IDs
+    const currentMcpIds = new Set([
+      ...Object.keys(externalMcps.externalMcps),
+      ...mcps.map((mcp) => mcp.id),
+    ]);
+
+    // Clean up MCPs that are no longer present
+    setMcpToolMap((prevToolMap) => {
+      const cleanedToolMap: Record<string, ToolMapEntry> = {};
+      Object.keys(prevToolMap).forEach((mcpId) => {
+        if (currentMcpIds.has(mcpId)) {
+          cleanedToolMap[mcpId] = prevToolMap[mcpId];
+        }
+      });
+      return cleanedToolMap;
+    });
+
+    // Fetch external MCPs
     Object.keys(externalMcps.externalMcps).forEach((mcpId) => {
       fetchMcpTools(mcpId, mcpId);
     });
 
-    mcps.mcps.forEach((mcp) => {
+    // Fetch internal MCPs
+    mcps.forEach((mcp) => {
       fetchMcpTools(mcp.id, mcp.name);
     });
   }, [mcps, externalMcps]);

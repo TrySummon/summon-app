@@ -1,5 +1,3 @@
-import { type JSONSchema7 } from "json-schema";
-
 export type LLMSettings = {
   /**
     Maximum number of tokens to generate.
@@ -73,9 +71,3 @@ export type LLMSettings = {
        */
   headers?: Record<string, string | undefined>;
 };
-
-export interface ModifiedTool {
-  schema: JSONSchema7;
-  name?: string;
-  description?: string;
-}

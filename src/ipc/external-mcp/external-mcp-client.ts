@@ -18,7 +18,7 @@ export const stopExternalMcpServer = async (mcpId: string) => {
 };
 
 export const onExternalMcpServersUpdated = (
-  callback: (mcpServers: Record<string, McpServerState>) => void,
+  callback: (mcpServers: Record<string, McpServerState> | null) => void,
 ) => {
   return window.externalMcpApi.onExternalMcpServersUpdated(callback);
 };

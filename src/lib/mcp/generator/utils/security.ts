@@ -215,18 +215,23 @@ export function generateExecuteApiToolFunction(): string {
  */
 async function executeApiTool(toolName: string, definition: McpToolDefinition, args: Record<string, any>): Promise<any> {
     try {
-    const baseUrl = process.env[definition.securityScheme.baseUrlEnvVar];
+    let baseUrl = process.env[definition.securityScheme.baseUrlEnvVar];
     if (!baseUrl) {
         throw new Error(\`Base URL environment variable \${definition.securityScheme.baseUrlEnvVar} is not set\`);
     }
 
-      // --- Argument Validation using Zod ---
-      let validatedArgs: JsonObject;
+    // Remove trailing slash from baseUrl to avoid double slashes when concatenating with pathTemplate
+    baseUrl = baseUrl.replace(/\\/$/, '');
+
+
+    // --- Argument Validation using Zod ---
+    let validatedArgs: JsonObject;
       try {
-          const zodSchema = getZodSchemaFromJsonSchema(definition.inputSchema, toolName);
+          const schema = definition.optimised?.inputSchema || definition.inputSchema;
+          const zodSchema = getZodSchemaFromJsonSchema(schema, toolName);
           const argsToParse = (typeof args === 'object' && args !== null) ? args : {};
           validatedArgs = zodSchema.parse(argsToParse);
-          console.error(\`Arguments validated successfully for tool '\${toolName}'.\`);
+          console.log(\`Arguments validated successfully for tool '\${toolName}'.\`);
       } catch (error: any) {
           if (error instanceof ZodError) {
               const validationErrorMessage = \`Invalid arguments for tool '\${toolName}': \${error.errors.map(e => \`\${e.path.join('.')} (\${e.code}): \${e.message}\`).join(', ')}\`;
@@ -237,6 +242,13 @@ async function executeApiTool(toolName: string, definition: McpToolDefinition, a
                return { content: [{ type: 'text', text: \`Internal server error during argument validation setup for tool '\${toolName}'.\` }] };
           }
       }
+
+    if (definition.originalToOptimisedMapping) {
+      validatedArgs = mapOptimizedToOriginal(
+        validatedArgs,
+        definition.originalToOptimisedMapping,
+      );
+    }
 
     // Build URL with path parameters
     let url = baseUrl + definition.pathTemplate;
@@ -301,9 +313,9 @@ async function executeApiTool(toolName: string, definition: McpToolDefinition, a
     // Handle request body if needed
     if (
       definition.requestBodyContentType &&
-      typeof args["requestBody"] !== "undefined"
+      typeof validatedArgs["requestBody"] !== "undefined"
     ) {
-      requestBodyData = args["requestBody"];
+      requestBodyData = validatedArgs["requestBody"];
       headers["content-type"] = definition.requestBodyContentType;
     }
 

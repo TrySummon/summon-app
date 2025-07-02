@@ -3,8 +3,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { BadgeCheck, Upload } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { OpenAPIV3 } from "openapi-types";
 import { ImportApiDialog } from "@/components/ImportApiDialog";
+import { OpenAPIV3 } from "openapi-types";
 
 interface ApiPickerDialogProps {
   open: boolean;

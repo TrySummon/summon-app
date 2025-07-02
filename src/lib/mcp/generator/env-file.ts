@@ -22,12 +22,12 @@ export async function generateEnvExample(
   const inferredEnvVars = new Set<string>();
 
   for (const [apiId, apiGroup] of Object.entries(apiGroups)) {
-    if (apiGroup.endpoints && apiGroup.endpoints.length > 0) {
+    if (apiGroup.tools && apiGroup.tools.length > 0) {
       const api = await getApiById(apiId);
       if (api) {
         try {
           const apiSpec = (await SwaggerParser.dereference(
-            api.originalFilePath,
+            api.api,
           )) as OpenAPIV3.Document;
 
           const securitySchemes = extractSecuritySchemes(

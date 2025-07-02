@@ -5,7 +5,9 @@ import {
   GET_API_CHANNEL,
   RENAME_API_CHANNEL,
   DELETE_API_CHANNEL,
+  CONVERT_ENDPOINT_TO_TOOL,
 } from "./openapi-channels";
+import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 
 export function exposeOpenApiContext() {
   try {
@@ -29,6 +31,9 @@ export function exposeOpenApiContext() {
           reader.onerror = () => reject(new Error("Failed to read file"));
           reader.readAsArrayBuffer(file);
         });
+      },
+      convertEndpointToTool: (apiId: string, endpoint: SelectedEndpoint) => {
+        return ipcRenderer.invoke(CONVERT_ENDPOINT_TO_TOOL, apiId, endpoint);
       },
 
       db: {

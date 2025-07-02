@@ -3,24 +3,31 @@ import { createRoot } from "react-dom/client";
 import { syncThemeWithLocal } from "@/lib/theme_helpers";
 import { router } from "./routes/router";
 import { RouterProvider } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { McpToolDefinition } from "@/lib/mcp/types";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { OpenAPIV3 } from "openapi-types";
-import { McpData } from "@/lib/db/mcp-db";
-import { Tool } from "@modelcontextprotocol/sdk/types";
+import type { McpData, McpSubmitData } from "@/lib/db/mcp-db";
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { McpServerState } from "@/lib/mcp/state";
 import {
   AIProviderCredential,
   PersistedAIProviderCredential,
 } from "./components/ai-providers/types";
-import {
-  McpAuth,
-  McpSubmitData,
-} from "./components/mcp-builder/start-mcp-dialog";
+import { McpAuth } from "./components/mcp-builder/api-config";
 import { initPostHog } from "@/lib/posthog";
 import { initSentryRenderer } from "@/lib/sentry-renderer";
 import { SentryErrorBoundary } from "./components/SentryErrorBoundary";
 import { Dataset, DatasetItem } from "@/types/dataset";
+import type { UserInfo } from "./ipc/auth/auth-listeners";
+import { SelectedEndpoint } from "./lib/mcp/parser/extract-tools";
+import { McpToolDefinitionWithoutAuth } from "./lib/mcp/types";
+import { ToolResult } from "./components/AgentSidebar/AgentContext";
+import type {
+  OptimiseToolSelectionRequest,
+  OptimiseToolSizeRequest,
+  SearchApiEndpointsRequest,
+} from "./ipc/agent-tools/agent-tools-listeners";
+import { SummonTool, SummonToolRef } from "./lib/mcp/tool";
+import { queryClient } from "./queryClient";
 
 export default function App() {
   useEffect(() => {
@@ -36,8 +43,6 @@ export default function App() {
   );
 }
 
-const queryClient = new QueryClient();
-
 // Define the interface for the electron API
 declare global {
   interface Window {
@@ -49,8 +54,6 @@ declare global {
           apis?: {
             id: string;
             api: OpenAPIV3.Document;
-            createdAt: string;
-            updatedAt: string;
           }[];
           message?: string;
         }>;
@@ -59,9 +62,6 @@ declare global {
           api?: {
             id: string;
             api: OpenAPIV3.Document;
-            tools: McpToolDefinition[];
-            createdAt: string;
-            updatedAt: string;
           };
           message?: string;
         }>;
@@ -77,6 +77,14 @@ declare global {
           message: string;
         }>;
       };
+      convertEndpointToTool: (
+        apiId: string,
+        endpoint: SelectedEndpoint,
+      ) => Promise<{
+        success: boolean;
+        data?: McpToolDefinitionWithoutAuth;
+        message?: string;
+      }>;
       import: (file: File) => Promise<{
         success: boolean;
         message: string;
@@ -88,6 +96,20 @@ declare global {
         baseUrl: string,
         authData: McpAuth,
       ) => Promise<{ status: number; success: boolean; message?: string }>;
+      // OAuth methods
+      authenticate: () => Promise<{
+        success: boolean;
+        token?: string;
+        user?: UserInfo;
+        message?: string;
+      }>;
+      getUser: () => Promise<{
+        success: boolean;
+        user?: UserInfo;
+        token?: string;
+        message?: string;
+      }>;
+      logout: () => Promise<{ success: boolean }>;
     };
     aiProviders: {
       getCredentials: () => Promise<PersistedAIProviderCredential[]>;
@@ -150,6 +172,15 @@ declare global {
         mcpId: string,
         name: string,
         args: Record<string, unknown>,
+      ) => Promise<{ success: boolean; data?: unknown; message?: string }>;
+      updateMcpTool: (
+        tool: SummonTool,
+      ) => Promise<{ success: boolean; message?: string; data: string }>;
+      revertMcpTool: (
+        tool: SummonToolRef,
+      ) => Promise<{ success: boolean; message?: string; data: string }>;
+      generateFakeData: (
+        schema: unknown,
       ) => Promise<{ success: boolean; data?: unknown; message?: string }>;
       openUserDataMcpJsonFile: () => Promise<{
         success: boolean;
@@ -268,6 +299,18 @@ declare global {
         updates: Partial<{ name: string }>,
       ) => Promise<boolean>;
       deleteWorkspace: (id: string) => Promise<boolean>;
+    };
+    agentTools: {
+      listApis: () => Promise<ToolResult>;
+      searchApiEndpoints: (
+        args: SearchApiEndpointsRequest,
+      ) => Promise<ToolResult>;
+      optimiseToolSize: (args: OptimiseToolSizeRequest) => Promise<ToolResult>;
+      optimiseToolSelection: (
+        args: OptimiseToolSelectionRequest,
+      ) => Promise<
+        ToolResult<{ original: SummonTool[]; optimised: SummonTool[] }>
+      >;
     };
   }
 }

@@ -153,20 +153,19 @@ export default function TabHeader() {
           <TooltipTrigger asChild>
             <Button
               onClick={() =>
-                confirm(
-                  `Are you sure you want to clear the tab messages and tool modifications?`,
-                ) && clearCurrentTab()
+                confirm(`Are you sure you want to clear the tab messages`) &&
+                clearCurrentTab()
               }
               disabled={isRunning}
               variant="ghost"
               size="icon"
-              aria-label="Clear tab messages and tool modifications"
+              aria-label="Clear tab messages"
             >
               <Paintbrush className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Clear tab messages and tool modifications</p>
+            <p>Clear tab messages</p>
           </TooltipContent>
         </Tooltip>
 
