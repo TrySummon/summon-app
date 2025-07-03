@@ -7,7 +7,6 @@ import { convertEndpointToTool } from "@/ipc/openapi/openapi-client";
 import { OptimizeToolSizeRequest } from "@/lib/mcp/tools";
 import { captureEvent } from "@/lib/posthog";
 
-
 // Custom event types for tool animations
 export interface ToolAnimationEvent extends CustomEvent {
   detail: {
