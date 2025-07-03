@@ -78,14 +78,13 @@ export function WorkspaceSelector() {
   const handleSwitchWorkspace = async (workspaceId: string) => {
     if (workspaceId === currentWorkspace?.id) return;
 
-    try {
-      await setCurrentWorkspace.mutateAsync(workspaceId);
-      const workspace = workspaces.find((w) => w.id === workspaceId);
-      toast.success(`Switched to "${workspace?.name}"`);
-    } catch (error) {
-      console.error("Failed to switch workspace:", error);
-      toast.error("Failed to switch workspace");
-    }
+    const workspace = workspaces.find((w) => w.id === workspaceId);
+
+    toast.promise(setCurrentWorkspace.mutateAsync(workspaceId), {
+      loading: `Switching to "${workspace?.name}"...`,
+      success: `Switched to "${workspace?.name}"`,
+      error: "Failed to switch workspace",
+    });
   };
 
   const handleRenameWorkspace = async () => {
