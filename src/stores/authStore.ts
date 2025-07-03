@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { UserInfo } from "@/ipc/auth/auth-listeners";
 import { toast } from "sonner";
+import { identifyUser, resetPostHogUser } from "@/lib/posthog";
 
 interface AuthState {
   user: UserInfo | null;
@@ -47,6 +48,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       isAuthenticated: Boolean(user && token),
       isLoading: false,
     });
+
+    // Identify user in PostHog with their email
+    if (user) {
+      identifyUser(user.id, {
+        email: user.email,
+        name: user.name,
+        image: user.image,
+      });
+    }
   },
 
   clearAuth: () => {
@@ -56,6 +66,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       isAuthenticated: false,
       isLoading: false,
     });
+
+    // Reset PostHog user on logout
+    resetPostHogUser();
   },
 
   loadUserData: async () => {
@@ -109,7 +122,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   logout: async () => {
     try {
       await window.auth.logout();
-      get().clearAuth();
+      get().clearAuth(); // This will also call resetPostHogUser()
       toast.success("Logged out successfully");
     } catch (error) {
       console.error("Logout failed:", error);

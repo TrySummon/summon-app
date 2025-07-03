@@ -3,7 +3,7 @@ import packageJson from "../../package.json";
 import { v4 as uuidv4 } from "uuid";
 
 // Generate or retrieve persistent user ID
-const getUserId = (): string => {
+export const getUserId = (): string => {
   const storageKey = "summon_user_id";
 
   try {
@@ -126,6 +126,60 @@ export const capturePageView = (
     }
   } catch (error) {
     console.error("Failed to capture PostHog pageview:", error);
+  }
+};
+
+// Helper function to identify authenticated users
+export const identifyUser = (
+  userId: string,
+  userInfo: {
+    email?: string;
+    name?: string;
+    image?: string;
+  },
+) => {
+  try {
+    if (typeof window !== "undefined" && posthog.__loaded) {
+      // Use email as the primary identifier, fallback to UUID
+      const distinctId = userInfo.email || userId;
+
+      posthog.identify(distinctId, {
+        email: userInfo.email,
+        name: userInfo.name,
+        image: userInfo.image,
+        app_type: "Summon",
+        app_version: packageJson.version,
+        user_id: userId, // Keep original UUID as a property
+      });
+
+      console.log("PostHog user identified:", {
+        distinctId,
+        email: userInfo.email,
+        name: userInfo.name,
+      });
+    }
+  } catch (error) {
+    console.error("Failed to identify user in PostHog:", error);
+  }
+};
+
+// Helper function to reset PostHog on logout
+export const resetPostHogUser = () => {
+  try {
+    if (typeof window !== "undefined" && posthog.__loaded) {
+      posthog.reset();
+
+      // Re-identify with the anonymous UUID
+      const userId = getUserId();
+      posthog.identify(userId, {
+        app_type: "Summon",
+        app_version: packageJson.version,
+      });
+
+      console.log("PostHog user reset and re-identified with UUID:", userId);
+    }
+  } catch (error) {
+    console.error("Failed to reset PostHog user:", error);
   }
 };
 

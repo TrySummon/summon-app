@@ -5,6 +5,8 @@ import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { toast } from "sonner";
 import { convertEndpointToTool } from "@/ipc/openapi/openapi-client";
 import { OptimizeToolSizeRequest } from "@/lib/mcp/tools";
+import { captureEvent } from "@/lib/posthog";
+
 
 // Custom event types for tool animations
 export interface ToolAnimationEvent extends CustomEvent {
@@ -224,6 +226,8 @@ export function useMcpActions(mcpId: string) {
 
   const optimiseToolSize = useCallback(
     async (args: Omit<OptimizeToolSizeRequest, "mcpId">) => {
+      captureEvent("optimize_tool_size");
+
       dispatchToolAnimation(args.toolName, mcpId, "start-update");
       try {
         const result = await window.agentTools.optimiseToolSize({

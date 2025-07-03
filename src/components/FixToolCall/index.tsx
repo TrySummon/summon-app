@@ -21,6 +21,7 @@ import { MergeView } from "./MergeView";
 import type { MentionedTool, OptimizedResult, DialogState } from "./types";
 import { SummonTool } from "@/lib/mcp/tools/types";
 import { updateMcpToolWithStoreSync } from "@/ipc/mcp/mcp-client";
+import { captureEvent } from "@/lib/posthog";
 
 interface FixToolCallButtonProps {
   invocation?: ToolInvocation;
@@ -83,6 +84,8 @@ export function FixToolCallButton({ invocation }: FixToolCallButtonProps) {
     setSubmittedMessage(message);
     setSubmittedTools(mentionedTools);
     setDialogState("loading");
+
+    captureEvent("optimize_tool_selection");
 
     try {
       // Convert MentionedTool[] to SummonTool[] format expected by the API

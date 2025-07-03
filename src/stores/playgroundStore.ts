@@ -27,7 +27,6 @@ export interface IPlaygroundTabState {
   };
   // Latency in milliseconds
   latency?: number;
-  autoExecuteTools?: boolean;
   selectedDatasetId?: string;
   cutMode?: boolean;
   cutPosition?: number;
@@ -57,6 +56,8 @@ export interface PlaygroundStore {
   currentTabId: string;
   // Tool sidebar visibility
   showToolSidebar: boolean;
+  // Global auto-execute tools setting
+  autoExecuteTools: boolean;
 
   // Getters
   getCurrentTab: () => PlaygroundTab | undefined;
@@ -110,6 +111,10 @@ export interface PlaygroundStore {
     result: { success: boolean; data?: unknown; message?: string },
   ) => void;
 
+  // Global auto-execute tools
+  getAutoExecuteTools: () => boolean;
+  setAutoExecuteTools: (autoExecuteTools: boolean) => void;
+
   // History management
   undo: () => string | null;
   redo: () => string | null;
@@ -128,7 +133,6 @@ const createDefaultState = (): IPlaygroundTabState => ({
   running: false,
   maxSteps: 10,
   shouldScrollToDock: false,
-  autoExecuteTools: false,
   toolSelectionPristine: true,
 });
 
@@ -136,6 +140,7 @@ const createDefaultState = (): IPlaygroundTabState => ({
 type PlaygroundStorePersist = {
   tabs: Record<string, PlaygroundTab>;
   currentTabId: string;
+  autoExecuteTools: boolean;
 };
 
 // Configure persist options
@@ -146,6 +151,7 @@ const persistOptions: PersistOptions<PlaygroundStore, PlaygroundStorePersist> =
     partialize: (state) => ({
       tabs: state.tabs,
       currentTabId: state.currentTabId,
+      autoExecuteTools: state.autoExecuteTools,
     }),
   };
 
@@ -157,6 +163,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
       mcpToolMap: {},
       currentTabId: "",
       showToolSidebar: false,
+      autoExecuteTools: true,
 
       getTabs: () => {
         const { tabs } = get();
@@ -660,6 +667,18 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
             },
           };
         });
+      },
+
+      // Global auto-execute tools
+      getAutoExecuteTools: () => {
+        const { autoExecuteTools } = get();
+        return autoExecuteTools;
+      },
+      setAutoExecuteTools: (autoExecuteTools) => {
+        set((state) => ({
+          ...state,
+          autoExecuteTools,
+        }));
       },
     }),
     persistOptions,

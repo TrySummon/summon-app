@@ -189,7 +189,7 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
                   onClick={handleReject}
                   size="sm"
                   variant="outline"
-                  className="h-8 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
+                  className="h-6 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300"
                 >
                   <XCircle className="mr-1.5 h-3 w-3" />
                   Reject
@@ -204,7 +204,7 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
                 <Button
                   onClick={handleApprove}
                   size="sm"
-                  className="h-8 bg-green-600 text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
+                  className="h-6 bg-green-600 text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
                   disabled={loading}
                 >
                   {loading ? (

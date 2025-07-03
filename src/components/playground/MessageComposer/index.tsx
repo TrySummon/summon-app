@@ -22,11 +22,11 @@ export default function MessageComposer() {
   const running = usePlaygroundStore(
     (state) => state.getCurrentState().running,
   );
-  const autoExecuteTools = usePlaygroundStore(
-    (state) => state.getCurrentState().autoExecuteTools ?? false,
+  const autoExecuteTools = usePlaygroundStore((state) =>
+    state.getAutoExecuteTools(),
   );
-  const updateCurrentState = usePlaygroundStore(
-    (state) => state.updateCurrentState,
+  const setAutoExecuteTools = usePlaygroundStore(
+    (state) => state.setAutoExecuteTools,
   );
   const addMessage = usePlaygroundStore((state) => state.addMessage);
   const stopAgent = usePlaygroundStore((state) => state.stopAgent);
@@ -121,19 +121,12 @@ export default function MessageComposer() {
   );
 
   const handleToggleAutoExecute = useCallback(() => {
-    updateCurrentState(
-      (state) => ({
-        ...state,
-        autoExecuteTools: !state.autoExecuteTools,
-      }),
-      false, // Don't add to history
-      `${autoExecuteTools ? "Disabled" : "Enabled"} auto-execute tools`,
-    );
+    setAutoExecuteTools(!autoExecuteTools);
 
     captureEvent("playground_auto_execute_toggled", {
       enabled: !autoExecuteTools,
     });
-  }, [updateCurrentState, autoExecuteTools, captureEvent]);
+  }, [setAutoExecuteTools, autoExecuteTools, captureEvent]);
 
   const submitButton = useMemo(() => {
     if (running) {
