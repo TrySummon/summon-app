@@ -55,6 +55,7 @@ export function CodeSnippet({
       </CardHeader>
       <CardContent className="px-4 py-0">
         <CodeMirrorEditor
+          className="overflow-y-auto"
           maxHeight={maxHeight}
           defaultValue={children}
           language={language}

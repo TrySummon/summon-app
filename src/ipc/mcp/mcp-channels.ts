@@ -29,5 +29,3 @@ export const GET_MCP_PROMPT_CHANNEL = "get-mcp-prompt";
 // Channel names for MCP resources operations
 export const GET_MCP_RESOURCES_CHANNEL = "get-mcp-resources";
 export const READ_MCP_RESOURCE_CHANNEL = "read-mcp-resource";
-export const SUBSCRIBE_MCP_RESOURCE_CHANNEL = "subscribe-mcp-resource";
-export const UNSUBSCRIBE_MCP_RESOURCE_CHANNEL = "unsubscribe-mcp-resource";

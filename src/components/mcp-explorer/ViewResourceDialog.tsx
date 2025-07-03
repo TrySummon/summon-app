@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, AlertCircle, CheckCircle, File, Download } from "lucide-react";
 import CodeEditor from "@/components/CodeEditor";
 import { readMcpResource } from "@/ipc/mcp/mcp-client";
-import { toast } from "sonner";
 
 interface ViewResourceDialogProps {
   resource: Resource | null;
@@ -64,7 +63,8 @@ export const ViewResourceDialog: React.FC<ViewResourceDialogProps> = ({
     } catch (error) {
       setResponse({
         success: false,
-        error: error instanceof Error ? error.message : "Failed to read resource",
+        error:
+          error instanceof Error ? error.message : "Failed to read resource",
       });
     } finally {
       setIsLoading(false);
@@ -112,7 +112,9 @@ export const ViewResourceDialog: React.FC<ViewResourceDialogProps> = ({
             </div>
           </DialogTitle>
           {resource.description && (
-            <p className="text-muted-foreground text-sm">{resource.description}</p>
+            <p className="text-muted-foreground text-sm">
+              {resource.description}
+            </p>
           )}
         </DialogHeader>
 
@@ -147,7 +149,9 @@ export const ViewResourceDialog: React.FC<ViewResourceDialogProps> = ({
                   <div className="space-y-2">
                     <label className="text-sm font-medium">URI</label>
                     <div className="bg-muted/30 rounded-lg border p-3">
-                      <code className="font-mono text-sm break-all">{resource.uri}</code>
+                      <code className="font-mono text-sm break-all">
+                        {resource.uri}
+                      </code>
                     </div>
                   </div>
 
@@ -162,7 +166,7 @@ export const ViewResourceDialog: React.FC<ViewResourceDialogProps> = ({
                     </div>
                   )}
 
-                  {resource.size && (
+                  {resource.size ? (
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Size</label>
                       <div className="bg-muted/30 rounded-lg border p-3">
@@ -171,7 +175,7 @@ export const ViewResourceDialog: React.FC<ViewResourceDialogProps> = ({
                         </span>
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
                   {resource.description && (
                     <div className="space-y-2">
@@ -221,7 +225,9 @@ export const ViewResourceDialog: React.FC<ViewResourceDialogProps> = ({
               {response && response.success && content ? (
                 <>
                   <div className="flex flex-shrink-0 items-center justify-between">
-                    <label className="text-sm font-medium">Resource Content</label>
+                    <label className="text-sm font-medium">
+                      Resource Content
+                    </label>
                     <div className="flex items-center gap-2">
                       {content.mimeType && (
                         <Badge variant="outline" className="font-mono text-xs">
@@ -252,13 +258,19 @@ export const ViewResourceDialog: React.FC<ViewResourceDialogProps> = ({
                       <CodeEditor
                         defaultValue={content.text || ""}
                         language={
-                          content.mimeType?.includes("json") ? "json" :
-                          content.mimeType?.includes("xml") ? "xml" :
-                          content.mimeType?.includes("html") ? "html" :
-                          content.mimeType?.includes("css") ? "css" :
-                          content.mimeType?.includes("javascript") ? "javascript" :
-                          content.mimeType?.includes("python") ? "python" :
-                          "text"
+                          content.mimeType?.includes("json")
+                            ? "json"
+                            : content.mimeType?.includes("xml")
+                              ? "xml"
+                              : content.mimeType?.includes("html")
+                                ? "html"
+                                : content.mimeType?.includes("css")
+                                  ? "css"
+                                  : content.mimeType?.includes("javascript")
+                                    ? "javascript"
+                                    : content.mimeType?.includes("python")
+                                      ? "python"
+                                      : "text"
                         }
                         height="100%"
                         readOnly
@@ -267,19 +279,26 @@ export const ViewResourceDialog: React.FC<ViewResourceDialogProps> = ({
                     ) : isBinaryContent ? (
                       <div className="flex h-full items-center justify-center">
                         <div className="text-center">
-                          <Download className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                          <p className="text-sm font-medium mb-2">Binary Content</p>
-                          <p className="text-muted-foreground text-xs mb-4">
-                            This resource contains binary data that cannot be displayed directly.
+                          <Download className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                          <p className="mb-2 text-sm font-medium">
+                            Binary Content
+                          </p>
+                          <p className="text-muted-foreground mb-4 text-xs">
+                            This resource contains binary data that cannot be
+                            displayed directly.
                           </p>
                           <p className="text-muted-foreground font-mono text-xs">
-                            {content.blob?.length ? `${content.blob.length} base64 characters` : "No data"}
+                            {content.blob?.length
+                              ? `${content.blob.length} base64 characters`
+                              : "No data"}
                           </p>
                         </div>
                       </div>
                     ) : (
                       <div className="flex h-full items-center justify-center">
-                        <p className="text-muted-foreground text-sm">No content available</p>
+                        <p className="text-muted-foreground text-sm">
+                          No content available
+                        </p>
                       </div>
                     )}
                   </div>
@@ -287,8 +306,10 @@ export const ViewResourceDialog: React.FC<ViewResourceDialogProps> = ({
               ) : response && !response.success ? (
                 <div className="flex h-full items-center justify-center">
                   <div className="text-center">
-                    <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-                    <p className="text-sm font-medium mb-2">Failed to load resource</p>
+                    <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+                    <p className="mb-2 text-sm font-medium">
+                      Failed to load resource
+                    </p>
                     <p className="text-muted-foreground text-xs">
                       {response.error || "An unknown error occurred"}
                     </p>
@@ -301,4 +322,4 @@ export const ViewResourceDialog: React.FC<ViewResourceDialogProps> = ({
       </DialogContent>
     </Dialog>
   );
-}; 
+};

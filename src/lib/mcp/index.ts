@@ -649,7 +649,7 @@ export async function stopAllMcpServers(
       // Also stop external MCP servers
       const serverState = runningMcpServers[serverId];
       if (serverState?.isExternal) {
-        await stopExternalMcp(serverId);
+        await stopExternalMcp(serverId, removeFromState);
       } else {
         await stopMcpServer(serverId, removeFromState);
       }

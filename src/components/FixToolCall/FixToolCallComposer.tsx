@@ -23,7 +23,7 @@ import { cn } from "@/utils/tailwind";
 import { usePlaygroundStore } from "@/stores/playgroundStore";
 import { useMcps } from "@/hooks/useMcps";
 import { useExternalMcps } from "@/hooks/useExternalMcps";
-import { ToolAnnotations } from "@/lib/mcp/tool";
+import { ToolAnnotations } from "@/lib/mcp/tools/types";
 import { MentionedTool } from "./types";
 import { toast } from "sonner";
 

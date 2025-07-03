@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Pencil } from "lucide-react";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { ToolAnnotations } from "@/lib/mcp/tool";
+import type { ToolAnnotations } from "@/lib/mcp/tools/types";
 import { ToolEditDialog } from "./ToolEdit";
 
 interface ToolItemProps {

@@ -6,7 +6,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { OpenAPIV3 } from "openapi-types";
 import type { McpData, McpSubmitData } from "@/lib/db/mcp-db";
-import { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { Prompt, Resource, Tool } from "@modelcontextprotocol/sdk/types.js";
 import { McpServerState } from "@/lib/mcp/state";
 import {
   AIProviderCredential,
@@ -20,13 +20,14 @@ import { Dataset, DatasetItem } from "@/types/dataset";
 import type { UserInfo } from "./ipc/auth/auth-listeners";
 import { SelectedEndpoint } from "./lib/mcp/parser/extract-tools";
 import { McpToolDefinitionWithoutAuth } from "./lib/mcp/types";
-import { ToolResult } from "./components/AgentSidebar/AgentContext";
-import type {
-  OptimiseToolSelectionRequest,
-  OptimiseToolSizeRequest,
-  SearchApiEndpointsRequest,
-} from "./ipc/agent-tools/agent-tools-listeners";
-import { SummonTool, SummonToolRef } from "./lib/mcp/tool";
+import { ToolResult } from "./hooks/useMcpActions";
+import type { SearchApiEndpointsRequest } from "./ipc/agent-tools/agent-tools-listeners";
+import {
+  SummonTool,
+  SummonToolRef,
+  OptimizeToolSizeRequest,
+  OptimizeToolSelectionRequest,
+} from "./lib/mcp/tools/types";
 import { queryClient } from "./queryClient";
 
 export default function App() {
@@ -194,6 +195,25 @@ declare global {
       showFileInFolder: (
         path: string,
       ) => Promise<{ success: boolean; message?: string }>;
+
+      // MCP prompts operations
+      getMcpPrompts: (
+        mcpId: string,
+      ) => Promise<{ success: boolean; data?: Prompt[]; message?: string }>;
+      getMcpPrompt: (
+        mcpId: string,
+        name: string,
+        args?: Record<string, string>,
+      ) => Promise<{ success: boolean; data?: Prompt; message?: string }>;
+
+      // MCP resources operations
+      getMcpResources: (
+        mcpId: string,
+      ) => Promise<{ success: boolean; data?: Resource[]; message?: string }>;
+      readMcpResource: (
+        mcpId: string,
+        uri: string,
+      ) => Promise<{ success: boolean; data?: Resource; message?: string }>;
     };
     externalMcpApi: {
       connectExternalMcpServer: (
@@ -305,9 +325,9 @@ declare global {
       searchApiEndpoints: (
         args: SearchApiEndpointsRequest,
       ) => Promise<ToolResult>;
-      optimiseToolSize: (args: OptimiseToolSizeRequest) => Promise<ToolResult>;
+      optimiseToolSize: (args: OptimizeToolSizeRequest) => Promise<ToolResult>;
       optimiseToolSelection: (
-        args: OptimiseToolSelectionRequest,
+        args: OptimizeToolSelectionRequest,
       ) => Promise<
         ToolResult<{ original: SummonTool[]; optimised: SummonTool[] }>
       >;

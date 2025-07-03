@@ -1,7 +1,7 @@
 import { captureEvent } from "@/lib/posthog";
 import { McpData } from "@/lib/db/mcp-db";
 import { recurseCountKeys } from "@/lib/object";
-import { SummonTool, SummonToolRef } from "@/lib/mcp/tool";
+import { SummonTool, SummonToolRef } from "@/lib/mcp/tools/types";
 import { queryClient } from "@/queryClient";
 import { MCP_LIST_QUERY_KEY, MCP_QUERY_KEY } from "@/hooks/useMcps";
 import { usePlaygroundStore } from "@/stores/playgroundStore";
@@ -325,14 +325,4 @@ export const readMcpResource = async (mcpId: string, uri: string) => {
   });
 
   return result;
-};
-
-export const subscribeMcpResource = async (mcpId: string, uri: string) => {
-  captureEvent("mcp_subscribe_resource");
-  return window.mcpApi.subscribeMcpResource(mcpId, uri);
-};
-
-export const unsubscribeMcpResource = async (mcpId: string, uri: string) => {
-  captureEvent("mcp_unsubscribe_resource");
-  return window.mcpApi.unsubscribeMcpResource(mcpId, uri);
 };

@@ -17,7 +17,7 @@ import { OptimizeToolButton } from "./OptimizeToolButton";
 import { RevertToolButton } from "./RevertToolButton";
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { useToolAnimations } from "@/hooks/useToolAnimations";
-import { ToolAnnotations } from "@/lib/mcp/tool";
+import { ToolAnnotations } from "@/lib/mcp/tools/types";
 import { ToolDefinitionDialog } from "@/components/ui/ToolDefinitionDialog";
 import { ToolDefinitionViewerItem } from "@/components/ui/ToolDefinitionViewer";
 

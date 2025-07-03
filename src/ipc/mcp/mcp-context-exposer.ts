@@ -22,11 +22,9 @@ import {
   GET_MCP_PROMPT_CHANNEL,
   GET_MCP_RESOURCES_CHANNEL,
   READ_MCP_RESOURCE_CHANNEL,
-  SUBSCRIBE_MCP_RESOURCE_CHANNEL,
-  UNSUBSCRIBE_MCP_RESOURCE_CHANNEL,
 } from "./mcp-channels";
 import { McpData } from "@/lib/db/mcp-db";
-import { SummonTool } from "@/lib/mcp/tool";
+import { SummonTool } from "@/lib/mcp/tools/types";
 
 export function exposeMcpContext() {
   contextBridge.exposeInMainWorld("mcpApi", {
@@ -138,20 +136,6 @@ export function exposeMcpContext() {
 
     readMcpResource: (mcpId: string, uri: string) => {
       return ipcRenderer.invoke(READ_MCP_RESOURCE_CHANNEL, {
-        mcpId,
-        uri,
-      });
-    },
-
-    subscribeMcpResource: (mcpId: string, uri: string) => {
-      return ipcRenderer.invoke(SUBSCRIBE_MCP_RESOURCE_CHANNEL, {
-        mcpId,
-        uri,
-      });
-    },
-
-    unsubscribeMcpResource: (mcpId: string, uri: string) => {
-      return ipcRenderer.invoke(UNSUBSCRIBE_MCP_RESOURCE_CHANNEL, {
         mcpId,
         uri,
       });

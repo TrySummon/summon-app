@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 
 import ToolItem from "./ToolItem";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { ToolAnnotations } from "@/lib/mcp/tool";
+import type { ToolAnnotations } from "@/lib/mcp/tools/types";
 import { cn } from "@/utils/tailwind";
 
 interface McpSectionProps {

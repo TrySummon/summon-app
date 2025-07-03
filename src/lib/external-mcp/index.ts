@@ -231,6 +231,7 @@ export const connectExternalMcp = async (
  */
 export const stopExternalMcp = async (
   serverName: string,
+  removeFromState?: boolean,
 ): Promise<McpServerState | null> => {
   log.info(`Stopping external MCP server: ${serverName}`);
 
@@ -254,6 +255,9 @@ export const stopExternalMcp = async (
     serverState.stoppedAt = new Date();
 
     log.info(`External MCP server ${serverName} stopped successfully`);
+    if (removeFromState) {
+      delete runningMcpServers[serverName];
+    }
     return serverState;
   } catch (error) {
     log.error(`Failed to stop external MCP server ${serverName}:`, error);

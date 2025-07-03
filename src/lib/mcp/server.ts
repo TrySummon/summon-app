@@ -11,7 +11,7 @@ import {
   CallToolResult,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { mapOptimizedToOriginal } from "./mapper";
+import { mapOptimizedToOriginal } from "./tools/mapper";
 
 /**
  * Load tools from JSON files in the tools directory

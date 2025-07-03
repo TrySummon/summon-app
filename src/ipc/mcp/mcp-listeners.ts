@@ -23,21 +23,16 @@ import {
   GET_MCP_PROMPT_CHANNEL,
   GET_MCP_RESOURCES_CHANNEL,
   READ_MCP_RESOURCE_CHANNEL,
-  SUBSCRIBE_MCP_RESOURCE_CHANNEL,
-  UNSUBSCRIBE_MCP_RESOURCE_CHANNEL,
 } from "./mcp-channels";
-import { 
-  callMcpTool, 
-  getMcpTools, 
-  getMcpPrompts, 
-  getMcpPrompt, 
-  getMcpResources, 
-  readMcpResource, 
-  subscribeMcpResource, 
-  unsubscribeMcpResource 
-} from "./mcp-tools";
+
 import { mcpDb, McpSubmitData } from "@/lib/db/mcp-db";
-import { SummonTool, updateMcpTool, revertMcpTool } from "@/lib/mcp/tool";
+import type { SummonTool } from "@/lib/mcp/tools/types";
+import {
+  getMcpTools,
+  callMcpTool,
+  updateMcpTool,
+  revertMcpTool,
+} from "@/lib/mcp/tools";
 import {
   deleteMcpImpl,
   generateMcpImpl,
@@ -50,9 +45,12 @@ import {
   showFileInFolder,
   generateFakeData,
 } from "@/lib/mcp";
+
 import { McpServerState } from "@/lib/mcp/state";
 import log from "electron-log/main";
 import { workspaceDb } from "@/lib/db/workspace-db";
+import { getMcpPrompt, getMcpPrompts } from "@/lib/mcp/prompts/fetcher";
+import { getMcpResources, readMcpResource } from "@/lib/mcp/resources/fetcher";
 
 export function registerMcpListeners() {
   // Create a new MCP configuration
@@ -562,13 +560,7 @@ export function registerMcpListeners() {
   // Read MCP resource
   ipcMain.handle(
     READ_MCP_RESOURCE_CHANNEL,
-    async (
-      _,
-      {
-        mcpId,
-        uri,
-      }: { mcpId: string; uri: string },
-    ) => {
+    async (_, { mcpId, uri }: { mcpId: string; uri: string }) => {
       try {
         const result = await readMcpResource(mcpId, uri);
         return {
@@ -577,60 +569,6 @@ export function registerMcpListeners() {
         };
       } catch (error) {
         log.error(`Error reading MCP resource:`, error);
-        return {
-          success: false,
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        };
-      }
-    },
-  );
-
-  // Subscribe to MCP resource updates
-  ipcMain.handle(
-    SUBSCRIBE_MCP_RESOURCE_CHANNEL,
-    async (
-      _,
-      {
-        mcpId,
-        uri,
-      }: { mcpId: string; uri: string },
-    ) => {
-      try {
-        const result = await subscribeMcpResource(mcpId, uri);
-        return {
-          success: true,
-          data: result,
-        };
-      } catch (error) {
-        log.error(`Error subscribing to MCP resource:`, error);
-        return {
-          success: false,
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        };
-      }
-    },
-  );
-
-  // Unsubscribe from MCP resource updates
-  ipcMain.handle(
-    UNSUBSCRIBE_MCP_RESOURCE_CHANNEL,
-    async (
-      _,
-      {
-        mcpId,
-        uri,
-      }: { mcpId: string; uri: string },
-    ) => {
-      try {
-        const result = await unsubscribeMcpResource(mcpId, uri);
-        return {
-          success: true,
-          data: result,
-        };
-      } catch (error) {
-        log.error(`Error unsubscribing from MCP resource:`, error);
         return {
           success: false,
           message:

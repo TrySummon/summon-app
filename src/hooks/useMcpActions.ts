@@ -4,7 +4,8 @@ import { useApis } from "./useApis";
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { toast } from "sonner";
 import { convertEndpointToTool } from "@/ipc/openapi/openapi-client";
-import type { OptimiseToolSizeRequest } from "@/ipc/agent-tools/agent-tools-listeners";
+import { OptimizeToolSizeRequest } from "@/lib/mcp/tools";
+import { captureEvent } from "@/lib/posthog";
 
 // Custom event types for tool animations
 export interface ToolAnimationEvent extends CustomEvent {
@@ -18,6 +19,13 @@ export interface ToolAnimationEvent extends CustomEvent {
       | "start-update"
       | "end-update";
   };
+}
+
+export interface ToolResult<T = unknown> {
+  success: boolean;
+  message: string;
+  data?: T;
+  tokenCount?: number;
 }
 
 // Helper function to dispatch tool animation events
@@ -216,7 +224,9 @@ export function useMcpActions(mcpId: string) {
   }, [mcp, updateMcp, mcpId]);
 
   const optimiseToolSize = useCallback(
-    async (args: Omit<OptimiseToolSizeRequest, "mcpId">) => {
+    async (args: Omit<OptimizeToolSizeRequest, "mcpId">) => {
+      captureEvent("optimize_tool_size");
+
       dispatchToolAnimation(args.toolName, mcpId, "start-update");
       try {
         const result = await window.agentTools.optimiseToolSize({
@@ -231,13 +241,136 @@ export function useMcpActions(mcpId: string) {
         dispatchToolAnimation(args.toolName, mcpId, "end-update");
       }
     },
-    [mcpId],
+    [mcpId, invalidateMcps],
+  );
+
+  // Agent-specific operations (consolidated from AgentContext)
+  const addToolsToMcp = useCallback(
+    async (
+      selectedEndpoints: {
+        apiId: string;
+        endpointPath: string;
+        endpointMethod: string;
+      }[],
+    ): Promise<ToolResult> => {
+      try {
+        // Group endpoints by apiId
+        const endpointsByApiId = new Map<string, SelectedEndpoint[]>();
+
+        selectedEndpoints.forEach((endpoint) => {
+          const { apiId, endpointPath, endpointMethod } = endpoint;
+          if (!endpointsByApiId.has(apiId)) {
+            endpointsByApiId.set(apiId, []);
+          }
+
+          // Convert to SelectedEndpoint format
+          const selectedEndpoint: SelectedEndpoint = {
+            path: endpointPath,
+            method: endpointMethod.toLowerCase(),
+          };
+
+          endpointsByApiId.get(apiId)!.push(selectedEndpoint);
+        });
+
+        const toolResults = await Promise.all(
+          Array.from(endpointsByApiId.entries()).map(([apiId, endpoints]) =>
+            onAddEndpoints(apiId, endpoints),
+          ),
+        );
+
+        return {
+          success: true,
+          message: JSON.stringify(toolResults),
+        };
+      } catch (error) {
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
+    [onAddEndpoints],
+  );
+
+  const removeMcpTool = useCallback(
+    async (_apiId: string, toolName: string): Promise<ToolResult> => {
+      try {
+        // Call the MCP operation (it handles finding the tool across API groups)
+        const result = await onDeleteTool(toolName);
+        return result;
+      } catch (error) {
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
+    [onDeleteTool],
+  );
+
+  const removeAllMcpTools = useCallback(async (): Promise<ToolResult> => {
+    try {
+      // Call the MCP operation
+      const result = await onDeleteAllTools();
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }, [onDeleteAllTools]);
+
+  const listMcpTools = useCallback(
+    async (apiId?: string): Promise<ToolResult> => {
+      try {
+        if (!mcp) return { success: false, message: "MCP not found" };
+
+        // Return all tools from all API groups
+        const allTools: Array<{ apiId: string; [key: string]: unknown }> = [];
+
+        Object.entries(mcp.apiGroups).forEach(([groupApiId, apiGroup]) => {
+          if (apiId && groupApiId !== apiId) {
+            return;
+          }
+
+          if (apiGroup.tools) {
+            const toolsWithApiId = apiGroup.tools.map((tool) => ({
+              name: tool.optimised?.name || tool.name,
+              description: tool.description,
+              originalTokenCount: tool.originalTokenCount,
+              isOptimised: !!tool.optimised,
+              apiId: groupApiId,
+            }));
+            allTools.push(...toolsWithApiId);
+          }
+        });
+
+        return {
+          success: true,
+          message: JSON.stringify(allTools),
+        };
+      } catch (error) {
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
+    [mcp],
   );
 
   return {
+    // Core MCP operations
     optimiseToolSize,
     onAddEndpoints,
     onDeleteTool,
     onDeleteAllTools,
+
+    // Agent-specific operations
+    addToolsToMcp,
+    removeMcpTool,
+    removeAllMcpTools,
+    listMcpTools,
   };
 }
