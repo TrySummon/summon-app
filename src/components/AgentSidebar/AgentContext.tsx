@@ -1,17 +1,10 @@
-import React, { createContext, useContext, useCallback } from "react";
+import React, { createContext, useContext } from "react";
 
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { Message, Attachment } from "ai";
 import { MentionData } from "@/components/CodeEditor";
 import { McpData } from "@/lib/db/mcp-db";
-import { useMcpActions } from "@/hooks/useMcpActions";
-
-export interface ToolResult<T = unknown> {
-  success: boolean;
-  message: string;
-  data?: T;
-  tokenCount?: number;
-}
+import { useMcpActions, ToolResult } from "@/hooks/useMcpActions";
 
 interface AgentContextType {
   onRefreshApis?: () => void;
@@ -48,7 +41,7 @@ interface AgentContextType {
   handleLoadChat: (chatId: string, messages: Message[]) => void;
   hasRevertState: (messageId: string) => boolean;
 
-  // Agent tool operations (mapped from MCP operations)
+  // Agent tool operations (from consolidated MCP actions)
   addToolsToMcp: (
     selectedEndpoints: {
       apiId: string;
@@ -118,130 +111,17 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
   handleLoadChat,
   hasRevertState,
 }) => {
-  const { onAddEndpoints, onDeleteTool, onDeleteAllTools, optimiseToolSize } =
-    useMcpActions(mcp.id);
-
-  // Map MCP operations to agent tool format
-  const addToolsToMcp = useCallback(
-    async (
-      selectedEndpoints: {
-        apiId: string;
-        endpointPath: string;
-        endpointMethod: string;
-      }[],
-    ) => {
-      try {
-        // Group endpoints by apiId
-        const endpointsByApiId = new Map<string, SelectedEndpoint[]>();
-
-        selectedEndpoints.forEach((endpoint) => {
-          const { apiId, endpointPath, endpointMethod } = endpoint;
-          if (!endpointsByApiId.has(apiId)) {
-            endpointsByApiId.set(apiId, []);
-          }
-
-          // Convert to SelectedEndpoint format
-          const selectedEndpoint: SelectedEndpoint = {
-            path: endpointPath,
-            method: endpointMethod.toLowerCase(),
-          };
-
-          endpointsByApiId.get(apiId)!.push(selectedEndpoint);
-        });
-
-        const toolResults = await Promise.all(
-          endpointsByApiId
-            .entries()
-            .map(([apiId, endpoints]) => onAddEndpoints(apiId, endpoints)),
-        );
-
-        return {
-          success: true,
-          message: JSON.stringify(toolResults),
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: error instanceof Error ? error.message : String(error),
-        };
-      }
-    },
-    [onAddEndpoints],
-  );
-
-  const removeMcpTool = useCallback(
-    async (_apiId: string, toolName: string): Promise<ToolResult> => {
-      try {
-        // Call the MCP operation (it handles finding the tool across API groups)
-        onDeleteTool(toolName);
-
-        return {
-          success: true,
-          message: `Successfully removed tool: ${toolName}`,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: error instanceof Error ? error.message : String(error),
-        };
-      }
-    },
-    [onDeleteTool],
-  );
-
-  const removeAllMcpTools = useCallback(async (): Promise<ToolResult> => {
-    try {
-      // Call the MCP operation
-      onDeleteAllTools();
-
-      return {
-        success: true,
-        message: "Successfully removed all tools",
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }, [onDeleteAllTools]);
-
-  const listMcpTools = useCallback(
-    async (apiId?: string): Promise<ToolResult> => {
-      try {
-        // Return all tools from all API groups
-        const allTools: Array<{ apiId: string; [key: string]: unknown }> = [];
-
-        Object.entries(mcp.apiGroups).forEach(([groupApiId, apiGroup]) => {
-          if (apiId && groupApiId !== apiId) {
-            return;
-          }
-
-          if (apiGroup.tools) {
-            const toolsWithApiId = apiGroup.tools.map((tool) => ({
-              name: tool.optimised?.name || tool.name,
-              description: tool.description,
-              originalTokenCount: tool.originalTokenCount,
-              isOptimised: !!tool.optimised,
-              apiId: groupApiId,
-            }));
-            allTools.push(...toolsWithApiId);
-          }
-        });
-
-        return {
-          success: true,
-          message: JSON.stringify(allTools),
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: error instanceof Error ? error.message : String(error),
-        };
-      }
-    },
-    [mcp],
-  );
+  // Use the consolidated MCP actions hook
+  const {
+    onAddEndpoints,
+    onDeleteTool,
+    onDeleteAllTools,
+    optimiseToolSize,
+    addToolsToMcp,
+    removeMcpTool,
+    removeAllMcpTools,
+    listMcpTools,
+  } = useMcpActions(mcp.id);
 
   const contextValue: AgentContextType = {
     onRefreshApis,
@@ -269,7 +149,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
     handleLoadChat,
     hasRevertState,
 
-    // Agent tool operations
+    // Agent tool operations (now directly from consolidated hook)
     addToolsToMcp,
     removeMcpTool,
     removeAllMcpTools,

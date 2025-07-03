@@ -1,94 +1,67 @@
-import { JSONSchema7 } from "json-schema";
-import { MappingConfig } from "@/lib/mcp/mapper";
-import { workspaceDb } from "../db/workspace-db";
 import path from "path";
 import fs from "fs/promises";
-import { mcpDb } from "../db/mcp-db";
-import { kebabCase } from "./generator/utils";
-import { calculateTokenCount } from "../tiktoken";
+import { workspaceDb } from "@/lib/db/workspace-db";
+import { app, BrowserWindow } from "electron";
 import {
-  deleteMcpImpl,
   ensureDirectoryExists,
+  deleteMcpImpl,
   generateMcpImpl,
   restartMcpServer,
-} from ".";
-import { BrowserWindow } from "electron";
+} from "@/lib/mcp";
+import { kebabCase } from "@/lib/mcp/generator/utils";
 import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "@/ipc/external-mcp";
+import type { ExternalToolOverride, SummonToolRef, SummonTool } from "./types";
+import { mcpDb } from "@/lib/db/mcp-db";
+import { calculateTokenCount } from "@/lib/tiktoken";
 
-export interface ToolAnnotations {
-  tokenCount?: number;
-  optimisedTokenCount?: number;
-  id: string;
-  prefix?: string;
-  isExternal?: boolean;
-  apiId?: string;
-  originalDefinition?: ToolDefinition;
+/**
+ * Get the directory for external MCP implementations
+ */
+export async function getExternalMcpDir(mcpId: string): Promise<string> {
+  try {
+    const currentWorkspace = await workspaceDb.getCurrentWorkspace();
+    const workspaceDataDir = workspaceDb.getWorkspaceDataDir(
+      currentWorkspace.id,
+    );
+    return path.join(workspaceDataDir, "external-mcps", mcpId);
+  } catch (error) {
+    // Fallback to root directory if workspace system fails
+    console.error(
+      "Failed to get workspace for external MCP, falling back to root:",
+      error,
+    );
+    const userDataPath = app.getPath("userData");
+    return path.join(userDataPath, "external-mcps", mcpId);
+  }
 }
 
-export interface ToolDefinition {
-  name: string;
-  description: string;
-  inputSchema: JSONSchema7;
-  annotations?: ToolAnnotations;
-}
-
-export interface ExternalToolOverride {
-  mcpId: string;
-  originalToolName: string;
-  definition: ToolDefinition;
-  mappingConfig?: MappingConfig;
-}
-
-export interface SummonTool {
-  apiId?: string;
-  mappingConfig?: MappingConfig;
-  mcpId: string;
-  isExternal: boolean;
-  originalToolName: string;
-  definition: ToolDefinition;
-}
-
-export interface SummonToolRef {
-  apiId?: string;
-  mcpId: string;
-  isExternal: boolean;
-  originalToolName: string;
-}
-
-export type ExternalMcpOverrides = Record<
-  string,
-  Record<string, ExternalToolOverride>
->;
-
-export const getExternalMcpsDir = async () => {
-  const currentWorkspace = await workspaceDb.getCurrentWorkspace();
-  const workspaceDataDir = workspaceDb.getWorkspaceDataDir(currentWorkspace.id);
-  return path.join(workspaceDataDir, "external-mcps");
-};
-
-export const getExternalMcpDir = async (mcpId: string) => {
-  const externalMcpsDir = await getExternalMcpsDir();
-  const mcpImplDir = path.join(externalMcpsDir, mcpId);
-
-  return mcpImplDir;
-};
-
-export const getExternalMcpToolsOverrideDir = async (mcpId: string) => {
+/**
+ * Get the directory for external MCP tool overrides
+ */
+export async function getExternalMcpToolsOverrideDir(
+  mcpId: string,
+): Promise<string> {
   const mcpImplDir = await getExternalMcpDir(mcpId);
   return path.join(mcpImplDir, "tools");
-};
+}
 
-export const getExternalMcpToolOverridePath = async (
+/**
+ * Get the path for a specific external MCP tool override
+ */
+export async function getExternalMcpToolOverridePath(
   mcpId: string,
   toolName: string,
-) => {
+): Promise<string> {
   const toolsDir = await getExternalMcpToolsOverrideDir(mcpId);
   return path.join(toolsDir, `${kebabCase(toolName)}.json`);
-};
+}
 
-export const overrideExternalMcpTool = async (
+/**
+ * Override an external MCP tool definition
+ */
+export async function overrideExternalMcpTool(
   override: ExternalToolOverride,
-) => {
+): Promise<string> {
   // Check if there's already an override with the same tool name
   const existingOverrides = await getExternalMcpOverrides(override.mcpId);
   const duplicateOverride = Object.values(existingOverrides).find(
@@ -109,18 +82,79 @@ export const overrideExternalMcpTool = async (
   );
   await ensureDirectoryExists(path.dirname(toolPath));
 
+  // Remove annotations before saving
   delete override.definition.annotations;
 
   await fs.writeFile(toolPath, JSON.stringify(override, null, 2));
 
-  // Force a refresh of the external MCPs (relist tools)
+  // Force a refresh of the external MCPs
   const mainWindow = BrowserWindow.getAllWindows()[0];
   if (mainWindow) {
     mainWindow.webContents.send(EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL, null);
   }
 
   return override.definition.name;
-};
+}
+
+/**
+ * Get all external MCP tool overrides
+ */
+export async function getExternalMcpOverrides(
+  mcpId: string,
+  indexWithOriginalToolName: boolean = true,
+): Promise<Record<string, ExternalToolOverride>> {
+  const toolsDir = await getExternalMcpToolsOverrideDir(mcpId);
+  const overrides: Record<string, ExternalToolOverride> = {};
+
+  try {
+    // Check if tools directory exists
+    await fs.access(toolsDir);
+
+    // Read all tool override files
+    const toolFiles = await fs.readdir(toolsDir);
+
+    for (const toolFile of toolFiles) {
+      if (!toolFile.endsWith(".json")) continue;
+
+      const toolPath = path.join(toolsDir, toolFile);
+      const content = await fs.readFile(toolPath, "utf-8");
+      const override: ExternalToolOverride = JSON.parse(content);
+
+      if (indexWithOriginalToolName) {
+        overrides[override.originalToolName] = override;
+      } else {
+        overrides[override.definition.name] = override;
+      }
+    }
+  } catch {
+    // Tools directory doesn't exist or other error - return empty object
+  }
+
+  return overrides;
+}
+
+/**
+ * Get a specific external MCP tool override
+ */
+export async function getExternalMcpToolOverride(
+  mcpId: string,
+  toolName: string,
+): Promise<ExternalToolOverride | null> {
+  try {
+    const toolPath = await getExternalMcpToolOverridePath(mcpId, toolName);
+    const toolContent = await fs.readFile(toolPath, "utf-8");
+    const override: ExternalToolOverride = JSON.parse(toolContent);
+
+    return {
+      mcpId,
+      originalToolName: override.originalToolName,
+      definition: override.definition,
+    };
+  } catch {
+    // File doesn't exist or other error
+    return null;
+  }
+}
 
 export const updateSummonMcpTool = async (tool: SummonTool) => {
   if (!tool.apiId) throw new Error("Tool has no apiId");
@@ -268,58 +302,4 @@ export const revertMcpTool = async (tool: SummonToolRef) => {
   } else {
     return revertSummonMcpTool(tool);
   }
-};
-
-export const getExternalMcpToolOverride = async (
-  mcpId: string,
-  toolName: string,
-): Promise<ExternalToolOverride | null> => {
-  try {
-    const toolPath = await getExternalMcpToolOverridePath(mcpId, toolName);
-    const toolContent = await fs.readFile(toolPath, "utf-8");
-    const override: ExternalToolOverride = JSON.parse(toolContent);
-
-    return {
-      mcpId,
-      originalToolName: override.originalToolName,
-      definition: override.definition,
-    };
-  } catch {
-    // File doesn't exist or other error - return null
-    return null;
-  }
-};
-
-export const getExternalMcpOverrides = async (
-  mcpId: string,
-  indexWithOriginalToolName: boolean = true,
-): Promise<Record<string, ExternalToolOverride>> => {
-  const toolsDir = await getExternalMcpToolsOverrideDir(mcpId);
-  const overrides: Record<string, ExternalToolOverride> = {};
-
-  try {
-    // Check if tools directory exists
-    await fs.access(toolsDir);
-
-    // Read all tool override files
-    const toolFiles = await fs.readdir(toolsDir);
-
-    for (const toolFile of toolFiles) {
-      if (!toolFile.endsWith(".json")) continue;
-
-      const toolPath = path.join(toolsDir, toolFile);
-      const content = await fs.readFile(toolPath, "utf-8");
-      const override: ExternalToolOverride = JSON.parse(content);
-
-      if (indexWithOriginalToolName) {
-        overrides[override.originalToolName] = override;
-      } else {
-        overrides[override.definition.name] = override;
-      }
-    }
-  } catch {
-    // Tools directory doesn't exist or other error - return empty object
-  }
-
-  return overrides;
 };

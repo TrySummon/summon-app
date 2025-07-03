@@ -20,7 +20,7 @@ import {
   SHOW_FILE_IN_FOLDER_CHANNEL,
 } from "./mcp-channels";
 import { McpData } from "@/lib/db/mcp-db";
-import { SummonTool } from "@/lib/mcp/tool";
+import { SummonTool } from "@/lib/mcp/tools/types";
 
 export function exposeMcpContext() {
   contextBridge.exposeInMainWorld("mcpApi", {

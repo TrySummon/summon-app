@@ -20,13 +20,14 @@ import { Dataset, DatasetItem } from "@/types/dataset";
 import type { UserInfo } from "./ipc/auth/auth-listeners";
 import { SelectedEndpoint } from "./lib/mcp/parser/extract-tools";
 import { McpToolDefinitionWithoutAuth } from "./lib/mcp/types";
-import { ToolResult } from "./components/AgentSidebar/AgentContext";
-import type {
-  OptimiseToolSelectionRequest,
-  OptimiseToolSizeRequest,
-  SearchApiEndpointsRequest,
-} from "./ipc/agent-tools/agent-tools-listeners";
-import { SummonTool, SummonToolRef } from "./lib/mcp/tool";
+import { ToolResult } from "./hooks/useMcpActions";
+import type { SearchApiEndpointsRequest } from "./ipc/agent-tools/agent-tools-listeners";
+import {
+  SummonTool,
+  SummonToolRef,
+  OptimizeToolSizeRequest,
+  OptimizeToolSelectionRequest,
+} from "./lib/mcp/tools/types";
 import { queryClient } from "./queryClient";
 
 export default function App() {
@@ -305,9 +306,9 @@ declare global {
       searchApiEndpoints: (
         args: SearchApiEndpointsRequest,
       ) => Promise<ToolResult>;
-      optimiseToolSize: (args: OptimiseToolSizeRequest) => Promise<ToolResult>;
+      optimiseToolSize: (args: OptimizeToolSizeRequest) => Promise<ToolResult>;
       optimiseToolSelection: (
-        args: OptimiseToolSelectionRequest,
+        args: OptimizeToolSelectionRequest,
       ) => Promise<
         ToolResult<{ original: SummonTool[]; optimised: SummonTool[] }>
       >;

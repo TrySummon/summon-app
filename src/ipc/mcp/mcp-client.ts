@@ -1,7 +1,7 @@
 import { captureEvent } from "@/lib/posthog";
 import { McpData } from "@/lib/db/mcp-db";
 import { recurseCountKeys } from "@/lib/object";
-import { SummonTool, SummonToolRef } from "@/lib/mcp/tool";
+import { SummonTool, SummonToolRef } from "@/lib/mcp/tools/types";
 import { queryClient } from "@/queryClient";
 import { MCP_LIST_QUERY_KEY, MCP_QUERY_KEY } from "@/hooks/useMcps";
 import { usePlaygroundStore } from "@/stores/playgroundStore";
