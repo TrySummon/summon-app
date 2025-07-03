@@ -48,7 +48,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       isAuthenticated: Boolean(user && token),
       isLoading: false,
     });
-    
+
     // Identify user in PostHog with their email
     if (user) {
       identifyUser(user.id, {
@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       isAuthenticated: false,
       isLoading: false,
     });
-    
+
     // Reset PostHog user on logout
     resetPostHogUser();
   },

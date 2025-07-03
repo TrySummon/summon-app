@@ -142,7 +142,7 @@ export const identifyUser = (
     if (typeof window !== "undefined" && posthog.__loaded) {
       // Use email as the primary identifier, fallback to UUID
       const distinctId = userInfo.email || userId;
-      
+
       posthog.identify(distinctId, {
         email: userInfo.email,
         name: userInfo.name,
@@ -151,7 +151,7 @@ export const identifyUser = (
         app_version: packageJson.version,
         user_id: userId, // Keep original UUID as a property
       });
-      
+
       console.log("PostHog user identified:", {
         distinctId,
         email: userInfo.email,
@@ -168,14 +168,14 @@ export const resetPostHogUser = () => {
   try {
     if (typeof window !== "undefined" && posthog.__loaded) {
       posthog.reset();
-      
+
       // Re-identify with the anonymous UUID
       const userId = getUserId();
       posthog.identify(userId, {
         app_type: "Summon",
         app_version: packageJson.version,
       });
-      
+
       console.log("PostHog user reset and re-identified with UUID:", userId);
     }
   } catch (error) {
