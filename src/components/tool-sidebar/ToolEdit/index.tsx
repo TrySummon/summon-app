@@ -40,7 +40,7 @@ import type {
   ToolAnnotations,
   SummonTool,
   ToolDefinition,
-} from "@/lib/mcp/tool";
+} from "@/lib/mcp/tools/types";
 import CopyButton from "@/components/CopyButton";
 
 interface ToolEditDialogProps {

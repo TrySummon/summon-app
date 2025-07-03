@@ -10,7 +10,7 @@ import {
 import { SignInDialog } from "@/components/SignInDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolAnnotations } from "@/lib/mcp/tool";
+import { ToolAnnotations } from "@/lib/mcp/tools/types";
 import { useMcpActions } from "@/hooks/useMcpActions";
 import { toast } from "sonner";
 
@@ -54,6 +54,7 @@ export function OptimizeToolButton({
         loading: `Optimizing ${toolName}...`,
         success: (result) => {
           refreshStatus();
+          if (!result.success) throw new Error(result.message);
           return result.message || `${toolName} optimized successfully!`;
         },
         error: (error) => error.message || `Failed to optimize ${toolName}`,

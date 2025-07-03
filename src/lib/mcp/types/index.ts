@@ -2,7 +2,7 @@
  * Core type definitions for the openapi-to-mcp generator
  */
 import type { JSONSchema7 } from "json-schema";
-import { MappingConfig } from "../mapper";
+import { MappingConfig } from "../tools/mapper";
 
 /**
  * Transport types supported by the MCP server

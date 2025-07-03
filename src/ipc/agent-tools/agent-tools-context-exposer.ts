@@ -5,11 +5,11 @@ import {
   OPTIMISE_TOOL_SIZE_CHANNEL,
   OPTIMISE_TOOL_SELECTION_CHANNEL,
 } from "./agent-tools-channels";
+import { SearchApiEndpointsRequest } from "./agent-tools-listeners";
 import {
-  OptimiseToolSelectionRequest,
-  OptimiseToolSizeRequest,
-  SearchApiEndpointsRequest,
-} from "./agent-tools-listeners";
+  OptimizeToolSelectionRequest,
+  OptimizeToolSizeRequest,
+} from "@/lib/mcp/tools";
 
 export function exposeAgentToolsContext() {
   try {
@@ -22,11 +22,11 @@ export function exposeAgentToolsContext() {
         return ipcRenderer.invoke(SEARCH_API_ENDPOINTS_CHANNEL, args);
       },
 
-      optimiseToolSize: (args: OptimiseToolSizeRequest) => {
+      optimiseToolSize: (args: OptimizeToolSizeRequest) => {
         return ipcRenderer.invoke(OPTIMISE_TOOL_SIZE_CHANNEL, args);
       },
 
-      optimiseToolSelection: (args: OptimiseToolSelectionRequest) => {
+      optimiseToolSelection: (args: OptimizeToolSelectionRequest) => {
         return ipcRenderer.invoke(OPTIMISE_TOOL_SELECTION_CHANNEL, args);
       },
     });

@@ -1,4 +1,4 @@
-import { SummonTool } from "@/lib/mcp/tool";
+import { SummonTool } from "@/lib/mcp/tools/types";
 import type { JSONSchema7 } from "json-schema";
 
 export interface MentionedTool {

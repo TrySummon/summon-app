@@ -8,7 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolAnnotations } from "@/lib/mcp/tool";
+import { ToolAnnotations } from "@/lib/mcp/tools/types";
 import { toast } from "sonner";
 import { revertMcpToolWithStoreSync } from "@/ipc/mcp/mcp-client";
 

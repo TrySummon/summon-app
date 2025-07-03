@@ -20,9 +20,14 @@ import {
   UPDATE_MCP_TOOL_CHANNEL,
   REVERT_MCP_TOOL_CHANNEL,
 } from "./mcp-channels";
-import { callMcpTool, getMcpTools } from "./mcp-tools";
 import { mcpDb, McpSubmitData } from "@/lib/db/mcp-db";
-import { SummonTool, updateMcpTool, revertMcpTool } from "@/lib/mcp/tool";
+import type { SummonTool } from "@/lib/mcp/tools/types";
+import {
+  getMcpTools,
+  callMcpTool,
+  updateMcpTool,
+  revertMcpTool,
+} from "@/lib/mcp/tools";
 import {
   deleteMcpImpl,
   generateMcpImpl,
@@ -35,6 +40,7 @@ import {
   showFileInFolder,
   generateFakeData,
 } from "@/lib/mcp";
+
 import { McpServerState } from "@/lib/mcp/state";
 import log from "electron-log/main";
 import { workspaceDb } from "@/lib/db/workspace-db";

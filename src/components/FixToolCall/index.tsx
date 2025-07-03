@@ -19,7 +19,7 @@ import { ComposerState } from "./ComposerState";
 import { LoadingState } from "./LoadingState";
 import { MergeView } from "./MergeView";
 import type { MentionedTool, OptimizedResult, DialogState } from "./types";
-import { SummonTool } from "@/lib/mcp/tool";
+import { SummonTool } from "@/lib/mcp/tools/types";
 import { updateMcpToolWithStoreSync } from "@/ipc/mcp/mcp-client";
 
 interface FixToolCallButtonProps {
