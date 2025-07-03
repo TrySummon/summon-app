@@ -100,7 +100,7 @@ export async function runPlaygroundAgent() {
 
     // Get the current state to access enabledTools
     const currentState = getCurrentState();
-    const autoExecuteTools = currentState.autoExecuteTools;
+    const autoExecuteTools = store.getAutoExecuteTools();
     const enabledTools = currentState.enabledTools || {};
 
     // Create a filtered toolset based on selected tools
