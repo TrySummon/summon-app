@@ -28,6 +28,9 @@ const McpServerConfigSchema = z
 
     // Environment variables for both types
     env: z.record(z.string(), z.string()).optional(),
+
+    // Headers for HTTP/SSE servers
+    headers: z.record(z.string(), z.string()).optional(),
   })
   .refine((data) => data.command !== undefined || data.url !== undefined, {
     message: "Must specify either 'command' or 'url'",
@@ -174,11 +177,17 @@ export const connectExternalMcp = async (
     // Handle URL-based server (HTTP or SSE)
     else if (config.url) {
       const url = config.url;
-      const isSSE = config.url.endsWith("/sse");
-      const isHTTP = config.url.endsWith("/mcp");
+      const isSSE = url.includes("/sse");
+      const isHTTP = url.includes("/mcp");
 
       if (isSSE) {
-        await client.connect(new SSEClientTransport(new URL(url)));
+        await client.connect(
+          new SSEClientTransport(new URL(url), {
+            requestInit: {
+              headers: config.headers,
+            },
+          }),
+        );
         serverState.transport = {
           type: "sse",
           url,
@@ -186,7 +195,13 @@ export const connectExternalMcp = async (
         };
         serverState.client = client;
       } else if (isHTTP) {
-        await client.connect(new StreamableHTTPClientTransport(new URL(url)));
+        await client.connect(
+          new StreamableHTTPClientTransport(new URL(url), {
+            requestInit: {
+              headers: config.headers,
+            },
+          }),
+        );
         serverState.transport = {
           type: "http",
           url,
