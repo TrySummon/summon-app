@@ -6,7 +6,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { OpenAPIV3 } from "openapi-types";
 import type { McpData, McpSubmitData } from "@/lib/db/mcp-db";
-import { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { Prompt, Resource, Tool } from "@modelcontextprotocol/sdk/types.js";
 import { McpServerState } from "@/lib/mcp/state";
 import {
   AIProviderCredential,
@@ -195,6 +195,25 @@ declare global {
       showFileInFolder: (
         path: string,
       ) => Promise<{ success: boolean; message?: string }>;
+
+      // MCP prompts operations
+      getMcpPrompts: (
+        mcpId: string,
+      ) => Promise<{ success: boolean; data?: Prompt[]; message?: string }>;
+      getMcpPrompt: (
+        mcpId: string,
+        name: string,
+        args?: Record<string, string>,
+      ) => Promise<{ success: boolean; data?: Prompt; message?: string }>;
+
+      // MCP resources operations
+      getMcpResources: (
+        mcpId: string,
+      ) => Promise<{ success: boolean; data?: Resource[]; message?: string }>;
+      readMcpResource: (
+        mcpId: string,
+        uri: string,
+      ) => Promise<{ success: boolean; data?: Resource; message?: string }>;
     };
     externalMcpApi: {
       connectExternalMcpServer: (

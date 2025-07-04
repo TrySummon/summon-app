@@ -213,7 +213,6 @@ export function ApiConfig({ apiGroups, onSave }: ApiConfigProps) {
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className="w-full"
           disabled={!apiGroups || Object.keys(apiGroups).length === 0}
         >
           <Settings className="mr-2 size-4" />

@@ -18,6 +18,10 @@ import {
   OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL,
   DOWNLOAD_MCP_ZIP_CHANNEL,
   SHOW_FILE_IN_FOLDER_CHANNEL,
+  GET_MCP_PROMPTS_CHANNEL,
+  GET_MCP_PROMPT_CHANNEL,
+  GET_MCP_RESOURCES_CHANNEL,
+  READ_MCP_RESOURCE_CHANNEL,
 } from "./mcp-channels";
 import { McpData } from "@/lib/db/mcp-db";
 import { SummonTool } from "@/lib/mcp/tools/types";
@@ -106,6 +110,35 @@ export function exposeMcpContext() {
 
     showFileInFolder: (path: string) => {
       return ipcRenderer.invoke(SHOW_FILE_IN_FOLDER_CHANNEL, path);
+    },
+
+    // MCP prompts operations
+    getMcpPrompts: (mcpId: string) => {
+      return ipcRenderer.invoke(GET_MCP_PROMPTS_CHANNEL, mcpId);
+    },
+
+    getMcpPrompt: (
+      mcpId: string,
+      name: string,
+      args?: Record<string, string>,
+    ) => {
+      return ipcRenderer.invoke(GET_MCP_PROMPT_CHANNEL, {
+        mcpId,
+        name,
+        args,
+      });
+    },
+
+    // MCP resources operations
+    getMcpResources: (mcpId: string) => {
+      return ipcRenderer.invoke(GET_MCP_RESOURCES_CHANNEL, mcpId);
+    },
+
+    readMcpResource: (mcpId: string, uri: string) => {
+      return ipcRenderer.invoke(READ_MCP_RESOURCE_CHANNEL, {
+        mcpId,
+        uri,
+      });
     },
   });
 }

@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Play } from "lucide-react";
+import { Trash2, Play, Search, X } from "lucide-react";
 import { extractToolParameters } from "./utils";
 import { JsonSchema } from "../json-schema";
 import { AddEndpointsButton } from "./AddEndpointsButton";
@@ -20,6 +20,7 @@ import { useToolAnimations } from "@/hooks/useToolAnimations";
 import { ToolAnnotations } from "@/lib/mcp/tools/types";
 import { ToolDefinitionDialog } from "@/components/ui/ToolDefinitionDialog";
 import { ToolDefinitionViewerItem } from "@/components/ui/ToolDefinitionViewer";
+import { Input } from "@/components/ui/input";
 
 const getTokenCountBadgeVariant = (count: number) => {
   if (count < 500) return "text-green-600 dark:text-green-400";
@@ -259,6 +260,25 @@ export const ToolsList: React.FC<ToolsListProps> = ({
     useState<Tool | null>(null);
   const { getAnimationClasses } = useToolAnimations({ mcpId });
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    searchInputRef.current?.focus();
+  };
+
+  // Filter tools by name or description
+  const filteredTools = useMemo(() => {
+    if (!searchQuery.trim()) return tools;
+    const q = searchQuery.toLowerCase();
+    return tools.filter(
+      (tool) =>
+        tool.name.toLowerCase().includes(q) ||
+        (tool.description && tool.description.toLowerCase().includes(q)),
+    );
+  }, [tools, searchQuery]);
+
   const handleCallTool = (tool: Tool) => {
     setSelectedTool(tool);
     setCallToolDialogOpen(true);
@@ -314,8 +334,27 @@ export const ToolsList: React.FC<ToolsListProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">MCP Tools ({tools.length})</h2>
+      <div className="flex items-center justify-between gap-2">
+        <div className="relative w-full max-w-xs">
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tools..."
+            className="border-input h-8 border bg-transparent pr-8 pl-9 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 m-0 -translate-y-1/2 p-0"
+              onClick={handleClearSearch}
+              tabIndex={-1}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
         {onDeleteAllTools && tools.length > 0 && (
           <Button
             variant="ghost"
@@ -340,7 +379,7 @@ export const ToolsList: React.FC<ToolsListProps> = ({
       ) : null}
 
       <Accordion type="single" collapsible className="w-full">
-        {tools.map((tool, index) => (
+        {filteredTools.map((tool, index) => (
           <ToolItem
             key={tool.name}
             tool={tool}

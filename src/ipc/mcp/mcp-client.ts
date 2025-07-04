@@ -291,3 +291,38 @@ export const showFileInFolder = async (filePath: string) => {
 export const generateFakeData = async (schema: unknown) => {
   return window.mcpApi.generateFakeData(schema);
 };
+
+// MCP prompts operations
+export const getMcpPrompts = async (id: string) => {
+  return window.mcpApi.getMcpPrompts(id);
+};
+
+export const getMcpPrompt = async (
+  mcpId: string,
+  name: string,
+  args?: Record<string, string>,
+) => {
+  const result = await window.mcpApi.getMcpPrompt(mcpId, name, args);
+
+  captureEvent("mcp_get_prompt", {
+    argsCount: Object.keys(args || {}).length,
+    success: result.success,
+  });
+
+  return result;
+};
+
+// MCP resources operations
+export const getMcpResources = async (id: string) => {
+  return window.mcpApi.getMcpResources(id);
+};
+
+export const readMcpResource = async (mcpId: string, uri: string) => {
+  const result = await window.mcpApi.readMcpResource(mcpId, uri);
+
+  captureEvent("mcp_read_resource", {
+    success: result.success,
+  });
+
+  return result;
+};

@@ -19,7 +19,12 @@ import {
   SHOW_FILE_IN_FOLDER_CHANNEL,
   UPDATE_MCP_TOOL_CHANNEL,
   REVERT_MCP_TOOL_CHANNEL,
+  GET_MCP_PROMPTS_CHANNEL,
+  GET_MCP_PROMPT_CHANNEL,
+  GET_MCP_RESOURCES_CHANNEL,
+  READ_MCP_RESOURCE_CHANNEL,
 } from "./mcp-channels";
+
 import { mcpDb, McpSubmitData } from "@/lib/db/mcp-db";
 import type { SummonTool } from "@/lib/mcp/tools/types";
 import {
@@ -44,6 +49,8 @@ import {
 import { McpServerState } from "@/lib/mcp/state";
 import log from "electron-log/main";
 import { workspaceDb } from "@/lib/db/workspace-db";
+import { getMcpPrompt, getMcpPrompts } from "@/lib/mcp/prompts/fetcher";
+import { getMcpResources, readMcpResource } from "@/lib/mcp/resources/fetcher";
 
 export function registerMcpListeners() {
   // Create a new MCP configuration
@@ -485,4 +492,89 @@ export function registerMcpListeners() {
       };
     }
   });
+
+  // Get MCP prompts
+  ipcMain.handle(GET_MCP_PROMPTS_CHANNEL, async (_, mcpId: string) => {
+    try {
+      const prompts = await getMcpPrompts(mcpId);
+      return {
+        success: true,
+        data: prompts,
+      };
+    } catch (error) {
+      log.error(`Error getting MCP prompts:`, error);
+      return {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  });
+
+  // Get a specific MCP prompt
+  ipcMain.handle(
+    GET_MCP_PROMPT_CHANNEL,
+    async (
+      _,
+      {
+        mcpId,
+        name,
+        args,
+      }: { mcpId: string; name: string; args?: Record<string, string> },
+    ) => {
+      try {
+        const result = await getMcpPrompt(mcpId, name, args);
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        log.error(`Error getting MCP prompt:`, error);
+        return {
+          success: false,
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        };
+      }
+    },
+  );
+
+  // Get MCP resources
+  ipcMain.handle(GET_MCP_RESOURCES_CHANNEL, async (_, mcpId: string) => {
+    try {
+      const resources = await getMcpResources(mcpId);
+      return {
+        success: true,
+        data: resources,
+      };
+    } catch (error) {
+      log.error(`Error getting MCP resources:`, error);
+      return {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  });
+
+  // Read MCP resource
+  ipcMain.handle(
+    READ_MCP_RESOURCE_CHANNEL,
+    async (_, { mcpId, uri }: { mcpId: string; uri: string }) => {
+      try {
+        const result = await readMcpResource(mcpId, uri);
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        log.error(`Error reading MCP resource:`, error);
+        return {
+          success: false,
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        };
+      }
+    },
+  );
 }
