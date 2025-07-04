@@ -4,7 +4,11 @@ import { ServerStatusSection } from "./ServerStatusSection";
 import { ToolsList } from "./ToolsList";
 import { PromptsList } from "./PromptsList";
 import { ResourcesList } from "./ResourcesList";
-import { getMcpTools, getMcpPrompts, getMcpResources } from "@/ipc/mcp/mcp-client";
+import {
+  getMcpTools,
+  getMcpPrompts,
+  getMcpResources,
+} from "@/ipc/mcp/mcp-client";
 import { McpApiGroup } from "@/lib/db/mcp-db";
 
 import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
@@ -100,11 +104,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
   }, [refreshStatus, fetchMcpTools, fetchMcpPrompts, fetchMcpResources]);
 
   useEffect(() => {
-    Promise.all([
-      fetchMcpTools(),
-      fetchMcpPrompts(),
-      fetchMcpResources(),
-    ]);
+    Promise.all([fetchMcpTools(), fetchMcpPrompts(), fetchMcpResources()]);
   }, [fetchMcpTools, fetchMcpPrompts, fetchMcpResources, apiGroups]);
 
   if (isLoading) return null;
@@ -122,21 +122,22 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
         onEditName={onEditName}
       />
 
-      {onUpdateApiConfigs && (
-        <ApiConfig apiGroups={apiGroups} onSave={onUpdateApiConfigs} />
-      )}
-
       {state?.status === "running" && (
-        <Tabs defaultValue="tools" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="tools">Tools ({mcpTools.length})</TabsTrigger>
-            <TabsTrigger value="prompts">
-              Prompts ({mcpPrompts.length})
-            </TabsTrigger>
-            <TabsTrigger value="resources">
-              Resources ({mcpResources.length})
-            </TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="tools">
+          <div className="mb-2 flex items-center justify-between gap-4">
+            <TabsList className="w-fit">
+              <TabsTrigger value="tools">Tools ({mcpTools.length})</TabsTrigger>
+              <TabsTrigger value="prompts">
+                Prompts ({mcpPrompts.length})
+              </TabsTrigger>
+              <TabsTrigger value="resources">
+                Resources ({mcpResources.length})
+              </TabsTrigger>
+            </TabsList>
+            {onUpdateApiConfigs && (
+              <ApiConfig apiGroups={apiGroups} onSave={onUpdateApiConfigs} />
+            )}
+          </div>
           <TabsContent value="tools" className="mt-4">
             <ToolsList
               tools={mcpTools}

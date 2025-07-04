@@ -7,41 +7,40 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Eye, FileText, Image, File } from "lucide-react";
-import { ViewResourceDialog } from "./ViewResourceDialog";
+import { Markdown } from "@/components/Markdown";
+import { readMcpResource } from "@/ipc/mcp/mcp-client";
+import { ZoomableImage } from "@/components/ZoomableImage";
 
 interface ResourcesListProps {
   resources: Resource[];
   mcpId: string;
 }
 
-const getResourceIcon = (mimeType?: string): React.ReactNode => {
-  if (!mimeType) return <File className="h-4 w-4" />;
-  
-  if (mimeType.startsWith("text/")) {
-    return <FileText className="h-4 w-4" />;
-  }
-  
-  if (mimeType.startsWith("image/")) {
-    return <Image className="h-4 w-4" />;
-  }
-  
-  return <File className="h-4 w-4" />;
-};
+interface ResourceResponse {
+  success: boolean;
+  data?: {
+    contents?: Array<{
+      uri: string;
+      mimeType?: string;
+      text?: string;
+      blob?: string;
+    }>;
+  };
+  message?: string;
+}
 
 const formatFileSize = (size?: number) => {
-  if (!size || typeof size !== 'number') return null;
-  
+  if (!size || typeof size !== "number") return null;
+
   const units = ["B", "KB", "MB", "GB"];
   let unitIndex = 0;
   let fileSize = size;
-  
+
   while (fileSize >= 1024 && unitIndex < units.length - 1) {
     fileSize /= 1024;
     unitIndex++;
   }
-  
+
   return `${fileSize.toFixed(1)} ${units[unitIndex]}`;
 };
 
@@ -49,8 +48,41 @@ export const ResourcesList: React.FC<ResourcesListProps> = ({
   resources,
   mcpId,
 }) => {
-  const [viewResourceDialogOpen, setViewResourceDialogOpen] = useState(false);
-  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [openIndex, setOpenIndex] = useState<string>("");
+  const [resourceStates, setResourceStates] = useState<
+    Record<
+      string,
+      {
+        isLoading: boolean;
+        response: ResourceResponse | null;
+      }
+    >
+  >({});
+
+  const handleAccordionChange = async (value: string, resource: Resource) => {
+    setOpenIndex(value === openIndex ? "" : value);
+    if (value !== openIndex && !resourceStates[value]) {
+      setResourceStates((prev) => ({
+        ...prev,
+        [value]: { isLoading: true, response: null },
+      }));
+      try {
+        const result = await readMcpResource(mcpId, resource.uri);
+        setResourceStates((prev) => ({
+          ...prev,
+          [value]: { isLoading: false, response: result as ResourceResponse },
+        }));
+      } catch {
+        setResourceStates((prev) => ({
+          ...prev,
+          [value]: {
+            isLoading: false,
+            response: null,
+          },
+        }));
+      }
+    }
+  };
 
   if (resources.length === 0) {
     return (
@@ -65,7 +97,21 @@ export const ResourcesList: React.FC<ResourcesListProps> = ({
 
   return (
     <div className="space-y-4">
-      <Accordion type="single" collapsible className="w-full">
+      <Accordion
+        type="single"
+        collapsible
+        className="w-full"
+        value={openIndex}
+        onValueChange={(value) => {
+          const idx = typeof value === "string" ? value : "";
+          const resource =
+            idx !== ""
+              ? resources[parseInt(idx.replace("resource-", ""))]
+              : undefined;
+          if (resource) handleAccordionChange(idx, resource);
+          else setOpenIndex("");
+        }}
+      >
         {resources.map((resource, index) => {
           const uri = String(resource.uri);
           const name = String(resource.name);
@@ -81,13 +127,30 @@ export const ResourcesList: React.FC<ResourcesListProps> = ({
             resource.size && typeof resource.size === "number"
               ? resource.size
               : undefined;
+          const value = `resource-${index}`;
+          const state = resourceStates[value] || {
+            isLoading: false,
+            response: null,
+          };
+          const content =
+            state.response?.success && state.response.data?.contents?.[0]
+              ? state.response.data.contents[0]
+              : undefined;
+          const isText =
+            !!content?.text &&
+            (content?.mimeType || mimeType || "").startsWith("text/");
+          const isImage =
+            !!content?.blob &&
+            (content?.mimeType || mimeType || "").startsWith("image/");
+          const isBinary =
+            !!content?.blob &&
+            !(content?.mimeType || mimeType || "").startsWith("image/");
 
           return (
-            <AccordionItem key={uri} value={`resource-${index}`}>
+            <AccordionItem key={uri} value={value}>
               <AccordionTrigger className="group hover:no-underline">
                 <div className="flex flex-col items-start gap-1 text-left">
                   <div className="flex items-center gap-2">
-                    {getResourceIcon(mimeType)}
                     <span className="font-medium">{name}</span>
                     {mimeType && (
                       <Badge
@@ -102,21 +165,6 @@ export const ResourcesList: React.FC<ResourcesListProps> = ({
                         {formatFileSize(size)}
                       </span>
                     )}
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedResource(resource);
-                          setViewResourceDialogOpen(true);
-                        }}
-                        title="View resource"
-                      >
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                    </div>
                   </div>
                   {description && (
                     <p className="text-muted-foreground line-clamp-2 text-sm font-normal">
@@ -129,69 +177,27 @@ export const ResourcesList: React.FC<ResourcesListProps> = ({
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="space-y-4 rounded-md border p-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-foreground font-mono text-xs font-semibold">
-                        URI
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground font-mono text-xs break-all">
-                      {uri}
-                    </p>
+                {state.isLoading ? null : state.response &&
+                  !state.response.success ? null : isText && content?.text ? (
+                  <Markdown className="max-w-full" textSize="base">
+                    {String(content.text)}
+                  </Markdown>
+                ) : isImage && content?.blob ? (
+                  <ZoomableImage
+                    src={`data:${content?.mimeType || mimeType};base64,${content.blob}`}
+                    alt={resource.name}
+                    className="max-h-[60vh] rounded shadow"
+                  />
+                ) : isBinary ? (
+                  <div className="text-muted-foreground py-4 text-center">
+                    Binary content cannot be displayed
                   </div>
-
-                  {mimeType && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-foreground font-mono text-xs font-semibold">
-                          MIME Type
-                        </span>
-                      </div>
-                      <p className="text-muted-foreground font-mono text-xs">
-                        {mimeType}
-                      </p>
-                    </div>
-                  )}
-
-                  {size && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-foreground font-mono text-xs font-semibold">
-                          Size
-                        </span>
-                      </div>
-                      <p className="text-muted-foreground font-mono text-xs">
-                        {formatFileSize(size)} ({size.toLocaleString()} bytes)
-                      </p>
-                    </div>
-                  )}
-
-                  {description && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-foreground font-mono text-xs font-semibold">
-                          Description
-                        </span>
-                      </div>
-                      <p className="text-muted-foreground text-xs">
-                        {description}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                ) : null}
               </AccordionContent>
             </AccordionItem>
           );
         })}
       </Accordion>
-
-      <ViewResourceDialog
-        resource={selectedResource}
-        mcpId={mcpId}
-        open={viewResourceDialogOpen}
-        onOpenChange={setViewResourceDialogOpen}
-      />
     </div>
   );
-}; 
+};

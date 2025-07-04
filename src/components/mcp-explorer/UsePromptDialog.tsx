@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Play, AlertCircle, CheckCircle, MessageSquare } from "lucide-react";
 import CodeEditor from "@/components/CodeEditor";
 import { getMcpPrompt } from "@/ipc/mcp/mcp-client";
-import { toast } from "sonner";
 
 interface UsePromptDialogProps {
   prompt: Prompt | null;
@@ -113,14 +112,16 @@ export const UsePromptDialog: React.FC<UsePromptDialogProps> = ({
               <MessageSquare className="text-primary h-5 w-5" />
             </div>
             <div className="flex flex-col gap-1">
-              <span>Use Prompt</span>
+              <span>Render Prompt</span>
               <span className="text-muted-foreground font-mono text-sm font-normal">
                 {prompt.name}
               </span>
             </div>
           </DialogTitle>
           {prompt.description && (
-            <p className="text-muted-foreground text-sm">{prompt.description}</p>
+            <p className="text-muted-foreground text-sm">
+              {prompt.description}
+            </p>
           )}
         </DialogHeader>
 
@@ -135,14 +136,14 @@ export const UsePromptDialog: React.FC<UsePromptDialogProps> = ({
                 value="input"
                 className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                Arguments
+                Template Variables
               </TabsTrigger>
               <TabsTrigger
                 value="response"
                 disabled={!response}
                 className="data-[state=active]:bg-background disabled:opacity-50 data-[state=active]:shadow-sm"
               >
-                Response
+                Rendered Output
               </TabsTrigger>
             </TabsList>
 
@@ -151,19 +152,24 @@ export const UsePromptDialog: React.FC<UsePromptDialogProps> = ({
               className="mt-4 flex min-h-0 flex-1 flex-col gap-4"
             >
               <div className="flex min-h-0 flex-1 flex-col gap-3">
-                <label className="text-sm font-medium">Arguments</label>
-                
+                <label className="text-sm font-medium">
+                  Template Variables
+                </label>
+
                 {prompt.arguments && prompt.arguments.length > 0 ? (
-                  <div className="space-y-4 flex-1 overflow-y-auto">
+                  <div className="flex-1 space-y-4 overflow-y-auto">
                     {prompt.arguments.map((arg) => (
                       <div key={arg.name} className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <Label htmlFor={arg.name} className="font-mono text-xs">
+                          <Label
+                            htmlFor={arg.name}
+                            className="font-mono text-xs"
+                          >
                             {arg.name}
                           </Label>
                           {arg.required && (
                             <Badge
-                              variant="outline" 
+                              variant="outline"
                               className="border-red-500/50 bg-red-500/10 font-mono text-xs text-red-500"
                             >
                               required
@@ -177,9 +183,11 @@ export const UsePromptDialog: React.FC<UsePromptDialogProps> = ({
                         )}
                         <Input
                           id={arg.name}
-                          placeholder={`Enter ${arg.name}...`}
+                          placeholder={`Enter value for ${arg.name}...`}
                           value={arguments_[arg.name] || ""}
-                          onChange={(e) => handleArgumentChange(arg.name, e.target.value)}
+                          onChange={(e) =>
+                            handleArgumentChange(arg.name, e.target.value)
+                          }
                           className="font-mono text-sm"
                         />
                       </div>
@@ -188,7 +196,7 @@ export const UsePromptDialog: React.FC<UsePromptDialogProps> = ({
                 ) : (
                   <div className="bg-muted/30 flex flex-1 items-center justify-center rounded-lg border">
                     <p className="text-muted-foreground text-sm">
-                      This prompt has no arguments.
+                      This prompt template has no variables.
                     </p>
                   </div>
                 )}
@@ -201,7 +209,7 @@ export const UsePromptDialog: React.FC<UsePromptDialogProps> = ({
                       {response.success ? (
                         <div className="flex items-center gap-2 text-green-600">
                           <CheckCircle className="h-4 w-4" />
-                          <span className="text-sm font-medium">Success</span>
+                          <span className="text-sm font-medium">Rendered</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 text-red-600">
@@ -219,7 +227,7 @@ export const UsePromptDialog: React.FC<UsePromptDialogProps> = ({
                   size="default"
                 >
                   <Play className="h-4 w-4" />
-                  {isLoading ? "Using..." : "Use Prompt"}
+                  {isLoading ? "Rendering..." : "Render Prompt"}
                 </Button>
               </div>
             </TabsContent>
@@ -231,13 +239,15 @@ export const UsePromptDialog: React.FC<UsePromptDialogProps> = ({
               {response && (
                 <>
                   <div className="flex flex-shrink-0 items-center justify-between">
-                    <label className="text-sm font-medium">Prompt Response</label>
+                    <label className="text-sm font-medium">
+                      Rendered Output
+                    </label>
                     {response.success ? (
                       <Badge
                         variant="outline"
                         className="border-green-600/30 bg-green-50 text-green-600 dark:bg-green-950/20"
                       >
-                        Success
+                        Rendered
                       </Badge>
                     ) : (
                       <Badge
@@ -268,4 +278,4 @@ export const UsePromptDialog: React.FC<UsePromptDialogProps> = ({
       </DialogContent>
     </Dialog>
   );
-}; 
+};
