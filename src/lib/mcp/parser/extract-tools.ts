@@ -5,10 +5,10 @@ import type { JSONSchema7, JSONSchema7TypeName } from "json-schema";
 import { OpenAPIV3 } from "openapi-types";
 
 import { McpToolDefinitionWithoutAuth } from "../types/index";
-import { generateOperationId, kebabCase } from "../generator/utils";
 import { apiDb } from "@/lib/db/api-db";
 import log from "electron-log/main";
 import { calculateTokenCount } from "@/lib/tiktoken";
+import { buildApiOperationId, toHyphenCase } from "@/lib/string";
 
 export interface SelectedEndpoint {
   path: string;
@@ -481,7 +481,7 @@ export async function convertEndpointToTool(
   // Generate a unique name for the tool
   let name =
     operation.operationId ||
-    generateOperationId(endpoint.method, endpoint.path);
+    buildApiOperationId(endpoint.method, endpoint.path);
 
   // Sanitize the name to be MCP-compatible (only a-z, 0-9, _, -)
   name = name
@@ -523,7 +523,7 @@ export async function convertEndpointToTool(
     apiId,
     name,
     description,
-    tags: operation.tags?.map((tag: string) => kebabCase(tag)) || [],
+    tags: operation.tags?.map((tag: string) => toHyphenCase(tag)) || [],
     inputSchema,
     method: endpoint.method,
     pathTemplate: endpoint.path,

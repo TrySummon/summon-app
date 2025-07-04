@@ -1,41 +1,41 @@
-export function generateReadme(
-  serverName: string,
-  tags: string[],
-  transport: string,
+export function buildReadmeCode(
+  serviceName: string,
+  categories: string[],
+  connectionType: string,
 ): string {
-  const readmeContent = `
-# ${serverName}
+  const documentation = `
+# ${serviceName}
 
-API server generated from OpenAPI specification.
+Protocol server built from API specification.
 
-## Getting Started
+## Setup Instructions
 
-1. Install dependencies:
+1. Install required packages:
 \`\`\`
 npm install
 \`\`\`
 
-2. Start the server:
+2. Launch the server:
 \`\`\`
 npm start
 \`\`\`
 
-## Configuration
+## Environment Setup
 
-The server can be configured using environment variables. See the \`.env.example\` file for available options.
+Configure the server using environment variables. Refer to \`.env.example\` for available settings.
 
-## API Documentation
+## API Access
 
-${transport === "web" ? "The API documentation is available at `/docs` when the server is running." : ""}
+${connectionType === "http" ? "API documentation is accessible at `/docs` when the server is active." : ""}
 
-## Tool Scopes
+## Tool Categories
 
-You can configure which tools are exposed by the MCP server by using the --tools option at start time.
+Configure available tools using the --tools parameter during startup.
 
-Available scopes:
-${tags.map((tag) => `\`${tag}\``).join(", ")}
+Available categories:
+${categories.map((category) => `\`${category}\``).join(", ")}
 
-Available permissions:
+Permission levels:
 - all
 - create
 - read
@@ -43,5 +43,5 @@ Available permissions:
 - delete
 
 `;
-  return readmeContent;
+  return documentation;
 }

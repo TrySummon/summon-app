@@ -2,17 +2,13 @@ import path from "path";
 import fs from "fs/promises";
 import { workspaceDb } from "@/lib/db/workspace-db";
 import { app, BrowserWindow } from "electron";
-import {
-  ensureDirectoryExists,
-  deleteMcpImpl,
-  generateMcpImpl,
-  restartMcpServer,
-} from "@/lib/mcp";
-import { kebabCase } from "@/lib/mcp/generator/utils";
+import { deleteMcpImpl, generateMcpImpl, restartMcpServer } from "@/lib/mcp";
 import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "@/ipc/external-mcp";
 import type { ExternalToolOverride, SummonToolRef, SummonTool } from "./types";
 import { mcpDb } from "@/lib/db/mcp-db";
 import { calculateTokenCount } from "@/lib/tiktoken";
+import { toHyphenCase } from "@/lib/string";
+import { ensureDirectoryExists } from "@/lib/file";
 
 /**
  * Get the directory for external MCP implementations
@@ -53,7 +49,7 @@ export async function getExternalMcpToolOverridePath(
   toolName: string,
 ): Promise<string> {
   const toolsDir = await getExternalMcpToolsOverrideDir(mcpId);
-  return path.join(toolsDir, `${kebabCase(toolName)}.json`);
+  return path.join(toolsDir, `${toHyphenCase(toolName)}.json`);
 }
 
 /**

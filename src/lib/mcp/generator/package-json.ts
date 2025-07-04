@@ -1,39 +1,35 @@
 /**
- * Generates the content of package.json for the MCP server
+ * Creates the package json code for the Protocol Server
  *
- * @param serverName Server name
- * @param serverVersion Server version
- * @param transportType Type of transport to use (stdio, web, or streamable-http)
- * @returns JSON string for package.json
+ * @param serviceName Service identifier
+ * @param versionNumber Version string
+ * @returns JSON package.json code
  */
-export function generatePackageJson(
-  serverName: string,
-  serverVersion: string,
-  transportType: string = "stdio",
+export function buildPackageJsonCode(
+  serviceName: string,
+  versionNumber: string,
 ): string {
-  const includeWebDeps =
-    transportType === "web" || transportType === "streamable-http";
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const packageData: any = {
-    name: serverName,
-    version: serverVersion,
-    description: `MCP Server generated from OpenAPI spec for ${serverName}`,
+  const manifestData: any = {
+    name: serviceName,
+    version: versionNumber,
+    description: `Protocol Server built from API specification for ${serviceName}`,
     private: true,
     type: "module",
-    main: "build/index.js",
-    files: ["build", "src"],
+    main: "dist/index.js",
+    files: ["dist", "src"],
     scripts: {
-      start: "node build/index.js",
-      build: "tsc && chmod 755 build/index.js",
-      typecheck: "tsc --noEmit",
-      prestart: "npm run build",
+      start: "node dist/index.js",
+      compile: "tsc && npm run copy-json && chmod 755 dist/index.js",
+      "copy-json": "mkdir -p dist/tools && cp src/tools/*.json dist/tools/",
+      verify: "tsc --noEmit",
+      prestart: "npm run compile",
     },
     engines: {
       node: ">=20.0.0",
     },
     dependencies: {
-      "@modelcontextprotocol/sdk": "^1.10.0",
+      "@modelcontextprotocol/sdk": "^1.15.0",
       axios: "^1.9.0",
       dotenv: "^16.4.5",
       zod: "^3.24.3",
@@ -45,29 +41,21 @@ export function generatePackageJson(
     },
   };
 
-  // Add Hono dependencies for web-based transports
-  if (includeWebDeps) {
-    packageData.dependencies = {
-      ...packageData.dependencies,
-      hono: "^4.7.7",
-      "@hono/node-server": "^1.14.1",
-      uuid: "^11.1.0",
-    };
+  manifestData.dependencies = {
+    ...manifestData.dependencies,
+    hono: "^4.7.7",
+    "@hono/node-server": "^1.14.1",
+    uuid: "^11.1.0",
+  };
 
-    packageData.devDependencies = {
-      ...packageData.devDependencies,
-      "@types/uuid": "^10.0.0",
-    };
+  manifestData.devDependencies = {
+    ...manifestData.devDependencies,
+    "@types/uuid": "^10.0.0",
+  };
 
-    // Add appropriate start script based on transport type
-    if (transportType === "web") {
-      packageData.scripts["start:web"] = "node build/index.js --transport=web";
-    } else if (transportType === "streamable-http") {
-      packageData.scripts["start:http"] =
-        "node build/index.js --transport=streamable-http";
-      packageData.dependencies["fetch-to-node"] = "^2.1.0";
-    }
-  }
+  manifestData.scripts["launch:stream"] =
+    "node dist/index.js --transport=stream-http";
+  manifestData.dependencies["fetch-to-node"] = "^2.1.0";
 
-  return JSON.stringify(packageData, null, 2);
+  return JSON.stringify(manifestData, null, 2);
 }

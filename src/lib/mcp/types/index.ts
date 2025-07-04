@@ -9,6 +9,22 @@ import { MappingConfig } from "../tools/mapper";
  */
 export type TransportType = "stdio" | "web" | "streamable-http";
 
+export type AuthSchema =
+  | {
+      type: "apiKey";
+      keyEnvVar: string;
+      in: "header" | "query";
+      name: string;
+      isInferred?: boolean;
+    }
+  | {
+      type: "bearerToken";
+      tokenEnvVar: string;
+      isInferred?: boolean;
+    };
+
+export type AuthSchemas = Array<AuthSchema>;
+
 /**
  * MCP Tool Definition describes a tool extracted from an OpenAPI spec
  * for use in Model Context Protocol server
@@ -49,20 +65,7 @@ export interface McpToolDefinition {
   /** Original operation ID from the OpenAPI spec */
   securityScheme: {
     baseUrlEnvVar: string;
-    schemas: Array<
-      | {
-          type: "apiKey";
-          keyEnvVar: string;
-          in: "header" | "query";
-          name: string;
-          isInferred?: boolean;
-        }
-      | {
-          type: "bearerToken";
-          tokenEnvVar: string;
-          isInferred?: boolean;
-        }
-    >;
+    schemas: AuthSchemas;
   };
 }
 

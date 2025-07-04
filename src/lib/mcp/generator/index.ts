@@ -1,22 +1,23 @@
 /**
- * MCP Generator Module
+ * Core module for API-to-MCP transformation
  *
- * This code was inspired by the openapi-mcp-generator project:
- * https://github.com/harsha-iiiv/openapi-mcp-generator (MIT License)
- *
- * Our implementation has been significantly modified.
+ * Provides utilities and functions for converting API specifications
+ * into Model Context Protocol servers
  */
 
-/**
- * Generator module exports
- */
-export * from "./server-code";
-export * from "./package-json";
-export * from "./config-files";
-export * from "./env-file";
-export * from "./oauth-docs";
-export * from "./readme";
-export * from "./web-server";
-export * from "./streamable-http";
-export * from "./tools";
-export * from "./mapper";
+// Core transformation modules
+export { buildServerCode } from "./server";
+export { buildPackageJsonCode } from "./package-json";
+export {
+  buildTypeScriptConfig,
+  buildIgnorePatterns,
+  buildLinterConfig,
+  buildTestConfig,
+  buildFormatterConfig,
+} from "./config";
+export { buildEnvExampleCode } from "./env";
+export { buildOAuth2Guide } from "./auth";
+export { buildReadmeCode } from "./readme";
+export { buildAdapterCode } from "./adapter";
+export { buildToolCode, buildMcpToolDefinitions } from "./tools";
+export { buildMapperCode } from "./mapper";

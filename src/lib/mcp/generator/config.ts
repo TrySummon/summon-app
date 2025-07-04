@@ -1,14 +1,14 @@
 /**
- * Generator for configuration files for MCP servers
+ * Builds configuration files for Protocol Servers
  */
 
 /**
- * Generates the content of tsconfig.json for the MCP server
+ * Creates TypeScript compiler configuration
  *
- * @returns JSON string for tsconfig.json
+ * @returns JSON configuration for TypeScript
  */
-export function generateTsconfigJson(): string {
-  const tsconfigData = {
+export function buildTypeScriptConfig(): string {
+  const compilerSettings = {
     compilerOptions: {
       esModuleInterop: true,
       skipLibCheck: true,
@@ -22,30 +22,30 @@ export function generateTsconfigJson(): string {
       module: "Node16",
       moduleResolution: "Node16",
       noEmit: false,
-      outDir: "./build",
+      outDir: "./dist",
       declaration: true,
       sourceMap: true,
       forceConsistentCasingInFileNames: true,
     },
     include: ["src/**/*"],
-    exclude: ["node_modules", "build", "**/*.test.ts"],
+    exclude: ["node_modules", "dist", "**/*.test.ts"],
   };
 
-  return JSON.stringify(tsconfigData, null, 2);
+  return JSON.stringify(compilerSettings, null, 2);
 }
 
 /**
- * Generates the content of .gitignore for the MCP server
+ * Creates ignore patterns for version control
  *
  * @returns Content for .gitignore
  */
-export function generateGitignore(): string {
-  return `# Dependencies
+export function buildIgnorePatterns(): string {
+  return `# Package managers
 node_modules
 .pnp
 .pnp.js
 
-# Build outputs
+# Compilation output
 dist
 build
 logs
@@ -56,28 +56,28 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
-# Reports
+# Diagnostic reports
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-# Runtime data
+# Process files
 pids
 *.pid
 *.seed
 *.pid.lock
 
-# Coverage
+# Test coverage
 coverage
 *.lcov
 .nyc_output
 
-# Build artifacts
+# Build tools
 .grunt
 bower_components
 jspm_packages/
 web_modules/
 .lock-wscript
 
-# Editor settings
+# IDE configuration
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
@@ -88,32 +88,32 @@ web_modules/
 *.sublime-workspace
 *.sublime-project
 
-# Caches
+# Tool caches
 .eslintcache
 .stylelintcache
 .node_repl_history
 .browserslistcache
 
-# Environment variables
+# Environment files
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# OS specific
+# System files
 .DS_Store
 Thumbs.db
 `;
 }
 
 /**
- * Generates the content of .eslintrc.json for the MCP server
+ * Creates linter configuration
  *
- * @returns JSON string for .eslintrc.json
+ * @returns JSON configuration for ESLint
  */
-export function generateEslintConfig(): string {
-  const eslintConfig = {
+export function buildLinterConfig(): string {
+  const linterSettings = {
     parser: "@typescript-eslint/parser",
     extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
     plugins: ["@typescript-eslint"],
@@ -132,15 +132,15 @@ export function generateEslintConfig(): string {
     },
   };
 
-  return JSON.stringify(eslintConfig, null, 2);
+  return JSON.stringify(linterSettings, null, 2);
 }
 
 /**
- * Generates the content of jest.config.js for the MCP server
+ * Creates test runner configuration
  *
  * @returns Content for jest.config.js
  */
-export function generateJestConfig(): string {
+export function buildTestConfig(): string {
   return `export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
@@ -161,12 +161,12 @@ export function generateJestConfig(): string {
 }
 
 /**
- * Generates the content of .prettierrc for the MCP server
+ * Creates formatter configuration
  *
- * @returns JSON string for .prettierrc
+ * @returns JSON configuration for Prettier
  */
-export function generatePrettierConfig(): string {
-  const prettierConfig = {
+export function buildFormatterConfig(): string {
+  const formatterSettings = {
     semi: true,
     trailingComma: "es5",
     singleQuote: true,
@@ -174,5 +174,5 @@ export function generatePrettierConfig(): string {
     tabWidth: 2,
   };
 
-  return JSON.stringify(prettierConfig, null, 2);
+  return JSON.stringify(formatterSettings, null, 2);
 }

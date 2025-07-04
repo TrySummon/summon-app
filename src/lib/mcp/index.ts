@@ -6,7 +6,6 @@ import log from "electron-log";
 import { mockApi } from "../mock";
 import { findFreePort } from "../port";
 import { getMcpImplPath, getMcpImplToolsDir, mcpDb } from "../db/mcp-db";
-import { getEnvVarName } from "./generator/utils/security";
 import { createMcpServer, loadToolsFromDirectory } from "./server";
 import { setupStreamableExpressServer } from "./streamable-express-server";
 import { McpServerState, runningMcpServers } from "./state";
@@ -15,21 +14,19 @@ import { shell } from "electron";
 import { createWriteStream } from "fs";
 import { JSONSchema7 } from "json-schema";
 import {
-  generateEnvExample,
-  generateEslintConfig,
-  generateGitignore,
-  generateJestConfig,
-  generateMapperCode,
-  generateMcpServerCode,
-  generateMcpTools,
-  generatePackageJson,
-  generatePrettierConfig,
-  generateReadme,
-  generateStreamableHttpClientHtml,
-  generateStreamableHttpCode,
-  generateTestClientHtml,
-  generateTsconfigJson,
-  generateWebServerCode,
+  buildEnvExampleCode,
+  buildLinterConfig,
+  buildIgnorePatterns,
+  buildTestConfig,
+  buildMapperCode,
+  buildServerCode,
+  buildMcpToolDefinitions,
+  buildPackageJsonCode,
+  buildFormatterConfig,
+  buildReadmeCode,
+  buildAdapterCode,
+  buildTypeScriptConfig,
+  buildToolCode,
 } from "./generator";
 import { getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -38,6 +35,8 @@ import { stopExternalMcp } from "../external-mcp";
 
 import { faker } from "@faker-js/faker";
 import { JSONSchemaFaker } from "json-schema-faker";
+import { ensureDirectoryExists, writeFileWithDir } from "../file";
+import { buildVariableName } from "./generator/auth";
 
 // Configure JSON Schema Faker
 JSONSchemaFaker.extend("faker", () => faker);
@@ -53,36 +52,6 @@ JSONSchemaFaker.option({
   // Handle edge cases gracefully
   ignoreMissingRefs: true,
 });
-
-/**
- * Creates a directory if it doesn't exist
- *
- * @param dir Directory path to create
- */
-export async function ensureDirectoryExists(dir: string): Promise<void> {
-  try {
-    await fs.mkdir(dir, { recursive: true });
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
-      throw error;
-    }
-  }
-}
-
-/**
- * Writes content to a file, creating parent directories if needed
- *
- * @param filePath Path where the file should be written
- * @param content Content to write to the file
- */
-async function writeFileWithDir(
-  filePath: string,
-  content: string,
-): Promise<void> {
-  const dir = path.dirname(filePath);
-  await ensureDirectoryExists(dir);
-  await fs.writeFile(filePath, content, "utf8");
-}
 
 /**
  * Generates an MCP server based on OpenAPI specification and writes all files to the specified output directory
@@ -107,6 +76,8 @@ export async function generateMcpImpl(mcpId: string) {
   // Define file paths
   const srcDir = path.join(output, "src");
   const toolsDir = path.join(srcDir, "tools");
+  const toolFilePath = path.join(toolsDir, "index.ts");
+  const adapterFilePath = path.join(srcDir, "adapter.ts");
   const serverFilePath = path.join(srcDir, "index.ts");
   const packageJsonPath = path.join(output, "package.json");
   const tsconfigPath = path.join(output, "tsconfig.json");
@@ -117,13 +88,7 @@ export async function generateMcpImpl(mcpId: string) {
   const envExamplePath = path.join(output, ".env.example");
   const docsDir = path.join(output, "docs");
 
-  // Web server files (if requested)
-  const webServerPath = path.join(srcDir, "web-server.ts");
   const publicDir = path.join(output, "public");
-  const indexHtmlPath = path.join(publicDir, "index.html");
-
-  // StreamableHTTP files (if requested)
-  const streamableHttpPath = path.join(srcDir, "streamable-http.ts");
 
   // Ensure the main directories exist
   await ensureDirectoryExists(srcDir);
@@ -131,7 +96,7 @@ export async function generateMcpImpl(mcpId: string) {
 
   // Generate and write core files
   log.info("Generating tools code...");
-  const tools = await generateMcpTools(mcp.apiGroups);
+  const tools = await buildMcpToolDefinitions(mcp.apiGroups);
 
   const tags = tools
     .map((tool) => tool.tags)
@@ -146,86 +111,59 @@ export async function generateMcpImpl(mcpId: string) {
     }),
   );
 
+  log.info("Generating tool code...");
+  const toolCode = await buildToolCode();
+  await writeFileWithDir(toolFilePath, toolCode);
+
+  log.info("Generating adapter code...");
+  const adapterCode = buildAdapterCode();
+  await writeFileWithDir(adapterFilePath, adapterCode);
+
   log.info("Generating server code...");
-  const serverCode = await generateMcpServerCode(
-    serverName,
-    serverVersion,
-    tags,
-  );
+  const serverCode = await buildServerCode(serverName, serverVersion, tags);
   await writeFileWithDir(serverFilePath, serverCode);
 
   log.info("Generating mapper code...");
-  const mapperCode = generateMapperCode();
+  const mapperCode = buildMapperCode();
   const mapperFilePath = path.join(srcDir, "mapper.ts");
   await writeFileWithDir(mapperFilePath, mapperCode);
 
   log.info("Generating package.json...");
-  const packageJsonContent = generatePackageJson(
-    serverName,
-    serverVersion,
-    transport,
-  );
+  const packageJsonContent = buildPackageJsonCode(serverName, serverVersion);
   await writeFileWithDir(packageJsonPath, packageJsonContent);
 
   log.info("Generating tsconfig.json...");
-  const tsconfigJsonContent = generateTsconfigJson();
+  const tsconfigJsonContent = buildTypeScriptConfig();
   await writeFileWithDir(tsconfigPath, tsconfigJsonContent);
 
   log.info("Generating .gitignore...");
-  const gitignoreContent = generateGitignore();
+  const gitignoreContent = buildIgnorePatterns();
   await writeFileWithDir(gitignorePath, gitignoreContent);
 
   log.info("Generating ESLint config...");
-  const eslintConfigContent = generateEslintConfig();
+  const eslintConfigContent = buildLinterConfig();
   await writeFileWithDir(eslintPath, eslintConfigContent);
 
   log.info("Generating Prettier config...");
-  const prettierConfigContent = generatePrettierConfig();
+  const prettierConfigContent = buildFormatterConfig();
   await writeFileWithDir(prettierPath, prettierConfigContent);
 
   log.info("Generating Jest config...");
-  const jestConfigContent = generateJestConfig();
+  const jestConfigContent = buildTestConfig();
   await writeFileWithDir(jestConfigPath, jestConfigContent);
 
   log.info("Generating .env.example file...");
-  const envExampleContent = await generateEnvExample(mcp.apiGroups);
+  const envExampleContent = await buildEnvExampleCode(mcp.apiGroups);
   await writeFileWithDir(envExamplePath, envExampleContent);
 
-  // Generate web server files if web transport is requested
-  if (transport === "web") {
-    log.info("Generating web server files...");
+  log.info("Generating StreamableHTTP server files...");
 
-    // Ensure public directory exists
-    await ensureDirectoryExists(publicDir);
-
-    // Generate web server code
-    const webServerCode = generateWebServerCode();
-    await writeFileWithDir(webServerPath, webServerCode);
-
-    // Generate test client
-    const indexHtmlContent = generateTestClientHtml(serverName);
-    await writeFileWithDir(indexHtmlPath, indexHtmlContent);
-  }
-
-  // Generate streamable HTTP files if streamable-http transport is requested
-  if (transport === "streamable-http") {
-    log.info("Generating StreamableHTTP server files...");
-
-    // Ensure public directory exists
-    await ensureDirectoryExists(publicDir);
-
-    // Generate StreamableHTTP server code
-    const streamableHttpCode = generateStreamableHttpCode();
-    await writeFileWithDir(streamableHttpPath, streamableHttpCode);
-
-    // Generate test client
-    const indexHtmlContent = generateStreamableHttpClientHtml(serverName);
-    await writeFileWithDir(indexHtmlPath, indexHtmlContent);
-  }
+  // Ensure public directory exists
+  await ensureDirectoryExists(publicDir);
 
   // Generate a simple README file
   const readmePath = path.join(output, "README.md");
-  const readmeContent = generateReadme(serverName, tags, transport);
+  const readmeContent = buildReadmeCode(serverName, tags, transport);
   await writeFileWithDir(readmePath, readmeContent);
 
   log.info(`MCP generation complete. Files written to: ${output}`);
@@ -329,7 +267,7 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
     // Process each API group
     for (const [apiId, apiGroup] of Object.entries(mcp.apiGroups)) {
       // Set base URL environment variable
-      const baseUrlEnvVar = getEnvVarName(apiGroup.name, "BASE_URL");
+      const baseUrlEnvVar = buildVariableName(apiGroup.name, "BASE_URL");
 
       // Check if this API should be mocked
       if (apiGroup.useMockData && apiGroup.tools && apiGroup.tools.length > 0) {
@@ -349,10 +287,10 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
         const auth = apiGroup.auth;
 
         if (auth.type === "apiKey" && auth.key) {
-          const keyEnvVar = getEnvVarName(apiGroup.name, "API_KEY");
+          const keyEnvVar = buildVariableName(apiGroup.name, "API_KEY");
           env[keyEnvVar] = auth.key;
         } else if (auth.type === "bearerToken" && auth.token) {
-          const tokenEnvVar = getEnvVarName(apiGroup.name, "BEARER_TOKEN");
+          const tokenEnvVar = buildVariableName(apiGroup.name, "BEARER_TOKEN");
           env[tokenEnvVar] = auth.token;
         }
       }

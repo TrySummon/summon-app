@@ -4,7 +4,7 @@ import { OpenAPIV3 } from "openapi-types";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import log from "electron-log/main";
 import { workspaceDb } from "./workspace-db";
-import { kebabCase } from "../mcp/generator/utils";
+import { toHyphenCase } from "../string";
 
 // Define the directory where API data will be stored for a specific workspace
 const getApiDataDirForWorkspace = (workspaceId: string) => {
@@ -70,7 +70,7 @@ const createApi = async (buffer: Buffer): Promise<string> => {
   }
 
   // Generate kebab-case filename from the title
-  const apiId = kebabCase(apiTitle);
+  const apiId = toHyphenCase(apiTitle);
 
   if (!apiId) {
     throw new Error("API title cannot be converted to a valid filename");
@@ -210,7 +210,7 @@ const renameApi = async (id: string, newName: string): Promise<boolean> => {
   }
 
   // Generate new ID from the new name
-  const newId = kebabCase(newName);
+  const newId = toHyphenCase(newName);
 
   if (!newId) {
     throw new Error("New name cannot be converted to a valid filename");

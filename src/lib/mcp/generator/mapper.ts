@@ -1,7 +1,7 @@
 /**
- * Generate the mapper.ts file content as a string
+ * Creates transformation engine code for data mapping
  */
-export function generateMapperCode(): string {
+export function buildMapperCode(): string {
   return `/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Types for pure static mapping configuration
@@ -255,6 +255,5 @@ export function mapOptimizedToOriginal(
   }
 
   return result;
-}
-`;
+}`;
 }
