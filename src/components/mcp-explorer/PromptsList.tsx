@@ -16,10 +16,7 @@ interface PromptsListProps {
   mcpId: string;
 }
 
-export const PromptsList: React.FC<PromptsListProps> = ({
-  prompts,
-  mcpId,
-}) => {
+export const PromptsList: React.FC<PromptsListProps> = ({ prompts, mcpId }) => {
   const [usePromptDialogOpen, setUsePromptDialogOpen] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
 
@@ -123,4 +120,4 @@ export const PromptsList: React.FC<PromptsListProps> = ({
       />
     </div>
   );
-}; 
+};

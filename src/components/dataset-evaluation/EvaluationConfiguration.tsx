@@ -132,17 +132,6 @@ export function EvaluationConfiguration({
           </div>
 
           <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => {
-              // TODO: Implement copy evaluation code to CI functionality
-              console.log('Copy evaluation code to CI clicked');
-            }}
-          >
-            Copy evaluation code to CI
-          </Button>
-
-          <Button
             onClick={onRunEvaluation}
             disabled={
               isRunning ||
