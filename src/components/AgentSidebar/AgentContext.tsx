@@ -1,24 +1,12 @@
 import React, { createContext, useContext } from "react";
 
-import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { Message, Attachment } from "ai";
 import { MentionData } from "@/components/CodeEditor";
-import { McpData } from "@/lib/db/mcp-db";
-import { useMcpActions, ToolResult } from "@/hooks/useMcpActions";
+import { AgentToolBox } from "@/types/agent";
 
 interface AgentContextType {
-  onRefreshApis?: () => void;
-  onAddEndpoints: (
-    apiId: string,
-    endpoints: SelectedEndpoint[],
-  ) => Promise<ToolResult>;
-  onDeleteTool: (toolName: string) => Promise<ToolResult>;
-  onDeleteAllTools: () => Promise<ToolResult>;
-  optimiseToolSize: (args: {
-    apiId: string;
-    toolName: string;
-    goal: string;
-  }) => Promise<ToolResult>;
+  // Tool agent for handling tool-specific operations
+  toolBox: AgentToolBox;
 
   // Chat state and operations
   isRunning: boolean;
@@ -26,6 +14,7 @@ interface AgentContextType {
   attachedFiles: Attachment[];
   mentionData: MentionData[];
   autoApprove: boolean;
+  composerPlaceholder: string;
 
   // Chat operations
   addToolResult: (params: { toolCallId: string; result: unknown }) => void;
@@ -40,18 +29,6 @@ interface AgentContextType {
   handleStarterClick: (prompt: string) => void;
   handleLoadChat: (chatId: string, messages: Message[]) => void;
   hasRevertState: (messageId: string) => boolean;
-
-  // Agent tool operations (from consolidated MCP actions)
-  addToolsToMcp: (
-    selectedEndpoints: {
-      apiId: string;
-      endpointPath: string;
-      endpointMethod: string;
-    }[],
-  ) => Promise<ToolResult>;
-  removeMcpTool: (apiId: string, toolName: string) => Promise<ToolResult>;
-  removeAllMcpTools: (apiId: string) => Promise<ToolResult>;
-  listMcpTools: (apiId?: string) => Promise<ToolResult>;
 }
 
 const AgentContext = createContext<AgentContextType | undefined>(undefined);
@@ -67,15 +44,15 @@ export const useAgentContext = () => {
 interface AgentProviderProps {
   children: React.ReactNode;
 
-  mcp: McpData;
-
-  onRefreshApis?: () => void;
+  // Tool agent for handling tool-specific operations
+  toolBox: AgentToolBox;
 
   // Chat state and operations from AgentSidebar
   isRunning: boolean;
   attachedFiles: Attachment[];
   mentionData: MentionData[];
   autoApprove: boolean;
+  composerPlaceholder: string;
   addToolResult: (params: { toolCallId: string; result: unknown }) => void;
   setAutoApprove: (value: boolean) => void;
   onSendMessage: (message: Message) => boolean;
@@ -92,12 +69,12 @@ interface AgentProviderProps {
 
 export const AgentProvider: React.FC<AgentProviderProps> = ({
   children,
-  mcp,
-  onRefreshApis,
+  toolBox,
   isRunning,
   attachedFiles,
   mentionData,
   autoApprove,
+  composerPlaceholder,
   addToolResult,
   setAutoApprove,
   onSendMessage,
@@ -111,30 +88,17 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
   handleLoadChat,
   hasRevertState,
 }) => {
-  // Use the consolidated MCP actions hook
-  const {
-    onAddEndpoints,
-    onDeleteTool,
-    onDeleteAllTools,
-    optimiseToolSize,
-    addToolsToMcp,
-    removeMcpTool,
-    removeAllMcpTools,
-    listMcpTools,
-  } = useMcpActions(mcp.id);
-
   const contextValue: AgentContextType = {
-    onRefreshApis,
-    onAddEndpoints,
-    onDeleteTool,
-    onDeleteAllTools,
-    optimiseToolSize,
+    // Tool agent for handling tool-specific operations
+    toolBox,
+
     // Chat state and operations
     isRunning,
 
     attachedFiles,
     mentionData,
     autoApprove,
+    composerPlaceholder,
 
     addToolResult,
     setAutoApprove,
@@ -148,12 +112,6 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
     handleStarterClick,
     handleLoadChat,
     hasRevertState,
-
-    // Agent tool operations (now directly from consolidated hook)
-    addToolsToMcp,
-    removeMcpTool,
-    removeAllMcpTools,
-    listMcpTools,
   };
 
   return (

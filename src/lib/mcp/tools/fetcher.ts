@@ -13,7 +13,18 @@ import { getExternalMcpOverrides } from "./persistence";
  * @returns A promise that resolves to an array of MCP tools
  */
 export async function getMcpTools(mcpId: string): Promise<Tool[]> {
-  const serverState = runningMcpServers[mcpId];
+  let serverState = runningMcpServers[mcpId];
+
+  if (!serverState) {
+    // Maybe the mcpId is actually the name of an MCP
+    const mcps = await mcpDb.listMcps();
+    const mcp = mcps.find((mcp) => mcp.name === mcpId);
+    if (mcp) {
+      mcpId = mcp.id;
+      serverState = runningMcpServers[mcpId];
+    }
+  }
+
   if (!serverState) {
     throw new Error(`MCP server with ID ${mcpId} not found`);
   }

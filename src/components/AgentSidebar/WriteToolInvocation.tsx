@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { ToolInvocation as AIToolInvocation } from "ai";
 import { Wrench, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,53 +19,21 @@ interface WriteToolInvocationProps {
 export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
   toolInvocation,
 }) => {
+  const processedRef = useRef(false);
   const [loading, setLoading] = useState(false);
-  const {
-    addToolsToMcp,
-    removeMcpTool,
-    removeAllMcpTools,
-    addToolResult,
-    optimiseToolSize,
-    autoApprove,
-  } = useAgentContext();
+  const { toolBox, addToolResult, autoApprove } = useAgentContext();
 
-  const handleApprove = async () => {
-    if (loading) {
+  const handleApprove = useCallback(async () => {
+    if (processedRef.current) {
       return;
     }
 
     setLoading(true);
+    processedRef.current = true;
+
     try {
-      let result;
-
-      // Execute the appropriate tool based on the tool name
-      switch (toolInvocation.toolName) {
-        case "addTools": {
-          result = await addToolsToMcp(toolInvocation.args.selectedEndpoints);
-          break;
-        }
-
-        case "optimiseToolSize": {
-          result = await optimiseToolSize(toolInvocation.args);
-          break;
-        }
-
-        case "removeMcpTool": {
-          result = await removeMcpTool(
-            toolInvocation.args.apiId,
-            toolInvocation.args.toolName,
-          );
-          break;
-        }
-
-        case "removeAllTools": {
-          result = await removeAllMcpTools(toolInvocation.args.apiId);
-          break;
-        }
-
-        default:
-          throw new Error(`Unknown tool: ${toolInvocation.toolName}`);
-      }
+      // Delegate to the tool agent
+      const result = await toolBox.executeWriteTool(toolInvocation);
 
       addToolResult({
         toolCallId: toolInvocation.toolCallId,
@@ -83,10 +51,14 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [toolBox, toolInvocation, addToolResult]);
 
-  const handleReject = () => {
-    if (!addToolResult) return;
+  const handleReject = useCallback(() => {
+    if (processedRef.current) {
+      return;
+    }
+
+    processedRef.current = true;
     addToolResult({
       toolCallId: toolInvocation.toolCallId,
       result: {
@@ -94,14 +66,53 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
         message: "Tool execution was denied by the user",
       },
     });
-  };
+  }, [addToolResult, toolInvocation.toolCallId]);
 
-  // Auto-approve effect for when autoApprove is enabled
+  // GIGA HACK: Keep a ref to the latest addToolResult function to work around race conditions
+  // Sometimes executing tools instantly breaks chat status from "submitted" to "ready"
+  // allegedly because of a stale addToolResult function being called
+  const addToolResultRef = useRef(addToolResult);
+  addToolResultRef.current = addToolResult;
+
+  // Auto-approve write tools when autoApprove is enabled (with 500ms delay)
+  // The delay is a workaround to ensure we get the fresh addToolResult function
   useEffect(() => {
-    if (autoApprove && toolInvocation.state === "call" && !loading) {
-      handleApprove();
+    if (toolInvocation.state === "call" && autoApprove) {
+      const timeoutId = setTimeout(() => {
+        if (processedRef.current) {
+          return;
+        }
+
+        setLoading(true);
+        processedRef.current = true;
+
+        (async () => {
+          try {
+            // Delegate to the tool agent
+            const result = await toolBox.executeWriteTool(toolInvocation);
+
+            addToolResultRef.current({
+              toolCallId: toolInvocation.toolCallId,
+              result,
+            });
+          } catch (error) {
+            console.error("Error executing tool:", error);
+            addToolResultRef.current({
+              toolCallId: toolInvocation.toolCallId,
+              result: {
+                success: false,
+                message: error instanceof Error ? error.message : String(error),
+              },
+            });
+          } finally {
+            setLoading(false);
+          }
+        })();
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [autoApprove, toolInvocation.state, loading]);
+  }, [toolInvocation.state, autoApprove, toolBox, toolInvocation]);
 
   const renderStatusBadge = () => {
     switch (toolInvocation.state) {

@@ -17,6 +17,7 @@ import { extractMentions } from "@/components/CodeEditor";
 import { AttachmentsDisplay } from "./AttachmentsDisplay";
 import { useAgentContext } from "./AgentContext";
 import { cn } from "@/utils/tailwind";
+import { Loader } from "../Loader";
 
 interface MessageComposerProps {
   className?: string;
@@ -28,6 +29,7 @@ export function MessageComposer({ className }: MessageComposerProps) {
     onStopAgent,
     isRunning,
     attachedFiles,
+    composerPlaceholder,
     onRemoveFile,
     onClearAttachments,
     mentionData,
@@ -145,7 +147,7 @@ export function MessageComposer({ className }: MessageComposerProps) {
 
   const extensions: Extension[] = useMemo(
     () => [
-      placeholder("Add, improve and manage MCP tools."),
+      placeholder(composerPlaceholder),
       keymap.of([
         {
           key: "Enter",
@@ -156,7 +158,7 @@ export function MessageComposer({ className }: MessageComposerProps) {
         },
       ]),
     ],
-    [handleAddMessage],
+    [handleAddMessage, composerPlaceholder],
   );
 
   return (
@@ -189,7 +191,14 @@ export function MessageComposer({ className }: MessageComposerProps) {
       />
 
       <div className="mt-auto flex items-center justify-between pt-2">
-        <div></div>
+        <div className="flex items-center gap-2">
+          {isRunning && (
+            <>
+              <Loader />
+              <span className="text-muted-foreground text-xs">Running...</span>
+            </>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <AutoButton
             isEnabled={autoApprove}

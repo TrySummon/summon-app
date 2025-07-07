@@ -1,21 +1,32 @@
 import React from "react";
-import { FileText, Image, X, Wrench, Server } from "lucide-react";
+import {
+  FileText,
+  Image,
+  X,
+  Wrench,
+  Server,
+  Database,
+  Dot,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/utils/tailwind";
 import { Button } from "./ui/button";
+import McpIcon from "./icons/mcp";
 
 export interface MentionPillProps {
   text: string;
-  type: "image" | "file" | "tool" | "api";
+  type: "image" | "file" | "tool" | "api" | "mcp" | "dataset" | "dataset-item";
   onDelete?: () => void;
   className?: string;
 }
 
 // Utility function to determine MentionPill type from contentType
-export function getFileTypeFromContentType(
-  contentType?: string,
-): "image" | "file" | "api" {
+export function getFileTypeFromContentType(contentType?: string) {
   if (contentType === "application/x-summon-api") return "api";
+  if (contentType === "application/x-summon-dataset") return "dataset";
+  if (contentType === "application/x-summon-dataset-item")
+    return "dataset-item";
+
   if (contentType?.startsWith("image/")) return "image";
   return "file";
 }
@@ -33,6 +44,15 @@ const typeConfig = {
   tool: {
     icon: Wrench,
   },
+  dataset: {
+    icon: Database,
+  },
+  mcp: {
+    icon: McpIcon,
+  },
+  "dataset-item": {
+    icon: Dot,
+  },
 };
 
 export function MentionPill({
@@ -45,6 +65,7 @@ export function MentionPill({
   const Icon = config.icon;
 
   text = text.startsWith("@") ? text.slice(1) : text;
+  text = text.startsWith(`${type}:`) ? text.slice(type.length + 1) : text;
 
   return (
     <Badge

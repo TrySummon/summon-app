@@ -53,7 +53,7 @@ export const DatasetsTable: React.FC<DatasetsTableProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const navigate = useNavigate();
 
   const filteredDatasets = datasets.filter((dataset) => {
@@ -87,9 +87,9 @@ export const DatasetsTable: React.FC<DatasetsTableProps> = ({
   return (
     <Card className="flex-grow border-none shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-4">
-            <div className="relative flex w-80">
+            <div className="relative flex max-w-80 flex-grow">
               <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
               <Input
                 placeholder="Search datasets..."
@@ -203,7 +203,7 @@ export const DatasetsTable: React.FC<DatasetsTableProps> = ({
                 value={itemsPerPage.toString()}
                 onValueChange={handleItemsPerPageChange}
               >
-                <SelectTrigger className="w-16">
+                <SelectTrigger className="w-fit">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

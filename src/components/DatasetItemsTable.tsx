@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -31,10 +31,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { formatDate } from "@/utils/formatDate";
 import { JsonCellDisplay } from "@/components/JsonCellDisplay";
 import { Loader } from "./Loader";
+import { useDatasets } from "@/hooks/useDatasets";
+import { toast } from "sonner";
 
 interface DatasetItemsTableProps {
   items: DatasetItem[];
@@ -47,9 +49,12 @@ export const DatasetItemsTable: React.FC<DatasetItemsTableProps> = ({
   isLoading,
   onSelectItem,
 }) => {
+  const navigate = useNavigate();
+  const { datasetId } = useParams({ from: "/datasets/$datasetId" });
+  const { deleteDataset } = useDatasets();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   const getInputMessages = (item: DatasetItem) => {
     const cutPosition = item.inputOutputCutPosition ?? item.messages.length;
@@ -91,12 +96,41 @@ export const DatasetItemsTable: React.FC<DatasetItemsTableProps> = ({
     setCurrentPage(1);
   };
 
+  const handleItemClick = (item: DatasetItem) => {
+    if (onSelectItem) {
+      onSelectItem(item);
+    } else {
+      navigate({
+        to: "/datasets/$datasetId/item/$itemId",
+        params: { datasetId, itemId: item.id },
+      });
+    }
+  };
+
+  const handleDeleteDataset = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete this dataset? This action cannot be undone and will delete all items in this dataset.`,
+    );
+    if (!confirmed) return;
+
+    await toast.promise(deleteDataset(datasetId), {
+      loading: `Deleting dataset...`,
+      success: () => {
+        navigate({ to: "/datasets" });
+        return `Dataset deleted successfully`;
+      },
+      error: (error) => {
+        return error.message || "Failed to delete dataset";
+      },
+    });
+  };
+
   return (
     <Card className="flex-grow overflow-y-auto border-none shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-4">
-            <div className="relative flex w-80">
+            <div className="relative flex max-w-80 flex-grow">
               <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
               <Input
                 placeholder="Search items..."
@@ -106,19 +140,29 @@ export const DatasetItemsTable: React.FC<DatasetItemsTableProps> = ({
               />
             </div>
           </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link to="/playground">
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Item
-                </Button>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>
-              Items are created from real conversations in the playground
-            </TooltipContent>
-          </Tooltip>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleDeleteDataset}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Dataset
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link to="/playground">
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Item
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                Items are created from real conversations in the playground
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-grow flex-col">
@@ -136,7 +180,7 @@ export const DatasetItemsTable: React.FC<DatasetItemsTableProps> = ({
           </div>
         ) : (
           <div className="flex flex-grow flex-col overflow-auto">
-            <div className="min-w-full overflow-x-auto">
+            <div className="h-full min-w-full overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -154,7 +198,7 @@ export const DatasetItemsTable: React.FC<DatasetItemsTableProps> = ({
                     <TableRow
                       key={item.id}
                       className="hover:bg-muted/50 cursor-pointer"
-                      onClick={() => onSelectItem?.(item)}
+                      onClick={() => handleItemClick(item)}
                     >
                       <TableCell className="max-w-[300px] min-w-[200px]">
                         <div className="truncate font-medium">{item.name}</div>
@@ -201,7 +245,7 @@ export const DatasetItemsTable: React.FC<DatasetItemsTableProps> = ({
                 value={itemsPerPage.toString()}
                 onValueChange={handleItemsPerPageChange}
               >
-                <SelectTrigger className="w-16">
+                <SelectTrigger className="w-fit">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

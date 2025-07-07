@@ -9,6 +9,8 @@ import { mcpDb } from "@/lib/db/mcp-db";
 import { calculateTokenCount } from "@/lib/tiktoken";
 import { toHyphenCase } from "@/lib/string";
 import { ensureDirectoryExists } from "@/lib/file";
+import { datasetDb } from "@/lib/db/dataset-db";
+import log from "electron-log/main";
 
 /**
  * Get the directory for external MCP implementations
@@ -53,11 +55,102 @@ export async function getExternalMcpToolOverridePath(
 }
 
 /**
+ * Update expected tool calls in dataset items when a tool name changes
+ */
+async function updateExpectedToolCallsInDatasets(
+  oldToolName: string,
+  newToolName: string,
+): Promise<void> {
+  try {
+    if (oldToolName === newToolName) {
+      return; // No change needed
+    }
+
+    const datasets = await datasetDb.listDatasets();
+    let updatedCount = 0;
+
+    for (const dataset of datasets) {
+      for (const item of dataset.items) {
+        if (
+          item.expectedToolCalls &&
+          item.expectedToolCalls.includes(oldToolName)
+        ) {
+          // Replace old tool name with new tool name
+          const updatedExpectedToolCalls = item.expectedToolCalls.map(
+            (toolName) => (toolName === oldToolName ? newToolName : toolName),
+          );
+
+          // Update the item in the database
+          await datasetDb.updateItem(dataset.id, item.id, {
+            expectedToolCalls: updatedExpectedToolCalls,
+          });
+
+          updatedCount++;
+        }
+      }
+    }
+
+    log.info(
+      `Updated ${updatedCount} dataset items with new tool name: ${oldToolName} -> ${newToolName}`,
+    );
+  } catch (error) {
+    log.error("Error updating expected tool calls in datasets:", error);
+  }
+}
+
+/**
+ * Get the current tool name for an external MCP tool
+ */
+async function getCurrentExternalToolName(
+  mcpId: string,
+  originalToolName: string,
+): Promise<string> {
+  const existingOverride = await getExternalMcpToolOverride(
+    mcpId,
+    originalToolName,
+  );
+  return existingOverride?.definition.name || originalToolName;
+}
+
+/**
+ * Get the current tool name for a summon MCP tool
+ */
+async function getCurrentSummonToolName(
+  mcpId: string,
+  apiId: string,
+  originalToolName: string,
+): Promise<string> {
+  const mcpData = await mcpDb.getMcpById(mcpId, true);
+  if (!mcpData) {
+    throw new Error("MCP not found");
+  }
+
+  const apiGroup = mcpData.apiGroups[apiId];
+  if (!apiGroup) {
+    throw new Error("API group not found");
+  }
+
+  const tool = apiGroup.tools?.find((t) => t.name === originalToolName);
+  if (!tool) {
+    throw new Error("Tool not found");
+  }
+
+  const toolName = tool.optimised?.name || tool.name;
+  return (apiGroup.toolPrefix || "") + toolName;
+}
+
+/**
  * Override an external MCP tool definition
  */
 export async function overrideExternalMcpTool(
   override: ExternalToolOverride,
 ): Promise<string> {
+  // Get the current tool name before updating
+  const currentToolName = await getCurrentExternalToolName(
+    override.mcpId,
+    override.originalToolName,
+  );
+
   // Check if there's already an override with the same tool name
   const existingOverrides = await getExternalMcpOverrides(override.mcpId);
   const duplicateOverride = Object.values(existingOverrides).find(
@@ -89,7 +182,12 @@ export async function overrideExternalMcpTool(
     mainWindow.webContents.send(EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL, null);
   }
 
-  return override.definition.name;
+  const newToolName = override.definition.name;
+
+  // Update expected tool calls in datasets
+  await updateExpectedToolCallsInDatasets(currentToolName, newToolName);
+
+  return newToolName;
 }
 
 /**
@@ -155,6 +253,13 @@ export async function getExternalMcpToolOverride(
 export const updateSummonMcpTool = async (tool: SummonTool) => {
   if (!tool.apiId) throw new Error("Tool has no apiId");
 
+  // Get the current tool name before updating
+  const currentToolName = await getCurrentSummonToolName(
+    tool.mcpId,
+    tool.apiId,
+    tool.originalToolName,
+  );
+
   const mcpData = await mcpDb.getMcpById(tool.mcpId, true);
 
   if (!mcpData) throw new Error("MCP not found");
@@ -215,7 +320,12 @@ export const updateSummonMcpTool = async (tool: SummonTool) => {
   await generateMcpImpl(tool.mcpId);
   await restartMcpServer(tool.mcpId);
 
-  return (apiGroup.toolPrefix || "") + tool.definition.name;
+  const newToolName = (apiGroup.toolPrefix || "") + tool.definition.name;
+
+  // Update expected tool calls in datasets
+  await updateExpectedToolCallsInDatasets(currentToolName, newToolName);
+
+  return newToolName;
 };
 
 export const updateMcpTool = async (tool: SummonTool) => {
@@ -228,6 +338,14 @@ export const updateMcpTool = async (tool: SummonTool) => {
 
 export const revertSummonMcpTool = async (tool: SummonToolRef) => {
   if (!tool.apiId) throw new Error("Tool has no apiId");
+
+  // Get the current tool name before reverting
+  const currentToolName = await getCurrentSummonToolName(
+    tool.mcpId,
+    tool.apiId,
+    tool.originalToolName,
+  );
+
   const mcpData = await mcpDb.getMcpById(tool.mcpId, true);
   if (!mcpData) throw new Error("MCP not found");
 
@@ -273,10 +391,21 @@ export const revertSummonMcpTool = async (tool: SummonToolRef) => {
   await generateMcpImpl(tool.mcpId);
   await restartMcpServer(tool.mcpId);
 
-  return (apiGroup.toolPrefix || "") + tool.originalToolName;
+  const newToolName = (apiGroup.toolPrefix || "") + tool.originalToolName;
+
+  // Update expected tool calls in datasets
+  await updateExpectedToolCallsInDatasets(currentToolName, newToolName);
+
+  return newToolName;
 };
 
 export const revertExternalMcpTool = async (tool: SummonToolRef) => {
+  // Get the current tool name before reverting
+  const currentToolName = await getCurrentExternalToolName(
+    tool.mcpId,
+    tool.originalToolName,
+  );
+
   const toolPath = await getExternalMcpToolOverridePath(
     tool.mcpId,
     tool.originalToolName,
@@ -289,7 +418,12 @@ export const revertExternalMcpTool = async (tool: SummonToolRef) => {
     mainWindow.webContents.send(EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL, null);
   }
 
-  return tool.originalToolName;
+  const newToolName = tool.originalToolName;
+
+  // Update expected tool calls in datasets
+  await updateExpectedToolCallsInDatasets(currentToolName, newToolName);
+
+  return newToolName;
 };
 
 export const revertMcpTool = async (tool: SummonToolRef) => {

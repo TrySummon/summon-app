@@ -77,11 +77,14 @@ const Markdown = ({
   const mentionRegex = useMemo(() => {
     if (!mentionData || mentionData.length === 0) return null;
 
-    const mentionNames = mentionData
-      .map((item) => item.name.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&"))
+    const mentionPatterns = mentionData
+      .map((item) => {
+        const escapedName = item.name.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&");
+        return `@(${item.type}:${escapedName}|${escapedName})`;
+      })
       .sort((a, b) => b.length - a.length);
 
-    return new RegExp(`@(${mentionNames.join("|")})`, "g");
+    return new RegExp(`${mentionPatterns.join("|")}`, "g");
   }, [mentionData]);
 
   // Function to render text with inline mentions
@@ -107,7 +110,7 @@ const Markdown = ({
       // Add the mention with inline styling (matching CodeMirror editor style)
       parts.push(
         <span
-          key={`${match[1]}-${match.index}`}
+          key={`${match[0]}-${match.index}`}
           className="bg-muted text-primary rounded-sm px-0.5 font-semibold"
         >
           {match[0]}
@@ -134,7 +137,7 @@ const Markdown = ({
             return (
               <code
                 {...omit(props, ["node"])}
-                className={`bg-muted relative rounded px-[0.3rem] py-[0.2rem] font-mono ${sizeClasses.code} font-semibold`}
+                className={`bg-sidebar-accent/60 relative rounded px-[0.2rem] py-[0.1rem] font-mono ${sizeClasses.code} font-semibold`}
               />
             );
           },
