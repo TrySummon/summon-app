@@ -74,7 +74,7 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
   const addToolResultRef = useRef(addToolResult);
   addToolResultRef.current = addToolResult;
 
-  // Auto-approve write tools when autoApprove is enabled (with 500ms delay)
+  // Auto-approve write tools when autoApprove is enabled (with 1000ms delay)
   // The delay is a workaround to ensure we get the fresh addToolResult function
   useEffect(() => {
     if (toolInvocation.state === "call" && autoApprove) {
@@ -108,7 +108,7 @@ export const WriteToolInvocation: React.FC<WriteToolInvocationProps> = ({
             setLoading(false);
           }
         })();
-      }, 500);
+      }, 1000);
 
       return () => clearTimeout(timeoutId);
     }

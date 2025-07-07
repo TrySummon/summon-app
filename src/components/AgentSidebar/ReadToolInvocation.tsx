@@ -43,7 +43,7 @@ export const ReadToolInvocation: React.FC<ReadToolInvocationProps> = ({
   const addToolResultRef = useRef(addToolResult);
   addToolResultRef.current = addToolResult;
 
-  // Auto-approve read tools with 500ms delay
+  // Auto-approve read tools with 0ms delay
   // The delay is a workaround to ensure we get the fresh addToolResult function
   useEffect(() => {
     if (toolInvocation.state === "call") {
@@ -77,7 +77,7 @@ export const ReadToolInvocation: React.FC<ReadToolInvocationProps> = ({
             setIsError(true);
           }
         })();
-      }, 500);
+      }, 0);
 
       return () => clearTimeout(timeoutId);
     }
