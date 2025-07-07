@@ -137,7 +137,7 @@ const Markdown = ({
             return (
               <code
                 {...omit(props, ["node"])}
-                className={`bg-sidebar-accent relative rounded px-[0.2rem] py-[0.1rem] font-mono ${sizeClasses.code} font-semibold`}
+                className={`bg-sidebar-accent/60 relative rounded px-[0.2rem] py-[0.1rem] font-mono ${sizeClasses.code} font-semibold`}
               />
             );
           },
