@@ -1,8 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { ToolInvocation as AIToolInvocation } from "ai";
 import { ReadToolInvocation } from "./ReadToolInvocation";
 import { WriteToolInvocation } from "./WriteToolInvocation";
-import { getToolClassification } from "./toolClassification";
 import { useAgentContext } from "./AgentContext";
 
 // New wrapper component that decides which tool component to render
@@ -13,12 +12,21 @@ interface ToolInvocationProps {
 export const ToolInvocation: React.FC<ToolInvocationProps> = ({
   toolInvocation,
 }) => {
-  const { addToolResult } = useAgentContext();
-  const toolClassification = getToolClassification(toolInvocation.toolName);
+  const { toolBox, addToolResult } = useAgentContext();
+  const processedRef = useRef(false);
+  const toolClassification = toolBox.getToolClassification(
+    toolInvocation.toolName,
+  );
 
   // Auto-reject unrecognized tools
   useEffect(() => {
-    if (!toolClassification && toolInvocation.state === "call") {
+    if (
+      !toolClassification &&
+      toolInvocation.state === "call" &&
+      !processedRef.current
+    ) {
+      processedRef.current = true;
+      console.error(`Unrecognized tool: ${toolInvocation.toolName}`);
       addToolResult({
         toolCallId: toolInvocation.toolCallId,
         result: {
@@ -37,10 +45,8 @@ export const ToolInvocation: React.FC<ToolInvocationProps> = ({
 
   if (!toolClassification) {
     return (
-      <div className="border-b p-1">
-        <div className="text-xs text-red-600">
-          Unrecognized tool: {toolInvocation.toolName}
-        </div>
+      <div className="text-xs text-red-600">
+        Unrecognized tool: {toolInvocation.toolName}
       </div>
     );
   }

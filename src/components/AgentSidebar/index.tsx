@@ -14,31 +14,64 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/button";
 import { AlertCircle, Plus, Upload } from "lucide-react";
 import { useDropzone } from "react-dropzone";
-import { useCallback, useState, useMemo, useRef, useEffect } from "react";
-import { McpData } from "@/lib/db/mcp-db";
-import { importApi } from "@/ipc/openapi/openapi-client";
+import { useCallback, useState, useRef, useEffect } from "react";
 import { SignInDialog } from "@/components/SignInDialog";
 import { Attachment, Message } from "ai";
-import { useMcp, useMcps } from "@/hooks/useMcps";
 import { AgentProvider } from "./AgentContext";
-import { useApis } from "@/hooks/useApis";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { useAgentChats } from "@/stores/agentChatsStore";
 import { toast } from "sonner";
 import { MentionData } from "@/components/CodeEditor";
+import { AgentToolBox } from "@/types/agent";
 
-interface Props {
-  mcpId: string;
+interface AgentSidebarProps {
+  // Agent configuration
+  agentId: string;
+  apiPath: string;
+  toolBox: AgentToolBox;
+  composerPlaceholder: string;
+
+  // Chat configuration
   defaultChatId?: string;
-  onChatIdChange?: (mcpId: string, chatId: string | undefined) => void;
+  onChatIdChange?: (agentId: string, chatId: string | undefined) => void;
+
+  // Agent-specific data and handlers
+  mentionData: MentionData[];
+  additionalAttachments?: Attachment[];
+  processFile?: (file: File) => Promise<Attachment | null>;
+  onRevert?: (messageId: string) => void;
+  hasRevertState?: (messageId: string) => boolean;
+
+  // File drop configuration
+  acceptedFileTypes?: Record<string, string[]>;
+
+  // Custom UI elements
+  chatNamePrefix?: string;
 }
 
-export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
+export function AgentSidebar({
+  agentId,
+  apiPath,
+  toolBox,
+  composerPlaceholder,
+  defaultChatId,
+  onChatIdChange,
+  mentionData,
+  additionalAttachments,
+  processFile,
+  onRevert,
+  hasRevertState,
+  acceptedFileTypes = {
+    "application/json": [".json"],
+    "text/yaml": [".yaml"],
+    "text/plain": [".txt"],
+    "text/markdown": [".md"],
+    "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
+  },
+  chatNamePrefix = "New Chat",
+}: AgentSidebarProps) {
   const { token, isAuthenticated } = useAuth();
-  const { apis, refetch: refetchApis } = useApis();
-  const { mcp } = useMcp(mcpId);
-
-  const { createChat, updateChat, getChat } = useAgentChats(mcpId);
+  const { createChat, updateChat, getChat } = useAgentChats(agentId);
 
   // Local state for current chat ID
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(
@@ -55,7 +88,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
     addToolResult,
     reload,
   } = useChat({
-    api: `${process.env.PUBLIC_SUMMON_HOST}/api/agent`,
+    api: `${process.env.PUBLIC_SUMMON_HOST}${apiPath}`,
     headers: token
       ? {
           Authorization: `Bearer ${token}`,
@@ -78,17 +111,21 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
       : {},
   });
 
-  const { updateMcp } = useMcps();
   const [attachedFiles, setAttachedFiles] = useState<Attachment[]>([]);
   const [showSignInDialog, setShowSignInDialog] = useState(false);
   const [autoApprove, setAutoApprove] = useState(false);
   const scrollableContentRef = useRef<ScrollableContentRef>(null);
-  const mcpVersionsRef = useRef<Record<string, McpData>>({});
   const [currentChatName, setCurrentChatName] = useState<string | undefined>(
-    "New Chat",
+    chatNamePrefix,
   );
 
-  // Load default chat when defaultChatId changes (including MCP switches)
+  useEffect(() => {
+    if (additionalAttachments) {
+      setAttachedFiles(additionalAttachments);
+    }
+  }, [additionalAttachments]);
+
+  // Load default chat when defaultChatId changes
   useEffect(() => {
     if (defaultChatId) {
       const chat = getChat(defaultChatId);
@@ -101,15 +138,13 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
       // No default chat, reset to new chat state
       setCurrentChatId(undefined);
       setMessages([]);
-      setCurrentChatName("New Chat");
-      // Clear attachments when switching MCPs
+      setCurrentChatName(chatNamePrefix);
+      // Clear attachments when switching agents
       setAttachedFiles([]);
-      // Clear revert states
-      mcpVersionsRef.current = {};
       // Clear name generation messages
       setNameMessages([]);
     }
-  }, [defaultChatId, getChat, setMessages, setNameMessages]);
+  }, [defaultChatId, getChat, setMessages, setNameMessages, chatNamePrefix]);
 
   // Handle conversation name generation
   useEffect(() => {
@@ -132,111 +167,39 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
     }
   }, [nameMessages, currentChatId, setCurrentChatName, updateChat]);
 
-  const mentionData = useMemo(() => {
-    const data: MentionData[] = [];
-
-    // 1. MCP Tools
-    if (mcp?.apiGroups) {
-      for (const group of Object.values(mcp.apiGroups)) {
-        if (group.tools) {
-          for (const tool of group.tools) {
-            data.push({
-              id: `mcp-tool-${tool.name}`,
-              name: tool?.optimised?.name || tool.name,
-              type: "tool",
-            });
-          }
-        }
-      }
-    }
-
-    // 2. APIs and their endpoints
-    if (apis) {
-      apis.forEach(({ id: apiId }) => {
-        // Add API itself
-        data.push({
-          id: `api-${apiId}`,
-          name: apiId,
-          type: "api",
-        });
-      });
-    }
-
-    return data;
-  }, [mcp, apis]);
-
   const isRunning = status === "streaming" || status === "submitted";
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       acceptedFiles.forEach(async (file) => {
-        let apiId: string | null = null;
+        const attachment = await processFile?.(file);
 
-        // Check if it's a JSON file and try to import as OpenAPI spec
-        if (file.type === "application/json" || file.name.endsWith(".json")) {
-          try {
-            const result = await importApi(file);
-            if (result.success) {
-              // Refresh the APIs list to update mentions
-              refetchApis();
-              apiId = result.apiId ?? null;
-            }
-          } catch (error) {
-            // If import fails, treat as regular file attachment
-            console.error(
-              `Failed to import ${file.name} as OpenAPI spec:`,
-              error,
-            );
-          }
-        }
-
-        // If successfully imported as API, create API attachment
-        if (apiId) {
-          const apiContent = `User uploaded OpenAPI spec for API with ID: ${apiId}`;
-          const dataUrl = `data:text/plain;base64,${btoa(apiContent)}`;
-
-          const newFile: Attachment = {
-            name: apiId,
-            contentType: "application/x-summon-api",
-            url: dataUrl,
-          };
-          setAttachedFiles((prev) => [...prev, newFile]);
+        if (attachment) {
+          setAttachedFiles((prev) => [...prev, attachment]);
           return;
         }
 
-        // Handle file attachments (images and other files)
         const reader = new FileReader();
-        reader.onabort = () => console.info("file reading was aborted");
-        reader.onerror = () => console.error("file reading has failed");
         reader.onload = () => {
           const content = reader.result as string;
-
           const newFile: Attachment = {
             name: file.name,
             contentType: file.type || "application/octet-stream",
             url: content,
           };
-
           setAttachedFiles((prev) => [...prev, newFile]);
         };
-
         reader.readAsDataURL(file);
       });
     },
-    [refetchApis],
+    [processFile],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     noClick: true,
     noKeyboard: true,
-    accept: {
-      "application/json": [".json"],
-      "text/yaml": [".yaml"],
-      "text/plain": [".txt"],
-      "text/markdown": [".md"],
-      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
-    },
+    accept: acceptedFileTypes,
   });
 
   const handleRemoveFile = useCallback((fileId: string) => {
@@ -251,13 +214,11 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
     setMessages([]);
     setAttachedFiles([]);
     setCurrentChatId(undefined);
-    // Clear revert states when starting a new chat
-    mcpVersionsRef.current = {};
     // Clear name generation messages
     setNameMessages([]);
-    setCurrentChatName("New Chat");
-    onChatIdChange?.(mcpId, undefined);
-  }, [setMessages, setNameMessages, onChatIdChange, mcpId]);
+    setCurrentChatName(chatNamePrefix);
+    onChatIdChange?.(agentId, undefined);
+  }, [setMessages, setNameMessages, onChatIdChange, agentId, chatNamePrefix]);
 
   // Save messages to current chat when they change
   useEffect(() => {
@@ -288,10 +249,6 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
         return false;
       }
 
-      if (!mcp) {
-        return false;
-      }
-
       if (isRunning) {
         toast.info(
           "Please wait for the agent to finish processing the previous message.",
@@ -307,12 +264,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
       if (!chatId) {
         chatId = createChat();
         setCurrentChatId(chatId);
-        onChatIdChange?.(mcpId, chatId);
-      }
-
-      // Store the current mcp state before sending the message
-      if (message.id) {
-        mcpVersionsRef.current[message.id] = mcp;
+        onChatIdChange?.(agentId, chatId);
       }
 
       append(message);
@@ -339,57 +291,39 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
       isAuthenticated,
       append,
       isRunning,
-      mcp,
       currentChatId,
       createChat,
       messages.length,
       setNameMessages,
       appendNameMessage,
       onChatIdChange,
-      mcpId,
+      agentId,
     ],
   );
 
   const handleRevert = useCallback(
     (messageId: string) => {
-      const storedMcp = mcpVersionsRef.current[messageId];
-      if (storedMcp) {
-        // Convert McpData to McpSubmitData by omitting id, createdAt, updatedAt
-        const mcpSubmitData = {
-          name: storedMcp.name,
-          transport: storedMcp.transport,
-          apiGroups: storedMcp.apiGroups,
-        };
-        updateMcp({
-          mcpId: storedMcp.id,
-          mcpData: mcpSubmitData,
-        });
-
-        // Remove all messages after the reverted message
-        setMessages((prevMessages) => {
-          const messageIndex = prevMessages.findIndex(
-            (msg) => msg.id === messageId,
-          );
-          if (messageIndex !== -1) {
-            return prevMessages.slice(0, messageIndex + 1);
-          }
-          return prevMessages;
-        });
-
-        // Clean up stored versions after revert
-        delete mcpVersionsRef.current[messageId];
+      if (onRevert) {
+        onRevert(messageId);
       }
+
+      // Remove all messages after the reverted message
+      setMessages((prevMessages) => {
+        const messageIndex = prevMessages.findIndex(
+          (msg) => msg.id === messageId,
+        );
+        if (messageIndex !== -1) {
+          return prevMessages.slice(0, messageIndex + 1);
+        }
+        return prevMessages;
+      });
     },
-    [updateMcp, setMessages],
+    [onRevert, setMessages],
   );
 
   const handleUpdateMessage = useCallback(
     (updatedMessage: Message) => {
-      if (!mcp) {
-        return;
-      }
-
-      // Remove the current message and all messages after it (since append will re-add the updated message)
+      // Remove the current message and all messages after it
       setMessages((prevMessages) => {
         const messageIndex = prevMessages.findIndex(
           (msg) => msg.id === updatedMessage.id,
@@ -400,10 +334,6 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
         return prevMessages;
       });
 
-      // Store the current mcp state before sending the message
-      if (updatedMessage.id) {
-        mcpVersionsRef.current[updatedMessage.id] = mcp;
-      }
       reload();
 
       // Scroll to show the updated message at top
@@ -411,37 +341,35 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
         scrollableContentRef.current?.scrollToLatestUserMessage();
       }, 0);
     },
-    [setMessages, mcp, reload],
+    [setMessages, reload],
   );
 
   const handleLoadChat = useCallback(
     (chatId: string, chatMessages: Message[]) => {
       setMessages(chatMessages);
       setCurrentChatId(chatId);
-      // Clear revert states when loading a different chat
-      mcpVersionsRef.current = {};
       // Clear name generation messages
       setNameMessages([]);
-      setCurrentChatName(getChat(chatId)?.name || "New Chat");
+      setCurrentChatName(getChat(chatId)?.name || chatNamePrefix);
       // Notify parent about chat change
-      onChatIdChange?.(mcpId, chatId);
+      onChatIdChange?.(agentId, chatId);
     },
-    [setMessages, setNameMessages, onChatIdChange, mcpId, getChat],
+    [
+      setMessages,
+      setNameMessages,
+      onChatIdChange,
+      agentId,
+      getChat,
+      chatNamePrefix,
+    ],
   );
 
-  // Function to check if a message has revert state available
-  const hasRevertState = useCallback((messageId: string): boolean => {
-    return messageId in mcpVersionsRef.current;
-  }, []);
-
-  if (!mcp) {
-    return null;
-  }
+  const defaultHasRevertState = useCallback(() => false, []);
 
   return (
     <AgentProvider
-      mcp={mcp}
-      onRefreshApis={refetchApis}
+      toolBox={toolBox}
+      composerPlaceholder={composerPlaceholder}
       isRunning={isRunning}
       attachedFiles={attachedFiles}
       mentionData={mentionData}
@@ -457,7 +385,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
       handleNewChat={handleNewChat}
       handleStarterClick={handleStarterClick}
       handleLoadChat={handleLoadChat}
-      hasRevertState={hasRevertState}
+      hasRevertState={hasRevertState || defaultHasRevertState}
     >
       <div {...getRootProps()} className="relative h-full">
         <input {...getInputProps()} />
@@ -473,7 +401,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
                     Drop files to attach
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    Images, JSON, TXT, and Markdown files supported
+                    Supported file types vary by agent
                   </p>
                 </div>
               </div>
@@ -503,7 +431,7 @@ export function AgentSidebar({ mcpId, defaultChatId, onChatIdChange }: Props) {
 
           <ScrollableContent
             ref={scrollableContentRef}
-            mcpId={mcpId}
+            mcpId={agentId}
             messages={messages}
             isRunning={isRunning}
           />

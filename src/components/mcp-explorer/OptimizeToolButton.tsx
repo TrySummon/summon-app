@@ -51,13 +51,13 @@ export function OptimizeToolButton({
         toolName: toolAnnotations.apiId ? toolAnnotations.id : toolName,
       }),
       {
-        loading: `Optimizing ${toolName}...`,
+        loading: `Simplifying ${toolName}...`,
         success: (result) => {
           refreshStatus();
           if (!result.success) throw new Error(result.message);
-          return result.message || `${toolName} optimized successfully!`;
+          return result.message || `${toolName} simplified successfully!`;
         },
-        error: (error) => error.message || `Failed to optimize ${toolName}`,
+        error: (error) => error.message || `Failed to simplify ${toolName}`,
         finally: () => {
           setIsOptimizing(false);
         },
@@ -76,13 +76,13 @@ export function OptimizeToolButton({
               className={`dark:text-blue-500" h-6 w-6 p-0 text-blue-600 opacity-0 transition-opacity group-hover:opacity-100 ${className}`}
               onClick={handleOptimize}
               disabled={isOptimizing}
-              title="Optimize tool"
+              title="Simplify tool"
             >
               <Sparkles className="h-3 w-3" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Optimize tool</p>
+            <p>Simplify tool</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

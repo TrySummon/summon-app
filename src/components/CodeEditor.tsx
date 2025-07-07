@@ -29,7 +29,7 @@ import {
 export interface MentionData {
   id: string;
   name: string;
-  type: "tool" | "api" | "file";
+  type: "tool" | "api" | "file" | "dataset" | "mcp";
   mcpId?: string;
   apiId?: string;
 }
@@ -37,7 +37,7 @@ export interface MentionData {
 export interface ExtractedMention {
   text: string;
   name: string;
-  type: "image" | "file" | "tool" | "api";
+  type: "image" | "file" | "tool" | "api" | "dataset" | "mcp";
   mcpId?: string;
   apiId?: string;
 }
@@ -50,35 +50,47 @@ export function extractMentions(
   if (mentionData.length === 0) {
     return [];
   }
-  // Create a regex that specifically matches the known mention names.
-  // Sort by length descending to ensure longer matches are tried first
-  // (prevents shorter substrings from matching when longer options exist)
-  const mentionNames = mentionData
-    .map((item) => ({
-      name: item.name,
-      escaped: item.name.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&"),
-    }))
-    .sort((a, b) => b.name.length - a.name.length)
-    .map((item) => item.escaped);
-  const mentionRegex = new RegExp(`@(${mentionNames.join("|")})`, "g");
+
+  const mentionRegex = createMentionRegex(mentionData);
+  if (!mentionRegex) {
+    return [];
+  }
 
   const mentionSet = new Set<string>();
   let match;
   // By creating a new RegExp object, we ensure the search starts from the beginning of the string every time.
   const regex = new RegExp(mentionRegex);
   while ((match = regex.exec(text))) {
-    mentionSet.add(match[1]); // `match[1]` is the captured group (the name)
+    mentionSet.add(match[1]); // `match[1]` is the captured group (the name or type:name)
   }
 
-  return Array.from(mentionSet).map((name) => {
-    const data = mentionData.find(
-      (item) => item.name.toLowerCase() === name.toLowerCase(),
-    );
+  return Array.from(mentionSet).map((nameOrPrefixed) => {
+    let name: string;
+    let type: string;
+    let data: MentionData | undefined;
+
+    if (nameOrPrefixed.includes(":")) {
+      // Prefixed format: type:name
+      const [prefixedType, prefixedName] = nameOrPrefixed.split(":", 2);
+      name = prefixedName;
+      type = prefixedType;
+      data = mentionData.find(
+        (item) =>
+          item.name.toLowerCase() === name.toLowerCase() && item.type === type,
+      );
+    } else {
+      // Non-prefixed format: just name
+      name = nameOrPrefixed;
+      data = mentionData.find(
+        (item) => item.name.toLowerCase() === name.toLowerCase(),
+      );
+      type = data?.type || "tool";
+    }
 
     return {
-      text: `@${name}`,
+      text: `@${nameOrPrefixed}`,
       name,
-      type: data?.type || "tool",
+      type: type as "image" | "file" | "tool" | "api" | "dataset" | "mcp",
       mcpId: data?.mcpId,
       apiId: data?.apiId,
     };
@@ -90,15 +102,41 @@ function createMentionRegex(mentionData: MentionData[]): RegExp | null {
   if (mentionData.length === 0) {
     return null;
   }
-  // Sort by length descending to ensure longer matches are tried first
-  const mentionNames = mentionData
-    .map((item) => ({
-      name: item.name,
-      escaped: item.name.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&"),
-    }))
-    .sort((a, b) => b.name.length - a.name.length)
-    .map((item) => item.escaped);
-  return new RegExp(`@(${mentionNames.join("|")})`, "g");
+
+  // Group by name to detect duplicates
+  const nameGroups = mentionData.reduce(
+    (acc, item) => {
+      if (!acc[item.name]) {
+        acc[item.name] = [];
+      }
+      acc[item.name].push(item);
+      return acc;
+    },
+    {} as Record<string, MentionData[]>,
+  );
+
+  // Create mention patterns
+  const mentionPatterns: string[] = [];
+
+  Object.entries(nameGroups).forEach(([name, items]) => {
+    const escapedName = name.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&");
+
+    if (items.length === 1) {
+      // No duplicates, just use the name
+      mentionPatterns.push(escapedName);
+    } else {
+      // Duplicates, create prefixed versions
+      items.forEach((item) => {
+        const escapedType = item.type.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&");
+        mentionPatterns.push(`${escapedType}:${escapedName}`);
+      });
+    }
+  });
+
+  // Sort by length descending
+  mentionPatterns.sort((a, b) => b.length - a.length);
+
+  return new RegExp(`@(${mentionPatterns.join("|")})`, "g");
 }
 
 // Autocomplete extension for mentions
@@ -109,73 +147,90 @@ function createMentionAutocompletion(mentionData: MentionData[]): Extension {
     optionClass: () => "custom-autocomplete-option",
     override: [
       (context: CompletionContext): CompletionResult | null => {
-        const match = context.matchBefore(/@[\w\s]*/);
+        const match = context.matchBefore(/@[\w\s:]*/);
         if (!match || (match.from === match.to && !context.explicit)) {
           return null;
         }
 
-        // Group mentions by type
-        const groupedMentions = mentionData.reduce(
+        // Group by name to detect duplicates
+        const nameGroups = mentionData.reduce(
           (acc, item) => {
-            const category =
-              item.type === "api"
-                ? "APIs"
-                : item.type === "tool"
-                  ? "Tools"
-                  : "Other";
-
-            if (!acc[category]) {
-              acc[category] = [];
+            if (!acc[item.name]) {
+              acc[item.name] = [];
             }
-            acc[category].push(item);
+            acc[item.name].push(item);
             return acc;
           },
-          {} as Record<string, typeof mentionData>,
+          {} as Record<string, MentionData[]>,
         );
 
-        // Create options with sections
+        // Create completion options
         const options: Completion[] = [];
 
-        // Add APIs first
-        if (groupedMentions.APIs) {
-          options.push(
-            ...groupedMentions.APIs.map((item) => ({
+        Object.entries(nameGroups).forEach(([, items]) => {
+          if (items.length === 1) {
+            // No duplicates, use regular name
+            const item = items[0];
+            const boost =
+              item.type === "api"
+                ? 100
+                : item.type === "tool"
+                  ? 90
+                  : item.type === "mcp"
+                    ? 80
+                    : item.type === "dataset"
+                      ? 70
+                      : item.type === "file"
+                        ? 60
+                        : 10;
+
+            options.push({
               label: `@${item.name}`,
               displayLabel: item.name,
               type: "variable",
               apply: `@${item.name} `,
-              detail: "API",
-              boost: 100,
-            })),
-          );
-        }
+              detail: item.type.toUpperCase(),
+              boost,
+            });
+          } else {
+            // Duplicates, use prefixed names
+            items.forEach((item) => {
+              const boost =
+                item.type === "api"
+                  ? 100
+                  : item.type === "tool"
+                    ? 90
+                    : item.type === "mcp"
+                      ? 80
+                      : item.type === "dataset"
+                        ? 70
+                        : item.type === "file"
+                          ? 60
+                          : 10;
 
-        // Then add Tools
-        if (groupedMentions.Tools) {
-          options.push(
-            ...groupedMentions.Tools.map((item) => ({
-              label: `@${item.name}`,
-              displayLabel: item.name,
-              type: "variable",
-              apply: `@${item.name} `,
-              detail: "Tool",
-              boost: 50,
-            })),
-          );
-        }
+              options.push({
+                label: `@${item.type}:${item.name}`,
+                displayLabel: `${item.type}:${item.name}`,
+                type: "variable",
+                apply: `@${item.type}:${item.name} `,
+                detail: item.type.toUpperCase(),
+                boost,
+              });
+            });
+          }
+        });
 
-        // Finally add Other category if it exists
-        if (groupedMentions.Other) {
-          options.push(
-            ...groupedMentions.Other.map((item) => ({
-              label: `@${item.name}`,
-              type: "variable",
-              apply: `@${item.name} `,
-              detail: "Other",
-              boost: 10,
-            })),
-          );
-        }
+        // Sort by boost and then by name
+        options.sort((a, b) => {
+          const aBoost = a.boost ?? 0;
+          const bBoost = b.boost ?? 0;
+          if (bBoost !== aBoost) {
+            return bBoost - aBoost;
+          }
+          const aDisplay = a.displayLabel ?? a.label;
+          const bDisplay = b.displayLabel ?? b.label;
+          return aDisplay.localeCompare(bDisplay);
+        });
 
         return {
           from: match.from,
@@ -249,19 +304,43 @@ function createMentionBackspaceHandler(
 
     const pos = selection.main.head;
     // Check for a mention immediately before the cursor
-    const textBefore = state.doc.sliceString(Math.max(0, pos - 50), pos);
-    // We use a non-global regex here to match only the end of the string
-    // Sort by length descending to ensure longer matches are tried first
-    const sortedMentionNames = mentionData
-      .map((item) => ({
-        name: item.name,
-        escaped: item.name.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&"),
-      }))
-      .sort((a, b) => b.name.length - a.name.length)
-      .map((item) => item.escaped);
-    const currentMentionRegex = new RegExp(
-      `@(${sortedMentionNames.join("|")})$`,
+    const textBefore = state.doc.sliceString(Math.max(0, pos - 100), pos);
+
+    // Create a regex that matches the same patterns as our mention regex but anchored at the end
+    // Group by name to detect duplicates
+    const nameGroups = mentionData.reduce(
+      (acc, item) => {
+        if (!acc[item.name]) {
+          acc[item.name] = [];
+        }
+        acc[item.name].push(item);
+        return acc;
+      },
+      {} as Record<string, MentionData[]>,
     );
+
+    // Create mention patterns
+    const mentionPatterns: string[] = [];
+
+    Object.entries(nameGroups).forEach(([name, items]) => {
+      const escapedName = name.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&");
+
+      if (items.length === 1) {
+        // No duplicates, just use the name
+        mentionPatterns.push(escapedName);
+      } else {
+        // Duplicates, create prefixed versions
+        items.forEach((item) => {
+          const escapedType = item.type.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&");
+          mentionPatterns.push(`${escapedType}:${escapedName}`);
+        });
+      }
+    });
+
+    // Sort by length descending
+    mentionPatterns.sort((a, b) => b.length - a.length);
+
+    const currentMentionRegex = new RegExp(`@(${mentionPatterns.join("|")})$`);
     const match = textBefore.match(currentMentionRegex);
 
     if (match) {

@@ -1,11 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import { ToolInvocation as AIToolInvocation } from "ai";
 import { cn } from "@/utils/tailwind";
 import { Eye } from "lucide-react";
-import {
-  searchApiEndpoints,
-  listApis,
-} from "@/ipc/agent-tools/agent-tools-client";
 import { useAgentContext } from "./AgentContext";
 import {
   Dialog,
@@ -35,81 +31,57 @@ export const ReadToolInvocation: React.FC<ReadToolInvocationProps> = ({
   doneText,
   errorText,
 }) => {
-  const { listMcpTools, addToolResult } = useAgentContext();
+  const { toolBox, addToolResult } = useAgentContext();
   const [isError, setIsError] = useState(false);
   const [tokenCount, setTokenCount] = useState(0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const processedRef = useRef(false);
 
-  const executeReadTool = useCallback(async () => {
-    try {
-      let result: {
-        success: boolean;
-        data?: unknown;
-        message?: string;
-        tokenCount?: number;
-      };
+  // GIGA HACK: Keep a ref to the latest addToolResult function to work around race conditions
+  // Sometimes executing tools instantly breaks chat status from "submitted" to "ready"
+  // allegedly because of a stale addToolResult function being called
+  const addToolResultRef = useRef(addToolResult);
+  addToolResultRef.current = addToolResult;
 
-      // Execute the appropriate read tool based on the tool name
-      switch (toolInvocation.toolName) {
-        case "listApis": {
-          result = await listApis();
-          break;
-        }
-
-        case "searchApiEndpoints": {
-          result = await searchApiEndpoints(toolInvocation.args);
-          break;
-        }
-
-        case "listMcpTools": {
-          result = await listMcpTools(toolInvocation.args.apiId);
-          break;
-        }
-
-        default:
-          throw new Error(`Unknown read tool: ${toolInvocation.toolName}`);
-      }
-
-      return result;
-    } catch (error) {
-      throw new Error(error instanceof Error ? error.message : String(error));
-    }
-  }, [toolInvocation, listMcpTools]);
-
-  // Auto-approve read tools immediately
+  // Auto-approve read tools with 500ms delay
+  // The delay is a workaround to ensure we get the fresh addToolResult function
   useEffect(() => {
-    if (
-      toolInvocation.state === "call" ||
-      toolInvocation.state === "partial-call"
-    ) {
-      executeReadTool()
-        .then((result) => {
-          addToolResult({
-            toolCallId: toolInvocation.toolCallId,
-            result: result,
-          });
-          if (result.tokenCount) {
-            setTokenCount(result.tokenCount);
+    if (toolInvocation.state === "call") {
+      const timeoutId = setTimeout(() => {
+        if (processedRef.current) {
+          return;
+        }
+        processedRef.current = true;
+
+        (async () => {
+          try {
+            const result = await toolBox.executeReadTool(toolInvocation);
+
+            addToolResultRef.current({
+              toolCallId: toolInvocation.toolCallId,
+              result: result,
+            });
+
+            if (result.tokenCount) {
+              setTokenCount(result.tokenCount);
+            }
+          } catch (error) {
+            console.error("Error executing read tool:", error);
+            addToolResultRef.current({
+              toolCallId: toolInvocation.toolCallId,
+              result: {
+                success: false,
+                message: error instanceof Error ? error.message : String(error),
+              },
+            });
+            setIsError(true);
           }
-        })
-        .catch((error) => {
-          addToolResult({
-            toolCallId: toolInvocation.toolCallId,
-            result: {
-              success: false,
-              message: error instanceof Error ? error.message : String(error),
-            },
-          });
-          setIsError(true);
-        });
+        })();
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [
-    toolInvocation.state,
-    toolInvocation.toolCallId,
-    executeReadTool,
-    addToolResult,
-    setIsError,
-  ]);
+  }, [toolInvocation.state, toolBox, toolInvocation]);
 
   const getDisplayText = () => {
     switch (toolInvocation.state) {

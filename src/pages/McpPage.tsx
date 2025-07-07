@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback } from "react";
 import { useParams } from "@tanstack/react-router";
 import { useMcp, useMcps } from "@/hooks/useMcps";
 import {
@@ -13,11 +13,11 @@ import { Link } from "@tanstack/react-router";
 import { Server } from "lucide-react";
 import { NotFound } from "@/components/ui/NotFound";
 import { McpExplorer } from "@/components/mcp-explorer";
-import { AgentSidebar } from "@/components/AgentSidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useApis } from "@/hooks/useApis";
 import { ApiConfigs } from "@/components/mcp-builder/api-config";
 import { useMcpActions } from "@/hooks/useMcpActions";
+import { McpBuilderAgentSidebar } from "@/components/mcp-builder/agent";
 
 export default function McpPage() {
   const { apis } = useApis();
@@ -26,27 +26,6 @@ export default function McpPage() {
   const { updateMcp } = useMcps();
   const { onAddEndpoints, onDeleteTool, onDeleteAllTools } =
     useMcpActions(mcpId);
-  // State for storing the current chat ID
-  const [currentChatId, setCurrentChatId] = useState<string | undefined>();
-
-  // Load the last visited chat for this MCP when mcpId changes
-  useEffect(() => {
-    const savedChatId = localStorage.getItem(`mcp-chat-${mcpId}`);
-    setCurrentChatId(savedChatId || undefined);
-  }, [mcpId]);
-
-  // Save chat ID to localStorage and update state
-  const handleChatIdChange = useCallback(
-    (mcpId: string, chatId: string | undefined) => {
-      if (chatId) {
-        localStorage.setItem(`mcp-chat-${mcpId}`, chatId);
-      } else {
-        localStorage.removeItem(`mcp-chat-${mcpId}`);
-      }
-      setCurrentChatId(chatId);
-    },
-    [],
-  );
 
   const onUpdateApiConfigs = useCallback(
     async (configData: ApiConfigs) => {
@@ -157,11 +136,7 @@ export default function McpPage() {
             </div>
           </div>
         </SidebarInset>
-        <AgentSidebar
-          mcpId={mcpId}
-          defaultChatId={currentChatId}
-          onChatIdChange={handleChatIdChange}
-        />
+        <McpBuilderAgentSidebar mcpId={mcpId} />
       </SidebarProvider>
     </div>
   );

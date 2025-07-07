@@ -10,7 +10,7 @@ export interface DatasetItem {
   messages: UIMessage[];
   systemPrompt?: string;
   model?: string;
-  settings: LLMSettings;
+  settings?: LLMSettings;
   createdAt: string;
   updatedAt: string;
   description?: string;
