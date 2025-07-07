@@ -338,6 +338,14 @@ export const updateMcpTool = async (tool: SummonTool) => {
 
 export const revertSummonMcpTool = async (tool: SummonToolRef) => {
   if (!tool.apiId) throw new Error("Tool has no apiId");
+
+  // Get the current tool name before reverting
+  const currentToolName = await getCurrentSummonToolName(
+    tool.mcpId,
+    tool.apiId,
+    tool.originalToolName,
+  );
+
   const mcpData = await mcpDb.getMcpById(tool.mcpId, true);
   if (!mcpData) throw new Error("MCP not found");
 
@@ -383,10 +391,21 @@ export const revertSummonMcpTool = async (tool: SummonToolRef) => {
   await generateMcpImpl(tool.mcpId);
   await restartMcpServer(tool.mcpId);
 
-  return (apiGroup.toolPrefix || "") + tool.originalToolName;
+  const newToolName = (apiGroup.toolPrefix || "") + tool.originalToolName;
+
+  // Update expected tool calls in datasets
+  await updateExpectedToolCallsInDatasets(currentToolName, newToolName);
+
+  return newToolName;
 };
 
 export const revertExternalMcpTool = async (tool: SummonToolRef) => {
+  // Get the current tool name before reverting
+  const currentToolName = await getCurrentExternalToolName(
+    tool.mcpId,
+    tool.originalToolName,
+  );
+
   const toolPath = await getExternalMcpToolOverridePath(
     tool.mcpId,
     tool.originalToolName,
@@ -399,7 +418,12 @@ export const revertExternalMcpTool = async (tool: SummonToolRef) => {
     mainWindow.webContents.send(EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL, null);
   }
 
-  return tool.originalToolName;
+  const newToolName = tool.originalToolName;
+
+  // Update expected tool calls in datasets
+  await updateExpectedToolCallsInDatasets(currentToolName, newToolName);
+
+  return newToolName;
 };
 
 export const revertMcpTool = async (tool: SummonToolRef) => {
