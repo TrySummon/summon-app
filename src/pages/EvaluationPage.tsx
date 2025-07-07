@@ -56,7 +56,7 @@ const EvaluationPage: React.FC = () => {
         </Breadcrumb>
       </div>
 
-      <div className="bg-background flex-shrink-0 border-b p-4">
+      <div className="bg-background flex-shrink-0 p-4">
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium">Dataset:</label>
           <Select
@@ -69,7 +69,7 @@ const EvaluationPage: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               {evaluableDatasets.length === 0 ? (
-                <SelectItem value="" disabled>
+                <SelectItem value="empty" disabled>
                   No datasets with evaluation criteria found
                 </SelectItem>
               ) : (
