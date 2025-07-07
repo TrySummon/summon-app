@@ -16,7 +16,7 @@ function Root() {
 
   // Extract dataset IDs from the route if on a dataset page
   const datasetRouteRegex = /^\/datasets\/([^/]+)(?:\/item\/([^/]+))?$/;
-   
+
   const datasetIds = isDatasetPage
     ? (() => {
         const match = location.pathname.match(datasetRouteRegex);
