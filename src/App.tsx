@@ -139,7 +139,17 @@ declare global {
       deleteMcp: (
         id: string,
       ) => Promise<{ success: boolean; message?: string }>;
-
+      getMcpLogs: (mcpId: string) => Promise<{
+        success: boolean;
+        data?: Array<{
+          timestamp: string;
+          level: string;
+          message: string;
+          mcpId: string;
+          isExternal: boolean;
+        }>;
+        message?: string;
+      }>;
       // MCP server operations
       getMcpServerStatus: (mcpId: string) => Promise<{
         success: boolean;

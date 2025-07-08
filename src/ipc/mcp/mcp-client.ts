@@ -326,3 +326,17 @@ export const readMcpResource = async (mcpId: string, uri: string) => {
 
   return result;
 };
+
+export async function getMcpLogs(mcpId: string): Promise<{
+  success: boolean;
+  data?: Array<{
+    timestamp: string;
+    level: string;
+    message: string;
+    mcpId: string;
+    isExternal: boolean;
+  }>;
+  message?: string;
+}> {
+  return window.mcpApi.getMcpLogs(mcpId);
+}

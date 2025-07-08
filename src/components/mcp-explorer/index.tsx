@@ -15,6 +15,7 @@ import { SelectedEndpoint } from "@/lib/mcp/parser/extract-tools";
 import { useMcpServerState } from "@/hooks/useMcpServerState";
 import { ApiConfig, ApiConfigs } from "../mcp-builder/api-config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import LogsList from "./LogsList";
 
 interface McpExplorerProps {
   mcpId: string;
@@ -110,7 +111,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
   if (isLoading) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-grow flex-col space-y-6">
       <ServerStatusSection
         status={state?.status || "stopped"}
         url={url || undefined}
@@ -123,7 +124,7 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
       />
 
       {state?.status === "running" && (
-        <Tabs defaultValue="tools">
+        <Tabs defaultValue="tools" className="flex-grow">
           <div className="mb-2 flex items-center justify-between gap-4">
             <TabsList className="w-fit">
               <TabsTrigger value="tools">Tools ({mcpTools.length})</TabsTrigger>
@@ -133,12 +134,13 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
               <TabsTrigger value="resources">
                 Resources ({mcpResources.length})
               </TabsTrigger>
+              <TabsTrigger value="logs">Logs</TabsTrigger>
             </TabsList>
             {onUpdateApiConfigs && (
               <ApiConfig apiGroups={apiGroups} onSave={onUpdateApiConfigs} />
             )}
           </div>
-          <TabsContent value="tools" className="mt-4">
+          <TabsContent value="tools" className="mt-4 flex flex-col">
             <ToolsList
               tools={mcpTools}
               mcpId={mcpId}
@@ -148,13 +150,23 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
               refreshStatus={handleRefreshStatus}
             />
           </TabsContent>
-          <TabsContent value="prompts" className="mt-4">
+          <TabsContent value="prompts" className="mt-4 flex flex-col">
             <PromptsList prompts={mcpPrompts} mcpId={mcpId} />
           </TabsContent>
-          <TabsContent value="resources" className="mt-4">
+          <TabsContent value="resources" className="mt-4 flex flex-col">
             <ResourcesList resources={mcpResources} mcpId={mcpId} />
           </TabsContent>
+          <TabsContent value="logs" className="mt-4 flex flex-col">
+            <LogsList mcpId={mcpId} />
+          </TabsContent>
         </Tabs>
+      )}
+
+      {/* Show logs directly when server fails to start */}
+      {(state?.status === "error" || error) && state?.status !== "running" && (
+        <div className="flex flex-grow flex-col">
+          <LogsList mcpId={mcpId} />
+        </div>
       )}
     </div>
   );

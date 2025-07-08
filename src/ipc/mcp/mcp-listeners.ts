@@ -23,6 +23,7 @@ import {
   GET_MCP_PROMPT_CHANNEL,
   GET_MCP_RESOURCES_CHANNEL,
   READ_MCP_RESOURCE_CHANNEL,
+  GET_MCP_LOGS_CHANNEL,
 } from "./mcp-channels";
 
 import { mcpDb, McpSubmitData } from "@/lib/db/mcp-db";
@@ -44,6 +45,8 @@ import {
   downloadMcpZip,
   showFileInFolder,
   generateFakeData,
+  getMcpLogs,
+  addMcpLog,
 } from "@/lib/mcp";
 
 import { McpServerState } from "@/lib/mcp/state";
@@ -361,16 +364,19 @@ export function registerMcpListeners() {
     ) => {
       try {
         const result = await callMcpTool(mcpId, name, args);
+
         return {
           success: true,
           data: result,
         };
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error occurred";
+        addMcpLog(mcpId, "error", `Tool '${name}' failed: ${errorMessage}`);
         log.error(`Error calling MCP tool:`, error);
         return {
           success: false,
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
+          message: errorMessage,
         };
       }
     },
@@ -577,4 +583,22 @@ export function registerMcpListeners() {
       }
     },
   );
+
+  // Get MCP logs
+  ipcMain.handle(GET_MCP_LOGS_CHANNEL, async (_, mcpId: string) => {
+    try {
+      const logs = getMcpLogs(mcpId);
+      return {
+        success: true,
+        data: logs,
+      };
+    } catch (error) {
+      log.error(`Error getting MCP logs:`, error);
+      return {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  });
 }

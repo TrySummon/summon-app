@@ -118,6 +118,15 @@ export const connectExternalMcp = async (
   config: McpServerConfig,
   force?: boolean,
 ): Promise<McpServerState> => {
+  // Import addMcpLog from the main MCP lib
+  const { addMcpLog } = await import("../mcp");
+
+  addMcpLog(
+    serverName,
+    "info",
+    `Starting external MCP server: ${serverName}`,
+    true,
+  );
   log.info(`Starting external MCP server: ${serverName}`);
 
   // Check if the server is already running
@@ -125,6 +134,12 @@ export const connectExternalMcp = async (
     runningMcpServers[serverName] &&
     runningMcpServers[serverName].status === "running"
   ) {
+    addMcpLog(
+      serverName,
+      "info",
+      `External MCP server ${serverName} is already running`,
+      true,
+    );
     log.info(`External MCP server ${serverName} is already running`);
     return runningMcpServers[serverName];
   }
@@ -135,6 +150,12 @@ export const connectExternalMcp = async (
     runningMcpServers[serverName] &&
     runningMcpServers[serverName].status === "stopped"
   ) {
+    addMcpLog(
+      serverName,
+      "info",
+      `External MCP server ${serverName} is already stopped`,
+      true,
+    );
     log.info(`External MCP server ${serverName} is already stopped`);
     return runningMcpServers[serverName];
   }
@@ -161,15 +182,66 @@ export const connectExternalMcp = async (
 
     // Handle CLI-based server
     if (config.command) {
+      addMcpLog(
+        serverName,
+        "info",
+        `Connecting to CLI-based MCP server: ${config.command}`,
+        true,
+      );
       const params = config as StdioServerParameters;
       params.env = {
         ...(params.env || {}),
         ...getDefaultEnvironment(),
         ELECTRON_RUN_AS_NODE: "1",
       };
+      params.stderr = "pipe"; // Enable stderr capture
       const transport = new StdioClientTransport(params);
 
+      // Hook into transport events for detailed logging
+      transport.onmessage = (message) => {
+        addMcpLog(
+          serverName,
+          "debug",
+          `← Received: ${JSON.stringify(message)}`,
+          true,
+        );
+      };
+
+      transport.onerror = (error) => {
+        addMcpLog(
+          serverName,
+          "error",
+          `Transport error: ${error.message}`,
+          true,
+        );
+      };
+
+      transport.onclose = () => {
+        addMcpLog(serverName, "info", `Transport connection closed`, true);
+      };
+
       await client.connect(transport);
+
+      // Capture stderr output if available
+      const stderrStream = transport.stderr;
+      if (stderrStream) {
+        stderrStream.on("data", (data) => {
+          const message = data.toString().trim();
+          if (message) {
+            addMcpLog(serverName, "warn", `stderr: ${message}`, true);
+          }
+        });
+      }
+
+      // Log process PID if available
+      if (transport.pid) {
+        addMcpLog(
+          serverName,
+          "info",
+          `Process started with PID: ${transport.pid}`,
+          true,
+        );
+      }
 
       serverState.transport = { type: "stdio", params: params };
       serverState.client = client;
@@ -181,13 +253,43 @@ export const connectExternalMcp = async (
       const isHTTP = url.includes("/mcp");
 
       if (isSSE) {
-        await client.connect(
-          new SSEClientTransport(new URL(url), {
-            requestInit: {
-              headers: config.headers,
-            },
-          }),
+        addMcpLog(
+          serverName,
+          "info",
+          `Connecting to SSE MCP server: ${url}`,
+          true,
         );
+        const transport = new SSEClientTransport(new URL(url), {
+          requestInit: {
+            headers: config.headers,
+          },
+        });
+
+        // Hook into transport events for detailed logging
+        transport.onmessage = (message) => {
+          addMcpLog(
+            serverName,
+            "debug",
+            `← Received: ${JSON.stringify(message)}`,
+            true,
+          );
+        };
+
+        transport.onerror = (error) => {
+          addMcpLog(
+            serverName,
+            "error",
+            `Transport error: ${error.message}`,
+            true,
+          );
+        };
+
+        transport.onclose = () => {
+          addMcpLog(serverName, "info", `Transport connection closed`, true);
+        };
+
+        await client.connect(transport);
+
         serverState.transport = {
           type: "sse",
           url,
@@ -195,13 +297,43 @@ export const connectExternalMcp = async (
         };
         serverState.client = client;
       } else if (isHTTP) {
-        await client.connect(
-          new StreamableHTTPClientTransport(new URL(url), {
-            requestInit: {
-              headers: config.headers,
-            },
-          }),
+        addMcpLog(
+          serverName,
+          "info",
+          `Connecting to HTTP MCP server: ${url}`,
+          true,
         );
+        const transport = new StreamableHTTPClientTransport(new URL(url), {
+          requestInit: {
+            headers: config.headers,
+          },
+        });
+
+        // Hook into transport events for detailed logging
+        transport.onmessage = (message) => {
+          addMcpLog(
+            serverName,
+            "debug",
+            `← Received: ${JSON.stringify(message)}`,
+            true,
+          );
+        };
+
+        transport.onerror = (error) => {
+          addMcpLog(
+            serverName,
+            "error",
+            `Transport error: ${error.message}`,
+            true,
+          );
+        };
+
+        transport.onclose = () => {
+          addMcpLog(serverName, "info", `Transport connection closed`, true);
+        };
+
+        await client.connect(transport);
+
         serverState.transport = {
           type: "http",
           url,
@@ -215,13 +347,26 @@ export const connectExternalMcp = async (
 
     // Update server status
     serverState.status = "running";
+    addMcpLog(
+      serverName,
+      "info",
+      `External MCP server ${serverName} started successfully`,
+      true,
+    );
     log.info(`External MCP server ${serverName} started successfully`);
 
     return serverState;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    addMcpLog(
+      serverName,
+      "error",
+      `Failed to start external MCP server ${serverName}: ${errorMessage}`,
+      true,
+    );
     log.error(`Failed to start external MCP server ${serverName}:`, error);
     serverState.status = "error";
-    serverState.error = error instanceof Error ? error.message : String(error);
+    serverState.error = errorMessage;
     return serverState;
   }
 };
@@ -233,10 +378,25 @@ export const stopExternalMcp = async (
   serverName: string,
   removeFromState?: boolean,
 ): Promise<McpServerState | null> => {
+  // Import addMcpLog from the main MCP lib
+  const { addMcpLog } = await import("../mcp");
+
+  addMcpLog(
+    serverName,
+    "info",
+    `Stopping external MCP server: ${serverName}`,
+    true,
+  );
   log.info(`Stopping external MCP server: ${serverName}`);
 
   // Check if the server is running
   if (!runningMcpServers[serverName]) {
+    addMcpLog(
+      serverName,
+      "info",
+      `External MCP server ${serverName} is not running`,
+      true,
+    );
     log.info(`External MCP server ${serverName} is not running`);
     return null;
   }
@@ -254,15 +414,28 @@ export const stopExternalMcp = async (
     serverState.status = "stopped";
     serverState.stoppedAt = new Date();
 
+    addMcpLog(
+      serverName,
+      "info",
+      `External MCP server ${serverName} stopped successfully`,
+      true,
+    );
     log.info(`External MCP server ${serverName} stopped successfully`);
     if (removeFromState) {
       delete runningMcpServers[serverName];
     }
     return serverState;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    addMcpLog(
+      serverName,
+      "error",
+      `Failed to stop external MCP server ${serverName}: ${errorMessage}`,
+      true,
+    );
     log.error(`Failed to stop external MCP server ${serverName}:`, error);
     serverState.status = "error";
-    serverState.error = error instanceof Error ? error.message : String(error);
+    serverState.error = errorMessage;
     return serverState;
   }
 };
@@ -273,6 +446,15 @@ export const stopExternalMcp = async (
 export const connectAllExternalMcps = async (
   force?: boolean,
 ): Promise<Record<string, McpServerState>> => {
+  // Import addMcpLog from the main MCP lib
+  const { addMcpLog } = await import("../mcp");
+
+  addMcpLog(
+    "system",
+    "info",
+    "Connecting to all external MCP servers...",
+    true,
+  );
   log.info("Connecting to all external MCP servers...");
 
   try {
@@ -295,6 +477,14 @@ export const connectAllExternalMcps = async (
           client: undefined,
         };
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        addMcpLog(
+          serverName,
+          "error",
+          `Failed to connect to external MCP server ${serverName}: ${errorMessage}`,
+          true,
+        );
         log.error(
           `Failed to connect to external MCP server ${serverName}:`,
           error,
@@ -303,16 +493,24 @@ export const connectAllExternalMcps = async (
           mcpId: serverName,
           status: "error",
           mockProcesses: {},
-          error: error instanceof Error ? error.message : String(error),
+          error: errorMessage,
           isExternal: true,
           startedAt: new Date(),
         };
       }
     }
 
+    addMcpLog("system", "info", "All external MCP servers connected", true);
     log.info("All external MCP servers connected");
     return results;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    addMcpLog(
+      "system",
+      "error",
+      `Error connecting to external MCP servers: ${errorMessage}`,
+      true,
+    );
     log.error("Error connecting to external MCP servers:", error);
     throw error;
   }

@@ -1,4 +1,4 @@
-import { app } from "electron";
+import { app, BrowserWindow } from "electron";
 import * as fs from "fs/promises";
 import * as path from "path";
 
@@ -215,6 +215,65 @@ export function getAllMcpServerStatuses(): Record<string, McpServerState> {
   return { ...runningMcpServers };
 }
 
+// Global log storage for MCP servers
+const mcpLogs: Record<
+  string,
+  Array<{
+    timestamp: string;
+    level: string;
+    message: string;
+    mcpId: string;
+    isExternal: boolean;
+  }>
+> = {};
+
+// Function to add log entry
+export function addMcpLog(
+  mcpId: string,
+  level: string,
+  message: string,
+  isExternal: boolean = false,
+) {
+  const timestamp = new Date().toISOString();
+  const logEntry = { timestamp, level, message, mcpId, isExternal };
+
+  if (!mcpLogs[mcpId]) {
+    mcpLogs[mcpId] = [];
+  }
+  mcpLogs[mcpId].push(logEntry);
+
+  // Keep only last 1000 logs per MCP to prevent memory issues
+  if (mcpLogs[mcpId].length > 1000) {
+    mcpLogs[mcpId] = mcpLogs[mcpId].slice(-1000);
+  }
+
+  // Send log update to renderer if available
+  try {
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      mainWindow.webContents.send("mcp-log-updated", { mcpId, logEntry });
+    }
+  } catch {
+    // Ignore errors when sending to renderer (might not be available)
+  }
+}
+
+// Function to get logs for a specific MCP
+export function getMcpLogs(mcpId: string): Array<{
+  timestamp: string;
+  level: string;
+  message: string;
+  mcpId: string;
+  isExternal: boolean;
+}> {
+  return mcpLogs[mcpId] || [];
+}
+
+// Function to clear logs for a specific MCP
+export function clearMcpLogs(mcpId: string) {
+  delete mcpLogs[mcpId];
+}
+
 /**
  * Start an MCP server with proper environment setup using in-memory Express server
  *
@@ -229,6 +288,11 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
       currentState.status === "running" ||
       currentState.status === "starting"
     ) {
+      addMcpLog(
+        mcpId,
+        "info",
+        `MCP server ${mcpId} is already ${currentState.status}`,
+      );
       log.info(`MCP server ${mcpId} is already ${currentState.status}`);
       return currentState;
     }
@@ -251,12 +315,14 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
 
     if (!mcp) {
       const error = `MCP with ID ${mcpId} not found`;
+      addMcpLog(mcpId, "error", error);
       serverState.status = "error";
       serverState.error = error;
       return serverState;
     }
 
     const implPath = await getMcpImplPath(mcpId);
+    addMcpLog(mcpId, "info", `Starting MCP server from: ${implPath}`);
     log.info(`Starting MCP server from: ${implPath}`);
 
     // Prepare environment variables for the MCP server
@@ -271,6 +337,7 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
 
       // Check if this API should be mocked
       if (apiGroup.useMockData && apiGroup.tools && apiGroup.tools.length > 0) {
+        addMcpLog(mcpId, "info", `Mocking API: ${apiGroup.name}`);
         log.info(`Mocking API: ${apiGroup.name}`);
         // Start the mock server and get the URL
         const mockResult = await mockApi(apiId);
@@ -302,6 +369,7 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
     const toolsDir = await getMcpImplToolsDir(mcpId);
     const tools = await loadToolsFromDirectory(toolsDir);
 
+    addMcpLog(mcpId, "info", `Loaded ${tools.size} tools from ${toolsDir}`);
     log.info(`Loaded ${tools.size} tools from ${toolsDir}`);
 
     const mcpServer = createMcpServer(mcpId, tools, env);
@@ -317,6 +385,7 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
           return;
         }
 
+        addMcpLog(mcpId, "info", `MCP server ${mcpId} started on port ${port}`);
         log.info(`MCP server ${mcpId} started on port ${port}`);
         serverState.status = "running";
         serverState.port = port;
@@ -325,6 +394,11 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
         // Store server reference for cleanup
         serverState.expressServer = server;
 
+        addMcpLog(
+          mcpId,
+          "info",
+          `MCP server ${mcpId} started with status: ${serverState.status}`,
+        );
         log.info(
           `MCP server ${mcpId} started with status: ${serverState.status}`,
         );
@@ -334,31 +408,54 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
 
       // Handle server errors
       server.on("error", (error: unknown) => {
+        const errorMessage = String(error);
+        addMcpLog(mcpId, "error", `MCP server ${mcpId} error: ${errorMessage}`);
         log.error(`MCP server ${mcpId} error:`, error);
         serverState.status = "error";
-        serverState.error = String(error);
+        serverState.error = errorMessage;
         reject(error);
       });
     });
 
-    const transport = {
+    const transportConfig = {
       type: "http" as const,
       url: `http://localhost:${port}/mcp`,
     };
-    serverState.transport = transport;
+    serverState.transport = transportConfig;
 
     const client = new Client({
       name: "Summon",
       version: "1.0.0",
     });
     serverState.client = client;
-    await client.connect(
-      new StreamableHTTPClientTransport(new URL(transport.url)),
+
+    const transport = new StreamableHTTPClientTransport(
+      new URL(transportConfig.url),
     );
+
+    // Hook into transport events for detailed logging
+    transport.onmessage = (message) => {
+      addMcpLog(mcpId, "debug", `← Received: ${JSON.stringify(message)}`);
+    };
+
+    transport.onerror = (error) => {
+      addMcpLog(mcpId, "error", `Transport error: ${error.message}`);
+    };
+
+    transport.onclose = () => {
+      addMcpLog(mcpId, "info", `Transport connection closed`);
+    };
+
+    await client.connect(transport);
 
     return serverState;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    addMcpLog(
+      mcpId,
+      "error",
+      `Error starting MCP server ${mcpId}: ${errorMessage}`,
+    );
     log.error(`Error starting MCP server ${mcpId}:`, errorMessage);
     serverState.status = "error";
     serverState.error = errorMessage;
