@@ -56,7 +56,7 @@ export default function ExternalMcpPage() {
       </Breadcrumb>
 
       <div className="flex flex-1 flex-col overflow-y-auto">
-        <div className="container mx-auto max-w-4xl py-6">
+        <div className="container mx-auto flex max-w-4xl flex-grow flex-col py-6">
           <McpExplorer mcpId={mcpId} mcpName={mcpId} isExternal />
         </div>
       </div>

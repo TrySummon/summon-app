@@ -16,11 +16,11 @@ export const GET_MCP_TOOLS_CHANNEL = "get-mcp-tools";
 export const CALL_MCP_TOOL_CHANNEL = "call-mcp-tool";
 export const UPDATE_MCP_TOOL_CHANNEL = "update-mcp-tool";
 export const REVERT_MCP_TOOL_CHANNEL = "revert-mcp-tool";
-export const GENERATE_FAKE_DATA_CHANNEL = "generate-fake-data";
 export const OPEN_USER_DATA_MCP_JSON_FILE_CHANNEL =
   "open-user-data-mcp-json-file";
 export const DOWNLOAD_MCP_ZIP_CHANNEL = "download-mcp-zip";
 export const SHOW_FILE_IN_FOLDER_CHANNEL = "show-file-in-folder";
+export const GENERATE_FAKE_DATA_CHANNEL = "generate-fake-data";
 
 // Channel names for MCP prompts operations
 export const GET_MCP_PROMPTS_CHANNEL = "get-mcp-prompts";
@@ -29,3 +29,7 @@ export const GET_MCP_PROMPT_CHANNEL = "get-mcp-prompt";
 // Channel names for MCP resources operations
 export const GET_MCP_RESOURCES_CHANNEL = "get-mcp-resources";
 export const READ_MCP_RESOURCE_CHANNEL = "read-mcp-resource";
+
+// Channel names for MCP logs operations
+export const GET_MCP_LOGS_CHANNEL = "get-mcp-logs";
+export const MCP_LOG_UPDATED_CHANNEL = "mcp-log-updated";

@@ -72,6 +72,7 @@ class MCPStreamableExpressServer {
 
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => uuid(),
+          enableDnsRebindingProtection: true,
         });
 
         // Add error handler for debug purposes

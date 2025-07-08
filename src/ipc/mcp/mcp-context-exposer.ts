@@ -22,6 +22,7 @@ import {
   GET_MCP_PROMPT_CHANNEL,
   GET_MCP_RESOURCES_CHANNEL,
   READ_MCP_RESOURCE_CHANNEL,
+  GET_MCP_LOGS_CHANNEL,
 } from "./mcp-channels";
 import { McpData } from "@/lib/db/mcp-db";
 import { SummonTool } from "@/lib/mcp/tools/types";
@@ -139,6 +140,11 @@ export function exposeMcpContext() {
         mcpId,
         uri,
       });
+    },
+
+    // MCP logs operations
+    getMcpLogs: (mcpId: string) => {
+      return ipcRenderer.invoke(GET_MCP_LOGS_CHANNEL, mcpId);
     },
   });
 }
