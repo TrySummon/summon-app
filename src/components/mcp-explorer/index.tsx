@@ -162,8 +162,8 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
         </Tabs>
       )}
 
-      {/* Show logs directly when server fails to start */}
-      {(state?.status === "error" || error) && state?.status !== "running" && (
+      {/* Show logs when server is not running */}
+      {state?.status !== "running" && (
         <div className="flex flex-grow flex-col">
           <LogsList mcpId={mcpId} />
         </div>

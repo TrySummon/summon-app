@@ -13,6 +13,16 @@ import { McpServerState, runningMcpServers } from "../mcp/state";
 import { z } from "zod";
 import log from "electron-log";
 import { workspaceDb } from "../db/workspace-db";
+import { BrowserWindow } from "electron";
+import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "../../ipc/external-mcp/external-mcp-channels";
+import { addMcpLog } from "../mcp";
+
+// Health check polling intervals
+const HEALTH_CHECK_INTERVAL = 3000; // 3 seconds
+const RECONNECTION_DELAY = 5000; // 5 seconds
+
+// Health check timers for each server
+const healthCheckTimers = new Map<string, NodeJS.Timeout>();
 
 // Define Zod schemas for MCP JSON validation
 const McpServerConfigSchema = z
@@ -111,6 +121,177 @@ export const validateMcpJsonConfig = (config: unknown): McpJsonConfig => {
 };
 
 /**
+ * Broadcast external MCP server state changes to the renderer process
+ */
+export const broadcastExternalMcpServersUpdate = () => {
+  const mainWindow = BrowserWindow.getAllWindows()[0];
+  if (mainWindow) {
+    // Create serializable server states for broadcasting
+    const serializableStates: Record<string, McpServerState> = {};
+
+    Object.entries(runningMcpServers).forEach(([serverName, serverState]) => {
+      if (serverState.isExternal) {
+        serializableStates[serverName] = {
+          ...serverState,
+          client: undefined, // Remove non-serializable client
+          transport: serverState.transport, // Keep transport info
+        };
+      }
+    });
+
+    // Broadcast the updated server states
+    mainWindow.webContents.send(
+      EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL,
+      serializableStates,
+    );
+  }
+};
+/**
+ * Start health check polling for a server
+ */
+const startHealthCheck = (serverName: string) => {
+  // Clear any existing timer
+  stopHealthCheck(serverName);
+
+  const timer = setInterval(async () => {
+    await performHealthCheck(serverName);
+  }, HEALTH_CHECK_INTERVAL);
+
+  healthCheckTimers.set(serverName, timer);
+
+  addMcpLog(
+    serverName,
+    "debug",
+    `Health check started for server: ${serverName}`,
+    true,
+  );
+};
+
+/**
+ * Stop health check polling for a server
+ */
+const stopHealthCheck = (serverName: string) => {
+  const timer = healthCheckTimers.get(serverName);
+  if (timer) {
+    clearInterval(timer);
+    healthCheckTimers.delete(serverName);
+
+    addMcpLog(
+      serverName,
+      "debug",
+      `Health check stopped for server: ${serverName}`,
+      true,
+    );
+  }
+};
+
+/**
+ * Perform a single health check for a server using client.ping()
+ */
+const performHealthCheck = async (serverName: string) => {
+  const serverState = runningMcpServers[serverName];
+  if (!serverState || serverState.status === "stopped") {
+    stopHealthCheck(serverName);
+    return;
+  }
+
+  // Only perform health check for running servers
+  if (serverState.status !== "running" || !serverState.client) {
+    // Try to reconnect if the server is in error state
+    if (serverState.status === "error") {
+      await attemptReconnection(serverName);
+    }
+    return;
+  }
+
+  try {
+    // Use client.ping() to check if the server is responsive
+    await serverState.client.ping();
+
+    // If we get here, the server is healthy
+    if (serverState.status !== "running") {
+      serverState.status = "running";
+      delete serverState.error;
+      broadcastExternalMcpServersUpdate();
+
+      addMcpLog(
+        serverName,
+        "info",
+        `Server ${serverName} is now healthy`,
+        true,
+      );
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    addMcpLog(
+      serverName,
+      "warn",
+      `Health check failed for server ${serverName}: ${errorMessage}`,
+      true,
+    );
+
+    // Mark server as unhealthy
+    serverState.status = "error";
+    serverState.error = `Health check failed: ${errorMessage}`;
+    serverState.stoppedAt = new Date();
+
+    broadcastExternalMcpServersUpdate();
+
+    // Schedule a reconnection attempt
+    setTimeout(() => {
+      attemptReconnection(serverName);
+    }, RECONNECTION_DELAY);
+  }
+};
+
+/**
+ * Attempt to reconnect to an external MCP server
+ */
+const attemptReconnection = async (serverName: string) => {
+  const serverState = runningMcpServers[serverName];
+  if (!serverState || serverState.status === "stopped") {
+    // Don't reconnect if server was manually stopped
+    return;
+  }
+
+  try {
+    addMcpLog(
+      serverName,
+      "info",
+      `Attempting to reconnect to server: ${serverName}`,
+      true,
+    );
+
+    // Read current config and attempt reconnection
+    const config = await readMcpJsonFile();
+    const serverConfig = config.mcpServers[serverName];
+
+    if (serverConfig) {
+      // Force reconnection
+      await connectExternalMcp(serverName, serverConfig, true);
+      broadcastExternalMcpServersUpdate();
+    } else {
+      addMcpLog(
+        serverName,
+        "error",
+        `Server configuration not found for ${serverName}`,
+        true,
+      );
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    addMcpLog(
+      serverName,
+      "error",
+      `Failed to reconnect to server ${serverName}: ${errorMessage}`,
+      true,
+    );
+    log.error(`Failed to reconnect to server ${serverName}:`, error);
+  }
+};
+
+/**
  * Connect to an external MCP server based on configuration
  */
 export const connectExternalMcp = async (
@@ -134,14 +315,19 @@ export const connectExternalMcp = async (
     runningMcpServers[serverName] &&
     runningMcpServers[serverName].status === "running"
   ) {
-    addMcpLog(
-      serverName,
-      "info",
-      `External MCP server ${serverName} is already running`,
-      true,
-    );
-    log.info(`External MCP server ${serverName} is already running`);
-    return runningMcpServers[serverName];
+    if (!force) {
+      addMcpLog(
+        serverName,
+        "info",
+        `External MCP server ${serverName} is already running`,
+        true,
+      );
+      log.info(`External MCP server ${serverName} is already running`);
+      return runningMcpServers[serverName];
+    } else {
+      // Force reconnection - stop the existing server first
+      await stopExternalMcp(serverName);
+    }
   }
 
   // Check if the server is manually stopped
@@ -197,7 +383,6 @@ export const connectExternalMcp = async (
       params.stderr = "pipe"; // Enable stderr capture
       const transport = new StdioClientTransport(params);
 
-      // Hook into transport events for detailed logging
       transport.onmessage = (message) => {
         addMcpLog(
           serverName,
@@ -265,7 +450,6 @@ export const connectExternalMcp = async (
           },
         });
 
-        // Hook into transport events for detailed logging
         transport.onmessage = (message) => {
           addMcpLog(
             serverName,
@@ -309,7 +493,6 @@ export const connectExternalMcp = async (
           },
         });
 
-        // Hook into transport events for detailed logging
         transport.onmessage = (message) => {
           addMcpLog(
             serverName,
@@ -347,6 +530,8 @@ export const connectExternalMcp = async (
 
     // Update server status
     serverState.status = "running";
+    delete serverState.error; // Clear any previous error
+
     addMcpLog(
       serverName,
       "info",
@@ -367,7 +552,11 @@ export const connectExternalMcp = async (
     log.error(`Failed to start external MCP server ${serverName}:`, error);
     serverState.status = "error";
     serverState.error = errorMessage;
+
     return serverState;
+  } finally {
+    // Start health check polling for this server
+    startHealthCheck(serverName);
   }
 };
 
@@ -404,6 +593,9 @@ export const stopExternalMcp = async (
   const serverState = runningMcpServers[serverName];
 
   try {
+    // Stop health check polling for this server
+    stopHealthCheck(serverName);
+
     // Close client if it exists
     if (serverState.client) {
       await serverState.client.close();
@@ -413,6 +605,7 @@ export const stopExternalMcp = async (
     // Update server status
     serverState.status = "stopped";
     serverState.stoppedAt = new Date();
+    delete serverState.error; // Clear any previous error
 
     addMcpLog(
       serverName,
@@ -421,9 +614,11 @@ export const stopExternalMcp = async (
       true,
     );
     log.info(`External MCP server ${serverName} stopped successfully`);
+
     if (removeFromState) {
       delete runningMcpServers[serverName];
     }
+
     return serverState;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -436,6 +631,7 @@ export const stopExternalMcp = async (
     log.error(`Failed to stop external MCP server ${serverName}:`, error);
     serverState.status = "error";
     serverState.error = errorMessage;
+
     return serverState;
   }
 };
@@ -502,6 +698,7 @@ export const connectAllExternalMcps = async (
 
     addMcpLog("system", "info", "All external MCP servers connected", true);
     log.info("All external MCP servers connected");
+
     return results;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -514,4 +711,67 @@ export const connectAllExternalMcps = async (
     log.error("Error connecting to external MCP servers:", error);
     throw error;
   }
+};
+
+/**
+ * Get the current state of all external MCP servers
+ */
+export const getExternalMcpServersState = (): Record<
+  string,
+  McpServerState
+> => {
+  const externalServers: Record<string, McpServerState> = {};
+
+  Object.entries(runningMcpServers).forEach(([serverName, serverState]) => {
+    if (serverState.isExternal) {
+      externalServers[serverName] = {
+        ...serverState,
+        client: undefined, // Remove non-serializable client
+      };
+    }
+  });
+
+  return externalServers;
+};
+
+/**
+ * Get the current state of a specific external MCP server
+ */
+export const getExternalMcpServerState = (
+  serverName: string,
+): McpServerState | null => {
+  const serverState = runningMcpServers[serverName];
+  if (!serverState || !serverState.isExternal) {
+    return null;
+  }
+
+  return {
+    ...serverState,
+    client: undefined, // Remove non-serializable client
+  };
+};
+
+/**
+ * Stop all external MCP servers
+ */
+export const stopAllExternalMcps = async (
+  removeFromState?: boolean,
+): Promise<void> => {
+  const { addMcpLog } = await import("../mcp");
+
+  addMcpLog("system", "info", "Stopping all external MCP servers...", true);
+  log.info("Stopping all external MCP servers...");
+
+  const externalServers = Object.entries(runningMcpServers).filter(
+    ([, serverState]) => serverState.isExternal,
+  );
+
+  const stopPromises = externalServers.map(([serverName]) =>
+    stopExternalMcp(serverName, removeFromState),
+  );
+
+  await Promise.allSettled(stopPromises);
+
+  addMcpLog("system", "info", "All external MCP servers stopped", true);
+  log.info("All external MCP servers stopped");
 };
