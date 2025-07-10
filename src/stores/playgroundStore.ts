@@ -47,6 +47,75 @@ interface PlaygroundTab {
   historyIndex: number;
 }
 
+// Helper function to estimate JSON size in bytes
+function getJSONSize(obj: unknown): number {
+  try {
+    return new Blob([JSON.stringify(obj)]).size;
+  } catch {
+    return 0;
+  }
+}
+
+// Helper function to strip large tool results from messages for persistence
+function stripLargeToolResults(messages: UIMessage[]): UIMessage[] {
+  const MAX_TOOL_RESULT_SIZE = 50 * 1024; // 50KB limit per tool result
+
+  return messages.map((message) => {
+    if (!message.parts) return message;
+
+    const strippedParts = message.parts.map((part) => {
+      if (
+        part.type === "tool-invocation" &&
+        part.toolInvocation.state === "result" &&
+        "result" in part.toolInvocation
+      ) {
+        const resultSize = getJSONSize(part.toolInvocation.result);
+
+        // If result is too large, replace with a summary
+        if (resultSize > MAX_TOOL_RESULT_SIZE) {
+          return {
+            ...part,
+            toolInvocation: {
+              ...part.toolInvocation,
+              result: {
+                _stripped: true,
+                _originalSize: resultSize,
+                _summary: `Large result (${Math.round(resultSize / 1024)}KB) stripped to save storage`,
+                success:
+                  typeof part.toolInvocation.result === "object" &&
+                  part.toolInvocation.result !== null &&
+                  "success" in part.toolInvocation.result
+                    ? part.toolInvocation.result.success
+                    : true,
+              },
+            },
+          };
+        }
+      }
+      return part;
+    });
+
+    return {
+      ...message,
+      parts: strippedParts,
+    };
+  });
+}
+
+// Helper function to prepare tab state for persistence
+function prepareStateForPersistence(
+  state: IPlaygroundTabState,
+): IPlaygroundTabState {
+  return {
+    ...state,
+    messages: stripLargeToolResults(state.messages),
+    // Don't persist runtime-only properties
+    running: false,
+    shouldScrollToDock: false,
+    abortController: undefined,
+  };
+}
+
 export interface PlaygroundStore {
   // All tabs
   tabs: Record<string, PlaygroundTab>;
@@ -138,7 +207,7 @@ const createDefaultState = (): IPlaygroundTabState => ({
 
 // Define the state that will be persisted to storage
 type PlaygroundStorePersist = {
-  tabs: Record<string, PlaygroundTab>;
+  tabs: Record<string, Omit<PlaygroundTab, "history" | "historyIndex">>;
   currentTabId: string;
   autoExecuteTools: boolean;
 };
@@ -148,11 +217,91 @@ const persistOptions: PersistOptions<PlaygroundStore, PlaygroundStorePersist> =
   {
     name: "playground-store",
     storage: createJSONStorage(() => localStorage),
-    partialize: (state) => ({
-      tabs: state.tabs,
-      currentTabId: state.currentTabId,
-      autoExecuteTools: state.autoExecuteTools,
-    }),
+    partialize: (state) => {
+      const MAX_STORAGE_SIZE = 8 * 1024 * 1024; // 8MB limit
+
+      // Create a clean version of tabs without history and with size limits
+      const cleanTabs: Record<
+        string,
+        Omit<PlaygroundTab, "history" | "historyIndex">
+      > = {};
+
+      for (const [tabId, tab] of Object.entries(state.tabs)) {
+        const cleanTab = {
+          id: tab.id,
+          name: tab.name,
+          state: prepareStateForPersistence(tab.state),
+        };
+
+        cleanTabs[tabId] = cleanTab;
+      }
+
+      const persistData = {
+        tabs: cleanTabs,
+        currentTabId: state.currentTabId,
+        autoExecuteTools: state.autoExecuteTools,
+      };
+
+      // Check if the data size is within limits
+      const dataSize = getJSONSize(persistData);
+      if (dataSize > MAX_STORAGE_SIZE) {
+        console.warn(
+          `Playground store data size (${Math.round(dataSize / 1024)}KB) exceeds limit. Reducing data...`,
+        );
+
+        // Further reduce by keeping only the current tab and 2 recent tabs
+        const tabEntries = Object.entries(cleanTabs);
+        const currentTabEntry = tabEntries.find(
+          ([id]) => id === state.currentTabId,
+        );
+        const otherTabs = tabEntries
+          .filter(([id]) => id !== state.currentTabId)
+          .slice(0, 2);
+
+        const reducedTabs: Record<
+          string,
+          Omit<PlaygroundTab, "history" | "historyIndex">
+        > = {};
+
+        if (currentTabEntry) {
+          reducedTabs[currentTabEntry[0]] = currentTabEntry[1];
+        }
+
+        otherTabs.forEach(([id, tab]) => {
+          reducedTabs[id] = tab;
+        });
+
+        persistData.tabs = reducedTabs;
+
+        const reducedSize = getJSONSize(persistData);
+        console.warn(`Reduced to ${Math.round(reducedSize / 1024)}KB`);
+      }
+
+      return persistData;
+    },
+    onRehydrateStorage: () => (state, error) => {
+      if (error) {
+        console.error("Error rehydrating playground store:", error);
+        return;
+      }
+
+      if (state) {
+        // Restore tabs with empty history
+        const restoredTabs: Record<string, PlaygroundTab> = {};
+
+        for (const [tabId, tabData] of Object.entries(state.tabs)) {
+          restoredTabs[tabId] = {
+            ...tabData,
+            history: [
+              { state: tabData.state, description: "Restored from storage" },
+            ],
+            historyIndex: 0,
+          };
+        }
+
+        state.tabs = restoredTabs;
+      }
+    },
   };
 
 // Create the store
@@ -312,10 +461,11 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
 
             newHistoryIndex = newHistory.length - 1;
 
-            // Limit history size
-            if (newHistory.length > 100) {
-              newHistory = newHistory.slice(-100);
-              newHistoryIndex = Math.min(newHistoryIndex, 99);
+            // Limit history size to prevent memory issues
+            if (newHistory.length > 50) {
+              // Reduced from 100 to 50
+              newHistory = newHistory.slice(-50);
+              newHistoryIndex = Math.min(newHistoryIndex, 49);
             }
           }
 

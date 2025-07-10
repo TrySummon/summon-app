@@ -164,7 +164,7 @@ const LogsList: React.FC<LogsListProps> = ({ mcpId }) => {
       )}
 
       <ScrollArea
-        className="bg-sidebar h-0 flex-grow rounded border p-2"
+        className="bg-card h-0 flex-grow rounded border p-2"
         ref={scrollAreaRef}
       >
         {logs.length === 0 ? (
