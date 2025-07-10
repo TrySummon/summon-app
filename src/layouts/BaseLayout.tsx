@@ -3,6 +3,7 @@ import DragWindowRegion from "@/components/DragWindowRegion";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Toaster } from "@/components/ui/sonner";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 export default function BaseLayout({
   children,
@@ -29,6 +30,7 @@ export default function BaseLayout({
           </SidebarInset>
         </div>
       </SidebarProvider>
+      <GlobalSearch />
     </>
   );
 }

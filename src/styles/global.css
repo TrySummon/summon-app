@@ -322,3 +322,56 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+
+/* Global search highlights */
+.search-highlight {
+  background-color: rgb(253 224 71);
+  color: rgb(0 0 0);
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+.dark .search-highlight {
+  background-color: rgb(202 138 4);
+  color: rgb(255 255 255);
+}
+
+/* Current/active search match */
+.search-highlight.search-highlight-current {
+  background-color: rgb(251 146 60);
+  color: rgb(0 0 0);
+  outline: 2px solid rgb(234 88 12);
+  outline-offset: -1px;
+}
+
+.dark .search-highlight.search-highlight-current {
+  background-color: rgb(234 88 12);
+  color: rgb(255 255 255);
+  outline: 2px solid rgb(251 146 60);
+  outline-offset: -1px;
+}
+
+/* CodeMirror search highlights */
+.cm-search-match {
+  background-color: rgba(253, 224, 71, 0.5) !important;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(253, 224, 71, 0.8);
+  position: relative;
+}
+
+.dark .cm-search-match {
+  background-color: rgba(202, 138, 4, 0.5) !important;
+  box-shadow: 0 0 0 1px rgba(202, 138, 4, 0.8);
+}
+
+/* Current CodeMirror search match */
+.cm-search-match.cm-search-match-current {
+  background-color: rgba(251, 146, 60, 0.7) !important;
+  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.8);
+  z-index: 1;
+}
+
+.dark .cm-search-match.cm-search-match-current {
+  background-color: rgba(234, 88, 12, 0.7) !important;
+  box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.8);
+}

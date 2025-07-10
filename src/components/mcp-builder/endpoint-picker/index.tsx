@@ -367,7 +367,7 @@ export function EndpointPickerDialog({
       part.toLowerCase() === query.toLowerCase() ? (
         <span
           key={index}
-          className="rounded bg-yellow-200 px-0.5 font-medium dark:bg-yellow-800"
+          className="search-highlight rounded px-0.5 font-medium"
         >
           {part}
         </span>
