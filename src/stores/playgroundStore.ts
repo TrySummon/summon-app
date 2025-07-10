@@ -127,6 +127,8 @@ export interface PlaygroundStore {
   showToolSidebar: boolean;
   // Global auto-execute tools setting
   autoExecuteTools: boolean;
+  // Global composer state (cross-tab)
+  composer: UIMessage;
 
   // Getters
   getCurrentTab: () => PlaygroundTab | undefined;
@@ -184,6 +186,11 @@ export interface PlaygroundStore {
   getAutoExecuteTools: () => boolean;
   setAutoExecuteTools: (autoExecuteTools: boolean) => void;
 
+  // Global composer management
+  getComposer: () => UIMessage;
+  setComposer: (composer: UIMessage) => void;
+  resetComposer: () => void;
+
   // History management
   undo: () => string | null;
   redo: () => string | null;
@@ -205,11 +212,19 @@ const createDefaultState = (): IPlaygroundTabState => ({
   toolSelectionPristine: true,
 });
 
+const createDefaultComposer = (): UIMessage => ({
+  id: uuidv4(),
+  role: "user",
+  content: "",
+  parts: [{ type: "text", text: "" }],
+});
+
 // Define the state that will be persisted to storage
 type PlaygroundStorePersist = {
   tabs: Record<string, Omit<PlaygroundTab, "history" | "historyIndex">>;
   currentTabId: string;
   autoExecuteTools: boolean;
+  composer: UIMessage;
 };
 
 // Configure persist options
@@ -240,6 +255,7 @@ const persistOptions: PersistOptions<PlaygroundStore, PlaygroundStorePersist> =
         tabs: cleanTabs,
         currentTabId: state.currentTabId,
         autoExecuteTools: state.autoExecuteTools,
+        composer: state.composer,
       };
 
       // Check if the data size is within limits
@@ -300,6 +316,11 @@ const persistOptions: PersistOptions<PlaygroundStore, PlaygroundStorePersist> =
         }
 
         state.tabs = restoredTabs;
+
+        // Ensure composer is restored or set to default
+        if (!state.composer) {
+          state.composer = createDefaultComposer();
+        }
       }
     },
   };
@@ -313,6 +334,7 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
       currentTabId: "",
       showToolSidebar: false,
       autoExecuteTools: true,
+      composer: createDefaultComposer(),
 
       getTabs: () => {
         const { tabs } = get();
@@ -828,6 +850,24 @@ export const usePlaygroundStore = create<PlaygroundStore>()(
         set((state) => ({
           ...state,
           autoExecuteTools,
+        }));
+      },
+
+      // Global composer management
+      getComposer: () => {
+        const { composer } = get();
+        return composer;
+      },
+      setComposer: (composer) => {
+        set((state) => ({
+          ...state,
+          composer,
+        }));
+      },
+      resetComposer: () => {
+        set((state) => ({
+          ...state,
+          composer: createDefaultComposer(),
         }));
       },
     }),

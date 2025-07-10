@@ -1,15 +1,8 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { AutoButton } from "@/components/ui/AutoButton";
 import { usePlaygroundStore } from "../../../stores/playgroundStore";
-import { Attachment, UIMessage } from "ai";
-import { v4 as uuidv4 } from "uuid";
+import { Attachment } from "ai";
 import { runPlaygroundAgent } from "@/lib/agent";
 import { ArrowUp, Square } from "lucide-react";
 import { MessageContent } from "../Message/Content";
@@ -30,15 +23,11 @@ export default function MessageComposer() {
   );
   const addMessage = usePlaygroundStore((state) => state.addMessage);
   const stopAgent = usePlaygroundStore((state) => state.stopAgent);
+  const composer = usePlaygroundStore((state) => state.getComposer());
+  const setComposer = usePlaygroundStore((state) => state.setComposer);
+  const resetComposer = usePlaygroundStore((state) => state.resetComposer);
 
   const { captureEvent } = usePostHog();
-
-  const [composer, setComposer] = useState<UIMessage>({
-    id: uuidv4(),
-    role: "user",
-    content: "",
-    parts: [{ type: "text", text: "" }],
-  });
 
   const isComposerEmpty = !composer.parts.find(
     (part) => part.type === "text" && part.text.trim() !== "",
@@ -78,14 +67,9 @@ export default function MessageComposer() {
     // Add the message to the current state using the zustand store
     addMessage(trimmedComposer);
     // Reset the composer
-    setComposer((prev) => ({
-      id: uuidv4(),
-      role: prev.role,
-      content: "",
-      parts: [{ type: "text", text: "" }],
-    }));
+    resetComposer();
     runPlaygroundAgent();
-  }, [disabled, composer, captureEvent, addMessage]);
+  }, [disabled, composer, captureEvent, addMessage, resetComposer]);
 
   // Keyboard shortcut handler
   useEffect(() => {
@@ -117,7 +101,7 @@ export default function MessageComposer() {
         ],
       });
     },
-    [composer, setComposer, captureEvent],
+    [composer, setComposer],
   );
 
   const handleToggleAutoExecute = useCallback(() => {
@@ -163,7 +147,7 @@ export default function MessageComposer() {
         onToggle={handleToggleAutoExecute}
       />
     ),
-    [autoExecuteTools, handleToggleAutoExecute, running],
+    [autoExecuteTools, handleToggleAutoExecute],
   );
 
   return (
