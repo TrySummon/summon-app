@@ -6,6 +6,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { JSONSchema7 } from "json-schema";
 import type { ToolAnnotations, ExternalToolOverride } from "./types";
 import { getExternalMcpOverrides } from "./persistence";
+import { addMcpLog } from "..";
 
 /**
  * Fetches tools from an MCP server
@@ -171,6 +172,18 @@ export async function callMcpTool(
       }
     }
   }
+
+  // Log the detailed request
+  const truncatedArgs =
+    JSON.stringify(args).length > 500
+      ? JSON.stringify(args).substring(0, 500) + "..."
+      : JSON.stringify(args);
+  addMcpLog(
+    mcpId,
+    "debug",
+    `→ Calling tool: ${name} with args: ${truncatedArgs}`,
+    serverState.isExternal,
+  );
 
   const result = await serverState.client.callTool({
     name: name,
