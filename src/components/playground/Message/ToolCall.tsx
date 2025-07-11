@@ -148,7 +148,7 @@ export const ToolCall: React.FC<ToolCallProps> = ({ invocation }) => {
         </div>
 
         {/* Content */}
-        <div className="space-y-3 px-4 py-3">
+        <div className="space-y-3 px-4 py-1">
           <div className="flex flex-wrap gap-2">
             <PayloadDialog
               title={`Arguments for ${invocation.toolName}`}

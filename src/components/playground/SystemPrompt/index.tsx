@@ -8,7 +8,7 @@ import React, {
 import { cn } from "@/utils/tailwind";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { EditorView } from "codemirror";
-import { keymap } from "@codemirror/view";
+import { keymap, placeholder } from "@codemirror/view";
 import { Extension } from "@codemirror/state";
 import CodeMirrorEditor from "@/components/CodeEditor";
 import { usePlaygroundStore } from "../../../stores/playgroundStore";
@@ -79,23 +79,26 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({ className }) => {
   }, [isExpanded]);
 
   // Create keyboard shortcuts for Enter and Escape to close the editor
-  const keyboardShortcuts = useMemo((): Extension => {
-    return keymap.of([
-      {
-        key: "Enter",
-        run: () => {
-          setIsExpanded(false);
-          return true;
+  const extensions = useMemo((): Extension[] => {
+    return [
+      placeholder("Your system prompt here..."),
+      keymap.of([
+        {
+          key: "Enter",
+          run: () => {
+            setIsExpanded(false);
+            return true;
+          },
         },
-      },
-      {
-        key: "Escape",
-        run: () => {
-          setIsExpanded(false);
-          return true;
+        {
+          key: "Escape",
+          run: () => {
+            setIsExpanded(false);
+            return true;
+          },
         },
-      },
-    ]);
+      ]),
+    ];
   }, []);
 
   const hasMultipleLines = systemPrompt.includes("\n");
@@ -152,7 +155,7 @@ const SystemPrompt: React.FC<SystemPromptProps> = ({ className }) => {
           onChange={updateSystemPrompt}
           readOnly={isRunning}
           language="markdown"
-          additionalExtensions={[keyboardShortcuts]}
+          additionalExtensions={extensions}
         />
         {!isExpanded && (
           <div

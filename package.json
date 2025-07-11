@@ -1,7 +1,7 @@
 {
   "name": "Summon",
   "productName": "Summon",
-  "version": "0.1.400",
+  "version": "0.1.500",
   "description": "Your integrated environment for designing, building, and testing Model Context Protocol (MCP) servers and AI agents.",
   "main": ".vite/build/main.js",
   "scripts": {

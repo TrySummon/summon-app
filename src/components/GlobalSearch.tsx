@@ -317,45 +317,49 @@ export function GlobalSearch() {
   if (!isOpen) return null;
 
   return (
-    <div className="global-search-bar bg-popover border-border fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg border-2 p-3 shadow-xl">
+    <div className="global-search-bar bg-popover border-border fixed top-4 right-4 z-50 flex min-w-96 items-center gap-2 rounded-lg border-2 p-3 shadow-2xl backdrop-blur-sm">
       <Input
         ref={inputRef}
         type="text"
         placeholder="Search..."
         value={searchQuery}
         onChange={(e) => handleSearch(e.target.value)}
-        className="w-64 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="border-input bg-background/80 focus-visible:ring-ring w-64 border focus-visible:ring-1"
       />
 
-      {searchQuery && matches.length === 0 && (
-        <span className="text-muted-foreground text-sm">No results</span>
-      )}
-
-      {matches.length > 0 && (
-        <div className="text-muted-foreground flex items-center gap-1 text-sm">
-          <span className="font-medium">
-            {currentMatchIndex + 1} / {matches.length}
+      <div className="flex w-32 items-center justify-end gap-2">
+        {searchQuery && matches.length === 0 && (
+          <span className="text-muted-foreground text-sm whitespace-nowrap">
+            No results
           </span>
-          <button
-            onClick={navigatePrevious}
-            className="hover:bg-accent rounded p-1 transition-colors"
-            title="Previous match (Shift+Enter)"
-          >
-            <ChevronUp className="h-4 w-4" />
-          </button>
-          <button
-            onClick={navigateNext}
-            className="hover:bg-accent rounded p-1 transition-colors"
-            title="Next match (Enter)"
-          >
-            <ChevronDown className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+        )}
+
+        {matches.length > 0 && (
+          <div className="text-muted-foreground flex items-center gap-1 text-sm">
+            <span className="font-medium whitespace-nowrap">
+              {currentMatchIndex + 1} / {matches.length}
+            </span>
+            <button
+              onClick={navigatePrevious}
+              className="hover:bg-accent rounded p-1 transition-colors"
+              title="Previous match (Shift+Enter)"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </button>
+            <button
+              onClick={navigateNext}
+              className="hover:bg-accent rounded p-1 transition-colors"
+              title="Next match (Enter)"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
 
       <button
         onClick={closeSearch}
-        className="hover:bg-accent rounded p-1 transition-colors"
+        className="hover:bg-accent flex-shrink-0 rounded p-1 transition-colors"
         title="Close (Esc)"
       >
         <X className="h-4 w-4" />

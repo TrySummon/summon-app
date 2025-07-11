@@ -121,15 +121,18 @@ function createMentionRegex(mentionData: MentionData[]): RegExp | null {
   Object.entries(nameGroups).forEach(([name, items]) => {
     const escapedName = name.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&");
 
-    if (items.length === 1) {
-      // No duplicates, just use the name
-      mentionPatterns.push(escapedName);
-    } else {
+    const isDuplicate =
+      items.length > 1 && !items.every((item) => item.type === items[0].type);
+
+    if (isDuplicate) {
       // Duplicates, create prefixed versions
       items.forEach((item) => {
         const escapedType = item.type.replace(/[-/^$*+?.()|[\]{}]/g, "\\$&");
         mentionPatterns.push(`${escapedType}:${escapedName}`);
       });
+    } else {
+      // No duplicates, just use the name
+      mentionPatterns.push(escapedName);
     }
   });
 
@@ -168,7 +171,11 @@ function createMentionAutocompletion(mentionData: MentionData[]): Extension {
         const options: Completion[] = [];
 
         Object.entries(nameGroups).forEach(([, items]) => {
-          if (items.length === 1) {
+          const isDuplicate =
+            items.length > 1 &&
+            !items.every((item) => item.type === items[0].type);
+
+          if (!isDuplicate) {
             // No duplicates, use regular name
             const item = items[0];
             const boost =
