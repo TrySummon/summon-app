@@ -46,7 +46,6 @@ import {
   showFileInFolder,
   generateFakeData,
   getMcpLogs,
-  addMcpLog,
 } from "@/lib/mcp";
 
 import { McpServerState } from "@/lib/mcp/state";
@@ -372,7 +371,6 @@ export function registerMcpListeners() {
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error occurred";
-        addMcpLog(mcpId, "error", `Tool '${name}' failed: ${errorMessage}`);
         log.error(`Error calling MCP tool:`, error);
         return {
           success: false,

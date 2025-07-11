@@ -1,5 +1,5 @@
+import { addMcpLog } from "..";
 import { runningMcpServers } from "../state";
-import { addMcpLog } from "../index";
 
 // Central export for all tool-related functionality
 export * from "./types";
@@ -35,18 +35,6 @@ export async function callMcpTool(
     name,
     arguments: args,
   });
-
-  // Log the detailed response
-  const truncatedResult =
-    JSON.stringify(result).length > 500
-      ? JSON.stringify(result).substring(0, 500) + "..."
-      : JSON.stringify(result);
-  addMcpLog(
-    mcpId,
-    "debug",
-    `← Tool response: ${truncatedResult}`,
-    serverState.isExternal,
-  );
 
   return result;
 }

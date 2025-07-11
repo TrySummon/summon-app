@@ -288,11 +288,6 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
       currentState.status === "running" ||
       currentState.status === "starting"
     ) {
-      addMcpLog(
-        mcpId,
-        "info",
-        `MCP server ${mcpId} is already ${currentState.status}`,
-      );
       log.info(`MCP server ${mcpId} is already ${currentState.status}`);
       return currentState;
     }
@@ -435,7 +430,9 @@ export async function startMcpServer(mcpId: string): Promise<McpServerState> {
 
     // Hook into transport events for detailed logging
     transport.onmessage = (message) => {
-      addMcpLog(mcpId, "debug", `← Received: ${JSON.stringify(message)}`);
+      const stringifiedMessage = JSON.stringify(message);
+      if (stringifiedMessage.includes(`"result":{}`)) return;
+      addMcpLog(mcpId, "debug", `← Received: ${stringifiedMessage}`);
     };
 
     transport.onerror = (error) => {

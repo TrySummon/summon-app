@@ -105,8 +105,15 @@ export const McpExplorer: React.FC<McpExplorerProps> = ({
   }, [refreshStatus, fetchMcpTools, fetchMcpPrompts, fetchMcpResources]);
 
   useEffect(() => {
+    if (state?.status !== "running") return;
     Promise.all([fetchMcpTools(), fetchMcpPrompts(), fetchMcpResources()]);
-  }, [fetchMcpTools, fetchMcpPrompts, fetchMcpResources, apiGroups]);
+  }, [
+    fetchMcpTools,
+    fetchMcpPrompts,
+    fetchMcpResources,
+    apiGroups,
+    state?.status,
+  ]);
 
   if (isLoading) return null;
 
