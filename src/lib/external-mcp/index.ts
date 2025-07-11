@@ -165,13 +165,7 @@ const startHealthCheck = (serverName: string) => {
   }, HEALTH_CHECK_INTERVAL);
 
   healthCheckTimers.set(serverName, timer);
-
-  addMcpLog(
-    serverName,
-    "debug",
-    `Health check started for server: ${serverName}`,
-    true,
-  );
+  log.info(`Health check started for server: ${serverName}`);
 };
 
 /**
@@ -182,13 +176,7 @@ const stopHealthCheck = (serverName: string) => {
   if (timer) {
     clearInterval(timer);
     healthCheckTimers.delete(serverName);
-
-    addMcpLog(
-      serverName,
-      "debug",
-      `Health check stopped for server: ${serverName}`,
-      true,
-    );
+    log.info(`Health check stopped for server: ${serverName}`);
   }
 };
 
@@ -221,22 +209,12 @@ const performHealthCheck = async (serverName: string) => {
       delete serverState.error;
       broadcastExternalMcpServersUpdate();
 
-      addMcpLog(
-        serverName,
-        "info",
-        `Server ${serverName} is now healthy`,
-        true,
-      );
+      log.info(`Server ${serverName} is now healthy`);
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    addMcpLog(
-      serverName,
-      "warn",
-      `Health check failed for server ${serverName}: ${errorMessage}`,
-      true,
-    );
+    log.warn(`Health check failed for server ${serverName}: ${errorMessage}`);
 
     // Mark server as unhealthy
     serverState.status = "error";
@@ -278,13 +256,6 @@ const attemptReconnection = async (serverName: string) => {
       // Force reconnection
       await connectExternalMcp(serverName, serverConfig, true);
       broadcastExternalMcpServersUpdate();
-    } else {
-      addMcpLog(
-        serverName,
-        "error",
-        `Server configuration not found for ${serverName}`,
-        true,
-      );
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -306,15 +277,6 @@ export const connectExternalMcp = async (
   config: McpServerConfig,
   force?: boolean,
 ): Promise<McpServerState> => {
-  // Import addMcpLog from the main MCP lib
-  const { addMcpLog } = await import("../mcp");
-
-  addMcpLog(
-    serverName,
-    "info",
-    `Starting external MCP server: ${serverName}`,
-    true,
-  );
   log.info(`Starting external MCP server: ${serverName}`);
 
   // Check if the server is already running
@@ -323,12 +285,6 @@ export const connectExternalMcp = async (
     runningMcpServers[serverName].status === "running"
   ) {
     if (!force) {
-      addMcpLog(
-        serverName,
-        "info",
-        `External MCP server ${serverName} is already running`,
-        true,
-      );
       log.info(`External MCP server ${serverName} is already running`);
       return runningMcpServers[serverName];
     } else {
@@ -343,12 +299,6 @@ export const connectExternalMcp = async (
     runningMcpServers[serverName] &&
     runningMcpServers[serverName].status === "stopped"
   ) {
-    addMcpLog(
-      serverName,
-      "info",
-      `External MCP server ${serverName} is already stopped`,
-      true,
-    );
     log.info(`External MCP server ${serverName} is already stopped`);
     return runningMcpServers[serverName];
   }
@@ -370,6 +320,8 @@ export const connectExternalMcp = async (
   let oauthSetup: McpOAuthSetup | null = null;
 
   try {
+    stopHealthCheck(serverName);
+
     // Check if OAuth should be enabled for this server
     if (config.url && (await shouldEnableOAuth(serverName, config.url))) {
       oauthSetup = await setupOAuthAuthentication({
@@ -388,12 +340,6 @@ export const connectExternalMcp = async (
 
     // Handle CLI-based server
     if (config.command) {
-      addMcpLog(
-        serverName,
-        "info",
-        `Connecting to CLI-based MCP server: ${config.command}`,
-        true,
-      );
       const params = config as StdioServerParameters;
       params.env = {
         ...(params.env || {}),
@@ -404,10 +350,12 @@ export const connectExternalMcp = async (
       const transport = new StdioClientTransport(params);
 
       transport.onmessage = (message) => {
+        const stringifiedMessage = JSON.stringify(message);
+        if (stringifiedMessage.includes(`"result":{}`)) return;
         addMcpLog(
           serverName,
           "debug",
-          `← Received: ${JSON.stringify(message)}`,
+          `← Received: ${stringifiedMessage}`,
           true,
         );
       };
@@ -500,12 +448,6 @@ export const connectExternalMcp = async (
       };
 
       if (isSSE) {
-        addMcpLog(
-          serverName,
-          "info",
-          `Connecting to SSE MCP server: ${url}`,
-          true,
-        );
         const transport = new SSEClientTransport(new URL(url), {
           authProvider: oauthSetup?.authProvider,
           requestInit: {
@@ -514,10 +456,12 @@ export const connectExternalMcp = async (
         });
 
         transport.onmessage = (message) => {
+          const stringifiedMessage = JSON.stringify(message);
+          if (stringifiedMessage.includes(`"result":{}`)) return;
           addMcpLog(
             serverName,
             "debug",
-            `← Received: ${JSON.stringify(message)}`,
+            `← Received: ${stringifiedMessage}`,
             true,
           );
         };
@@ -544,12 +488,6 @@ export const connectExternalMcp = async (
         };
         serverState.client = client;
       } else if (isHTTP) {
-        addMcpLog(
-          serverName,
-          "info",
-          `Connecting to HTTP MCP server: ${url}`,
-          true,
-        );
         const transport = new StreamableHTTPClientTransport(new URL(url), {
           authProvider: oauthSetup?.authProvider,
           requestInit: {
@@ -558,10 +496,12 @@ export const connectExternalMcp = async (
         });
 
         transport.onmessage = (message) => {
+          const stringifiedMessage = JSON.stringify(message);
+          if (stringifiedMessage.includes(`"result":{}`)) return;
           addMcpLog(
             serverName,
             "debug",
-            `← Received: ${JSON.stringify(message)}`,
+            `← Received: ${stringifiedMessage}`,
             true,
           );
         };
@@ -596,12 +536,6 @@ export const connectExternalMcp = async (
     serverState.status = "running";
     delete serverState.error; // Clear any previous error
 
-    addMcpLog(
-      serverName,
-      "info",
-      `External MCP server ${serverName} started successfully`,
-      true,
-    );
     log.info(`External MCP server ${serverName} started successfully`);
 
     return serverState;
@@ -636,25 +570,10 @@ export const stopExternalMcp = async (
   serverName: string,
   removeFromState?: boolean,
 ): Promise<McpServerState | null> => {
-  // Import addMcpLog from the main MCP lib
-  const { addMcpLog } = await import("../mcp");
-
-  addMcpLog(
-    serverName,
-    "info",
-    `Stopping external MCP server: ${serverName}`,
-    true,
-  );
   log.info(`Stopping external MCP server: ${serverName}`);
 
   // Check if the server is running
   if (!runningMcpServers[serverName]) {
-    addMcpLog(
-      serverName,
-      "info",
-      `External MCP server ${serverName} is not running`,
-      true,
-    );
     log.info(`External MCP server ${serverName} is not running`);
     return null;
   }
@@ -679,12 +598,6 @@ export const stopExternalMcp = async (
     serverState.stoppedAt = new Date();
     delete serverState.error; // Clear any previous error
 
-    addMcpLog(
-      serverName,
-      "info",
-      `External MCP server ${serverName} stopped successfully`,
-      true,
-    );
     log.info(`External MCP server ${serverName} stopped successfully`);
 
     if (removeFromState) {
@@ -694,12 +607,6 @@ export const stopExternalMcp = async (
     return serverState;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    addMcpLog(
-      serverName,
-      "error",
-      `Failed to stop external MCP server ${serverName}: ${errorMessage}`,
-      true,
-    );
     log.error(`Failed to stop external MCP server ${serverName}:`, error);
     serverState.status = "error";
     serverState.error = errorMessage;
@@ -714,15 +621,6 @@ export const stopExternalMcp = async (
 export const connectAllExternalMcps = async (
   force?: boolean,
 ): Promise<Record<string, McpServerState>> => {
-  // Import addMcpLog from the main MCP lib
-  const { addMcpLog } = await import("../mcp");
-
-  addMcpLog(
-    "system",
-    "info",
-    "Connecting to all external MCP servers...",
-    true,
-  );
   log.info("Connecting to all external MCP servers...");
 
   try {
@@ -768,19 +666,12 @@ export const connectAllExternalMcps = async (
       }
     }
 
-    addMcpLog("system", "info", "All external MCP servers connected", true);
     log.info("All external MCP servers connected");
 
     return results;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    addMcpLog(
-      "system",
-      "error",
-      `Error connecting to external MCP servers: ${errorMessage}`,
-      true,
-    );
-    log.error("Error connecting to external MCP servers:", error);
+    log.error("Error connecting to external MCP servers:", errorMessage);
     throw error;
   }
 };
@@ -829,9 +720,6 @@ export const getExternalMcpServerState = (
 export const stopAllExternalMcps = async (
   removeFromState?: boolean,
 ): Promise<void> => {
-  const { addMcpLog } = await import("../mcp");
-
-  addMcpLog("system", "info", "Stopping all external MCP servers...", true);
   log.info("Stopping all external MCP servers...");
 
   const externalServers = Object.entries(runningMcpServers).filter(
@@ -844,6 +732,5 @@ export const stopAllExternalMcps = async (
 
   await Promise.allSettled(stopPromises);
 
-  addMcpLog("system", "info", "All external MCP servers stopped", true);
   log.info("All external MCP servers stopped");
 };
