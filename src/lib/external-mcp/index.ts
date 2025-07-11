@@ -4,6 +4,7 @@ import path from "path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js";
 import {
   getDefaultEnvironment,
   StdioClientTransport,
@@ -16,6 +17,12 @@ import { workspaceDb } from "../db/workspace-db";
 import { BrowserWindow } from "electron";
 import { EXTERNAL_MCP_SERVERS_UPDATED_CHANNEL } from "../../ipc/external-mcp/external-mcp-channels";
 import { addMcpLog } from "../mcp";
+import {
+  shouldEnableOAuth,
+  setupOAuthAuthentication,
+  cleanupOAuthAuthentication,
+  type McpOAuthSetup,
+} from "../mcp-oauth";
 
 // Health check polling intervals
 const HEALTH_CHECK_INTERVAL = 3000; // 3 seconds
@@ -359,7 +366,20 @@ export const connectExternalMcp = async (
 
   runningMcpServers[serverName] = serverState;
 
+  // Setup OAuth authentication if enabled
+  let oauthSetup: McpOAuthSetup | null = null;
+
   try {
+    // Check if OAuth should be enabled for this server
+    if (config.url && (await shouldEnableOAuth(serverName, config.url))) {
+      oauthSetup = await setupOAuthAuthentication({
+        serverName,
+        serverUrl: config.url,
+        clientName: `Summon - ${serverName}`,
+        clientUri: "https://github.com/modelcontextprotocol/summon-app",
+      });
+    }
+
     // Create client
     const client = new Client({
       name: "Summon",
@@ -437,6 +457,48 @@ export const connectExternalMcp = async (
       const isSSE = url.includes("/sse");
       const isHTTP = url.includes("/mcp");
 
+      // Helper function to handle OAuth authentication
+      const handleOAuthAuth = async (
+        transport: StreamableHTTPClientTransport | SSEClientTransport,
+      ) => {
+        if (oauthSetup) {
+          try {
+            await client.connect(transport);
+          } catch (error) {
+            if (error instanceof UnauthorizedError) {
+              addMcpLog(
+                serverName,
+                "info",
+                "Authentication required, starting OAuth flow",
+                true,
+              );
+
+              // Wait for OAuth authentication
+              const authCode = await oauthSetup.waitForAuth();
+              addMcpLog(
+                serverName,
+                "info",
+                "OAuth authorization code received",
+                true,
+              );
+
+              // Complete the OAuth flow
+              await transport.finishAuth(authCode);
+              addMcpLog(
+                serverName,
+                "info",
+                "OAuth authentication completed",
+                true,
+              );
+            } else {
+              throw error;
+            }
+          }
+        } else {
+          await client.connect(transport);
+        }
+      };
+
       if (isSSE) {
         addMcpLog(
           serverName,
@@ -445,6 +507,7 @@ export const connectExternalMcp = async (
           true,
         );
         const transport = new SSEClientTransport(new URL(url), {
+          authProvider: oauthSetup?.authProvider,
           requestInit: {
             headers: config.headers,
           },
@@ -472,7 +535,7 @@ export const connectExternalMcp = async (
           addMcpLog(serverName, "info", `Transport connection closed`, true);
         };
 
-        await client.connect(transport);
+        await handleOAuthAuth(transport);
 
         serverState.transport = {
           type: "sse",
@@ -488,6 +551,7 @@ export const connectExternalMcp = async (
           true,
         );
         const transport = new StreamableHTTPClientTransport(new URL(url), {
+          authProvider: oauthSetup?.authProvider,
           requestInit: {
             headers: config.headers,
           },
@@ -515,7 +579,7 @@ export const connectExternalMcp = async (
           addMcpLog(serverName, "info", `Transport connection closed`, true);
         };
 
-        await client.connect(transport);
+        await handleOAuthAuth(transport);
 
         serverState.transport = {
           type: "http",
@@ -552,6 +616,11 @@ export const connectExternalMcp = async (
     log.error(`Failed to start external MCP server ${serverName}:`, error);
     serverState.status = "error";
     serverState.error = errorMessage;
+
+    // Cleanup OAuth setup if it was created
+    if (oauthSetup) {
+      oauthSetup.cleanup();
+    }
 
     return serverState;
   } finally {
@@ -595,6 +664,9 @@ export const stopExternalMcp = async (
   try {
     // Stop health check polling for this server
     stopHealthCheck(serverName);
+
+    // Cleanup OAuth authentication for this server
+    cleanupOAuthAuthentication(serverName);
 
     // Close client if it exists
     if (serverState.client) {
