@@ -40,12 +40,12 @@ export function AssertionResult({ assertion }: AssertionResultProps) {
     }
 
     if (typeof value === "string") {
-      return value.length > 200 ? value.substring(0, 200) + "..." : value;
+      return value;
     }
 
     if (typeof value === "object") {
       const str = JSON.stringify(value, null, 2);
-      return str.length > 500 ? str.substring(0, 500) + "..." : str;
+      return str;
     }
 
     return String(value);
@@ -132,7 +132,7 @@ export function AssertionResult({ assertion }: AssertionResultProps) {
                 height={isExpanded ? "auto" : 100}
                 maxHeight={isExpanded ? 400 : 100}
                 fontSize={12}
-                className="min-h-[100px]"
+                className="min-h-[100px] overflow-y-auto"
               />
             </div>
           </div>

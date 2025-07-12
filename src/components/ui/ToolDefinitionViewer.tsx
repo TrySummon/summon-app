@@ -201,7 +201,7 @@ export function ToolDefinitionViewer({
               </div>
             )}
           </div>
-          <div className="flex min-h-[400px] flex-grow overflow-hidden rounded-lg border">
+          <div className="flex h-0 min-h-[400px] flex-grow overflow-y-auto rounded-lg border">
             <div ref={mergeViewContainerRef} className="h-full w-full" />
           </div>
         </Tabs>
