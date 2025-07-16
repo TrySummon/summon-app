@@ -1,7 +1,6 @@
 import React from "react";
-import Logo from "./Logo";
 import { Button } from "./ui/button";
-import { StarIcon } from "lucide-react";
+import { StarIcon, Search } from "lucide-react";
 import {
   closeWindow,
   maximizeWindow,
@@ -13,13 +12,26 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useGlobalCommandPalette } from "./GlobalCommandPaletteProvider";
+import { Kbd } from "./Kbd";
 
 export default function DragWindowRegion() {
+  const { open } = useGlobalCommandPalette();
+
   return (
     <header className="draglayer bg-sidebar sticky top-0 z-50 flex w-full border-b">
       <div className="relative flex h-[var(--header-height)] flex-grow items-center px-2">
         <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1">
-          <Logo />
+          <Button
+            variant="outline"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent border-border bg-background/50 h-8 w-64 justify-start backdrop-blur-sm"
+            onClick={open}
+            style={{ "-webkit-app-region": "no-drag" } as React.CSSProperties}
+          >
+            <Search className="mr-2 h-3.5 w-3.5" />
+            <span className="text-sm">Search... </span>
+            <Kbd keys={["cmd", "k"]} />
+          </Button>
         </div>
         <div
           className="ml-auto flex items-center gap-2"

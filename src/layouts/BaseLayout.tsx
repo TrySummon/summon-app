@@ -4,6 +4,8 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { GlobalCommandPaletteProvider } from "@/components/GlobalCommandPaletteProvider";
+import { GlobalCommandPalette } from "@/components/GlobalCommandPalette";
 
 export default function BaseLayout({
   children,
@@ -11,7 +13,7 @@ export default function BaseLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <GlobalCommandPaletteProvider>
       <SidebarProvider
         className="flex h-svh flex-col"
         open
@@ -31,6 +33,7 @@ export default function BaseLayout({
         </div>
       </SidebarProvider>
       <GlobalSearch />
-    </>
+      <GlobalCommandPalette />
+    </GlobalCommandPaletteProvider>
   );
 }
