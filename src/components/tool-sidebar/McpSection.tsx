@@ -48,7 +48,6 @@ export default function McpSection({
       <div
         className={cn(
           "text-foreground bg-sidebar sticky top-0 z-10 flex flex-col gap-1 p-2",
-          !isExpanded && "border-b",
         )}
       >
         <div
