@@ -7,7 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Trash2, PlayCircle } from "lucide-react";
+import { Trash2, ArrowUp } from "lucide-react";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { UIMessage } from "ai";
@@ -79,17 +79,17 @@ export default function Message({
               className={`-mr-2 flex ${showButtons ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
             >
               {children}
-              <CopyButton className="h-3.5 w-3.5" content={messageContent} />
               {onRerun && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      className="text-muted-foreground"
+                      className="text-muted-foreground my-auto h-6 gap-1 px-2 text-xs"
                       onClick={onRerun}
                       variant="ghost"
-                      size="icon"
+                      size="sm"
                     >
-                      <PlayCircle size={14} />
+                      <ArrowUp size={14} />
+                      Rerun
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">
@@ -97,6 +97,7 @@ export default function Message({
                   </TooltipContent>
                 </Tooltip>
               )}
+              <CopyButton className="h-3.5 w-3.5" content={messageContent} />
               {onDelete ? (
                 <Button
                   className="text-muted-foreground"

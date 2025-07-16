@@ -14,7 +14,7 @@ export function PastChats({ mcpId }: PastChatsProps) {
 
   if (!chats?.length) {
     return (
-      <div className="mb-12 space-y-3">
+      <div className="space-y-3">
         <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <Clock className="h-4 w-4" />
           <span>Recent Chats</span>
@@ -28,7 +28,7 @@ export function PastChats({ mcpId }: PastChatsProps) {
   }
 
   return (
-    <div className="mb-12 space-y-2">
+    <div className="mb-2 space-y-2">
       <div className="text-muted-foreground flex items-center gap-2 px-2 text-sm">
         <Clock className="h-4 w-4" />
         <span>Recent Chats</span>

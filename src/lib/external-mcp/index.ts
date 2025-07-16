@@ -214,11 +214,11 @@ const performHealthCheck = async (serverName: string) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    log.warn(`Health check failed for server ${serverName}: ${errorMessage}`);
+    log.warn(`Failed to ping the server ${serverName}: ${errorMessage}`);
 
     // Mark server as unhealthy
     serverState.status = "error";
-    serverState.error = `Health check failed: ${errorMessage}`;
+    serverState.error = `Failed to ping the server: ${errorMessage}`;
     serverState.stoppedAt = new Date();
 
     broadcastExternalMcpServersUpdate();

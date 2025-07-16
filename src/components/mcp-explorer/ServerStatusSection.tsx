@@ -120,6 +120,60 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
 
   const canEdit = !isExternal && onEditName;
 
+  const buttons = (
+    <div className="flex items-center gap-2">
+      <Link to="/playground">
+        <Button variant="ghost" size="sm" className="gap-2">
+          <MessageCircle className="h-3 w-3" />
+          Chat
+        </Button>
+      </Link>
+      {isExternal ? (
+        <Button
+          onClick={() => openUserDataMcpJsonFile()}
+          variant="ghost"
+          size="sm"
+          className="gap-2"
+        >
+          <FileJson className="h-3 w-3" />
+          Edit
+        </Button>
+      ) : (
+        <>
+          <WaitlistButton
+            featureName="MCP Server Deployment"
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+          >
+            <Rocket className="h-3 w-3" />
+            Deploy
+          </WaitlistButton>
+          <Button
+            onClick={handleDownload}
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            disabled={isDownloading}
+          >
+            <Download className="h-3 w-3" />
+            {isDownloading ? "Downloading..." : "Download"}
+          </Button>
+        </>
+      )}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button onClick={refreshStatus} variant="ghost" size="sm">
+            <RefreshCw className="h-3 w-3" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Refresh Status</p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
+  );
+
   if (status === "running") {
     return (
       <TooltipProvider>
@@ -158,57 +212,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <Link to="/playground">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <MessageCircle className="h-3 w-3" />
-                  Chat
-                </Button>
-              </Link>
-              {isExternal ? (
-                <Button
-                  onClick={() => openUserDataMcpJsonFile()}
-                  variant="ghost"
-                  size="sm"
-                  className="gap-2"
-                >
-                  <FileJson className="h-3 w-3" />
-                  Edit
-                </Button>
-              ) : (
-                <>
-                  <WaitlistButton
-                    featureName="MCP Server Deployment"
-                    variant="ghost"
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <Rocket className="h-3 w-3" />
-                    Deploy
-                  </WaitlistButton>
-                  <Button
-                    onClick={handleDownload}
-                    variant="ghost"
-                    size="sm"
-                    className="gap-2"
-                    disabled={isDownloading}
-                  >
-                    <Download className="h-3 w-3" />
-                    {isDownloading ? "Downloading..." : "Download"}
-                  </Button>
-                </>
-              )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button onClick={refreshStatus} variant="ghost" size="sm">
-                    <RefreshCw className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Refresh Status</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
+            {buttons}
           </div>
 
           {url ? (
@@ -244,21 +248,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
         <div>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold">MCP Server Status</h2>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={refreshStatus}
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                >
-                  <RefreshCw className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Refresh Status</p>
-              </TooltipContent>
-            </Tooltip>
+            {buttons}
           </div>
           <Alert className="border-yellow-500/30 bg-yellow-500/10 dark:bg-yellow-500/5">
             <AlertCircle className="h-4 w-4 !text-yellow-600 dark:text-yellow-500" />
@@ -280,21 +270,7 @@ export const ServerStatusSection: React.FC<ServerStatusSectionProps> = ({
         <div>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold">MCP Server Status</h2>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={refreshStatus}
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                >
-                  <RefreshCw className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Refresh Status</p>
-              </TooltipContent>
-            </Tooltip>
+            {buttons}
           </div>
           <Alert variant="destructive" className="border-red-500">
             <AlertCircle className="h-4 w-4" />

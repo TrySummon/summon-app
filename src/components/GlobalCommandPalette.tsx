@@ -140,10 +140,11 @@ export function GlobalCommandPalette() {
 
             results.push({
               id: `mcp-tool-${mcpId}-${tool.name}`,
-              title: `${tool.name} (${mcpEntry.name})`,
+              title: `${tool.name}`,
               category: "mcp-tools",
               icon: <Wrench className="h-4 w-4" />,
               path: `${basePath}?tab=tools`,
+              badges: [mcpEntry.name],
             });
           }
         });

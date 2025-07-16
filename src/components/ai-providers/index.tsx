@@ -136,23 +136,17 @@ export const AIProvidersTable: React.FC = () => {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">AI Providers</h2>
-        <Button
-          size="sm"
-          className="gap-1"
-          onClick={() => handleConfigureProvider(AIProviderType.Custom)}
-        >
-          <PlusIcon className="h-3.5 w-3.5" />
-          Add custom provider
-        </Button>
+        <div>
+          <h2 className="text-xl font-semibold">AI Providers</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Click the + button next to any provider to configure it. The
+            credentials are securely encrypted on your local machine.
+          </p>
+        </div>
       </div>
 
-      <p className="text-muted-foreground mb-4 text-sm">
-        The credentials are securely encrypted on your local machine.
-      </p>
-
       {isError && error && (
-        <div className="bg-destructive/10 text-destructive mb-4 rounded-md p-3">
+        <div className="bg-destructive/10 text-destructive mt-4 mb-4 rounded-md p-3">
           {error instanceof Error ? error.message : "An error occurred"}
         </div>
       )}
@@ -328,6 +322,23 @@ export const AIProvidersTable: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ))}
+
+              {/* Add custom provider row */}
+              <TableRow className="border-muted border-t-2 border-dashed">
+                <TableCell colSpan={5} className="py-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground w-fit justify-start gap-2"
+                    onClick={() =>
+                      handleConfigureProvider(AIProviderType.Custom)
+                    }
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                    Add custom provider
+                  </Button>
+                </TableCell>
+              </TableRow>
             </>
           )}
         </TableBody>

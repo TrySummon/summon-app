@@ -104,6 +104,10 @@ export const DatasetsTable: React.FC<DatasetsTableProps> = ({
             New Dataset
           </Button>
         </CardTitle>
+        <div className="text-muted-foreground text-sm">
+          Save conversations from the playground and create test cases with
+          success criteria to run semantic regression tests on your MCP servers.
+        </div>
       </CardHeader>
       <CardContent className="flex flex-grow flex-col">
         {isLoading ? (
