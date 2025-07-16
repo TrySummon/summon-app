@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { LLMPicker } from "@/components/llm-picker";
 import { SaveToDatasetButton } from "./SaveToDatasetButton";
 import ToolSidebarTrigger from "@/components/tool-sidebar/Trigger";
+import { Badge } from "@/components/ui/badge";
 
 export default function TabHeader() {
   const currentTabId = usePlaygroundStore((state) => state.currentTabId);
@@ -124,7 +125,9 @@ export default function TabHeader() {
           <TooltipContent>
             <div className="flex items-center gap-1">
               <p>Undo</p>
-              <Kbd className="z-10">cmd+z</Kbd>
+              <Badge variant="secondary" className="z-10">
+                <Kbd keys={["cmd", "z"]} />
+              </Badge>
             </div>
           </TooltipContent>
         </Tooltip>
@@ -144,7 +147,9 @@ export default function TabHeader() {
           <TooltipContent>
             <div className="flex items-center gap-1">
               <p>Redo</p>
-              <Kbd className="z-10">cmd+shift+z</Kbd>
+              <Badge variant="secondary" className="z-10">
+                <Kbd keys={["cmd", "shift", "z"]} />
+              </Badge>
             </div>
           </TooltipContent>
         </Tooltip>

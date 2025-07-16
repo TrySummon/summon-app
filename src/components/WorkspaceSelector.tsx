@@ -35,6 +35,7 @@ import {
   useDeleteWorkspace,
 } from "@/hooks/useWorkspaces";
 import { toast } from "sonner";
+import IconLogo from "./IconLogo";
 
 export function WorkspaceSelector() {
   const { data: workspaces = [] } = useWorkspaces();
@@ -162,7 +163,7 @@ export function WorkspaceSelector() {
             className="hover:bg-accent/50 h-8 w-full justify-between px-2 transition-colors"
           >
             <div className="flex min-w-0 items-center gap-2.5">
-              <FolderOpen className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+              <IconLogo className="text-muted-foreground -mt-[6px] h-3 w-3 flex-shrink-0" />
               <span className="truncate font-medium">
                 {currentWorkspace?.name || "Loading..."}
               </span>

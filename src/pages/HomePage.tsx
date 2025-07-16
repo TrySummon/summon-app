@@ -42,7 +42,7 @@ export default function HomePage() {
   return (
     <div className="flex h-full flex-1 flex-col overflow-y-auto">
       <div className="relative z-10 flex-grow p-6 md:p-10">
-        <div className="pointer-events-none absolute top-4 right-8 z-0 hidden opacity-5 lg:block">
+        <div className="pointer-events-none absolute top-4 right-8 z-0 hidden opacity-5 lg:block dark:opacity-15">
           <IconLogo className="w-36" />
         </div>
         {/* Top Banner/Callout - Updated */}

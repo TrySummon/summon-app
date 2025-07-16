@@ -1,71 +1,97 @@
 import React from "react";
 import { cn } from "@/utils/tailwind";
 import { Slot } from "@radix-ui/react-slot";
-import { Command, CornerDownLeft } from "lucide-react";
 import { ForwardedRef, forwardRef } from "react";
+import { Command, ArrowUp, CornerDownLeft } from "lucide-react";
 import { usePlatform } from "@/hooks/usePlatform";
 
 export type KbdProps = React.HTMLAttributes<HTMLElement> & {
   asChild?: boolean;
+  keys?: string[];
 };
 
 const Kbd = forwardRef(
   (
-    { asChild, children, className, ...kbdProps }: KbdProps,
+    { asChild, children, keys, className, ...kbdProps }: KbdProps,
     forwardedRef: ForwardedRef<HTMLElement>,
   ) => {
     const { isMac } = usePlatform();
-    const Comp = asChild ? Slot : "kbd";
+    const Comp = asChild ? Slot : "span";
 
-    const formatChildren = (child: React.ReactNode): React.ReactNode => {
-      if (typeof child === "string") {
-        let lowerChild = child.toLowerCase();
-        if (lowerChild === "enter") {
-          return <CornerDownLeft className="mt-[1px] !size-2.5" />;
-        }
-        if (lowerChild === "cmd+enter" || lowerChild === "ctrl+enter") {
-          const cmdKey = isMac ? (
-            <Command className="mt-[1px] !size-2.5" />
+    // Use keys prop if provided, otherwise try to extract from children
+    const keyList =
+      keys || (typeof children === "string" ? children.split("+") : []);
+
+    const renderKey = (key: string) => {
+      const normalizedKey = key.trim().toLowerCase();
+
+      switch (normalizedKey) {
+        case "cmd":
+        case "command":
+          return isMac ? (
+            <Command className="h-2.5 w-2.5" />
           ) : (
-            "Ctrl"
+            <span className="text-xs">Ctrl</span>
           );
-          return (
-            <>
-              {cmdKey}
-              <CornerDownLeft className="mt-[1px] ml-0.5 !size-2.5" />
-            </>
+        case "shift":
+          return <ArrowUp className="h-2.5 w-2.5" />;
+        case "enter":
+        case "return":
+          return <CornerDownLeft className="h-2.5 w-2.5" />;
+        case "alt":
+        case "option":
+          return isMac ? (
+            <span className="text-xs">⌥</span>
+          ) : (
+            <span className="text-xs">Alt</span>
           );
-        }
-        // Handle shift replacement
-        if (lowerChild.includes("shift")) {
-          lowerChild = lowerChild.replace(/shift/i, "⇧");
-        }
-        if (lowerChild.includes("cmd")) {
-          if (isMac) {
-            lowerChild = lowerChild.replace(/cmd/i, "⌘");
-          } else {
-            lowerChild = lowerChild.replace(/cmd/i, "Ctrl");
-          }
-        }
-        return lowerChild;
+        case "ctrl":
+        case "control":
+          return <span className="text-xs">Ctrl</span>;
+        case "space":
+          return <span className="text-xs">Space</span>;
+        case "tab":
+          return <span className="text-xs">Tab</span>;
+        case "esc":
+        case "escape":
+          return <span className="text-xs">Esc</span>;
+        case "del":
+        case "delete":
+          return <span className="text-xs">Del</span>;
+        default:
+          // For single characters or other keys, show as uppercase
+          return <span className="font-mono text-xs">{key.toUpperCase()}</span>;
       }
-      return child;
     };
 
-    const formattedChildren = Array.isArray(children)
-      ? children.map(formatChildren)
-      : formatChildren(children);
+    // If no keys to render, fall back to children
+    if (keyList.length === 0) {
+      return (
+        <Comp
+          {...kbdProps}
+          className={cn(
+            "text-muted-foreground ml-auto inline-flex items-center gap-1 text-xs tracking-widest",
+            className,
+          )}
+          ref={forwardedRef}
+        >
+          {children}
+        </Comp>
+      );
+    }
 
     return (
       <Comp
         {...kbdProps}
         className={cn(
-          "bg-muted text-muted-foreground inline-flex items-center justify-center rounded-[4px] px-1 font-mono text-sm text-xs tracking-tight whitespace-nowrap select-none",
+          "text-muted-foreground ml-auto inline-flex items-center gap-1 text-xs tracking-widest",
           className,
         )}
         ref={forwardedRef}
       >
-        {formattedChildren}
+        {keyList.map((key, index) => (
+          <React.Fragment key={index}>{renderKey(key)}</React.Fragment>
+        ))}
       </Comp>
     );
   },
