@@ -32,7 +32,7 @@ The main features of the Summon app are:
 
 ## 📺 Showcase
 
-https://github.com/user-attachments/assets/f3ff8ef4-2ec8-4aa3-9d30-8d10bdc0b6ea
+https://github.com/user-attachments/assets/9f4dc327-7507-4f2e-9144-44f8cfb50961
 
 ## 🚀 Getting Started
 
